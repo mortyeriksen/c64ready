@@ -1,0 +1,527 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2026 Morten Øien Eriksen */
+/* src/styles-header.css – header bar, text logo + logo CRT effect, boot shake-zoom,
+   about/credits modal.
+   Part of the styles.css @import manifest — cascade order is set there. */
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+header {
+  width: 100%;
+  max-width: 1460px;
+  display: flex;
+  justify-content: space-between;
+  /* Bottom-align the two children: the ABOUT/DOCS links column is shorter
+     than the logo block (big "C64 READY." + tagline below), so flex-end
+     drops the buttons' lower edge level with the tagline's bottom. */
+  align-items: flex-end;
+  padding-bottom: 16px;
+}
+
+.logo {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo img {
+  height: 48px;
+  width: auto;
+  display: block;
+}
+
+/* Retro pixel/ASCII text logo (alternative to the image). Uses the UI
+   palette (--accent cyan, --accent2 lavender) so it blends with the rest
+   of the chrome. */
+.logo-text {
+  display: flex;
+  align-items: flex-end;   /* bottom-align the text with the (smaller) blocks */
+  align-self: flex-start;  /* don't stretch to the column width (the wider tagline below) — keep the box hugging the glyphs so the CRT scanline/hum overlays (inset:0) cover the logo, not empty space to the right */
+  gap: 2px;
+  font-family: 'PetMe64', 'Share Tech Mono', monospace;
+  font-size: clamp(0.62rem, 3vw, 1.26rem);  /* desktop max reduced 10% (1.4→1.26rem); shrinks on mobile */
+  line-height: 1;
+  white-space: nowrap;                       /* keep "C64 READY." on one line */
+  letter-spacing: 1px;
+  position: relative;
+  margin-top: 5px;         /* was top padding; moved out so the inset:0 overlays don't start above the glyphs */
+  padding: 0 0 3px;
+}
+
+/* Nudge the "C64 READY." text down so it bottom-aligns with the blocks —
+   PetMe64 leaves empty space below its glyphs, so flex-end alone leaves the
+   text sitting high. The gap scales with the font, and the logo font is
+   responsive (clamp above), so the nudge must be em-relative — a fixed px
+   over-nudged the (smaller) text ~2px low on mobile. 0.2em ≈ 4px at the
+   desktop max size. */
+.logo-text .lt-main {
+  position: relative;
+  top: 0.2em;
+}
+
+.logo-text .lt-c64 {
+  color: #dff4ff;                 /* near-white tint of --accent */
+  text-shadow: 0 0 2px var(--accent), 0 0 10px rgba(112, 109, 235, 0.7), 2px 2px 0 #07071a;
+}
+
+.logo-text .lt-ready {
+  color: var(--accent);           /* C64 light blue (VIC #14) — the real READY. prompt colour */
+  text-shadow: 0 0 2px var(--accent), 0 0 12px rgba(112, 109, 235, 0.6), 2px 2px 0 #07071a;
+  margin-left: calc(-0.333em - 3px); /* trim 1/3 of the (1em) space, then 3px more */
+}
+
+/* ANSI shading-ramp block — the classic BBS/demoscene ASCII signature.
+   Coloured by glyph density (a "density ramp"): the full block █ is the
+   brightest light-blue and each lighter shade ▓▒░ steps darker, so the
+   colour fades exactly as the glyphs do — brightest at the outer edge,
+   fading toward the text. */
+.logo-text .lt-blocks {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.85em;
+  text-shadow: 0 0 8px rgba(112, 109, 235, 0.4);
+  margin-right: 6px;      /* the wider original spacing before "C64" */
+}
+.logo-text .lt-blocks .b4 { color: #9b98ff; }   /* █ full   — brightest */
+.logo-text .lt-blocks .b3 { color: var(--accent); } /* ▓ dark   (#706deb) */
+.logo-text .lt-blocks .b2 { color: #5a57b8; }   /* ▒ medium */
+.logo-text .lt-blocks .b1 { color: #43407c; }   /* ░ light  — faintest */
+
+/* ── Logo CRT effect — mirrors the screen's CRT filter (body.crt-*) ────
+   The logo's scanline + tone + roll overlay tracks whichever CRT preset
+   is chosen for the screen, so the header logo and the emulator screen
+   always share the same look. Default ('on', no body class) = the basic
+   scanline overlay below. */
+.logo-text::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: repeating-linear-gradient(0deg,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0.28) 3px,
+      rgba(0, 0, 0, 0) 4px);
+}
+
+/* OFF: drop the scanlines entirely (raw logo). */
+body.crt-off .logo-text::after { display: none; }
+
+/* TUBE / HUM: soft tube tone (slight blur + lift), like the screen. */
+body.crt-tube .logo-text,
+body.crt-hum .logo-text {
+  filter: brightness(1.08) contrast(1.04) saturate(1.05) blur(0.3px);
+}
+
+/* B&W: grayscale tube — matches the monochrome screen preset. */
+body.crt-bw .logo-text {
+  filter: grayscale(1) brightness(1.08) contrast(1.05) blur(0.3px);
+}
+
+/* Softer scanlines for TUBE / B&W / HUM (tighter period, like the screen). */
+body.crt-tube .logo-text::after,
+body.crt-bw .logo-text::after,
+body.crt-hum .logo-text::after {
+  background: repeating-linear-gradient(0deg,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 1px,
+      rgba(0, 0, 0, 0.28) 2px,
+      rgba(0, 0, 0, 0.28) 3px);
+}
+
+/* ARCADE: punchy tone + tight, strong scanlines (crisp, no blur). */
+body.crt-arcade .logo-text {
+  filter: brightness(1.06) contrast(1.14) saturate(1.14);
+}
+body.crt-arcade .logo-text::after {
+  background: repeating-linear-gradient(0deg,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 1px,
+      rgba(0, 0, 0, 0.42) 2px,
+      rgba(0, 0, 0, 0.42) 3px);
+}
+
+/* HUM: a soft bright band slowly rolling up the logo (mirrors .crt-roll). */
+body.crt-hum .logo-text::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: repeating-linear-gradient(to bottom,
+      rgba(255, 255, 255, 0) 0px,
+      rgba(255, 255, 255, 0) 10px,
+      rgba(255, 255, 255, 0.12) 16px,
+      rgba(255, 255, 255, 0) 22px,
+      rgba(255, 255, 255, 0) 40px);
+  background-size: 100% 40px;
+  mix-blend-mode: screen;
+  animation: logo-crt-roll 7s linear infinite;
+}
+@keyframes logo-crt-roll {
+  from { background-position: 0 0; }
+  to   { background-position: 0 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.crt-hum .logo-text::before { animation: none; }
+}
+
+/* ── Boot shake-zoom — the logo punches in big and rattles, then settles ─
+   Fires on every "boot" moment (power-on, RESET, state load). JS adds the
+   .logo-punch class via _punchLogo(), which re-triggers it with a reflow
+   so it replays even while the machine stays powered on (RESET doesn't
+   toggle power). transform-origin is the left edge so the zoom grows into
+   the empty header space on the right instead of clipping off-screen left.
+   `both` holds the final (identity) frame so it never resets layout. */
+.logo-text.logo-punch {
+  transform-origin: left center;
+  /* `linear` so the keyframes' sampled damped-sine shape is preserved;
+     a per-segment ease would round off the over/undershoot peaks. */
+  animation: logo-shake-zoom 1.4s linear both;
+}
+/* Damped-sine "spring" zoom: the scale rings above AND below 1 with
+   decaying amplitude (1.50 -> 0.90 -> 1.08 -> 0.95 -> 1.035 -> ... -> 1)
+   instead of settling in one direction, so the punch feels springy rather
+   than linear. translate/rotate ride the same decaying oscillation. */
+@keyframes logo-shake-zoom {
+  0%   { transform: scale(1.50) translate(0, 0)       rotate(0deg);     opacity: 0; }
+  10%  { transform: scale(1.20) translate(6px, -4px)  rotate(1.4deg);   opacity: 1; }
+  20%  { transform: scale(0.90) translate(-6px, 4px)  rotate(-1.6deg); }
+  31%  { transform: scale(1.08) translate(5px, 3px)   rotate(1.1deg); }
+  43%  { transform: scale(0.95) translate(-4px, -2px) rotate(-0.7deg); }
+  55%  { transform: scale(1.035) translate(3px, 2px)  rotate(0.5deg); }
+  67%  { transform: scale(0.98) translate(-2px, -1px) rotate(-0.3deg); }
+  79%  { transform: scale(1.014) translate(1px, 1px)  rotate(0.15deg); }
+  89%  { transform: scale(0.995) translate(-1px, 0)   rotate(-0.06deg); }
+  100% { transform: scale(1)    translate(0, 0)       rotate(0deg);     opacity: 1; }
+}
+/* Reduced motion: skip the rattle — a quick, calm scale-in instead. */
+@media (prefers-reduced-motion: reduce) {
+  .logo-text.logo-punch {
+    animation: logo-zoom-calm 0.62s ease-out both;
+  }
+  @keyframes logo-zoom-calm {
+    from { transform: scale(1.12); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+  }
+}
+
+.logo p {
+  font-size: clamp(0.7rem, 2.4vw, 1.13rem);
+  color: var(--dim);
+  font-family: 'Share Tech Mono', monospace;
+  margin-top: 7px;
+}
+
+.tagline-prompt {
+  color: var(--accent);
+  margin-right: 4px;
+}
+
+.badge {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.65rem;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--dim);
+}
+
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+/* ABOUT + DOCS sit on their own row, above the fps/ms/MB badge. */
+.header-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.credits-link {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.credits-link:hover {
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(112, 109, 235, 0.45);
+}
+
+/* ABOUT / DOCS read a little small at desktop sizes — bump them up there
+   only; the ≤680px mobile header keeps the compact size. */
+@media (min-width: 681px) {
+  .credits-link {
+    font-size: 0.9rem;
+    padding: 7px 16px;
+  }
+}
+
+/* GitHub / YouTube / Facebook: icon-only, and desktop-only. The mobile header
+   has no room for them beside ABOUT and DOCS, and all three are linked from
+   ABOUT anyway, so hiding them there costs nothing. */
+.icon-link {
+  display: none;
+}
+
+@media (min-width: 681px) {
+  .icon-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 11px;
+  }
+}
+
+/* ── Credits modal (retro demoscene flavor) ─────────────────────────── */
+.credits-modal .modal-card {
+  max-width: 832px;
+  background: linear-gradient(180deg, #0a0a18 0%, #08081a 100%);
+  border: 1px solid var(--accent);
+  box-shadow:
+    0 0 0 1px rgba(112, 109, 235, 0.25) inset,
+    0 0 40px rgba(112, 109, 235, 0.18),
+    0 12px 60px rgba(0, 0, 0, 0.85);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle CRT scanline overlay over the modal */
+.credits-modal .modal-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(112, 109, 235, 0.04) 0px,
+    rgba(112, 109, 235, 0.04) 1px,
+    transparent 1px,
+    transparent 3px);
+  opacity: 0.6;
+  z-index: 1;
+}
+
+.credits-modal .modal-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Centre the CREDITS title; the close button floats to the right edge. */
+.credits-modal .panel-card-header {
+  position: relative;
+  justify-content: center;
+}
+
+.credits-modal #btn-credits-close {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.credits-modal .panel-card-header h2 {
+  font-family: 'Giana', 'Share Tech Mono', monospace;
+  font-size: 1.9rem;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-shadow:
+    0 0 6px rgba(112, 109, 235, 0.55),
+    0 0 18px rgba(112, 109, 235, 0.35);
+  animation: credits-flicker 4s steps(60, end) infinite;
+}
+
+@keyframes credits-flicker {
+  0%, 92%, 94%, 100% { opacity: 1; }
+  93%                { opacity: 0.6; }
+}
+
+.credits-body {
+  font-family: 'Berkelium64', 'Share Tech Mono', monospace;  /* GEOS document font for the body copy */
+  font-size: 0.91rem;
+  color: var(--text);
+  line-height: 1.6;
+  max-height: 78vh;
+  overflow-y: auto;
+  padding: 18px 24px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.credits-body::-webkit-scrollbar { width: 6px; }
+.credits-body::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.credits-body h3 {
+  font-family: 'Share Tech Mono', monospace;  /* section labels stay crisp, distinct from the GEOS prose */
+  color: var(--accent);
+  margin: 18px 0 5px 0;
+  font-size: 0.91rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-shadow: 0 0 6px rgba(112, 109, 235, 0.35);
+}
+
+.credits-body h3::before {
+  content: "◇ ";
+  color: var(--green);
+}
+
+.credits-body p {
+  margin: 4px 0 8px 0;
+  color: var(--dim);
+}
+
+/* The About prose reads a couple of steps larger than the liner-notes grid.
+   .credits-prose is the runtime-injected body (from docs/ABOUT.md); .credits-intro
+   is kept for any legacy/hardcoded sections. */
+.credits-body .credits-intro,
+.credits-body .credits-prose { font-size: 1.18rem; }
+
+.credits-body ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px 0;
+}
+
+.credits-body li {
+  padding-left: 14px;
+  position: relative;
+  color: var(--dim);   /* match the paragraph body copy */
+}
+
+.credits-body li::before {
+  content: "›";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+}
+
+/* Flowing variant: one dot-separated line, no ›-markers (name clusters). */
+.credits-body ul.credits-flow li { padding-left: 0; line-height: 1.7; }
+.credits-body ul.credits-flow li::before { content: none; }
+
+.credits-body strong {
+  color: var(--accent);
+  font-weight: normal;
+  text-shadow: 0 0 4px rgba(112, 109, 235, 0.35);
+}
+
+.credits-body em {
+  color: var(--green);
+  font-style: italic;
+}
+
+  /* "nostalgia" — warm C64 gold with a soft glow, set apart from the green
+   emphasis so the word itself feels nostalgic. */
+.credits-body .nostalgia {
+  color: var(--amber);
+  font-style: italic;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--amber) 55%, transparent);
+}
+
+/* Layout: the five reference sections flow into a responsive card grid
+   (liner-notes style) instead of one long stacked column; the closing line
+   is a centred sign-off above the footer. */
+.credits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(238px, 1fr));
+  gap: 12px;
+  margin: 16px 0 14px;
+}
+
+.credits-sec {
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+  border-radius: 8px;
+  padding: 12px 14px 13px;
+}
+
+.credits-sec h3 {
+  margin: 0 0 8px;
+}
+
+.credits-sec ul {
+  margin: 0;
+}
+
+/* Closing sign-off — the final cell of the grid (lands bottom-right,
+   filling the empty slot). Green instead of the cards' blue so it reads as
+   a distinct, special closing note; content centred with a » flourish. */
+.credits-body .credits-coda {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 14px 16px;
+  text-align: center;
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--green) 50%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--green) 8%, transparent);
+  box-shadow:
+    0 0 18px color-mix(in srgb, var(--green) 16%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--green) 14%, transparent);
+}
+
+.credits-body .credits-coda::before {
+  content: "»";
+  display: block;
+  margin-bottom: 6px;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--green);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--green) 60%, transparent);
+}
+
+.credits-link-inline {
+  color: var(--text);   /* sit close to the prose; the underline carries the affordance */
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  text-underline-offset: 2px;
+  transition: color 0.15s, text-decoration-color 0.15s;
+}
+
+.credits-link-inline:hover {
+  color: #fff;
+  text-decoration-color: var(--accent);
+}
+
+/* Emphasis inside a link must not hijack its colour — .credits-body strong/em
+   recolour to accent/green elsewhere, which would make bold/italic links look
+   different from plain ones. Keep every inline link uniform whatever it wraps. */
+.credits-link-inline strong,
+.credits-link-inline em {
+  color: inherit;
+  text-shadow: none;
+}
+
+/* The version number links to what changed in that release. It sits in dim
+   footer text, so it keeps that colour instead of the prose link's brighter one
+   — the underline is the affordance here as everywhere else in this dialog. */
+.credits-footer .credits-link-inline { color: inherit; }
+.credits-footer .credits-link-inline:hover { color: var(--text); }
+
+.credits-footer {
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px dashed var(--border);
+  color: var(--dim);
+  font-size: 0.806rem;
+  text-align: center;
+  letter-spacing: 1px;
+}
+

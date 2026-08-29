@@ -1,0 +1,1072 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2026 Morten Øien Eriksen */
+/* src/styles-decks.css – unified LOAD button colour, datasette deck, 1541 drive deck
+   + disk write controls, directory zoom viewer + panel.
+   Part of the styles.css @import manifest — cascade order is set there. */
+
+/* Unified LOAD colour (--accent2) for every load button, whatever its icon:
+   LOAD .PRG / disk LOAD / cartridge LOAD (btn-prg) / tape LOAD / LOAD STATE
+   / LOAD LIB. EJECT and SAVE keep their own colours. */
+.btn-prg,
+.btn-d64,
+.btn-d64-new,
+.btn-tap,
+.btn-tap-new,
+.btn-reu-new,
+#btn-load-state,
+#btn-library {
+  color: var(--accent2);
+  border-color: color-mix(in srgb, var(--accent2) 50%, var(--border));
+}
+
+.btn-prg:hover:not(:disabled),
+.btn-d64:hover:not(:disabled),
+.btn-d64-new:hover:not(:disabled),
+.btn-tap:hover:not(:disabled),
+.btn-tap-new:hover:not(:disabled),
+.btn-reu-new:hover:not(:disabled),
+#btn-load-state:hover:not(:disabled),
+#btn-library:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent2) 22%, #1a1a30);
+  border-color: var(--accent2);
+}
+
+.btn-settings:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 22%, #1a1a30);
+}
+
+/* Cog glyph rendered 20% larger than the button label. Centred by flexbox rather
+   than a baseline nudge: ⚙ resolves to a different fallback font per engine, so a
+   fixed vertical-align offset that looks right in Chromium sits visibly off in
+   Safari. The button holds only the glyph and its label, so making it a flex
+   container is safe (buttons whose label wraps across text nodes must not be). */
+.btn-settings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35em;
+}
+
+.btn-settings .cog {
+  font-size: 1.2em;
+  line-height: 1;
+}
+
+/* ── Datasette deck ───────────────────────────────────────────────── */
+.tape-deck {
+  /* Sits inside its own panel-card now, so no inset frame needed. */
+}
+
+.tape-transport {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.tape-transport .btn {
+  flex: 1;
+  min-width: 44px;
+  padding: 6px 4px;
+  font-size: 0.68rem;
+  /* Labels stay on one line: a wrapped one makes its row taller than the others. */
+  white-space: nowrap;
+}
+
+/* The tape/media rows use the drive deck's 3-column grid, so LOAD and BLANK sit
+   in column 1 at exactly the same width:
+     LOAD  · EJECT · [WP + .TAP]
+     BLANK · STOP  · START
+   The four transport keys (PLAY · REC · REW · FF) are the flex row below. The
+   hidden file input takes no cell. */
+.tape-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.tape-grid > .btn {
+  min-width: 0;
+}
+
+.btn-tap-play {
+  color: var(--green);
+  border-color: color-mix(in srgb, var(--green) 50%, var(--border));
+}
+
+.btn-tap-play:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--green) 22%, #1a1a30);
+  border-color: var(--green);
+}
+
+/* STOP is not destructive, so only its glyph carries the red — the label stays
+   in the normal button colour. */
+.btn-tap-stop {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn-tap-stop .key-ico {
+  color: var(--red);
+}
+
+.btn-tap-stop:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--red) 18%, #1a1a30);
+  border-color: color-mix(in srgb, var(--red) 60%, var(--border));
+}
+
+.btn-tap-rew,
+.btn-tap-ff,
+.btn-tap-start {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn-tap-rew:hover:not(:disabled),
+.btn-tap-ff:hover:not(:disabled),
+.btn-tap-start:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 22%, #1a1a30);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* RECORD writes to the tape — red like the deck's own key. */
+.btn-tap-rec {
+  color: var(--red);
+  border-color: color-mix(in srgb, var(--red) 50%, var(--border));
+}
+
+.btn-tap-rec:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--red) 22%, #1a1a30);
+  border-color: var(--red);
+}
+
+/* One key is down at a time, so show which — a real deck latches it. */
+.tape-transport .btn.key-down:not(:disabled) {
+  background: color-mix(in srgb, currentColor 26%, #12121f);
+  border-color: currentColor;
+  box-shadow: inset 0 1px 3px #0008;
+}
+
+/* BLANK reuses LOAD's cassette emoji, lightened so it reads as an empty tape —
+   the same treatment the drive's BLANK gives its floppy. */
+.tape-emoji {
+  filter: grayscale(1) brightness(1.9);
+}
+
+/* The tape's write row mirrors the drive's: padlock + export share a cell. */
+.tape-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tape-cell .btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 6px 4px;
+  font-size: 0.68rem;
+}
+
+/* The padlock is a narrow icon toggle, so .TAP takes the slack in their shared
+   cell — mirroring the drive deck's write row. */
+.tape-cell .btn-tap-export { flex-grow: 1.4; }
+
+/* EXPORT downloads the current .tap — green accent, like the disk's .D64. */
+.btn-tap-export {
+  color: var(--green);
+  border-color: color-mix(in srgb, var(--green) 45%, var(--border));
+  font-size: 0.62rem !important;
+  letter-spacing: 0;
+}
+
+.btn-tap-export .dl-ico {
+  margin-right: 2px;
+}
+
+.btn-tap-export:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--green) 20%, #1a1a30);
+  border-color: var(--green);
+}
+
+.tape-dropzone {
+  border: 1px solid #2a3a5a;
+  border-radius: 5px;
+  padding: 6px 8px;
+  cursor: default;
+}
+
+.drive-dropzone:not(.loaded),
+.crt-dropzone:not(.loaded),
+.tape-dropzone:not(.loaded) {
+  display: none;
+}
+
+.tape-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.tape-bar-wrap {
+  flex: 1;
+  height: 10px;   /* thick enough to aim at, and to read as a scrubber */
+  background: #1e1e30;
+  border-radius: 5px;
+  overflow: hidden;
+  cursor: pointer;
+  /* A scrubber: click, tap or drag to move the tape. Still thin for a fingertip, so
+     ::before grows the hit area vertically only — the horizontal maths stays exact.
+     touch-action keeps a drag from becoming a page pan. */
+  position: relative;
+  touch-action: none;
+}
+
+.tape-bar-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -6px 0;
+}
+
+/* Only where hovering is a thing — on touch the state would just stick. */
+@media (hover: hover) {
+  .tape-bar-wrap:not(.locked):hover {
+    background: #26264a;
+  }
+}
+
+/* Recording: the head can't be moved, so the bar stops looking like it can. */
+.tape-bar-wrap.locked {
+  cursor: default;
+}
+
+.tape-bar-wrap:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.tape-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  border-radius: 5px;
+  transition: width 0.4s linear, background 0.3s;
+}
+
+.tape-bar-fill.at-end {
+  background: var(--amber);
+}
+
+/* While recording, the tape is growing under the head, so there is no fraction
+   of a total to show — the bar just fills, in red. The pulsing is left to the
+   motor dot; two things blinking at once is noise. */
+.tape-bar-fill.recording {
+  background: var(--red);
+  transition: none;
+}
+
+@keyframes motor-pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.tape-motor-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #333;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.tape-motor-dot.running {
+  background: #0f0;
+  animation: motor-pulse 0.7s ease-in-out infinite;
+}
+
+/* Writing, not reading. */
+.tape-motor-dot.recording {
+  background: var(--red);
+}
+
+/* The label, counter and clock under the bar: bigger than the deck's button text,
+   since this row is what you actually read while a tape runs. */
+.tape-info-row {
+  display: flex;
+  justify-content: space-between;
+  /* Centred, not baseline: the magnifier is taller than the text, and on a
+     baseline the line of text rides up against the top of its box. Every text
+     item here is the same size, so they stay aligned with each other either way. */
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--dim);
+}
+
+#tape-label {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 45%;
+}
+
+/* The three-digit mechanical counter, between the label and the time. */
+.tape-counter {
+  color: var(--dim);
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+#tape-time {
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+
+/* ── 1541 drive deck ──────────────────────────────────────────────── */
+.drive-deck {
+  /* Sits inside its own panel-card now, so no inset frame needed. */
+}
+
+.drive-transport {
+  /* Two rows of three equal columns: LOAD · EJECT · [TDE+LED] over
+     BLANK · [WP+FORMAT] · EXPORT. LOAD and BLANK both sit in column 1, so they
+     are exactly the same width. The hidden file input takes no grid cell. */
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.drive-transport > .btn {
+  min-width: 0;
+  padding: 6px 4px;
+  font-size: 0.68rem;
+}
+
+/* A grid cell holding two controls side by side (TDE + activity LED, or the
+   small write-protect toggle + FORMAT). */
+.drive-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.drive-cell .btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 6px 4px;
+  font-size: 0.68rem;
+}
+
+/* The write row's second cell spans columns 2-3 (WP + FORMAT + .D64), so FORMAT
+   isn't cramped against the small write-protect toggle. FORMAT gets more of the
+   space than the narrower .D64 export. */
+.drive-cell-wide {
+  grid-column: span 2;
+}
+.drive-cell-wide .btn-d64-format { flex-grow: 1.7; }
+.drive-cell-wide .btn-d64-export { flex-grow: 1; }
+
+.btn-d64-eject {
+  color: var(--dim);
+  border-color: var(--border);
+}
+
+.btn-d64-eject:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--text) 12%, #1a1a30);
+  border-color: var(--text);
+  color: var(--text);
+}
+
+/* Library "CLEAR ALL" is destructive — red font (id wins over the shared
+   .btn-d64-eject color, including its :hover). */
+#btn-library-clear,
+#btn-library-clear:hover:not(:disabled) {
+  color: var(--red);
+}
+
+/* Eject buttons (disk / cartridge / datasette). They read as ACTIVE — amber
+   text + lit border — whenever media is loaded and can be ejected, and fall
+   back to the shared .btn:disabled fade when there's nothing to eject. */
+.btn-eject {
+  color: var(--amber);
+  border-color: color-mix(in srgb, var(--amber) 50%, var(--border));
+}
+
+.btn-eject:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--amber) 22%, #1a1a30);
+  border-color: var(--amber);
+}
+
+.btn-tde {
+  font-size: 0.62rem !important;
+}
+
+.btn-tde.tde-on {
+  color: var(--text) !important;   /* stay white even when ON — the green border marks the state */
+  border-color: color-mix(in srgb, var(--green) 50%, var(--border)) !important;
+}
+
+.btn-tde.tde-on:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--green) 22%, #1a1a30) !important;
+}
+
+.drive-led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #333;
+  flex-shrink: 0;
+  transition: background 0.1s;
+}
+
+/* ── Disk write controls (write-protect / FORMAT / EXPORT) ─────────────────── */
+/* BLANK (new disk) shares LOAD's button colours — see the .btn-d64 group above. */
+
+/* Write-protect toggle — a compact icon button. Protected (🔒) reads neutral;
+   writable (🔓) reads amber to flag that the drive can now modify the disk. */
+.btn-wp {
+  flex: 0 0 auto !important;   /* small icon toggle, narrower than the rest */
+  min-width: 30px !important;
+  color: var(--dim);
+  border-color: var(--border);
+}
+.btn-wp[aria-pressed="false"] {
+  color: var(--amber);
+  border-color: color-mix(in srgb, var(--amber) 50%, var(--border));
+}
+.btn-wp:hover:not(:disabled) {
+  border-color: var(--text);
+}
+
+/* PETSCII padlock: both glyphs are injected; show CLOSED when protected and
+   OPEN when writable (aria-pressed="false"). Fill follows the button's
+   currentColor; crispEdges keeps the chunky C64 pixels sharp at any size. */
+.btn-wp .lock {
+  display: block;
+  height: 1em;            /* match the text height so the button doesn't grow */
+  width: auto;
+  margin: 0 auto;
+}
+.btn-wp .lock-open,
+.btn-wp[aria-pressed="false"] .lock-closed {
+  display: none;
+}
+.btn-wp[aria-pressed="false"] .lock-open {
+  display: block;
+}
+
+/* BLANK reuses LOAD's floppy emoji, lightened to near-white via CSS
+   (grayscale removes the blue, brightness lifts it toward white) while keeping
+   the floppy's shutter/label detail — so it reads as a blank/new disk, distinct
+   from LOAD's coloured floppy. */
+.disk-emoji {
+  filter: grayscale(1) brightness(1.9);
+}
+
+/* FORMAT erases the disk — destructive red, like Library CLEAR ALL. */
+.btn-d64-format {
+  color: var(--red);
+  border-color: color-mix(in srgb, var(--red) 45%, var(--border));
+}
+.btn-d64-format:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--red) 20%, #1a1a30);
+  border-color: var(--red);
+}
+
+/* EXPORT downloads the current .d64 — green accent. Slightly smaller text with
+   the download arrow pulled in close to ".D64". */
+.btn-d64-export {
+  color: var(--green);
+  border-color: color-mix(in srgb, var(--green) 45%, var(--border));
+  font-size: 0.62rem !important;
+  letter-spacing: 0;
+}
+.btn-d64-export .dl-ico {
+  margin-right: 2px;
+}
+.btn-d64-export:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--green) 20%, #1a1a30);
+  border-color: var(--green);
+}
+
+.drive-led.active {
+  background: var(--red);
+}
+
+/* On/off power switch for the secondary drive (device 9). It sits in the
+   card header, just right of the title; the expand chevron is pushed to
+   the far right. The drive deck stays hidden until the switch is on. */
+.power-switch {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 12px;
+  margin-right: auto;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.power-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.power-track {
+  position: relative;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 18px;
+  border-radius: 9px;
+  background: #1a1a30;
+  border: 1px solid var(--border);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.power-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--dim);
+  transition: transform 0.15s, background 0.15s;
+}
+
+.power-switch input:checked + .power-track {
+  background: color-mix(in srgb, var(--green) 22%, #1a1a30);
+  border-color: color-mix(in srgb, var(--green) 50%, var(--border));
+}
+
+.power-switch input:checked + .power-track .power-thumb {
+  transform: translateX(20px);
+  background: var(--green);
+}
+
+.power-switch input:focus-visible + .power-track {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Match the LOAD/EJECT button sizing of the Disk + Datasette transport
+   rows (.drive-transport/.tape-transport .btn) so the cartridge buttons
+   don't render taller than the others in the side panel. */
+#cartridge-card .btn-group .btn {
+  min-width: 44px;
+  padding: 6px 4px;
+  font-size: 0.68rem;
+}
+
+/* Desaturated to match the disk and tape deck emoji. */
+.reu-emoji {
+  filter: grayscale(1) brightness(1.9);
+}
+
+/* RAM Expansion transport — LOAD · BLANK · .REU on one row. The download
+   column sizes to its content so the button comes out the same width as the
+   disk deck's .D64 export, which is likewise content-sized inside
+   .drive-cell-wide rather than taking a full grid column; LOAD and BLANK split
+   what is left. The hidden file input takes no grid cell. */
+.reu-transport {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 6px;
+  /* Centre rather than stretch, so the download keeps the short natural height
+     the disk and tape exports have inside their own flex cells — stretched to
+     the row it would take LOAD's taller emoji line box. */
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.reu-transport > .btn {
+  min-width: 0;
+  padding: 6px 4px;
+  font-size: 0.68rem;
+}
+
+/* Downloads the current expansion RAM — green accent, matching the disk and
+   tape exports. */
+.btn-reu-export {
+  color: var(--green);
+  border-color: color-mix(in srgb, var(--green) 45%, var(--border));
+  font-size: 0.62rem !important;
+  letter-spacing: 0;
+}
+/* The disk and tape exports land between 45 and 61px, sized by the cells they
+   share; this one has a column to itself, so pin it into the same range. Scoped
+   to the row so it outranks the `min-width: 0` above. */
+.reu-transport > .btn-reu-export {
+  min-width: 52px;
+}
+.btn-reu-export .dl-ico {
+  margin-right: 2px;
+}
+.btn-reu-export:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--green) 20%, #1a1a30);
+  border-color: var(--green);
+}
+
+/* RAM Expansion contents line. Same frame as the cartridge/disk dropzones, but
+   always visible — it reports what is in the unit rather than standing in for
+   an empty slot, so it has no .loaded state to hide behind. */
+.reu-status {
+  border: 1px solid #2a3a5a;
+  border-radius: 5px;
+  padding: 6px 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.60rem;
+  color: var(--dim);
+  cursor: default;
+}
+
+#reu-card .cp-row {
+  margin-bottom: 8px;
+}
+
+#btn-crt-freeze.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.drive-dropzone,
+.crt-dropzone {
+  border: 1px solid #2a3a5a;
+  border-radius: 5px;
+  padding: 6px 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.60rem;
+  color: var(--dim);
+  cursor: default;
+}
+
+.crt-dropzone #crt-label {
+  color: var(--text);
+}
+
+.crt-dropzone.loaded #crt-empty-hint {
+  display: none;
+}
+
+.drive-disk-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 3px;
+}
+
+.drive-disk-name {
+  color: var(--text);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 65%;
+}
+
+.drive-disk-meta {
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.drive-dir-toggle {
+  cursor: pointer;
+  color: var(--accent);
+  user-select: none;
+  display: inline-block;
+  padding: 1px 0;
+}
+
+.drive-dir-toggle:hover {
+  color: var(--text);
+}
+
+.drive-dir {
+  margin-top: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.drive-dir::-webkit-scrollbar {
+  width: 4px;
+}
+
+.drive-dir::-webkit-scrollbar-thumb {
+  background: #2a2a4a;
+  border-radius: 2px;
+}
+
+.d64-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  height: 8px;
+  line-height: 8px;
+  font-size: 0.60rem;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--dim);
+}
+
+.d64-entry canvas {
+  display: block;
+}
+
+/* A row you can click to load: PRG or USR, the two types that hold programs. */
+.d64-entry.d64-loadable {
+  color: var(--text);
+  cursor: pointer;
+}
+
+.d64-entry.d64-loadable:hover {
+  color: var(--accent);
+}
+
+/* DEL: a scratched file whose data hasn't been overwritten yet. Rendered
+   exactly like a normal (PRG) row — same colours, type tag included (the tag
+   inherits the default dim `.d64-type` colour, matching PRG rows). */
+.d64-entry.d64-del { color: var(--text); }
+
+.d64-entry.d64-free {
+  margin-top: 1em;
+}
+
+.d64-blocks {
+  min-width: 22px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.d64-type {
+  color: var(--dim);
+  flex-shrink: 0;
+}
+
+/* ── Directory "zoom" button + viewer ──────────────────────────────────────
+   The 🔍 in a drive's directory panel opens an enlarged, filenames-only view
+   of the disk so the PETSCII artwork many demos hide in their directory reads
+   clearly. */
+
+/* Anchor the corner button to the drive's dropzone (hidden until a disk is
+   loaded — the button lives inside #drive[9]-loaded). */
+.drive-dropzone { position: relative; }
+
+.drive-dir-zoom {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  line-height: 1;
+  color: var(--text);
+  background: rgba(20, 20, 40, 0.9);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+  opacity: 0.72;
+  transition: opacity 0.15s, border-color 0.15s, background 0.15s;
+}
+
+/* The tape's magnifier rides in the info row instead of a dropzone corner, so
+   it drops the absolute anchoring and keeps everything else. */
+.tape-dir-zoom {
+  position: static;
+  flex: none;
+}
+
+.drive-dir-zoom:hover {
+  opacity: 1;
+  border-color: var(--accent);
+  background: rgba(30, 30, 58, 0.96);
+}
+
+/* Enlarged directory viewer modal.
+   The card sizes to its content (capped at the viewport) and the file list is
+   the single scroll area, so a short directory shows NO scrollbar at all. Wide
+   art shrinks to fit the card's width (see the .dirzoom-list canvas rule) rather
+   than scrolling sideways; only a directory taller than the space available
+   scrolls — and then just the list, with the header + disk info staying put. */
+#dirzoom-modal .modal-card {
+  width: fit-content;            /* hug the directory art's exact width */
+  max-width: min(92vw, 960px);   /* but never overflow the viewport */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;   /* the list scrolls, not the card */
+}
+
+#dirzoom-modal .panel-card-header { flex: none; }
+
+.dirzoom-disk {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 2px 0 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dirzoom-disk canvas { image-rendering: pixelated; max-width: 100%; height: auto; }
+
+/* Let a long disk name / id shrink to fit rather than force the card wider than
+   a narrow viewport (min-width:0 lets these flex items drop below their content
+   width so the canvas's max-width:100% can take effect). */
+.dirzoom-diskname, .dirzoom-diskmeta { min-width: 0; }
+
+.dirzoom-list {
+  /* Grow with content (bounded by the card's max-height); scroll only when the
+     art is genuinely taller than the available space (width always fits — the
+     rows scale down). min-height:0 lets the flex item shrink below its content
+     so the list — not the card — is what scrolls. */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  background: #0b0b18;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  line-height: 0;   /* no line-box gaps between stacked rows */
+}
+
+/* Each filename is one canvas; block display + no gap → consecutive names form
+   a contiguous picture, exactly like a real C64 directory LIST.
+
+   Every row is rendered at the SAME intrinsic pixel width (the widest filename;
+   see showDirZoom), so a single `max-width:100%` scales every row by the
+   identical factor — columns stay aligned and multi-line art keeps registration.
+   That lets a wide picture shrink to fit a narrow portrait screen instead of
+   being clipped, with NO horizontal scroll and NO JS: while sizing the
+   fit-content card the browser ignores the percentage max-width, so the card
+   still hugs the art's true width; only the final layout clamps the rows to the
+   width actually available. `height:auto` keeps each row's aspect ratio, and it
+   renders at the correct size on the first paint (no resize/zoom). */
+.dirzoom-list canvas {
+  display: block;
+  image-rendering: pixelated;
+  max-width: 100%;
+  height: auto;
+}
+
+/* A row that carries a tag. The tag floats over the blank right-hand end of the
+   name so every row keeps the same width and the art stays aligned. */
+.dirzoom-empty {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--dim);
+  text-align: center;
+  padding: 20px 8px;
+}
+
+/* Status indicator */
+.status {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  padding: 6px 10px;
+  border-radius: 5px;
+  border-left: 3px solid transparent;
+  background: #0e0e1c;
+}
+
+.status-idle {
+  border-color: var(--dim);
+  color: var(--dim);
+}
+
+.status-ready {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.status-running {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.status-error {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+/* Inline action inside a status line — inherits the status tone's colour. */
+.status-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.status-link:hover {
+  color: var(--text);
+}
+
+.kbd {
+  display: inline-block;
+  padding: 0px 5px;
+  border: 1px solid #333355;
+  border-radius: 3px;
+  background: #1a1a2e;
+  color: var(--accent);
+  font-size: 0.58rem;
+}
+
+/* ── D64 Directory Panel ─────────────────────────────────────────────── */
+#d64-panel {
+  display: none;
+}
+
+#d64-name {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--accent);
+  margin-bottom: 8px;
+  word-break: break-all;
+}
+
+#d64-dir {
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.62rem;
+  line-height: 1.6;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+#d64-dir::-webkit-scrollbar {
+  width: 4px;
+}
+
+#d64-dir::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#d64-dir::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.d64-entry {
+  padding: 2px 6px;
+  border-radius: 3px;
+  transition: background 0.12s;
+}
+
+.d64-entry[style*="cursor: pointer"]:hover {
+  background: #1a2a40;
+}
+
+.d64-blocks {
+  color: var(--dim);
+}
+
+.d64-fname {
+  color: var(--green);
+}
+
+.d64-type {
+  color: var(--dim);
+}
+
+.d64-free {
+  color: var(--amber);
+  margin-top: 1em;
+}
+
+
+/* Datasette listen button — the tape speaker, sitting in the card header next
+   to the title. Same pixel-speaker glyph as the volume control, so the two read
+   as the same idea: this is sound coming out. */
+.tape-scope,
+.tape-listen {
+  /* Tight horizontal padding so the two glyphs end up 6px apart — the same gap
+     the deck's own buttons sit at, counting the 1px border each side. The wider
+     padding they used to carry read as a loose pair next to that. */
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--accent);
+}
+.tape-scope:hover,
+.tape-listen:hover {
+  border-color: var(--border);
+}
+
+/* The scope sits left of the speaker; between them they take the header's slack
+   so the expand caret stays at the far end. */
+.tape-scope {
+  margin-left: 8px;
+  /* Pulls back the header's flex gap entirely: the two belong together as one
+     pair of controls for the same signal, not as two separate things. */
+  margin-right: -8px;
+  color: var(--dim);
+}
+.tape-scope:hover,
+.tape-scope.is-open {
+  color: var(--accent);
+}
+.tape-listen {
+  margin-right: auto;
+}
+.tape-scope .spk,
+.tape-listen .spk {
+  display: block;
+  width: 18px;
+  height: auto;
+}
+/* Off is the muted glyph, dimmed — on is the speaker in the accent colour. */
+.tape-listen .spk-mute,
+.tape-listen.is-silent .spk-on {
+  display: none;
+}
+.tape-listen.is-silent .spk-mute {
+  display: block;
+}
+.tape-listen.is-silent {
+  color: var(--dim);
+}
+
+/* Tape eject: the glyph alone. With WP and two download buttons sharing the deck
+   the word was the first thing that could go, and ⏏ is unambiguous. The transport
+   is a grid of equal columns, so the button has to be narrowed inside its cell
+   rather than by flex. */
+/* Eject is the glyph alone, sharing a cell with write-protect — two icon
+   buttons in one column leaves the downloads a column of their own, so they
+   keep the width they had before .WAV joined them. */
+.tape-cell .btn-eject-narrow {
+  flex: 1 1 auto;          /* write-protect keeps its icon width; eject takes the rest */
+  padding: 6px 10px;
+}

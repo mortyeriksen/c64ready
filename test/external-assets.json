@@ -1,0 +1,184 @@
+{
+ "_readme": [
+  "Every file the tests and test tools use that is NOT part of this repository,",
+  "kept in one place so paths can be updated without touching test code.",
+  "Resolution (test/external-assets.js): the entry's env var, when set, wins;",
+  "otherwise the first existing path in `paths` is used (top to bottom).",
+  "Paths may start with ~ (home directory) or be repo-relative.",
+  "Tests SKIP with a note when an asset is missing — except the ROMs, which",
+  "most of the suite cannot run without (all-test.js checks them up front).",
+  "`link` says where an asset can be obtained; each remains under its own",
+  "copyright/license and is not distributed with this repository."
+ ],
+ "roms": {
+  "kernal": {
+   "description": "C64 KERNAL ROM, 8 KB — developed/tested against revision 901227-03",
+   "paths": [
+    "roms/kernal.bin"
+   ],
+   "link": "docs/GETTING-STARTED.md — Set up ROMs",
+   "note": "Copyrighted Commodore ROM — supply your own dump"
+  },
+  "basic": {
+   "description": "C64 BASIC ROM, 8 KB — revision 901226-01",
+   "paths": [
+    "roms/basic.bin"
+   ],
+   "link": "docs/GETTING-STARTED.md — Set up ROMs",
+   "note": "Copyrighted Commodore ROM — supply your own dump"
+  },
+  "chargen": {
+   "description": "C64 character ROM, 4 KB — revision 901225-01",
+   "paths": [
+    "roms/chargen.bin"
+   ],
+   "link": "docs/GETTING-STARTED.md — Set up ROMs",
+   "note": "Copyrighted Commodore ROM — supply your own dump"
+  },
+  "drive1541": {
+   "description": "1541 DOS ROM, 16 KB — 1541-II 251968-03; required by the true-drive tests",
+   "paths": [
+    "roms/1541.bin"
+   ],
+   "link": "docs/GETTING-STARTED.md — Set up ROMs",
+   "note": "Copyrighted Commodore ROM — supply your own dump"
+  }
+ },
+ "collections": {
+  "c64stuff": {
+   "description": "Local demo/game collection root (d64/, prg/ subdirs) used by demo-status.mjs and commit-screenshots.mjs",
+   "env": "C64_STUFF_DIR",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media"
+   ]
+  },
+  "assembly64": {
+   "description": "Local Assembly64 collection root used by demo-status.mjs",
+   "env": "ASSEMBLY64_DIR",
+   "paths": [
+    "~/projects/c64ready-workspace/assembly64"
+   ]
+  },
+  "commit-screenshots-out": {
+   "description": "Output dir for test/commit-screenshots.mjs (screenshots accumulate + diff across runs); outside the public tree",
+   "env": "C64_COMMIT_SHOTS_DIR",
+   "paths": [
+    "investigation/commitscreenshots"
+   ]
+  },
+  "demo-status-shots": {
+   "description": "Output dir for test/demo-status.mjs screenshots; outside the public tree",
+   "env": "C64_DEMO_STATUS_SHOTS_DIR",
+   "paths": [
+    "investigation/demo-status-shots"
+   ]
+  },
+  "vibes-guide-work": {
+   "description": "Working dir for the Retro Vibes guide shots (tools/vibes-guide-shots.mjs writes, tools/vibes-strip.mjs reads)",
+   "env": "C64_VIBES_GUIDE_DIR",
+   "paths": [
+    "investigation/ikplus-scene/guide"
+   ]
+  },
+  "perf-profiles": {
+   "description": "Where tools/perf-workloads.mjs writes prof-<workload>.cpuprofile",
+   "env": "C64_PERF_PROFILES_DIR",
+   "paths": [
+    "investigation"
+   ]
+  }
+ },
+ "tools": {
+  "vice-x64sc": {
+   "description": "VICE x64sc binary for oracle/screenshot comparisons; run-vice-screenshots.sh reads $VICE_X64SC directly (shell scripts don't parse this file)",
+   "env": "VICE_X64SC",
+   "paths": [
+    "/Applications/vice-arm64-sdl2-3.10/bin/x64sc"
+   ],
+   "link": "https://vice-emu.sourceforge.io/"
+  }
+ },
+ "assets": {
+  "cia-int-irq-prg": {
+   "description": "TLR cia-int IRQ testprog — VICE-testprogs interrupts/cia-int/cia-int-irq.prg (GPL-2)",
+   "env": "C64_CIA_INT_PRG",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/vice-emu-code-r46094-testprogs/interrupts/cia-int/cia-int-irq.prg"
+   ],
+   "link": "https://github.com/libsidplayfp/VICE-testprogs"
+  },
+  "test-d64": {
+   "description": "OPTIONAL cross-check for the KERNAL LOAD\"*\",8,1 true-drive spec test, which builds its own disk by default (createPRGDisk) and needs no asset",
+   "env": "C64_TEST_D64",
+   "paths": [
+    "test/fixtures/test.d64",
+    "~/projects/c64ready-workspace/c64media/d64/Aloft/Aloft-Side1.d64"
+   ]
+  },
+  "klaus-6502-functional-bin": {
+   "description": "Klaus Dormann's 6502 functional test, 64 KB binary (GPL-3) — exhaustive opcode/flag verification",
+   "env": "C64_KLAUS_6502_BIN",
+   "paths": [
+    "investigation/6502_functional_test.bin",
+    "~/projects/c64ready-workspace/c64ready-lab/investigation/6502_functional_test.bin"
+   ],
+   "link": "https://github.com/Klaus2m5/6502_65C02_functional_tests"
+  },
+  "raster-time-demo": {
+   "description": "Raster demo .d64 (Raster Time by Genesis Project, BCC Party #20) for the User Guide screenshots — the 'in action' overview-running shot, and the PETSCII directory art in drive8-loaded / directory-zoom — tools/guide-shots.mjs",
+   "env": "C64_RASTER_TIME_D64",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/d64/raster_time_gp.d64"
+   ],
+   "note": "Demoscene production — bring your own; not distributed with this repo"
+  },
+  "commando": {
+   "description": "Commando (Elite/Capcom, 1985) as a ready-to-run PRG for the User Guide touch-joystick screenshot — a game title screen behind the on-screen controls. tools/guide-extra-shots.mjs",
+   "env": "C64_COMMANDO_PRG",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Uncrunched/Commando.prg"
+   ],
+   "note": "Commercial game — bring your own; not distributed with this repo"
+  },
+  "demo-tape": {
+   "description": "Any real tape image for the User Guide's Datasette animation — a few minutes long, so the bar and counter visibly climb across the capture. tools/datasette-anim.mjs",
+   "env": "C64_DEMO_TAP",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/tap/Commando.tap"
+   ],
+   "note": "Commercial game — bring your own; not distributed with this repo"
+  },
+  "reu-testprogs-dir": {
+   "description": "VICE-testprogs REU directory — the REU oracle suite (GPL-2)",
+   "env": "C64_REU_TESTPROGS_DIR",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/vice-emu-code-r46094-testprogs/REU"
+   ],
+   "link": "https://github.com/libsidplayfp/VICE-testprogs"
+  },
+  "blureu-image": {
+   "description": "blu.reu — the 16 MB expansion image BluREU/Crest ships; reudetect needs it to pass",
+   "env": "C64_BLUREU_IMAGE",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/BluREU_Crest/blu.reu"
+   ],
+   "link": "https://csdb.dk/release/?id=92651"
+  },
+  "fppscroller-prg": {
+   "description": "FppScroller.prg (VIC-II c-access scroller) — commit-screenshots.mjs",
+   "env": "C64_FPPSCROLLER_PRG",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/prg/FppScroller.prg"
+   ],
+   "note": "Demoscene production — bring your own; not distributed with this repo"
+  },
+  "orbit-untold-prg": {
+   "description": "Orbit Untold .prg (mid-line raster-IRQ demo) — commit-screenshots.mjs and tools/perf-workloads.mjs",
+   "env": "C64_ORBIT_UNTOLD_PRG",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/prg/OrbitUntold.prg"
+   ],
+   "note": "Demoscene production — bring your own; not distributed with this repo"
+  }
+ }
+}

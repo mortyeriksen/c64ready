@@ -1,0 +1,10 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.vite/
+rust/sid/target/
+
+# Downloaded spec
+specs/

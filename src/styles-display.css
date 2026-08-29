@@ -1,0 +1,876 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2026 Morten Øien Eriksen */
+/* src/styles-display.css – main layout, CRT monitor + bezel, CRT effect presets
+   (TUBE / B&W / ARCADE / HUM), drop hints, side-panel cards.
+   Part of the styles.css @import manifest — cascade order is set there. */
+
+/* ── Main layout ──────────────────────────────────────────────────────── */
+/* max-width doubled (860 → 1460) so the CRT column scales 2× while the
+   260px side panel stays unchanged. Canvas native res (384×272) is
+   untouched — CSS just upsamples via image-rendering: pixelated. */
+.main-wrap {
+  width: 100%;
+  max-width: 1460px;
+  display: grid;
+  /* The picture track hugs its fixed multiple and stays left-aligned; the panel
+     takes the rest. minmax(0, …) on BOTH is load-bearing: a bare max-content
+     track can grow past the viewport, so the bezel's max-width never binds and
+     the picture stops shrinking, and a bare 1fr can't go below the panel's
+     min-content (its two columns), which pushed the controls off-screen where
+     body's overflow-x: hidden made them unreachable. */
+  /* The 260px floor makes the PICTURE yield first: without it the picture kept
+     its full multiple while the panel was squeezed to 90px and then to nothing.
+     Below the phone breakpoint the panel stacks instead (see the @media blocks
+     at the end), so the floor can't overflow there. */
+  --panel-min: 260px;   /* read by the SIZE cycle in main.js */
+  grid-template-columns: minmax(0, max-content) minmax(var(--panel-min), 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+/* Below this width the picture and a usable panel no longer fit side by side:
+   the panel bottoms out at its 260px floor while the picture shrinks well under
+   its chosen multiple, leaving one cramped column of controls. Stack instead —
+   the picture keeps its size and the panel takes the full width beneath it,
+   where there is room for both columns. Tablets in portrait land here. */
+@media (max-width: 1024px) {
+  .main-wrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── CRT display ─────────────────────────────────────────────────────── */
+/* Default frame is the thin flat one (same as CRT: OFF). Basic CRT: ON
+   keeps its scanlines + shine but at this full screen size, so toggling
+   basic CRT on/off no longer resizes the picture. Only the rich effect
+   presets below add the chunky faux-CRT bezel that shrinks the screen. */
+/* Screen column: the monitor plus the drop-hint stacked beneath its
+   border. Occupies the first grid track of .main-wrap. */
+.screen-col {
+  min-width: 0;
+}
+
+.c64-monitor {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0;
+  background: #000;
+  box-shadow: none;
+  position: relative;
+  /* Frame hugs the picture rather than stretching to the track. Width is the
+     only limit: the picture is the multiple SIZE asked for, and a short viewport
+     scrolls to it rather than shrinking it, so 2X / 2.5X / 3X stay distinct on a
+     landscape phone. Nothing caps the HEIGHT — a max-height would clamp the
+     height and leave the width where it was, and with a definite width
+     aspect-ratio yields to it, which is how the picture used to come out
+     stretched. Width is left clamped so nothing lands outside the viewport
+     horizontally, where body's overflow-x: hidden would make it unreachable. */
+  width: max-content;
+  max-width: 100%;
+}
+
+/* Display-size toggle (SIZE button). 2X: the monitor fills the screen
+   column and the side panel is one 260px column. 1X splits the row evenly
+   so the picture is smaller and the side-panel controls flow into two
+   columns to use the freed-up width. FULL is separate (handled by
+   body.fullscreen-mode, whose rules override these).
+
+   This 1X two-column reflow only makes sense when there's horizontal room
+   to spare, so it's gated behind a wide-viewport min-width. On phones /
+   narrow windows it would squeeze the picture to half-width and overflow
+   the controls over the screen, so below this breakpoint 1X falls back to
+   the single-column responsive layout (see the @media blocks at the end). */
+/* Deep CRT monitor bezel + glow — only the rich presets (TUBE / B&W /
+   ARCADE / HUM). This is the "border" that changes the screen size. */
+body.crt-tube .c64-monitor,
+body.crt-bw .c64-monitor,
+body.crt-arcade .c64-monitor,
+body.crt-hum .c64-monitor {
+  border: 24px solid #1a1a1a;
+  border-radius: 12px;
+  padding: 2px;
+  background: #0a0a0a;
+  box-shadow:
+    0 0 20px rgba(0, 0, 0, 0.8),
+    inset 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+#fps-counter {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  color: var(--green);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  text-shadow: 1px 1px 0 #000;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+#build-stamp {
+  position: absolute;
+  top: 10px;
+  left: 15px;
+  color: var(--amber);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  text-shadow: 1px 1px 0 #000;
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 12;
+}
+
+.crt-bezel {
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  background: #000;
+  /* The framebuffer is the authority on aspect: 384x272 shown as 384x272, never
+     stretched to 4:3. SIZE picks a whole multiple of it, so every emulated pixel
+     lands on the same number of screen pixels in both axes.
+       1X 384x272   2X 768x544 (default)   2.5X 960x680   3X 1152x816
+     max-width lets a narrow viewport shrink the picture rather than overflow. */
+  aspect-ratio: 384 / 272;
+  width: 768px;
+  /* Narrow windows can't hold the chosen multiple, so follow the frame's width
+     and let aspect-ratio set the height from it. Never a max-height here: see
+     the frame above. */
+  max-width: 100%;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.5);
+}
+
+body.size-1x .crt-bezel {
+  width: 384px;
+}
+
+body.size-25x .crt-bezel {
+  width: 960px;
+}
+
+body.size-3x .crt-bezel {
+  width: 1152px;
+}
+
+/* MAX needs the picture track to stop hugging the picture: minmax(0, max-content)
+   sizes from the content, and a percentage-width bezel gives it nothing to size
+   from — the track collapsed to the canvas's own 384px attribute. Give the
+   picture the free space and the panel its minimum. Scoped above the stacking
+   breakpoint; below it the row is already a single 1fr column and the picture
+   fills it. */
+@media (min-width: 1025px) {
+  body.size-max .main-wrap {
+    grid-template-columns: minmax(0, 1fr) var(--panel-min);
+  }
+}
+
+/* MAX: as wide as the screen column allows, rather than a fixed multiple.
+   Emulated pixels stop landing on a whole number of screen pixels, which is why
+   it is offered alongside the multiples rather than instead of them. The frame
+   has to be told to fill too — left at max-content it would hug a percentage
+   width, which has nothing to resolve against. */
+body.size-max .c64-monitor {
+  width: 100%;
+}
+
+body.size-max .crt-bezel {
+  width: 100%;
+}
+
+#screen {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+/* The power-off vector demo overlay (created in pausedemo.js). It shares the
+   screen's pixel upscale, and the CRT preset filters below apply to it too
+   so the demo gets the same tube / B&W / arcade look as the live screen. */
+.pause-demo-canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+/* Focus indicator: 1 px dark grey instead of the browser default blue/black
+   ring, drawn on the FRAME. It used to be an inset outline on the canvas, which
+   painted over the outermost row of C64 pixels; the bezel's overflow:hidden is
+   why it could not simply sit outside. Putting it on the monitor keeps the
+   picture area untouched. */
+.c64-monitor:has(#screen:focus-visible) {
+  outline: 1px solid #444;
+}
+
+/* The frame ring above replaces this one, so suppress the UA default — it draws
+   just outside the canvas, where the bezel clips it. */
+#screen:focus,
+#screen:focus-visible {
+  outline: none;
+}
+
+/* Never give .crt-bezel a border or padding: box-sizing is border-box globally,
+   so either would eat into the fixed width and break the whole-multiple sizing.
+   content-box here makes that structural rather than a rule to remember. */
+.crt-bezel {
+  box-sizing: content-box;
+}
+
+/* Scanline overlay, held as a FRACTION of the picture so every size looks the
+   same. 222 periods reproduces what a fixed 4px period gave on the old ~887px
+   picture — ~1.2 emulated lines each, so the dark band lands sub-pixel and
+   antialiases into the soft haze that look had. A fixed 4px would now be exactly
+   2 lines at 2X, darkening every second line: identical average, far heavier. */
+.crt-bezel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%,
+      rgba(0, 0, 0, 0.15) 50%);
+  background-size: 100% calc(100% / 222);
+  z-index: 10;
+}
+
+/* 1X is one CSS pixel per emulated line, so 222 periods is sub-pixel throughout
+   and collapses into a flat wash. A whole-line band is the only real pattern
+   available there; alpha stays 0.15 at 50% duty so the average darkening matches
+   the other sizes rather than standing out. */
+body.size-1x .crt-bezel::after {
+  background-size: 100% 2px;
+}
+
+.crt-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.04) 0%, transparent 60%);
+  z-index: 11;
+}
+
+/* ── CRT effect presets (CSS-only) ───────────────────────────────────
+   Layered over the same .crt-bezel DOM as basic 'on'. Bottom→top:
+   canvas (z auto) < phosphor mask ::before (z 9) < scanlines ::after
+   (z 10) < shine+vignette .crt-shine (z 11) < roll bar .crt-roll (z 12).
+   TUBE / B&W / HUM share most rules; ARCADE is its own punchier set.
+   All scoped to body.crt-* so 'on' / 'off' stay untouched. */
+
+/* Soft/authentic upscale + tone shaping (TUBE & HUM). Kept modest: the
+   C64's bright blue channel clips at 255, so a larger brightness/saturate
+   boost scaled blue down disproportionately after the darkening overlays —
+   tinting light areas (e.g. the border) pinkish. These values keep all
+   channels attenuating evenly (neutral hue); blur gives the tube look. */
+body.crt-tube #screen,
+body.crt-tube .pause-demo-canvas,
+body.crt-hum #screen,
+body.crt-hum .pause-demo-canvas {
+  image-rendering: auto;
+  filter: brightness(1.08) contrast(1.04) saturate(1.05) blur(0.4px);
+}
+
+/* B&W: same soft tube look, but grayscale and with NO RGB phosphor mask
+   (a real monochrome tube has a single white phosphor). */
+body.crt-bw #screen,
+body.crt-bw .pause-demo-canvas {
+  image-rendering: auto;
+  filter: grayscale(1) brightness(1.08) contrast(1.05) blur(0.4px);
+}
+
+/* Aperture-grille RGB phosphor mask — vertical R/G/B stripes, multiply
+   (subtractive, like a real mask; keeps blacks/borders dark). TUBE+HUM. */
+body.crt-tube .crt-bezel::before,
+body.crt-hum .crt-bezel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9;
+  /* 394 triads reproduces the old 3px column on a 1182px-wide picture (0.975
+     emulated pixels) at any size — see the scanline note above for why the
+     repeating gradient had to become percentage stops. */
+  background: linear-gradient(to right,
+    rgba(255, 0, 0, 0.10) 0 33.33%,
+    rgba(0, 255, 0, 0.10) 33.33% 66.66%,
+    rgba(0, 0, 255, 0.10) 66.66% 100%);
+  background-size: calc(100% / 394) 100%;
+  mix-blend-mode: multiply;
+}
+
+/* Softer scanlines. TUBE / B&W / HUM. Held as a fraction like the basic overlay:
+   the old 3px period on an ~887px picture was 0.92 emulated lines, so 296 periods
+   reproduces it at every size. A repeating-linear-gradient could not be scaled
+   this way — its px stops set the period regardless of background-size — hence
+   the percentage stops (1/3 clear, 1/3 ramp, 1/3 dark = the old 1px/1px/1px). */
+body.crt-tube .crt-bezel::after,
+body.crt-bw .crt-bezel::after,
+body.crt-hum .crt-bezel::after {
+  background: linear-gradient(rgba(0, 0, 0, 0) 33.33%, rgba(0, 0, 0, 0.28) 66.66%);
+  background-size: 100% calc(100% / 296);
+  z-index: 10;
+}
+
+/* Glass shine + edge vignette (tube falloff). TUBE / B&W / HUM. */
+body.crt-tube .crt-shine,
+body.crt-bw .crt-shine,
+body.crt-hum .crt-shine {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 55%),
+    radial-gradient(ellipse at center, transparent 60%,
+      rgba(0, 0, 0, 0.22) 88%, rgba(0, 0, 0, 0.45) 100%);
+  z-index: 11;
+}
+
+/* ── ARCADE: punchy, sharp, bright monitor with tight strong scanlines.
+   Keeps crisp pixels (no blur) and a higher-contrast, more saturated
+   image. Brightness/saturate held where the blue channel still
+   attenuates evenly with R/G (no pink cast). */
+body.crt-arcade #screen,
+body.crt-arcade .pause-demo-canvas {
+  image-rendering: pixelated;
+  filter: brightness(1.06) contrast(1.14) saturate(1.14);
+}
+body.crt-arcade .crt-bezel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9;
+  background: linear-gradient(to right,
+    rgba(255, 0, 0, 0.08) 0 33.33%,
+    rgba(0, 255, 0, 0.08) 33.33% 66.66%,
+    rgba(0, 0, 255, 0.08) 66.66% 100%);
+  background-size: calc(100% / 394) 100%;
+  mix-blend-mode: multiply;
+}
+body.crt-arcade .crt-bezel::after {
+  background: linear-gradient(rgba(0, 0, 0, 0) 33.33%, rgba(0, 0, 0, 0.42) 66.66%);
+  background-size: 100% calc(100% / 296);
+  z-index: 10;
+}
+body.crt-arcade .crt-shine {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at center, transparent 72%,
+      rgba(0, 0, 0, 0.16) 92%, rgba(0, 0, 0, 0.30) 100%);
+  z-index: 11;
+}
+
+/* ── HUM: a soft bright band slowly rolling up the screen, like mains
+   hum beating against the vertical refresh. Screen-blend so it lifts
+   brightness. Seamless loop (tile height == scroll distance). */
+.crt-roll {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 12;
+  display: none;
+}
+body.crt-hum .crt-roll {
+  display: block;
+  background: repeating-linear-gradient(to bottom,
+    rgba(255, 255, 255, 0) 0px,
+    rgba(255, 255, 255, 0) 200px,
+    rgba(255, 255, 255, 0.06) 300px,
+    rgba(255, 255, 255, 0) 400px,
+    rgba(255, 255, 255, 0) 600px);
+  background-size: 100% 600px;
+  mix-blend-mode: screen;
+  animation: crt-roll 7s linear infinite;
+}
+@keyframes crt-roll {
+  from { background-position: 0 0; }
+  to   { background-position: 0 600px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.crt-hum .crt-roll { animation: none; }
+}
+/* Freeze the HUM roll (screen + logo twin) while paused: it is a continuous
+   full-screen, paint-driven compositor animation, so it burns battery for
+   nothing when the machine is not running. animation-play-state (not
+   `animation: none`) leaves the band in place instead of snapping it away. */
+body.crt-hum.paused .crt-roll,
+body.crt-hum.paused .logo-text::before { animation-play-state: paused; }
+
+/* CRT-effect off: drop the scanline overlay and the glass shine to show
+   the raw canvas. The flat thin frame is already the default .c64-monitor
+   (shared with basic CRT: ON), so only the screen overlays differ here. */
+/* 1X is one CSS pixel per emulated pixel, so every fractional period above is
+   sub-pixel and collapses into a flat wash. Fall back to whole-pixel patterns —
+   the only real ones at that size — keeping each preset's own alpha. The
+   compound body selectors are what put these above the preset rules. */
+body.size-1x.crt-tube .crt-bezel::after,
+body.size-1x.crt-bw .crt-bezel::after,
+body.size-1x.crt-hum .crt-bezel::after {
+  background: linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.28) 50%);
+  background-size: 100% 2px;
+}
+
+body.size-1x.crt-arcade .crt-bezel::after {
+  background: linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.42) 50%);
+  background-size: 100% 2px;
+}
+
+/* Phosphor mask back to its original 3px triad (1px per channel). */
+body.size-1x .crt-bezel::before {
+  background-size: 3px 100%;
+}
+
+body.crt-off .crt-bezel {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body.crt-off .crt-bezel::after {
+  display: none;
+}
+
+body.crt-off .crt-bezel::before {
+  display: none;
+}
+
+body.crt-off .crt-shine {
+  display: none;
+}
+
+.crt-label {
+  text-align: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--dim);
+  margin-top: 8px;
+  letter-spacing: 4px;
+}
+
+.drop-hint {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.93rem;
+  color: var(--dim);
+  text-align: center;
+  margin-top: 4px;
+  opacity: 0.6;
+  /* The picture's grid track is max-content, so this line would size it to its
+     own UNWRAPPED width and pad the column at 1X, where the picture is narrower
+     than the text. Contributing 0 and filling afterwards lets it wrap to the
+     picture instead of widening the track. */
+  width: 0;
+  min-width: 100%;
+}
+/* The word carries the list of file types as a tooltip; the underline says so. */
+.drop-hint-types {
+  border-bottom: 1px dotted currentColor;
+  cursor: help;
+}
+/* Default (mouse/desktop): show the drop-files hint, hide the tap hint.
+   On touch devices, swap them — tapping raises the native keyboard, and
+   drag-drop isn't available. */
+.drop-hint.hint-touch { display: none; }
+@media (hover: none) and (pointer: coarse) {
+  .drop-hint.hint-pointer { display: none; }
+  .drop-hint.hint-touch { display: block; }
+}
+
+/* ── Side panel ──────────────────────────────────────────────────────── */
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Base state — one flow. The two .panel-col containers stay in the DOM (so each
+   card keeps the column it belongs to) but stop generating boxes, and the cards
+   become direct flex children of .panel-cols. Widening back to the two-column
+   breakpoint restores the arrangement untouched. */
+.panel-cols {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel-col {
+  display: contents;
+}
+
+/* Two columns exactly when the panel itself is wide enough to hold them —
+   which is the honest question, and the one a viewport-width media query kept
+   getting wrong. Beside a narrow window the panel is 260px and stays one
+   column; stacked below a tablet it is full width and takes two.
+
+   440px is two cards plus the gap: a card stops being usable much under 215px
+   wide. Must follow the one-column rules above — same specificity, so source
+   order is what decides. */
+.side-panel {
+  container-type: inline-size;
+}
+
+@container (min-width: 440px) {
+  .panel-cols {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .panel-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  /* An emptied column keeps its place and its width. Collapsing it would hand
+     the width to the cards that remain, but it would also leave nothing to aim
+     at — the column could never be refilled. It stays, so dragging a card back
+     across is always possible.
+
+     Pick up a card and the outline appears, so an emptied column still reads as
+     somewhere you can drop one. */
+  body.panels-reordering .panel-col.is-empty {
+    min-height: 104px;
+    border: 1px dashed var(--accent);
+    border-radius: 10px;
+    background: rgba(112, 109, 235, 0.05);
+  }
+
+  body.panels-hide-armed .panel-col.is-empty {
+    border-color: transparent;
+    background: none;
+  }
+
+}
+
+/* 2.5X and 3X hand the width to the picture, so the panel beside it is left
+   wide enough to satisfy the query but too narrow to read as two columns. */
+@media (min-width: 1180px) {
+  body.size-25x .side-panel .panel-cols,
+  body.size-3x .side-panel .panel-cols {
+    flex-direction: column;
+    /* Undo the row alignment too. The container query still matches here — the
+       panel is wide enough for two columns, it is just not being given them —
+       so its align-items: flex-start survives this override and leaves every
+       card at its own content width instead of filling the column. */
+    align-items: stretch;
+  }
+
+  body.size-25x .side-panel .panel-col,
+  body.size-3x .side-panel .panel-col {
+    display: contents;
+  }
+}
+
+.panel-card {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.panel-card h2 {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--dim);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Status card header: the title on the left, the fps/ms/MB perf badge on
+   the right. Neutralise the h2's uppercase + letter-spacing on the badge so
+   the numeric readout stays legible. It spans its header wrapper via the
+   generic `.panel-card-header > h2 { flex: 1 }` rule below. */
+.status-h2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.status-h2 .badge {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: normal;
+}
+
+/* Card header with right-aligned action (e.g. expand chevron). When used,
+   the inner h2 should set its own margin/border to none. Every side-panel card
+   uses one, so the drag handle has a single place to sit. */
+.panel-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-card-header h2 {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+/* The title takes the slack so the handle hugs the left edge and the trailing
+   controls (SWAP PORTS, the tape-listen speaker, the drive-9 power switch, the
+   expand chevron) stay grouped at the right. */
+.side-panel .panel-card-header > h2 {
+  flex: 1;
+}
+
+.controlports-header #btn-swap-ports {
+  padding: 2px 6px;
+  font-size: 0.5rem;
+  border-radius: 4px;
+  max-width: 90px;
+}
+
+/* Headers of collapsible panels: the whole header toggles expand/collapse,
+   so make it read as clickable and light up the title + chevron on hover. */
+.panel-card-header.header-clickable {
+  cursor: pointer;
+}
+
+.panel-card-header.header-clickable:hover h2 {
+  color: var(--accent);
+}
+
+.panel-card-header.header-clickable:hover .expand-btn {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Generic expand chevron + collapsible body for any panel-card.
+
+   A disclosure triangle, not an accordion arrow: it points right at a closed
+   card and swings down to point into the body it reveals. Turning the ▼ from
+   the markup by -90° rather than swapping the glyph for a ▶ keeps the quarter
+   turn animatable. An up-pointing arrow is deliberately never shown — up reads
+   as "collapse" everywhere else. */
+.expand-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  cursor: pointer;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  line-height: 1;
+  padding: 2px 8px;
+  border-radius: 3px;
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease, color 0.15s, border-color 0.15s;
+}
+
+.expand-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.panel-card.expanded .expand-btn {
+  transform: rotate(0deg);
+}
+
+.panel-body {
+  display: none;
+}
+
+.panel-card.expanded .panel-body {
+  display: block;
+}
+
+/* ── Drag-to-reorder (src/panel-order.js) ────────────────────────────────── */
+
+/* Grip in front of every side-panel card title. touch-action: none is what lets
+   a finger drag reorder instead of scrolling the page, and the callout/select
+   suppression stops a held finger raising iOS's selection bubble mid-drag. */
+.panel-drag-handle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  /* Padding, not size: a 10px grip is a fine target for a mouse and far too
+     small for a thumb. */
+  padding: 6px 5px;
+  margin: -6px -3px;
+  color: var(--dim);
+  cursor: grab;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+/* The button is then always the hit target, so touch-action: none on it is what
+   the browser actually consults — an SVG child would answer for itself. */
+.panel-drag-handle svg {
+  pointer-events: none;
+}
+
+.panel-drag-handle:hover,
+.panel-drag-handle:focus-visible {
+  color: var(--accent);
+}
+
+.panel-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* The ghost carries the picture, so the card left behind becomes the
+   placeholder: a dashed box holding the space the card will drop into, moved to
+   the insertion point as the pointer travels.
+
+   It stays a real box in the flow rather than a margin opened on its neighbour,
+   which is what makes the space appear correctly everywhere — a margin at the
+   top of a column is truncated by multicol, so the two-column layout showed no
+   space at all there, and at the end of a row there is no neighbour to hang one
+   on. A box gets wrapped, columned and sized by the browser like any other. */
+.panel-card.panel-drag-source {
+  border-style: dashed;
+  border-color: var(--accent);
+  background: rgba(112, 109, 235, 0.07);
+}
+
+/* hidden, not removed — the emptied box keeps the card's own height. */
+.panel-card.panel-drag-source > * {
+  visibility: hidden;
+}
+
+/* Held over the Hide target: the columns stop offering anywhere to land. The
+   opened slot and any empty-column target keep their space — so nothing
+   reflows if the card comes back — but drop nothing that reads as a target. */
+body.panels-hide-armed .panel-card.panel-drag-source {
+  border-color: transparent;
+  background: none;
+}
+
+/* Fixed to the viewport and positioned entirely by transform, so a drag is one
+   composited write per move. Lifting the real card instead would be clipped by
+   the multicol column box at 1X / 2X. */
+.panel-drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 900;
+  margin: 0;
+  pointer-events: none;
+  opacity: 0.9;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55);
+  border-color: var(--accent);
+  will-change: transform;
+}
+
+body.panels-reordering {
+  cursor: grabbing;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* A hidden card keeps its slot in the saved layout; it is only not drawn. */
+.panel-card.is-panel-hidden { display: none; }
+
+/* Drop-to-hide target — a square in the lower-right corner, only while a card is
+   in flight. Fixed to the viewport with safe-area insets, so it lands in the
+   same corner on a phone, a tablet and a desktop, clear of a notch or a home
+   indicator. Under the ghost (z-index 900) so the card stays the thing in hand,
+   and pointer-events:none so it can never steal the drag's pointer capture. */
+.panel-hide-target {
+  position: fixed;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  transform: scale(0.9);
+  z-index: 890;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  width: 120px;
+  height: 120px;
+  border-radius: 10px;   /* the panel-card radius — square, but of this UI */
+  border: 2px dashed var(--border);
+  background: rgba(12, 12, 20, 0.72);
+  backdrop-filter: blur(2px);
+  color: var(--dim);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease, transform 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.panel-hide-target svg { width: 26px; height: 26px; }
+
+body.panels-reordering .panel-hide-target {
+  opacity: 1;
+  transform: scale(1);
+  animation: panel-hide-pulse 2.6s ease-in-out infinite;
+}
+
+/* Over the target: solid ring, accent colour, and it swells a little. */
+body.panels-reordering .panel-hide-target.is-over {
+  animation: none;
+  border-style: solid;
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(12, 12, 20, 0.92);
+  transform: scale(1.12);
+}
+
+/* The card fades while it is over the target, so the drop reads as "gone". */
+.panel-drag-ghost.is-over-hide { opacity: 0.45; }
+
+@keyframes panel-hide-pulse {
+  0%, 100% { transform: scale(1);    opacity: 0.72; }
+  50%      { transform: scale(1.06); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.panels-reordering .panel-hide-target { animation: none; }
+}
+
+/* The + that brings a hidden card back: same corner as the hide oval, but shown
+   only while something IS hidden — and it stands down mid-drag so the two never
+   share the spot. Options ▸ Display is the other way back; this is the near one. */
+.panel-restore-btn {
+  position: fixed;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 880;
+  display: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  color: var(--dim);
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  transition: color 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.panel-restore-btn.is-shown { display: grid; }
+.panel-restore-btn svg { width: 22px; height: 22px; }
+
+.panel-restore-btn:hover,
+.panel-restore-btn:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+  transform: scale(1.06);
+}
+
+/* The touch joystick's fire buttons own that corner, so while it is up the +
+   moves to the middle of the bottom edge — clear of the stick on the left and
+   the buttons on the right. Centred by margin, not transform, which :hover has. */
+body.touch-input-capable:has(.touch-controls:not([hidden])) .panel-restore-btn {
+  right: auto;
+  left: 50%;
+  margin-left: -22px;
+}
+
+/* Announces each keyboard move to screen readers; never shown. */
+.panel-order-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+

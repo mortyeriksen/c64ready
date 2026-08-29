@@ -1,0 +1,75 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2026 Morten Øien Eriksen */
+/* src/styles-base.css – reset + :root design tokens (the chrome palette pulled from the
+   VIC-II Colodore hues).
+   Part of the styles.css @import manifest — cascade order is set there. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Chrome palette pulled from the VIC-II (Colodore) colours the emulator
+   itself renders — so the UI around the monitor speaks the C64's own 16
+   hues instead of generic Material tones. --accent is light blue (VIC #14),
+   the boot-screen text colour; the ambient is C64 blue, not cosmic purple. */
+:root {
+  --crt-bg: #070a1c;     /* the dark room the monitor glows in (blue-black) */
+  --ui-bg: #0b0e24;
+  --panel-bg: #11142e;   /* deep VIC-blue shadow */
+  --border: #2c2f63;     /* blue (VIC #6) at low intensity */
+  --accent: #706deb;     /* C64 light blue (VIC #14) — boot-screen text */
+  --accent2: #b362c4;    /* C64 purple (VIC #4), lifted for legibility */
+  --green: #8fe985;      /* C64 green family (VIC #5 / #13) */
+  --amber: #e6dd6b;      /* C64 yellow (VIC #7) */
+  --red: #d76b70;        /* C64 light red (VIC #10) */
+  --text: #ccd0ec;       /* light grey (VIC #15) with a blue cast */
+  --dim: #6e6ea4;        /* grey (VIC #12) toward blue */
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--crt-bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 24px 12px 40px;
+  gap: 20px;
+  min-height: 100vh;      /* fallback for engines without dvh */
+  min-height: 100dvh;     /* iOS: exclude the dynamic toolbar so the page doesn't overflow */
+  background: radial-gradient(ellipse at 50% 0%, #15184a 0%, #070a1c 62%);
+}
+
+/* Our own tooltip, drawn from data-tip (src/tooltips.js). Placed by transform
+   from the top-left corner, so no layout work per move. Above everything —
+   controls inside a dialog have tips too. */
+.tip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 5000;
+  max-width: 280px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-bg);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  pointer-events: none;
+}
+
+.tip[hidden] { display: none; }

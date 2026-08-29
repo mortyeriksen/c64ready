@@ -1,0 +1,17 @@
+# Netlify redirect rules. First match wins.
+
+# One canonical host. The `!` is required: without it Netlify skips a redirect
+# whenever a real file exists at the path, which here is every path.
+https://c64ready.netlify.app/*  https://c64ready.com/:splat  301!
+
+# Extensionless docs URLs (/docs/about) are resolved to the .html file by
+# Netlify's asset server itself, before the redirect engine sees them, so they
+# need no rule here — and must not get one: Netlify matches a request against the
+# file it resolves to, so `/docs/index.html -> /docs/` fired on /docs/ as well and
+# redirected it to itself. <link rel="canonical"> is what points crawlers at the
+# .html URL that sitemap.xml and the precache (src/sw.js) use.
+
+# The Datasette animation was a .gif that no service worker precached, so a docs
+# page held in an older precache still requests it over the network. Keep the old
+# name resolving until those clients have taken an update.
+/guide/datasette-loading.gif  /guide/datasette-loading.webp  301

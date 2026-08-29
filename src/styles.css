@@ -1,0 +1,17 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2026 Morten Øien Eriksen */
+/* src/styles.css – UI stylesheet manifest. All rules live in the imported
+   part files (split by UI area); this file only sets their order.
+   ORDER IS LOAD-BEARING: equal-specificity cascade ties resolve by source
+   order, so keep these @imports in exactly this sequence. Vite inlines them
+   into one asset at build; the dev server serves them as native @imports. */
+
+@import './styles-base.css';
+@import './styles-header.css';
+@import './styles-display.css';
+@import './styles-dialogs.css';
+@import './styles-controls.css';
+@import './styles-decks.css';
+@import './styles-ports.css';
+@import './styles-vibes.css';
+@import './styles-splash.css';

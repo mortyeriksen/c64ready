@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="robots" content="noindex">
+  <title>C64 READY. — installed app launch</title>
+</head>
+<body>
+  <!--
+    Network-only analytics marker. The installed PWA fetches this on launch
+    (the beacon in src/main.js, gated on _isInstalled()) so Netlify's
+    server-side analytics logs installed-app launches under Top Pages as
+    /pwa.html, distinct from browser visits to /. Deliberately kept OUT of the
+    precache (vite.config.js globIgnores) and passed straight to the network by
+    the service worker (src/sw.js), so the request reaches Netlify's edge
+    instead of being served from the offline cache.
+  -->
+  <p>This page records installed-app launches. <a href="/">Open the C64 emulator</a>.</p>
+</body>
+</html>

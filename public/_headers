@@ -1,0 +1,83 @@
+# Netlify headers (https://docs.netlify.com/routing/headers/).
+# Cross-origin isolation is REQUIRED for the SharedArrayBuffer the SID audio
+# worklet uses. Without COOP/COEP on the top-level document, crossOriginIsolated
+# is false and the emulator fails to initialise ("SharedArrayBuffer is not
+# available"). vite.config.js / serve.json only cover dev/preview/`serve`, so a
+# real host (Netlify) needs this. Vite copies public/ verbatim into dist/, so
+# this lands at dist/_headers automatically.
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  Permissions-Policy: gamepad=(self)
+
+# Vite content-hashes everything under /assets/ (e.g. index-1CMMbpkA.js), so the
+# bytes at a given URL never change — safe to cache permanently. A new build
+# emits new filenames, so there's nothing to invalidate. Only /assets/* is
+# hashed; index.html and sw.js are intentionally NOT covered here so they keep
+# Netlify's revalidating default and new deploys are always picked up.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Splash teaser media: large, content-stable files streamed by <video> with a
+# 40 s loop. Without caching, every loop restart and range chunk re-hits the
+# origin and shows up as noise in Netlify Analytics' page views. Cache them
+# hard; when the teaser is replaced, RENAME the file (new URL) to invalidate.
+/media/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Requested as /docs/docs.css?v=<content hash> (tools/build-docs.mjs), so each
+# generation is its own cache key — permanent like /assets/*.
+/docs/docs.css
+  Cache-Control: public, max-age=31536000, immutable
+
+# Icons are always requested with the ?v= that vite.config.js bumps on artwork
+# changes (kept in sync with index.html), so a changed icon is a changed URL.
+/icons/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The 3D models: 18 MB and 95 MB, fetched only when Retro Vibes opens, and
+# content-stable. RENAME on replacement (and bump MODEL_CACHE in src/sw.js).
+/commodore_64.glb
+  Cache-Control: public, max-age=31536000, immutable
+
+/commodore_64_4k.glb
+  Cache-Control: public, max-age=31536000, immutable
+
+# Link-preview cards. The version is in the filename precisely so a shared link
+# keeps resolving to the image it was shared with — never overwrite one in place.
+/c64rdy-3d-vibes-sm.png
+  Cache-Control: public, max-age=31536000, immutable
+
+/c64rdy-3d-vibes-sm-v2.png
+  Cache-Control: public, max-age=31536000, immutable
+
+/c64rdy-3d-vibes-sm-v3.png
+  Cache-Control: public, max-age=31536000, immutable
+
+/c64rdy-3d-vibes-sm-v4.png
+  Cache-Control: public, max-age=31536000, immutable
+
+# Fonts and in-app artwork: unhashed names that CAN be regenerated in place (the
+# guide shots are, and fonts.css shares the /fonts/ prefix), so these get a month
+# with background revalidation rather than immutable — repeat visits still cost no
+# requests, and a replaced file propagates on its own without a rename.
+/fonts/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+
+/logos/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+
+/guide/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+
+/screens/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+
+# Netlify has no .webmanifest MIME mapping and served it as octet-stream.
+/manifest.webmanifest
+  Content-Type: application/manifest+json
+
+# Everything else keeps Netlify's revalidating default (max-age=0,
+# must-revalidate), which is the update path: index.html, /docs/*.html, sw.js,
+# the webmanifest, and the analytics beacons (pwa*.html, roms-*.html — a cached
+# beacon never reaches the log). Do not wildcard over those.

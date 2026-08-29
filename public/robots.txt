@@ -1,0 +1,6 @@
+# Allow search engines and social link-preview crawlers to access the public
+# app and documentation. /pwa.html carries its own noindex directive.
+User-agent: *
+Disallow:
+
+Sitemap: https://c64ready.com/sitemap.xml

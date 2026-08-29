@@ -1,0 +1,50 @@
+/* Self-hosted fonts so the app shell renders offline and stays COEP-clean.
+
+   Inter and Share Tech Mono (the .woff2 pair, latin subset) are licensed under
+   the SIL Open Font License 1.1 — see OFL.txt for the full license and
+   copyright notices.
+
+   PetMe64 (the C64 system charset), Giana (The Great Giana Sisters title
+   face) and Berkelium (the GEOS "BSW" document font), all by Rebecca
+   Bettencourt / Kreative Korporation and made with Bits'n'Picas, are NOT OFL.
+   They ship under the "Kreative Software Relay Fonts Free Use License" (see
+   FreeLicense.txt): free to embed and redistribute with attribution, the
+   license included verbatim, and NO modification. They are therefore vendored
+   as the unmodified original .ttf — deliberately not subsetted or converted to
+   woff2, since the no-derivatives clause would not permit it. All are credited
+   in the in-app Credits. */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;            /* variable font — one file, all weights */
+  font-display: swap;
+  src: url('/fonts/inter.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Share Tech Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/share-tech-mono-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'PetMe64';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;          /* the boot/system charset — logo fallback + PWA heading */
+  src: url('/fonts/PetMe64.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Giana';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;          /* the game-title face — carries the "C64 READY." logo */
+  src: url('/fonts/Giana.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Berkelium64';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;          /* the GEOS document font — credits body text */
+  src: url('/fonts/Berkelium64.ttf') format('truetype');
+}

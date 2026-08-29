@@ -1,0 +1,458 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2026 Morten Øien Eriksen */
+/* src/styles-controls.css – side-panel controls (volume slider, pixel speaker, POWER
+   LED, Retro Vibes + RECORD buttons), hidden mobile-keyboard input, touch
+   joystick overlay.
+   Part of the styles.css @import manifest — cascade order is set there. */
+
+/* Controls */
+.btn-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+/* Two buttons per row (used by the Options ▸ Display section). */
+.btn-group-2col {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.u-mb-8 {
+  margin-bottom: 8px;
+}
+
+/* Sound ▸ master volume: one full-width row combining the mute toggle, a
+   draggable level slider, and a live percentage readout. Themed with the
+   VIC-blue accent so it reads native to the Settings dialog. */
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.volume-control .btn-icon {
+  flex: 0 0 auto;
+  width: 42px;
+  padding: 7px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.volume-control .btn-icon.is-muted {
+  border-color: var(--red);
+  color: var(--red);
+}
+/* Pixel speaker: both glyphs are injected; show ON by default, MUTE when the
+   output is silent. Fill follows the button's currentColor (see .btn / :hover
+   / .is-muted). crispEdges keeps the chunky C64 pixels sharp at any scale. */
+.volume-control .btn-icon .spk {
+  display: block;
+  width: 22px;
+  height: auto;
+}
+.volume-control .btn-icon .spk-mute,
+.volume-control .btn-icon.is-silent .spk-on {
+  display: none;
+}
+.volume-control .btn-icon.is-silent .spk-mute {
+  display: block;
+}
+.volume-value {
+  flex: 0 0 auto;
+  min-width: 3.6em;
+  text-align: right;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 1px;
+  color: var(--dim);
+}
+
+/* Draggable level slider. WebKit/Safari paints the filled portion via the
+   element's inline background (set in main.js); Firefox uses ::-moz-range-
+   progress below. Both share the pill track + glowing accent thumb. */
+.volume-slider {
+  flex: 1 1 auto;
+  min-width: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+  cursor: pointer;
+  outline: none;
+  margin: 0;
+}
+.volume-slider.is-muted {
+  opacity: 0.45;
+}
+.volume-slider::-webkit-slider-runnable-track {
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: transparent;
+}
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #1a1a30;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 60%, transparent);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--accent) 80%, transparent);
+}
+.volume-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+}
+.volume-slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+.volume-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #1a1a30;
+  cursor: pointer;
+}
+.volume-slider:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.btn {
+  flex: 1;
+  padding: 8px 4px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: #1a1a30;
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 1px;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 22%, #1a1a30);
+}
+
+.btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Shared "green accent" button style (used by REDEFINE ALL KEYS as well as the
+   POWER button). The POWER button itself is re-styled by power state below
+   (#btn-power beats this class) so an idle machine doesn't look powered-on. */
+.btn-power {
+  color: var(--green);
+  border-color: var(--green);
+}
+
+.btn-power:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--green) 22%, #1a1a30);
+}
+
+/* POWER button as a power LED: neutral when off (so an idle machine doesn't read
+   as "on"), lit green with a soft glow while the machine is running. Disabled
+   (before ROMs load) stays dimmed by the base .btn:disabled rule. */
+#btn-power {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+/* Off / ready: a faint accent hint on hover — "press to power on". */
+#btn-power:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, #1a1a30);
+}
+
+/* Running: the LED is lit — green glyph + border with a soft green glow. */
+body.powered-on #btn-power {
+  color: var(--green);
+  border-color: var(--green);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--green) 30%, transparent);
+}
+
+body.powered-on #btn-power:hover:not(:disabled) {
+  color: var(--green);
+  border-color: var(--green);
+  background: color-mix(in srgb, var(--green) 20%, #1a1a30);
+}
+
+/* Inline SVG button glyph (e.g. the POWER symbol). Used instead of the Unicode
+   power character ⏻ (U+23FB), which Android's default fonts don't ship — it
+   rendered as tofu/blank. Sized in em + currentColor so it tracks the button's
+   font size and colour (including the disabled dim). */
+.btn-ico {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+  margin-right: 0.12em;
+}
+
+/* Retro Vibes button — opens the 3D synthwave model viewer. Given an 80s-sunset
+   look (magenta→purple gradient, neon-pink hover glow) so it reads as the "fun"
+   control next to the plain SIZE / FULL toggles. */
+.btn-vibes {
+  border-color: #b362c4;
+  color: #ffdcfa;
+  background: linear-gradient(135deg, #2a1145, #3a1550 55%, #12233f);
+  text-shadow: 0 0 6px rgba(179, 98, 196, 0.55);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  /* Hosts the .vibes-fx dot canvas: `isolate` keeps its negative z-index inside
+     the button, `hidden` trims the field to the rounded corners. */
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+/* The VIBES button's pixel demo (vibes-btn-fx.js) — decorative, so it takes no
+   pointer events and the label paints over it. */
+.vibes-fx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+.vibes-fx[hidden] { display: none; }
+.btn-vibes:hover:not(:disabled) {
+  border-color: #ff6ad5;
+  color: #fff;
+  background: linear-gradient(135deg, #3a1656, #571f6c 55%, #163356);
+  box-shadow: 0 0 12px rgba(255, 106, 213, 0.45);
+}
+
+.btn-reset {
+  color: var(--amber);
+  border-color: color-mix(in srgb, var(--amber) 50%, var(--border));
+}
+
+.btn-reset:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--amber) 22%, #1a1a30);
+  border-color: var(--amber);
+}
+
+.btn-pause {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+}
+
+.btn-pause:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 22%, #1a1a30);
+  border-color: var(--accent);
+}
+
+/* RECORD button (recorder.js). The button itself stays neutral (base .btn
+   styling, matching OPTIONS) in both states; only the leading glyph is tinted
+   red — a dot idle, a stop icon while recording. */
+.rec-dot {
+  color: var(--red);
+}
+
+/* Hidden mobile-keyboard input (see #mobile-kbd in the bezel). Must stay
+   focusable (NOT display:none / far off-screen, which stop iOS from
+   opening the keyboard): keep it in-layout at the top-left, 1px, opacity 0.
+   font-size >=16px prevents iOS from auto-zooming the page on focus.
+   pointer-events:none so the canvas underneath receives the tap. */
+#mobile-kbd {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  pointer-events: none;
+  font-size: 16px;
+}
+
+/* ── Touch joystick overlay ─────────────────────────────────────────── */
+.touch-controls {
+  --touch-stick-size: clamp(112px, 30vw, 144px);
+  --touch-knob-size: clamp(48px, 13vw, 58px);
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.touch-controls[hidden],
+body:not(.touch-input-capable) .touch-controls {
+  display: none !important;
+}
+
+.touch-stick {
+  position: absolute;
+  --touch-stick-edge-inset:
+    max(16px, env(safe-area-inset-left), env(safe-area-inset-bottom));
+  left: var(--touch-stick-edge-inset);
+  bottom: var(--touch-stick-edge-inset);
+  width: var(--touch-stick-size);
+  height: var(--touch-stick-size);
+  border: 2px solid rgba(112, 109, 235, 0.88);
+  border-radius: 50%;
+  background: rgba(17, 20, 46, 0.66);
+  box-shadow:
+    inset 0 0 0 1px rgba(204, 208, 236, 0.08),
+    0 5px 18px rgba(0, 0, 0, 0.34);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.touch-stick::after {
+  content: '';
+  position: absolute;
+  inset: 24%;
+  border: 1px solid rgba(112, 109, 235, 0.18);
+  border-radius: 50%;
+}
+
+.touch-stick-tick {
+  position: absolute;
+  top: 5px;
+  left: calc(50% - 1px);
+  width: 2px;
+  height: 10px;
+  border-radius: 1px;
+  background: rgba(112, 109, 235, 0.78);
+  transform-origin: 1px calc(var(--touch-stick-size) / 2 - 5px);
+  pointer-events: none;
+}
+
+.touch-stick-tick-0 { transform: rotate(0deg); }
+.touch-stick-tick-1 { transform: rotate(45deg); }
+.touch-stick-tick-2 { transform: rotate(90deg); }
+.touch-stick-tick-3 { transform: rotate(135deg); }
+.touch-stick-tick-4 { transform: rotate(180deg); }
+.touch-stick-tick-5 { transform: rotate(225deg); }
+.touch-stick-tick-6 { transform: rotate(270deg); }
+.touch-stick-tick-7 { transform: rotate(315deg); }
+
+.touch-stick-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--touch-knob-size);
+  height: var(--touch-knob-size);
+  border: 2px solid #706deb;
+  border-radius: 50%;
+  background: #5a58c7;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.16),
+    0 4px 10px rgba(0, 0, 0, 0.46);
+  transform: translate(-50%, -50%);
+  will-change: transform;
+  pointer-events: none;
+}
+
+.touch-stick.touch-control-active {
+  border-color: var(--green);
+}
+
+.touch-buttons {
+  position: absolute;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  width: 148px;
+  height: 128px;
+  pointer-events: none;
+}
+
+.touch-button {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(17, 20, 46, 0.78);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.08),
+    0 5px 16px rgba(0, 0, 0, 0.38);
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-button-a {
+  right: 0;
+  bottom: 0;
+  width: 76px;
+  height: 76px;
+  color: #ef8a8e;
+  border: 2px solid var(--red);
+}
+
+.touch-button-b {
+  left: 0;
+  top: 0;
+  width: 68px;
+  height: 68px;
+  color: #f1e97d;
+  border: 2px solid var(--amber);
+}
+
+.touch-button.touch-control-active {
+  color: var(--green);
+  border-color: var(--green);
+  background: rgba(25, 42, 45, 0.9);
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.45);
+  transform: translateY(2px);
+}
+
+@media (orientation: landscape) {
+  .touch-controls {
+    --touch-stick-size: clamp(135.2px, 31.2dvh, 179.4px);
+    --touch-knob-size: clamp(59.8px, 13dvh, 72.8px);
+  }
+  .touch-stick {
+    --touch-stick-edge-inset:
+      max(8px, env(safe-area-inset-left), env(safe-area-inset-bottom));
+  }
+  .touch-buttons {
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(10px, env(safe-area-inset-bottom));
+    width: 192.4px;
+    height: 166.4px;
+  }
+  .touch-button-a {
+    width: 98.8px;
+    height: 98.8px;
+  }
+  .touch-button-b {
+    width: 88.4px;
+    height: 88.4px;
+  }
+}
+

@@ -1,0 +1,208 @@
+C64 READY.
+Copyright © 2026 Morten Øien Eriksen
+
+This product is licensed under the GNU General Public License, version 3 or
+later (see the LICENSE file for the full text). It bundles, or builds upon,
+the third-party materials listed below; each remains under its own license,
+reproduced or linked here as that license requires.
+
+================================================================================
+Fonts  (bundled under public/fonts/, shipped in the production build)
+================================================================================
+
+Inter
+    Copyright © The Inter Project Authors (Rasmus Andersson)
+    SIL Open Font License, Version 1.1
+    https://rsms.me/inter/  ·  https://openfontlicense.org/
+    File: public/fonts/inter.woff2
+
+Share Tech Mono
+    Copyright © The Share Tech Mono Project Authors (Carrois Type Design)
+    SIL Open Font License, Version 1.1
+    https://fonts.google.com/specimen/Share+Tech+Mono
+    File: public/fonts/share-tech-mono-400.woff2
+
+PetMe64, Giana, Berkelium64
+    Copyright © Rebecca G. Bettencourt (Kreative Korporation)
+    KreativeKorp free-use license (Kreative Software Relay Fonts)
+    https://www.kreativekorp.com/software/fonts/c64.shtml
+    Files: public/fonts/PetMe64.ttf, public/fonts/Giana.ttf,
+           public/fonts/Berkelium64.ttf
+
+    The full text of the SIL Open Font License 1.1 and the KreativeKorp free-use
+    license accompany the font files / are available at the URLs above; the fonts
+    are redistributed unmodified.
+
+================================================================================
+3D model  (bundled, shipped in the production build)
+================================================================================
+
+"Commodore 64 || Computer (Full Pack)"
+    Copyright © dark_igorek
+    Creative Commons Attribution 4.0 International (CC BY 4.0)
+    https://skfb.ly/oUKFx  ·  https://creativecommons.org/licenses/by/4.0/
+    Files: commodore_64.glb, commodore_64_4k.glb — served by the deployed
+    site under public/, not kept in this repository (see README).
+    Used for the optional 3D Retro Vibes.
+
+================================================================================
+Trademark notice
+================================================================================
+
+Commodore, Commodore 64, C64, 1541, 1702, and related names, logos, trade
+dress, and product markings are trademarks or historical marks of their
+respective owners. C64 READY. is an independent emulator project and is not
+affiliated with, sponsored by, endorsed by, or licensed by any Commodore
+trademark owner.
+
+================================================================================
+Bundled software  (compiled into the browser app)
+================================================================================
+
+three.js
+    Copyright © 2010-2026 three.js authors
+    MIT License — https://github.com/mrdoob/three.js
+    Lazy-loaded for the attract-mode animation and the 3D Retro Vibes.
+    (MIT license text reproduced at the bottom of this file.)
+
+Workbox
+    Copyright © Google LLC
+    MIT License — https://github.com/GoogleChrome/workbox
+    Bundled into the production service worker by vite-plugin-pwa so the app
+    shell can be precached and run offline.
+    (MIT license text reproduced at the bottom of this file.)
+
+================================================================================
+Ported / derived algorithms and model constants
+================================================================================
+
+reSID
+    Copyright © 2010 Dag Lem <resid@nimrod.no>
+    GNU General Public License, version 2 or later
+    https://github.com/daglem/reSID
+
+    The SID implementation is substantially a JavaScript translation of
+    reSID: oscillator and waveform timing, the noise shift-register logic,
+    the pipelined ADSR envelope generator, the measured combined-waveform
+    lookup tables (OSC3 samplings of real 6581/8580 chips, embedded verbatim
+    in src/sid-wavetables.js and, for the WASM engine, as the eight
+    rust/sid/data/wave*.dat files — see rust/sid/data/README.md), the R-2R
+    DAC models with subthreshold leakage (dac.cc), the transistor-level
+    filter / mixer / nonlinear volume stage (filter8580new), the external RC
+    filter, the SINC audio resampler (sid.cc), and SID data-bus readback. The
+    combined-waveform sample data descends from chip samplings provided to
+    reSID by Tibor Biczo, Andreas Boose and André Fachat (reSID THANKS).
+
+    The port is pinned to reSID AS DISTRIBUTED IN VICE 3.10's modified
+    src/resid tree (see the VICE entry below): some ported behaviors are
+    VICE-team modifications that exist only there, e.g. the measured gradual
+    TEST-bit fade of the noise shift register and the improved 8580 filter
+    model compiled by VICE's default build. Exact upstream pin: the official
+    VICE 3.10 source release, vice-3.10.tar.gz, sha256
+    8e5bac18cbcb9f192380ad3ef881f8790f5b75c41d7b3da65d831985d864d6d1
+    (https://downloads.sourceforge.net/project/vice-emu/releases/); every
+    src/resid source file in that release carries the header
+    "Copyright (C) 2010 Dag Lem" (voice.cc: 2004) with the GNU GPL
+    "version 2 ... or (at your option) any later version" grant.
+
+    reSID is GPL-2.0-or-later; it is conveyed here as part of this
+    GPL-3.0-or-later project under the "any later version" grant, with all
+    upstream copyright notices retained in the translated files.
+
+    The engine ships in two additional forms beside the JavaScript
+    translation (src/sid-voice.js, src/sid-filter.js, src/sid-worklet.js):
+    a Rust translation of that JavaScript under rust/sid/, and the
+    WebAssembly module compiled from it (embedded base64 in
+    src/sid-wasm-blob.js; rebuilt reproducibly by rust/sid/build.sh with
+    the toolchain pinned in rust/sid/rust-toolchain.toml). Both are
+    derivative works of reSID as pinned above, conveyed under
+    GPL-3.0-or-later; rust/sid/ is the corresponding source for the
+    compiled module. The compiled module statically includes portions of
+    the Rust standard library, licensed MIT OR Apache-2.0 and used here
+    under the MIT option (MIT license text reproduced at the bottom of
+    this file).
+
+VICE — src/resid modifications and reSID wrapper conventions
+    Copyright © The VICE Team
+    GNU General Public License, version 2 or later
+    https://vice-emu.sourceforge.io/
+
+    The reSID tree this SID port translates from is VICE's modified copy
+    (see the reSID entry above), so portions of the SID implementation
+    derive from VICE-team modifications as well. The runtime conventions of
+    VICE's reSID wrapper (src/sid/resid.cc: filter bias in mV/1000,
+    resampler passband/gain percentages, output amplification
+    clip(scale·x/2)) are followed so that output can be compared against
+    headless VICE x64sc, this project's regression oracle.
+
+VIC-II color palettes — "Pepto" and "Colodore"
+    Measurement data by Philip Timmermann ("Pepto")
+    https://www.pepto.de/projects/colorvic/  ·  https://www.colodore.com
+    The two selectable VIC-II palettes embedded in src/vic2-tables.js
+    reproduce pepto's published palette values.
+
+================================================================================
+Reference implementations and calibration sources  (not redistributed)
+================================================================================
+
+VICE
+    Copyright © The VICE Team
+    GNU General Public License, version 2 or later
+    https://vice-emu.sourceforge.io/  ·  https://github.com/VICE-Team/svn-mirror
+    Used as a behavioral reference, regression oracle and calibration source
+    throughout. The GCR track-layout synthesis parameters in src/gcr.js
+    (per-zone tail gaps and the 9-byte header-to-data gap) follow VICE's
+    D64-to-GCR conversion so that each sector's GCR framing matches VICE's
+    byte-for-byte. (The whole-track bitstream still differs: this project
+    does not reproduce VICE's per-track skew rotation.) The power-on RAM
+    pattern in src/memory.js (an 8-byte 00 00 FF FF FF FF 00 00 cycle) is
+    VICE's default RAM initialisation, taken from a boot dump so demos that
+    read uninitialised memory behave alike. This project does not distribute
+    VICE binaries. For the PORTED code taken from VICE's
+    modified src/resid tree and the wrapper conventions it follows, see the
+    "VICE — src/resid modifications" entry in the SID section above.
+
+================================================================================
+Development / test tooling  (NOT shipped in the app)
+================================================================================
+
+Vite, vite-plugin-pwa, Playwright, pngjs, and marked are used only for building
+the app and running the test/diagnostic harnesses under test/. They are
+obtained via npm under their own licenses (MIT / Apache-2.0) and are not
+reproduced here.
+
+================================================================================
+NOT included — you must supply these
+================================================================================
+
+- Commodore / MOS KERNAL, BASIC, CHARGEN, and 1541 ROMs — copyrighted by their
+  respective rights holders and NOT distributed with this project. Supply your
+  own copies.
+- Demo, game and hardware test-program files the test tools reach for via
+  test/external-assets.json (VICE-testprogs, Klaus Dormann's 6502 functional
+  test, commercial disks and tapes) — NOT distributed with this project; the
+  tests skip when they are absent. Each remains under its original author's
+  terms. The only test programs tracked under test/ are built by this
+  project's own test/build-*.mjs scripts.
+
+================================================================================
+MIT License  (applies to three.js and workbox above, and to the Rust
+standard library portions statically included in the compiled SID module)
+================================================================================
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

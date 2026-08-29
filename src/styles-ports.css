@@ -1,0 +1,296 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2026 Morten Øien Eriksen */
+/* src/styles-ports.css – control port rows + custom gamepad dropdown.
+   Part of the styles.css @import manifest — cascade order is set there. */
+
+/* ── Control Port ────────────────────────────────────────────────────── */
+.cp-row {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+
+/* First port row: no divider above it. (Can't use :first-of-type — the
+   card's first <div> is the header, not a .cp-row, so it never matches.) */
+.cp-row[data-port="1"] {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.cp-row-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cp-port-name {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--text);
+  min-width: 42px;
+}
+
+.cp-device-select {
+  flex: 1;
+  /* Allow the select to shrink below its content width so the activity
+     indicator fits beside it on the same row (it clips its own value
+     behind the chevron rather than overflowing the card). */
+  min-width: 0;
+  padding: 6px 6px;
+  padding-right: 22px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background-color: #1a1a30;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--accent) 50%),
+    linear-gradient(135deg, var(--accent) 50%, transparent 50%);
+  background-position:
+    calc(100% - 12px) 50%,
+    calc(100% - 7px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.cp-device-select:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background-color: #1e2840;
+}
+
+.cp-device-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.cp-gamepad-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.cp-gamepad-row[hidden] {
+  display: none;
+}
+
+.cp-gamepad-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--dim);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── Custom gamepad dropdown ──────────────────────────────────────────
+   A DOM-rendered replacement for <select> so the OPEN list is fully
+   styleable (the macOS native menu ignores CSS for its internal layout).
+   The closed trigger mirrors .cp-device-select; the list is our own. */
+.cp-dropdown {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  /* Reserve the same trailing slot the device <select> row leaves for its
+     activity indicator (.cp-indicator 46px + the row's 8px gap), so the gamepad
+     dropdown lines up to exactly the width of the port device selects above. */
+  margin-right: 54px;
+}
+
+.cp-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 4px 20px 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background-color: #16162a;
+  color: var(--green);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--accent) 50%),
+    linear-gradient(135deg, var(--accent) 50%, transparent 50%);
+  background-position:
+    calc(100% - 12px) 50%,
+    calc(100% - 7px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.cp-dropdown-trigger:hover,
+.cp-dropdown.open .cp-dropdown-trigger {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.cp-dropdown-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cp-dropdown-list {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background-color: #16162a;
+  border: 1px solid var(--accent);
+  border-radius: 7px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55);
+  max-height: 168px;
+  overflow-y: auto;
+  display: none;
+}
+
+.cp-dropdown.open .cp-dropdown-list {
+  display: block;
+}
+
+.cp-dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 7px;
+  border-radius: 5px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.cp-dropdown-option:hover,
+.cp-dropdown-option.active {
+  background-color: rgba(79, 195, 247, 0.14);
+  color: var(--accent);
+}
+
+.cp-dropdown-check {
+  flex: none;
+  width: 11px;
+  text-align: center;
+  color: var(--green);
+}
+
+.cp-dropdown-option-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cp-gamepad-empty {
+  flex: 1;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  font-style: italic;
+  color: var(--dim);
+  letter-spacing: 0.5px;
+}
+
+/* Live direction/fire feedback, just right of the Port selector. Fixed
+   width and flex:none so it reserves a stable slot — the device select
+   shrinks to make room (see its min-width:0). */
+.cp-indicator {
+  flex: none;
+  width: 46px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--green);
+  letter-spacing: 1px;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.cp-row-detail {
+  margin-top: 6px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--dim);
+  line-height: 1.7;
+}
+
+.cp-row-detail strong {
+  color: var(--text);
+}
+
+.cp-row-detail:empty {
+  display: none;
+}
+
+/* Key-joystick key readout under the selector. Make every chip and the edit
+   link a flex item so wrapped chip rows retain a small vertical gap. */
+.cp-row-detail-joykeys {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 4px;
+  row-gap: 4px;
+}
+.cp-row-detail-joykeys .cp-joy-keys {
+  display: contents;
+}
+.cp-joy-keys .kbd {
+  zoom: 1.728;   /* key indicators enlarged ~1.73× (20%, 20%, then another 20%) — keeps the blue .kbd look */
+  vertical-align: middle;
+  white-space: nowrap;
+}
+/* The chips double as tap-and-hold joystick controls (touch/mouse). Make them
+   feel pressable: pointer cursor, no text-select, no scroll/zoom gesture
+   stealing the press (touch-action:none), and a taller hit area. A tap/click
+   gives a green pressed state (added only by the pointer path, so the mapped
+   physical keys never light the chips — the port indicator covers those). */
+.cp-joy-keys .kbd.cp-joy-dir {
+  box-sizing: border-box;
+  min-width: 24px;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+.cp-joy-keys .kbd.cp-joy-dir.cp-joy-dir-active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #06110b;
+}
+.cp-joy-edit-link {
+  white-space: nowrap;
+  vertical-align: middle;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+}
+.cp-joy-edit-link:hover {
+  color: var(--text);
+  border-bottom-style: solid;
+}
+

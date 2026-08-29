@@ -1,0 +1,35 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright © 2026 Morten Øien Eriksen -->
+<meta charset="utf-8">
+<body>
+<pre id="out">running…</pre>
+<script type="module">
+// Idle (READY-screen) perf harness for JavaScriptCore (Safari/WebKit via
+// Playwright). Mirrors tools/perf-workloads.mjs `idle`: boot, settle to
+// READY, then time 9×300-frame batches. Served over HTTP so the ES modules and
+// ROMs load with a real origin. Run by tools/jsc-perf.mjs.
+import { C64Machine } from '/src/machine.js';
+
+const rom = async (p) => new Uint8Array(await (await fetch(p)).arrayBuffer());
+
+window.__run = async () => {
+  const [kernal, basic, charRom] = await Promise.all([
+    rom('/roms/kernal.bin'), rom('/roms/basic.bin'), rom('/roms/chargen.bin'),
+  ]);
+  const m = new C64Machine();
+  m.loadROMs({ kernal, basic, charRom });
+  m.reset();
+  for (let i = 0; i < 300; i++) m.runFrame();     // settle to READY
+
+  const BATCH = 300, REPS = 9, times = [];
+  for (let r = 0; r < REPS; r++) {
+    const t0 = performance.now();
+    for (let i = 0; i < BATCH; i++) m.runFrame();
+    times.push((performance.now() - t0) / BATCH);
+  }
+  times.sort((a, b) => a - b);
+  return { median: times[(REPS - 1) >> 1], best: times[0] };
+};
+</script>
+</body>
