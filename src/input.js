@@ -5,9 +5,10 @@
 // the physical keyboard → C64 matrix bridge.
 //
 // Reads the live machine + running flag from state.js and drives the emulator's
-// joyPort/paddle/cia1 inputs. Two core hooks (downloadSnapshot for Cmd/Alt+Shift+S, and
-// clearing the paste buffer on blur) are dependency-injected via initInput(deps),
-// so this module never imports main.js (keeps the module graph acyclic).
+// joyPort/paddle/cia1 inputs. Two core hooks (downloadSnapshot for the debug-
+// snapshot shortcut, and clearing the paste buffer on blur) are
+// dependency-injected via initInput(deps), so this module never imports main.js
+// (keeps the module graph acyclic).
 //
 // Exports installNeosHook (re-run after each machine build), updateJoyPorts (the
 // per-frame poll), and _releaseAllLatched (used on power-off / reset / state load).
@@ -23,6 +24,7 @@ import { pushEscapeLayer, popEscapeLayer } from './escape-stack.js';
 import { machine, running } from './state.js';
 import { KEY_MAP, CHAR_MAP } from './cia.js';
 import { MatrixKeyOwnership } from './input-key-ownership.js';
+import { appAccel } from './app-accel.js';
 import * as ControlPort from './control-port.js';
 import {
   dropSoftKeyboardFocus, isTouchCapable, resolveTouchStickInto,
@@ -39,6 +41,7 @@ const IS_WINDOWS =
 
 // ── Injected core hooks (assigned by initInput) ──────────────────────────────
 let downloadSnapshot, clearPendingPaste, cycleCrtEffect, toggleVibesZoom, pasteFromShortcut;
+let toggleVibesPromo;
 
 // ── Control Port state ──────────────────────────────────────────────────────
 // C64 joystick bits: active-low
@@ -1218,14 +1221,15 @@ function _buildKeymapGrid() {
   charSection('Symbols', Object.keys(CHAR_MAP), '^ produces ↑ &middot; _ produces ←');
 
   // The app's own shortcuts, straight from APP_SHORTCUTS so this cannot drift
-  // from what the dispatcher does. The modifier is stated once rather than spelled
-  // out per row: all three chords work on every platform, so a reader has nothing
-  // to match against their own, and three columns of near-identical keycaps would
-  // be the longest section in the dialog for the least information.
+  // from what the dispatcher does. The modifier is stated once rather than
+  // spelled out per row: both spellings work on every platform, so a reader has
+  // nothing to match against their own, and two columns of near-identical
+  // keycaps would be the longest section in the dialog for the least
+  // information.
   if (APP_SHORTCUTS.length) {
     html.push(`<h3>App shortcuts</h3>`);
-    html.push(`<div class="keymap-symbols-note">With <kbd class="kbd">⌘</kbd> on macOS, or `
-      + `<kbd class="kbd">Alt</kbd> / <kbd class="kbd">Alt+Shift</kbd> elsewhere. `
+    html.push(`<div class="keymap-symbols-note">With <kbd class="kbd">⌘</kbd>+<kbd class="kbd">Shift</kbd> `
+      + `on macOS, or <kbd class="kbd">Ctrl</kbd>+<kbd class="kbd">Shift</kbd> elsewhere. `
       + `These reach the app, not the C64.</div>`);
     html.push(`<div class="keymap-section">`);
     for (const s of APP_SHORTCUTS) {
@@ -1801,35 +1805,6 @@ document.addEventListener('keydown', e => {
   e.stopImmediatePropagation();
 }, { capture: true });
 
-// The app's accelerator chord: Alt+Shift+key on every platform, plus Cmd+key on
-// macOS, where Cmd is what a shortcut is expected to use. Both are accepted
-// everywhere — the branches are independent — so Alt+Shift is the one chord that
-// works wherever you are, and Cmd stays available for Mac muscle memory (Cmd+V
-// for paste above all).
-//
-// Alt is the only modifier going spare — Ctrl is a real C64 key, and Meta is the
-// Windows key, which the browser never sees. The C64 keyboard has no Alt at all
-// (C= sits on F10) and the matrix router already drops AltLeft/AltRight.
-//
-// Shift is what makes it usable. Every browser menu accelerator is a plain
-// Alt+letter — Alt+F opens Chrome's menu and Firefox's File — and in Firefox
-// those letters are LOCALIZED (Arkiv / Rediger / Vis on a Norwegian build), so no
-// choice of letter is safe for every user. Adding Shift steps outside that whole
-// class instead of dodging it letter by letter, and it leaves the plain
-// Alt+letter space free for shortcuts added later.
-//
-// Never AltGr, whatever the letter: Windows delivers it as Ctrl+Alt and the
-// Nordic/European layouts type @ [ ] { } \ | ~ $ with it, so a bare Ctrl or a
-// live AltGraph state disqualifies the chord. In a focused text field only Cmd
-// counts, so Option+Shift+key still types what macOS says it should.
-function _appAccel(e, inField) {
-  if (e.metaKey) return !e.altKey && !e.ctrlKey && !e.shiftKey;
-  // Shift optional: Alt+key and Alt+Shift+key are both accepted, being the same
-  // shortcut spelled the way each browser spells page shortcuts.
-  return e.altKey && !e.ctrlKey && !inField &&
-    !(e.getModifierState && e.getModifierState('AltGraph'));
-}
-
 // Every app-level shortcut, in one place. The dispatcher below, and the App
 // shortcuts section of the KEY MAP dialog, both read this — so a new shortcut is
 // one entry here and nothing else, and the help can't drift from the behaviour.
@@ -1845,9 +1820,13 @@ export function registerAppShortcut(entry) {
 }
 
 // The letters the browser or OS will not give up, whatever we do: preventDefault
-// cannot stop these, so nothing may be bound to them. Alt+F4 and Alt+Tab are
-// Windows'; the Cmd set is macOS window and tab management.
-const RESERVED_CODES = new Set(['KeyW', 'KeyT', 'KeyN', 'KeyQ', 'KeyM', 'KeyH']);
+// cannot stop these, so nothing may be bound to them. W/T/N/Q are new window,
+// new tab, reopen tab and quit — Ctrl+Shift+ and Cmd+Shift+ alike, with
+// Cmd+Shift+Q logging the Mac out; M and H are macOS minimise and hide; I/J/C
+// open Chrome's DevTools from Ctrl+Shift+ and never reach the page.
+const RESERVED_CODES = new Set([
+  'KeyW', 'KeyT', 'KeyN', 'KeyQ', 'KeyM', 'KeyH', 'KeyI', 'KeyJ', 'KeyC',
+]);
 
 // The app's own shortcuts. `run` closes over the injected hooks, which initInput
 // assigns later — it is only ever called from an event, so the binding is set by
@@ -1866,6 +1845,11 @@ registerAppShortcut({
   run: () => toggleVibesZoom(),
 });
 registerAppShortcut({
+  code: 'KeyP', label: 'Retro Vibes promo mode',
+  run: () => toggleVibesPromo?.(),
+});
+// Developer-only; on the same chord as the rest.
+registerAppShortcut({
   code: 'KeyS', label: 'Debug snapshot',
   run: () => { if (machine) downloadSnapshot(); },
 });
@@ -1878,16 +1862,19 @@ document.addEventListener('keydown', e => {
   // A focused text field (e.g. the Fetch-ROMs URL inputs) owns its own keys —
   // never map them onto the C64 matrix, or typing/paste there both leak to the
   // emulator and get preventDefault'd (which blocks the browser's own paste).
-  // Read up here because the accelerator below needs it too; the matrix bail-out
-  // is still further down, so Cmd+S keeps working with a field focused.
+  // Read up here because the accelerator below needs it too: with a field
+  // focused the chord stands down, so Cmd+Shift+V and Ctrl+Shift+V still paste
+  // into the field the way the host means them to.
   const _kt = e.target;
   const _inField = !!(_kt && (_kt.tagName === 'INPUT' || _kt.tagName === 'TEXTAREA' || _kt.isContentEditable));
 
   // App shortcuts, from the registry above. Dispatched ahead of the matrix
   // mapping because every letter we use is also a C64 key — reached by that
-  // mapping, Alt+F would type an F — and ahead of the `running` gate, so a
-  // halted machine can still be inspected.
-  if (_appAccel(e, _inField)) {
+  // mapping, Ctrl+Shift+F would type an F — and ahead of the `running` gate, so
+  // a halted machine can still be inspected. Only the bound letter is taken: the
+  // Ctrl and Shift of the chord reach the matrix as themselves, so every other
+  // Ctrl / Ctrl+Shift combination still belongs to the C64.
+  if (appAccel(e, _inField)) {
     const hit = APP_SHORTCUTS.find(s => s.code === e.code);
     if (hit) {
       e.preventDefault();
@@ -1897,6 +1884,15 @@ document.addEventListener('keydown', e => {
   }
 
   if (_inField) return;
+
+  // Cmd is not a C64 key, so a Cmd chord that isn't one of ours is not the
+  // machine's either. Bailing out here matters most on macOS, where the browser
+  // swallows the keyup of a letter pressed with Cmd held: routed to the matrix,
+  // Cmd+V would press V on the C64 and never release it. Leaving the keydown
+  // alone also lets the browser raise its own `paste` event, which main.js
+  // listens for — so Cmd+V still pastes, by the host's route rather than ours.
+  // Ctrl is untouched by this: it IS a C64 key and keeps working as one.
+  if (e.metaKey) return;
 
   if (!running) return;
 
@@ -2257,5 +2253,6 @@ document.addEventListener('pointerlockchange', () => {
 
 // ── Dependency injection ─────────────────────────────────────────────────────
 export function initInput(deps) {
-  ({ downloadSnapshot, clearPendingPaste, cycleCrtEffect, toggleVibesZoom, pasteFromShortcut } = deps);
+  ({ downloadSnapshot, clearPendingPaste, cycleCrtEffect, toggleVibesZoom, pasteFromShortcut,
+     toggleVibesPromo } = deps);
 }

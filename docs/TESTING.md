@@ -276,7 +276,7 @@ machine.reset()                          // cold boot / power cycle (regenerates
 ```
 
 ```js
-// VIC frame trace: enrich the Cmd+S snapshot with whole-frame + per-raster
+// VIC frame trace: enrich the debug snapshot with whole-frame + per-raster
 // data (see "VIC frame trace and state snapshots" below for workflow + perf).
 c64Trace.enable() / .disable() / .status()
 
@@ -375,9 +375,9 @@ inside music locks onto tune transients. Measure on the BASIC prompt for a
 clean baseline, and note that the recorder taps upstream of the output device, so
 device latency shows up live but never in the file.
 
-### VIC frame trace and state snapshots (Cmd+S)
+### VIC frame trace and state snapshots (Cmd+Shift+S)
 
-**`Alt+S` / `Alt+Shift+S`, or `Cmd+S` on macOS,** downloads a debug snapshot of the machine: a `c64-snapshot-<timestamp>.json` state dump plus a sibling `c64-snapshot-<timestamp>.png` of the rendered frame. It is handled *before* the "is the machine running" gate, so a JAMmed or paused machine can still be inspected. The JSON embeds the same PNG as `framebufferPng`, so the one file is self-contained; the sibling `.png` is just for quick preview. (Bound in `input.js`; the download itself is `downloadSnapshot()` in `media.js`.)
+**`Cmd+Shift+S` on macOS, `Ctrl+Shift+S` elsewhere** (both work on either), downloads a debug snapshot of the machine: a `c64-snapshot-<timestamp>.json` state dump plus a sibling `c64-snapshot-<timestamp>.png` of the rendered frame. It is handled *before* the "is the machine running" gate, so a JAMmed or paused machine can still be inspected. The JSON embeds the same PNG as `framebufferPng`, so the one file is self-contained; the sibling `.png` is just for quick preview. (Bound in `input.js`; the download itself is `downloadSnapshot()` in `media.js`.)
 
 The snapshot's `vicFrameDebug` block is where the VIC frame trace lands: per-pixel `borderBuffer` / `graphicsPriorityBuffer` / `spriteOwnerBuffer` maps plus per-line register and flag traces (`frameTraceHBorder`, `frameTraceVBorder`, `frameTraceLineD011`, `frameTraceLineD016`, `frameTraceLineD015`, …), indexed `raster * 64 + cycle`. Combined with `framebufferPng` this answers questions like "is this side-border garbage the border being *open* or *closed*?" pixel by pixel.
 
@@ -386,7 +386,7 @@ The snapshot's `vicFrameDebug` block is where the VIC frame trace lands: per-pix
 ```js
 c64Trace.enable()    // start accumulating whole-frame trace data
 // …run the demo to the exact moment of interest…
-// press Cmd+S / Alt+S to download the snapshot (JSON + PNG)
+// press Cmd+Shift+S / Ctrl+Shift+S to download the snapshot (JSON + PNG)
 c64Trace.disable()   // stop, restore the fast path
 c64Trace.status()    // check whether it's currently capturing
 ```

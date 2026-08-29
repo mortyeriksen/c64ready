@@ -140,6 +140,7 @@ available over the 3D scene.
 | **⛶** | Glides the camera to a head-on view that fills the frame with the monitor, a virtual fullscreen. Drag or scroll to break out of it. |
 | **🥽 ENTER VR** | View in VR (shown when a headset or the WebXR emulator is available). |
 | **ⓘ model credit** | Shows attribution for the 3D model. |
+| **Cmd+Shift+P** / **Ctrl+Shift+P** | Promo mode: hides everything else in this table and leaves the scene alone with the C64 READY. logo, for screenshots and video. The same keys bring the controls back. It is remembered, so the scene reopens the way you left it. |
 | **✕** or **Esc** | Close and return to the emulator. |
 
 ### Scenes
@@ -761,19 +762,22 @@ you choose **Reload** (or relaunch later).
 
 ### App shortcuts
 
-Hold **Cmd** on a Mac, or **Alt** (or **Alt+Shift**) on Windows and Linux. All
-three work on every platform; they are simply what macOS, Chrome and Firefox
-each use for a shortcut belonging to the page. **Ctrl** is never used, because
-it is a real C64 key and the machine needs it.
+Hold **Cmd+Shift** on a Mac, or **Ctrl+Shift** on Windows and Linux. Both work
+on every platform.
 
 | With the modifier | Action |
 | --- | --- |
 | **V** | Pastes the clipboard into the C64 as keystrokes, same as **PASTE**. |
 | **F** | Cycles the CRT look, same as the CRT button in [Options](#options). |
 | **Z** | Zooms the VIBES button to 10x, so the little pixel demo running inside it can be watched properly: magnified, and running at your display's refresh rate. It stays a working button: clicking it opens [Retro Vibes](#retro-vibes). Press it again (or **Esc**) to send it back. |
+| **P** | Opens [Retro Vibes](#retro-vibes) in promo mode — the 3D scene and the C64 READY. logo, nothing else. Press it again to bring the controls back. The mode is remembered between visits. |
+
+Only those letters are borrowed. **Ctrl** on its own is a real C64 key and still
+reaches the machine, and a text box keeps its own keys.
 
 The same list is in the **KEY MAP** dialog under *App shortcuts*, which is
-generated from the shortcuts themselves and so is always current.
+generated from the shortcuts themselves and so is always current. It adds
+**S** — a debug snapshot, handy when reporting a bug.
 
 ### Reserved keys
 

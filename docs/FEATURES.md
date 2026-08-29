@@ -94,9 +94,10 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **Paste**: type clipboard text or a BASIC listing straight into the machine.
 - **PETSCII directory listings**: disk directories render through the real
   character ROM, so custom cracker-art charsets display correctly.
-- **App shortcuts**: **Cmd** on a Mac, **Alt** (or **Alt+Shift**) on Windows and
-  Linux, for paste, the CRT look and more; the **KEY MAP** dialog lists them.
-  **Ctrl** is left to the C64.
+- **App shortcuts**: **Cmd+Shift** on a Mac, **Ctrl+Shift** on Windows and Linux
+  — both work everywhere — for paste, the CRT look, the VIBES zoom and Retro
+  Vibes promo mode; the **KEY MAP** dialog lists them. Only those letters are
+  borrowed; **Ctrl** on its own is still the C64's.
 
 ## Disk drives
 
@@ -230,6 +231,8 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   IK+ sunset, 80s bedroom).
   Opened with the **VIBES** button in Controls (icon: a retro sun in the ⛶
   fullscreen brackets); double-click the model to power on, **Esc** / ✕ to return.
+  **Cmd+Shift+P** / **Ctrl+Shift+P** is promo mode: every control disappears and
+  the scene is left with just the C64 READY. logo, for screenshots and video.
   On a WebXR device an **🥽 Enter VR** button appears to step into the scene in
   stereo with head tracking (experimental, see the note below).
 - **VR (WebXR), experimental**: if the browser reports a headset (or the WebXR
@@ -252,7 +255,7 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   back. The handles work from the keyboard too, and **Options ▸ Display** resets
   everything, hidden cards included.
 - **VIBES button demo**: a small pixel demo runs inside the VIBES button itself;
-  **Cmd+Z** / **Alt+Z** zooms it to ten times the size. Switch it off in
+  **Cmd+Shift+Z** / **Ctrl+Shift+Z** zooms it to ten times the size. Switch it off in
   Options ▸ Other.
 - **Powered-off attract animation**: an animated idle screen (toggleable).
 - **About**: a short in-app project note, with full specifications, source

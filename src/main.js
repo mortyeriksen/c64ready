@@ -1982,7 +1982,7 @@ document.addEventListener('fullscreenchange', () => {
   if (sidNode) sidNode.port.postMessage({ type: 'resync' });
 });
 
-// Assigned by the CRT block below so input.js can drive it from Cmd+F; the mode
+// Assigned by the CRT block below so input.js can drive it from the shortcut; the mode
 // state stays scoped to that block.
 let _cycleCrtEffect = () => {};
 
@@ -2027,7 +2027,8 @@ let _cycleCrtEffect = () => {};
     try { localStorage.setItem('c64emu.crtMode', crtMode); } catch {}
   };
   if (crtEffectBtn) crtEffectBtn.addEventListener('click', cycle);
-  // Cmd+F is bound in input.js, next to Cmd+S — see initInput below.
+  // Cmd+Shift+F is bound in input.js, next to the snapshot shortcut — see
+  // initInput below.
   _cycleCrtEffect = cycle;
 }
 
@@ -2164,7 +2165,7 @@ if (vibesBtn) vibesBtn.addEventListener('click', async () => {
 // switchable from Options ▸ Display and persisted; default ON.
 const vibesBtnFx = attachVibesButtonFx(vibesBtn);
 
-// Cmd+Z zooms that button to 10x in a dialog. Wired through
+// Cmd+Shift+Z zooms that button to 10x in a dialog. Wired through
 // input.js's shortcut table, since Z is also a C64 key.
 const vibesZoom = createVibesZoom(vibesBtn, vibesZoomModal, vibesZoomStage, vibesZoomClose);
 if (vibesFxBtn && vibesBtnFx) {
@@ -2178,7 +2179,7 @@ if (vibesFxBtn && vibesBtnFx) {
   _syncFxLabel();
   const _applyFx = () => {
     vibesBtnFx.setEnabled(fxEnabled);
-    vibesZoom?.setFxEnabled(fxEnabled);   // the Cmd+Z zoom shows the same button
+    vibesZoom?.setFxEnabled(fxEnabled);   // the zoom shows the same button
   };
   _applyFx();
   vibesFxBtn.addEventListener('click', () => {
@@ -2362,8 +2363,8 @@ document.addEventListener('keydown', e => {
 
 
 // Read the clipboard and queue it into the C64 keyboard buffer. Shared by the
-// PASTE button and the Cmd/Ctrl+V shortcut (both use the async Clipboard API,
-// so the shortcut behaves identically to the button).
+// PASTE button and the Cmd+Shift+V / Ctrl+Shift+V shortcut (both use the async
+// Clipboard API, so the shortcut behaves identically to the button).
 async function _pasteFromClipboard() {
   if (!running) return;
   try {
@@ -2376,10 +2377,10 @@ async function _pasteFromClipboard() {
   }
 }
 
-// Dedupe guard: a single Cmd/Ctrl+V can fire BOTH our keydown shortcut and a
-// native 'paste' event. Whichever runs first claims a short window; the other
-// skips, so text is queued once. Right-click → Paste has no keydown, so it
-// still claims via the paste event.
+// Dedupe guard: one keystroke can fire BOTH our keydown shortcut and a native
+// 'paste' event. Whichever runs first claims a short window; the other skips, so
+// text is queued once. Right-click → Paste and (on macOS) a plain Cmd+V have no
+// shortcut of ours behind them, so they claim via the paste event alone.
 let _pasteGuardUntil = 0;
 function _pasteClaim() {
   const now = performance.now();
@@ -2391,17 +2392,18 @@ function _pasteClaim() {
 if (pasteBtn) pasteBtn.addEventListener('click', _pasteFromClipboard);
 
 // The paste shortcut itself is registered in input.js (see pasteFromShortcut in
-// the initInput deps below), alongside every other app shortcut. Ctrl+V is
+// the initInput deps below), alongside every other app shortcut. Plain Ctrl+V is
 // deliberately not bound: Ctrl is a real C64 key, and the native `paste` event
 // below cannot cover for it either, because the matrix handler consumes that
-// keydown before the browser would raise one.
+// keydown before the browser would raise one. Plain Cmd+V needs no binding — the
+// matrix router leaves Cmd chords alone, so the browser raises `paste` itself.
 
 
 
 document.addEventListener('paste', e => {
   if (!running) return;
   if (isEditableTarget(e.target)) return;
-  if (!_pasteClaim()) return;   // already handled by the Cmd/Ctrl+V shortcut
+  if (!_pasteClaim()) return;   // already handled by the paste shortcut
   const text = e.clipboardData?.getData('text/plain') || '';
   const queued = queuePastedTextAndReport(text);
   if (queued > 0) {
@@ -2806,7 +2808,7 @@ setTimeout(() => {
 
 // ── Wire input.js ────────────────────────────────────────────────────────────
 // input.js registered its keyboard/joystick/mouse listeners at import; inject the
-// two core hooks it needs — Cmd+S snapshot download (from media.js) and clearing
+// two core hooks it needs — the debug-snapshot download (from media.js) and clearing
 // the keyboard paste buffer on focus loss.
 initInput({
   cycleCrtEffect: () => _cycleCrtEffect(),
@@ -2817,6 +2819,14 @@ initInput({
   // clipboard plumbing is here; _pasteClaim keeps it from doubling up with the
   // native `paste` event below when the browser raises both.
   pasteFromShortcut: () => { if (running && _pasteClaim()) _pasteFromClipboard(); },
+  // Promo mode strips Retro Vibes to the scene and the logo. From a closed
+  // viewer the shortcut opens it straight into promo, which is what someone
+  // reaching for it actually wants — one keystroke to a clean frame.
+  toggleVibesPromo: async () => {
+    const mv = await _ensureModelViewer();
+    if (mv.isOpen()) mv.togglePromo();
+    else { mv.open(); mv.setPromo(true); }
+  },
 });
 
 // ── Wire media.js ────────────────────────────────────────────────────────────

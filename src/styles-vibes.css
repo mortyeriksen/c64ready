@@ -292,6 +292,45 @@
 }
 .model-viewer-credit-popup a:hover { text-decoration: underline; }
 
+/* ── Promo mode (Cmd+Shift+P / Ctrl+Shift+P) ─────────────────────────────────
+   Strips the viewer for screenshots and video: every control and caption goes,
+   leaving the scene and the C64 READY. logo in the top-right corner. The logo
+   only exists in this mode, so it is display:none by default rather than
+   sitting invisible over the scene the rest of the time. The loading caption is
+   deliberately NOT hidden — entering promo straight from a closed viewer would
+   otherwise be a black screen with no sign that the model is on its way. */
+.model-viewer-promo-logo { display: none; }
+
+.model-viewer-overlay.promo .model-viewer-hint,
+.model-viewer-overlay.promo .model-viewer-credit,
+.model-viewer-overlay.promo .model-viewer-scene,
+.model-viewer-overlay.promo .model-viewer-fullscreen,
+.model-viewer-overlay.promo .model-viewer-vr,
+.model-viewer-overlay.promo .model-viewer-close,
+.model-viewer-overlay.promo .touch-controls {
+  display: none;
+}
+
+.model-viewer-overlay.promo .model-viewer-promo-logo {
+  display: block;
+  position: absolute;
+  top: 26px;
+  right: 30px;
+  z-index: 3;
+  width: clamp(150px, 22vw, 330px);
+  height: auto;
+  pointer-events: none;
+  opacity: 0.92;
+  filter: drop-shadow(0 2px 14px rgba(0, 0, 0, 0.55));
+}
+
+@media (max-width: 720px) {
+  .model-viewer-overlay.promo .model-viewer-promo-logo {
+    top: 14px;
+    right: 16px;
+  }
+}
+
 body.fullscreen-mode {
   padding: 0;
   overflow: hidden;

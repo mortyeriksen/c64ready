@@ -14,7 +14,7 @@ import { machine } from './state.js';
 // Frame-trace toggles. The per-raster trace capture in vic2.js is gated by
 // vic.frameTraceEnabled (default off). Expose console-callable enable/disable
 // so the user can flip it on, run the demo to a moment of interest, hit
-// CMD+S, then turn it off again — without paying the per-frame cost in
+// Cmd+Shift+S, then turn it off again — without paying the per-frame cost in
 // normal use.
 //
 // Usage from DevTools console:

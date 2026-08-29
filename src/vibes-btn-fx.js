@@ -2,8 +2,8 @@
 // Copyright © 2026 Morten Øien Eriksen
 // src/vibes-btn-fx.js — the small pixel demo inside the VIBES button: ten sine
 // patterns of dark dots, painted through a perspective divide so they move in
-// depth. Decoration only, switchable from Options ▸ Display, and Cmd+Z (Alt+Shift+Z
-// off macOS) blows the whole button up to 10x in a dialog.
+// depth. Decoration only, switchable from Options ▸ Display, and Cmd+Shift+Z
+// (Ctrl+Shift+Z off macOS) blows the whole button up to 10x in a dialog.
 //
 // Three parts: the field maths, the painter, and the zoom.
 
@@ -446,7 +446,7 @@ export function attachVibesButtonFx(btn, { manual = false, fps = FPS, timeScale 
   return { start, stop, setEnabled, setResolution, remeasure };
 }
 
-// ── Zoom (Cmd+Z) ─────────────────────────────────────────────────────────────
+// ── Zoom (Cmd+Shift+Z) ─────────────────────────────────────────────────────────────
 // The live button is cloned and magnified; it stays a working button. 10x is
 // capped to what the viewport holds.
 //
@@ -501,7 +501,7 @@ export function createVibesZoom(btn, modal, stage, closeBtn) {
   let field = null;      // its dot field
   let lastFocus = null;  // what to hand focus back to on close
   let scale = ZOOM;      // the zoom actually in use (viewport-capped)
-  let closing = false;   // mid-flight home; a second Cmd+Z turns it around
+  let closing = false;   // mid-flight home; a second Cmd+Shift+Z turns it around
   let fx = true;         // mirrors Options ▸ Display, so the zoom shows the
                          // same button the panel does
 
