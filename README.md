@@ -21,38 +21,40 @@
 ██████████████████████████████████████████████████████████████████████████████████████████████
 ```
 
-> A cycle-exact Commodore 64, emulated from the silicon up and running entirely in your browser. No plugins, no installs.
-
 ## What it is
 
-A Commodore 64 rebuilt from scratch in modern JavaScript: the 6510 CPU with every
-illegal opcode, raster-level VIC-II, both SID chips (6581 & 8580), CIA timers, and a
-true 1541 drive that runs the nastiest custom fastloaders. Drop in a `.d64`, `.prg`,
-`.tap`, `.wav`, `.crt`, or `.reu` and go. It installs as an app and runs offline, on desktop or phone.
+The Commodore 64 is where a lot of us learned that a computer does wonderful things. Real
+hardware and emulators have kept it running for forty years; C64 READY. is an attempt to
+keep it going. Open a link and it runs on your phone or your desktop computer. No app download,
+no native install. Drop in a game or demo, and go!
 
-What makes it different: it is not a VICE source port. Every chip is written from scratch
-and then held to real hardware, using VICE as a differential oracle alongside the Lorenz
-and Klaus Dormann test suites, C64 hardware test programs, and real games and demos. The
-result is checked by 2,400+ tests that live in this repository.
+If you were there the first time, it should feel like sitting back down at your breadbin:
+the drive chattering, the border flashing under a fastloader, a proper CRT glow instead of
+flat pixels. If you weren't, it should be worth a look anyway. You get the whole machine on
+your desk in 3D or even VR.
+
+Underneath, it is a real emulator. Every chip is written from specs in modern JavaScript and WASM (SID),
+then held to real hardware, with VICE as an oracle alongside the Lorenz and Klaus Dormann
+test suites, C64 hardware test programs, and real games and demos. 2,400+ tests in this repository keep
+it that way.
 
 **▶ Play it live at [c64ready.com](https://www.c64ready.com)**
 
 ![C64 READY. emulator overview.](public/screens/c64rdy-emulator-v4.png)
 
-![C64 READY. running in the Retro Vibes 3D viewer, the live emulator picture on a modelled 1702 monitor.](public/screens/c64rdy-3d-vibes-v4.webp)
-
 ## Features
 
-- **Cycle-exact** 6510 CPU (full illegal-opcode set), raster-level VIC-II, and both SID revisions (6581 & 8580) on a reSID engine compiled to WebAssembly
-- **True 1541 drive**: real `.d64` images (35-, 40- and 42-track, error tables honoured), custom fastloaders, and disk writing: `SAVE`, format and scratch through the real DOS
-- Loads `.prg`, `.d64`, `.tap`, `.wav`, `.crt` (generic, Action Replay, Final Cartridge III, Magic Desk, EasyFlash), and `.reu`
-- **RAM Expansion Unit**: fit a 1700, 1764, 1750, 1750 XL or a generic unit up to 16 MB, fill it from a `.reu` image and save it back out
-- **Datasette** that reads *and* writes: `SAVE` to tape, turbo savers included, and tapes move in and out as `.wav` cassette audio
-- Joystick / gamepad, 1351 & NEOS mouse, Paddle, Touch joystick, and two Key Joysticks across the control ports
-- Full-machine save / load state, video recording, Retro Vibes 3D scenes (with WebXR VR)
-- Cosmetic CRT display modes, installable & offline (PWA)
+- **Get started quickly**: it runs in the browser, and installs as an app on desktop or phone if you want (with offline support)
+- **Cycle-exact**: the 6510, VIC-II, both SIDs and a true 1541 with its own CPU, so the hard demos and custom fastloaders run
+- **Retro Vibes**: the C64, drive and monitor as a 3D model with your live screen on the glass, in five nostalgic scenes
+- **Load anything**: drop a `.d64`, `.prg`, `.tap`, `.wav`, `.dmp`, `.crt` or `.reu` on the screen and it works out the rest
+- **Play it the way you like**: a gamepad in either port, the keyboard, or a touch joystick on your phone
+- **Make it yours**: arrange the side-panel cards or hide the ones you never touch
+- **Your old cassettes may play again**: automatic recovery functionality for your old tapes, both originals and turbo compilations
+- **RAM Expansion**: a 1700, 1764, 1750, 1750 XL or up to 16 MB, for the demos that ask for it
+- **Keep and share**: named save states with instant load, and MP4 recording of the whole window
 
-→ [Full feature list](docs/FEATURES.md)
+→ [Full feature list](docs/FEATURES.md) · [What's new](docs/WHATS-NEW.md)
 
 ## Getting started
 
@@ -123,16 +125,16 @@ Hosted at **[c64ready.com/docs](https://www.c64ready.com/docs/)**; sources in [`
 │   ├── memory.js     # RAM / ROM / PLA banking
 │   ├── drive1541.js  # true 1541 drive (+ d64.js, gcr.js)
 │   ├── reu.js        # RAM Expansion Unit, the 8726 REC as a second bus master
+│   ├── cartridges/   # .crt types: generic, Action Replay, Final Cartridge III, Magic Desk, EasyFlash
 │   └── …             # datasette, control ports, CRT, input, UI, Retro Vibes
 ├── rust/             # reSID engine in Rust, compiled to the WebAssembly SID
 ├── docs/             # Markdown docs, compiled to HTML by tools/build-docs.mjs
 ├── test/             # unit + spec + hardware-testprog suites (npm test)
-├── public/           # static assets: fonts, icons, 3D models, screenshots, compiled docs
-├── tools/            # build + dev tooling: docs compile, screenshot & perf harnesses
-├── index.html        # app entry point
-├── vite.config.js    # dev server + production build
-├── LICENSE           # GPL-3.0-or-later
-└── NOTICE.txt        # third-party attributions
+├── public/           # fonts, icons, logos, screenshots, guide media, compiled docs
+├── tools/            # build + dev tooling: docs compile, WASM embed, screenshot & perf harnesses
+├── dist/             # npm run build output, ready to serve (git-ignored)
+├── roms/             # your own C64 ROMs, read by npm test (git-ignored)
+└── index.html        # app entry point
 ```
 
 ## Reporting a problem
@@ -147,9 +149,11 @@ your browser and OS. A screenshot or short recording helps a lot.
 
 ## How it was built
 
-C64 READY. was developed with extensive generative-AI assistance. The maintainer directs
-the architecture, verification, releases and maintenance. Correctness is evaluated through
-reproducible tests, differential comparison with VICE and real C64 software.
+C64 READY. was developed with extensive generative-AI assistance, and would not exist
+without it: a project this size was not a spare-time undertaking a few years ago. The
+maintainer directs the architecture, verification, releases and maintenance. Correctness is
+evaluated through reproducible tests, differential comparison with VICE and real C64
+software.
 
 ## Acknowledgements
 
@@ -175,3 +179,5 @@ materials (the fonts, the 3D model, three.js and Workbox) remain under their own
 they and the reSID lineage of the SID engine are attributed in [`NOTICE.txt`](NOTICE.txt).
 The Commodore / MOS ROMs are copyrighted by their rights holders and are **not** included.
 Supply your own.
+
+![C64 READY. running in the Retro Vibes 3D viewer, the live emulator picture on a modelled 1702 monitor.](public/screens/c64rdy-3d-vibes-v4.webp)
