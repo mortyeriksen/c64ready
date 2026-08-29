@@ -28,6 +28,9 @@ npm test        # the full test suite
 npm run build   # production build
 ```
 
+`npm install` prints a deprecation warning about `glob` (pulled in by a build-only
+dependency, `vite-plugin-pwa` → `workbox-build`). It is expected and harmless.
+
 See [Getting started](docs/GETTING-STARTED.md) and [Testing](docs/TESTING.md) for more.
 
 ## Making changes
