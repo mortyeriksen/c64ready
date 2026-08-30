@@ -116,6 +116,13 @@ async function _ensurePauseDemo() {
   if (!_pauseDemoPromise) _pauseDemoPromise = (async () => {
     const { PauseDemo } = await import('./pausedemo.js');
     pauseDemo = new PauseDemo(document.querySelector('.crt-bezel'));
+    // The demo measures itself: if this GPU can't hold a frame rate, it stops and
+    // says so, and the powered-off screen goes back to the static banner.
+    pauseDemo.onTooSlow = (medianMs) => {
+      console.info(`PauseDemo: ~${medianMs}ms/frame — falling back to the boot banner.`);
+      try { localStorage.setItem(ATTRACT_CAPABLE_KEY, `no:${VERSION}`); } catch { /* storage off */ }
+      if (!running) _startBootHint();
+    };
     if (typeof window !== 'undefined') window.pauseDemo = pauseDemo;
     return pauseDemo;
   })();
@@ -128,6 +135,18 @@ let attractModeEnabled = (() => {
   try { const v = localStorage.getItem('c64emu.attractMode'); return v === null ? true : v === 'on'; }
   catch { return true; }
 })();
+// A looping vector demo is the kind of motion prefers-reduced-motion asks us not
+// to play, so the static banner stands in — same as attract mode off.
+const _reducedMotion = () =>
+  !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+// Machines whose GPU couldn't hold a frame rate get the banner too, remembered so
+// the next visit doesn't make them sit through the demo again to find out. Stamped
+// with the version: a new build re-tests, since a driver or a machine can change.
+const ATTRACT_CAPABLE_KEY = 'c64emu.attractCapable';
+const _attractCapable = () => {
+  try { return localStorage.getItem(ATTRACT_CAPABLE_KEY) !== `no:${VERSION}`; }
+  catch { return true; }
+};
 
 // The "PRESS ⏻ POWER TO BOOT" boot banner — shown while the machine is off and
 // attract mode is disabled. Styled to match the attract demo's own banner (Giana
@@ -246,7 +265,7 @@ function _showPoweredOffScreen() {
     _startBootHint();
     return;
   }
-  if (!attractModeEnabled) {
+  if (!attractModeEnabled || _reducedMotion() || !_attractCapable()) {
     pauseDemo?.stop();   // halt a running demo (e.g. attract toggled off live)
     _startBootHint();    // pulsing "PRESS ⏻ POWER TO BOOT" banner
     return;
@@ -269,6 +288,9 @@ function _showPoweredOffScreen() {
     }
   }).catch(() => {});
 }
+window.matchMedia?.('(prefers-reduced-motion: reduce)')
+  ?.addEventListener?.('change', () => { if (!running) _showPoweredOffScreen(); });
+
 // First visit, splash overlay up: it covers the screen, so skip the powered-
 // off render (and the attract demo's lazy three.js fetch) until it's
 // dismissed. "Explore" lands here still powered off; POWER ON boots before

@@ -258,7 +258,10 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **VIBES button demo**: a small pixel demo runs inside the VIBES button itself;
   **Cmd+Shift+Z** / **Ctrl+Shift+Z** zooms it to ten times the size. Switch it off in
   Options ▸ Other.
-- **Powered-off attract animation**: an animated idle screen (toggleable).
+- **Powered-off attract animation**: an animated idle screen (toggleable). It
+  bows out by itself where it would cost more than it is worth: under
+  `prefers-reduced-motion`, on software WebGL, and on any GPU that cannot hold
+  the frame rate — the static boot hint takes over.
 - **About**: a short in-app project note, with full specifications, source
   material, and credits in the docs.
 

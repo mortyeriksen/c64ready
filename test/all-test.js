@@ -103,6 +103,7 @@ const TESTS = [
   'test/soft-keyboard-spec-test.js',
   'test/input-key-ownership-spec-test.js',
   'test/app-accel-spec-test.js',
+  'test/frame-rate-guard-spec-test.js',
   'test/vic2-sprite-x-comparator-spec-test.js',
   'test/vic2-frame-boundary-spec-test.js',
   'test/via6522-spec-test.js',

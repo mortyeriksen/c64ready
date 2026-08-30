@@ -626,7 +626,7 @@ ROM management. All choices persist in this browser.
 | Button | What it does |
 | --- | --- |
 | **🖥 CRT** | Cycles the CRT visual effect: **ON** (basic scanlines) → **TUBE** (phosphor mask + vignette + glow) → **B&W** (monochrome tube) → **ARCADE** (bright, sharp scanlines) → **HUM** (tube look with a slow rolling mains-hum bar) → **OFF** (flat, crisp pixels). |
-| **ATTRACT MODE** | On by default: plays an animated attract-mode demo on the screen while the machine is powered off. Turn it off to show a simple "press power to boot" hint instead. |
+| **ATTRACT MODE** | On by default: plays an animated attract-mode demo on the screen while the machine is powered off. Turn it off to show a simple "press power to boot" hint instead. It also steps aside on its own if your system asks for reduced motion, or the machine has no GPU to spare, you get the hint instead. |
 | **3D MODEL** | Which model the VIBES viewer loads: **SMALL** (default, a light model that's easy on memory everywhere), **AUTO** (picks by device: lighter on phones/tablets, detailed 4K on desktop), or **LARGE** (force the 4K model). Takes effect next time you open VIBES. |
 | **STAY AWAKE** | Keeps the screen awake while a demo runs, so the device doesn't dim or lock (which would pause the emulator). |
 | **VIBES BUTTON FX** | On by default: runs a tiny demo inside the VIBES button itself: a field of dark pixels drifting through ten sine patterns in 3D. Turn it off for a plain button. |

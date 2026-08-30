@@ -29,6 +29,7 @@
 // A depth-shaded starfield flies toward the camera underneath all acts.
 
 import * as THREE from 'three';
+import { frameRateVerdict } from './frame-rate-guard.js';
 
 // Internal resolution (4:3) upscaled to the bezel. Kept low for the chunky
 // pixel look, but at 640×480 (was 320×240) so the centred "PRESS POWER TO BOOT
@@ -128,6 +129,18 @@ const ACTS = [
 const LOOP_LEN = ACTS.reduce((s, a) => s + a.dur, 0);
 const FADE = 1.3; // seconds of fade-in / fade-out at each act boundary
 
+// Software WebGL (SwiftShader, llvmpipe, Microsoft Basic Render) runs this on
+// the CPU. Nothing here is worth that, so the demo never starts. Firefox masks
+// the string and returns '' — unknown means "let the frame-rate guard below
+// decide", which is the honest answer for a GPU we can't identify.
+function _softwareRenderer(gl) {
+  try {
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || '') : '';
+    return /swiftshader|llvmpipe|softpipe|software|basic render/i.test(name);
+  } catch { return false; }
+}
+
 function smoothstep(e0, e1, x) {
   const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
   return t * t * (3 - 2 * t);
@@ -147,13 +160,18 @@ export class PauseDemo {
     // the user turns Attract Mode off (Settings ▸ Display). Initialised here so
     // start({bannerOnly}) never adds a property post-construction.
     this._bannerOnly = false;
+    // Set by main.js: called once if the frame-rate guard gives up, so the
+    // powered-off screen can fall back to the static banner and remember it.
+    this.onTooSlow = null;
+    this._frames = [];      // recent frame times (ms), collected after warm-up
+    this._guarded = false;  // the guard runs once per page, not once per start()
     try {
       this._init();
       this.supported = true;
     } catch (err) {
       // No WebGL (or context creation failed): degrade to a no-op. The black
       // #screen canvas beneath simply stays black.
-      console.warn('PauseDemo: WebGL unavailable — vector demo disabled.', err);
+      console.warn('PauseDemo: no hardware WebGL — vector demo disabled.', err);
     }
   }
 
@@ -163,6 +181,11 @@ export class PauseDemo {
       alpha: false,
       powerPreference: 'low-power',
     });
+    if (_softwareRenderer(renderer.getContext())) {
+      try { renderer.forceContextLoss(); } catch { /* not fatal */ }
+      renderer.dispose();
+      throw new Error('software WebGL renderer');
+    }
     // Render at a fixed low resolution (set in _resize) and let CSS upscale it,
     // so pixel ratio stays 1 regardless of the display's DPR.
     renderer.setPixelRatio(1);
@@ -981,11 +1004,27 @@ export class PauseDemo {
   _loop(now) {
     if (!this.running) return;
     if (!this._last) this._last = now;
-    let dt = (now - this._last) / 1000;
+    const dtMs = now - this._last;
+    let dt = dtMs / 1000;
     this._last = now;
     if (dt > 0.05) dt = 0.05; // clamp after tab-switch / long stalls
     this._animate(dt);
+    if (!this._guarded && !this._checkFrameRate(dtMs)) return;   // gave up; stopped
     this._raf = requestAnimationFrame(this._loop);
+  }
+
+  // One frame's worth of the guard (see frame-rate-guard.js for the decision).
+  // Returns false once it has given up on this GPU, having already stopped.
+  _checkFrameRate(dtMs) {
+    this._frames.push(dtMs);
+    const verdict = frameRateVerdict(this._frames);
+    if (verdict === 'wait') return true;
+    this._guarded = true;                 // decided; never asked again this page
+    if (verdict === 'ok') return true;
+    const sorted = [...this._frames].sort((a, b) => a - b);
+    this.stop();
+    this.onTooSlow?.(Math.round(sorted[sorted.length >> 1]));
+    return false;
   }
 
   _resize() {
@@ -1007,6 +1046,7 @@ export class PauseDemo {
     if (!this.supported || this.running) return;
     this.running = true;
     this._last = 0;
+    if (!this._guarded) this._frames = [];   // fresh sample per attempt
     this.renderer.domElement.style.display = 'block';
     this._raf = requestAnimationFrame(this._loop);
   }

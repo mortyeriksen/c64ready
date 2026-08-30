@@ -127,7 +127,7 @@ handle lives in `dom.js`.
 | **cartridges/** | `cartridges/registry.js` + device modules | Hardware-type registry and cartridge-owned ROM/RAM banking, I/O, reset, freeze, and save-state behavior. |
 | **control-port.js** | `control-port.js` | DOM-free joystick / NEOS-mouse byte builders (used by `input.js`). |
 | **filelibrary.js** / **statelibrary.js** | `filelibrary.js` / `statelibrary.js` | Browser-local (IndexedDB) caches of loaded `.prg/.d64/.crt/.tap/.wav` and of save-states. |
-| **pausedemo.js** / **retrovibes.js** | `pausedemo.js` / `retrovibes.js` | Lazy-loaded three.js: the attract-mode animation, and the Retro Vibes 3D model viewer ([deep-dive](RETROVIBES-ARCHITECTURE.md)). |
+| **pausedemo.js** / **retrovibes.js** | `pausedemo.js` / `retrovibes.js` | Lazy-loaded three.js: the attract-mode animation, and the Retro Vibes 3D model viewer ([deep-dive](RETROVIBES-ARCHITECTURE.md)). The attract demo refuses software WebGL and measures its own frame rate (`frame-rate-guard.js`), handing the powered-off screen back to main.js's static boot hint when a GPU can't keep up. |
 
 ---
 
