@@ -8,6 +8,28 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
+## Next release
+
+*Not out yet — what is finished and waiting for the next version.*
+
+- **Shortcuts that stay out of the C64's way.** App shortcuts now take
+  **Cmd+Shift** on a Mac and **Ctrl+Shift** on Windows and Linux, both working
+  everywhere: **V** pastes, **F** cycles the CRT look, **Z** zooms the VIBES
+  button. **Ctrl** on its own stays the machine's, and text boxes keep their own
+  keys. The [KEY MAP](USER-GUIDE.md#key-map) dialog lists them.
+- **Studio mode for Retro Vibes.** **Cmd+Shift+P** / **Ctrl+Shift+P** strips the
+  [3D scene](USER-GUIDE.md#retro-vibes) to the machine and the C64 READY. logo —
+  no buttons, no pointer — for screenshots and video. Remembered between visits.
+- **A smoother welcome.** The **POWER ON** glow was redrawn on the processor
+  every frame; it now runs on the graphics card. Same look, none of the cost.
+  Thanks to the reader who
+  [reported it](https://github.com/mortyeriksen/c64ready/issues/1), fix included.
+- **The idle demo knows when to sit one out.** It steps aside for reduced-motion
+  settings, or graphics that can't keep up, leaving the "press power to boot"
+  hint. **ATTRACT MODE** in [Options](USER-GUIDE.md#options) still has the say.
+
+---
+
 ## 2026.8.6 — August 29, 2026
 
 **First public release of source code.** C64 READY. is now open source under the

@@ -71,15 +71,17 @@ is git-ignored and excluded from the PWA precache for that reason).
 - Every shipped source file gets the two-line SPDX/copyright header (`src/`,
   `docs/`, `index.html`, build config, `tools/*.mjs`); `test/` and
   `investigation/` only on request.
-- Bump `src/version.js` (`YEAR.MONTH.FIX`) only on request. In the same commit: a
-  user-facing summary as the newest section of `docs/WHATS-NEW.md` (plain
-  language, no internals — it is a published docs page), and `package.json`'s
-  `version` synced.
-- `docs/WHATS-NEW.md` is only ever touched by a version bump. A feature landing
-  between bumps does not get a What's New entry — it is written up when the next
-  version ships. Shipped sections are history and are never revised: each says
-  what that version did, so a later change to the same feature belongs in the
-  next section, not edited into the old one.
+- A user-facing change is written up in `docs/WHATS-NEW.md` as it lands, under
+  the **Next release** section at the top of the file — plain language, no
+  internals, since it is a published docs page. Add that section if it is gone
+  (a bump consumed it); leave it out when the change is invisible to users.
+- Bump `src/version.js` (`YEAR.MONTH.FIX`) only on request. In the same commit:
+  retitle **Next release** to `## <version> — <Month D, YYYY>`, write its lead
+  paragraph if the release deserves one, and sync `package.json`'s `version`.
+- Shipped sections are history and are never revised: each says what that version
+  did, so a later change to the same feature belongs in Next release, not edited
+  into the old one. Next release itself is still open — an entry there may be
+  rewritten or dropped until it ships.
 
 ## Test Methodology
 
