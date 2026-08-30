@@ -254,18 +254,30 @@ body.splash-open #splash {
   padding: 22px 44px;
   border: 0;
   border-radius: 6px;
+  position: relative;                           /* anchors the ::after glow */
   cursor: pointer;
   font-family: 'PetMe64', 'Share Tech Mono', monospace;
   font-size: clamp(0.95rem, 1.1vw + 0.5rem, 1.25rem);
   background: #a9ff9f;                          /* Colodore light green (VIC #13) — the authentic power green */
   color: #08240c;
-  box-shadow: 0 0 26px rgba(169, 255, 159, 0.55);
+  box-shadow: 0 0 16px rgba(169, 255, 159, 0.4);   /* the trough of the breath */
   transition: background 0.15s, transform 0.05s;
-  animation: splash-power-pulse 2.2s ease-in-out infinite;   /* soft LED breathing */
 }
-@keyframes splash-power-pulse {
-  0%, 100% { box-shadow: 0 0 16px rgba(169, 255, 159, 0.4); }
-  50%      { box-shadow: 0 0 36px rgba(169, 255, 159, 0.75); }
+/* Soft LED breathing: the bright end is a static shadow on a pseudo-element and
+   only its opacity animates. Animating box-shadow itself repainted every frame. */
+.splash-power-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 36px rgba(169, 255, 159, 0.75);
+  will-change: opacity;
+  animation: splash-power-glow 2.2s ease-in-out infinite;
+}
+@keyframes splash-power-glow {
+  0%, 100% { opacity: 0; }
+  50%      { opacity: 1; }
 }
 .splash-power-btn:hover { background: #c6ffbf; }
 .splash-power-btn:active { transform: translateY(1px); }
@@ -488,5 +500,6 @@ body.splash-open #splash {
 
 @media (prefers-reduced-motion: reduce) {
   body.splash-open #splash { transition: none; }
-  .splash-power-btn { transition: none; animation: none; box-shadow: 0 0 26px rgba(169, 255, 159, 0.55); }
+  .splash-power-btn { transition: none; box-shadow: 0 0 26px rgba(169, 255, 159, 0.55); }
+  .splash-power-btn::after { animation: none; opacity: 0; }
 }
