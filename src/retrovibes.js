@@ -134,10 +134,10 @@ const SCENE_KEY = 'c64emu.modelViewerScene';
 // Persisted idle-spin (auto-rotate) on/off, so the viewer reopens rotating or
 // standstill exactly as the user last left it.
 const ROTATE_KEY = 'c64emu.modelViewerAutoRotate';
-// Persisted promo mode (Cmd/Ctrl+Shift+P), so the viewer reopens as bare or as
+// Persisted Studio mode (Cmd/Ctrl+Shift+P), so the viewer reopens as bare or as
 // furnished as it was left — someone shooting a sequence of scenes should not
 // have to strip the chrome again on every open.
-const PROMO_KEY = 'c64emu.modelViewerPromo';
+const STUDIO_KEY = 'c64emu.modelViewerStudio';
 
 // ── Scenes ───────────────────────────────────────────────────────────────────
 // Each scene keeps the SAME model + camera; only the lighting, surroundings and
@@ -215,9 +215,9 @@ export class ModelViewer {
         return Number.isInteger(v) ? Math.min(Math.max(v, 0), SCENES.length - 1) : 0;
       } catch { return 0; }
     })();
-    // Promo mode (Cmd/Ctrl+Shift+P): remembered like the scene above.
-    this._promoWanted = (() => {
-      try { return localStorage.getItem(PROMO_KEY) === '1'; } catch { return false; }
+    // Studio mode (Cmd/Ctrl+Shift+P): remembered like the scene above.
+    this._studioWanted = (() => {
+      try { return localStorage.getItem(STUDIO_KEY) === '1'; } catch { return false; }
     })();
     this._sceneBtn = overlayEl.querySelector('.model-viewer-scene');
     if (this._sceneBtn) this._sceneBtn.addEventListener('click', () => this.nextScene());
@@ -1436,34 +1436,34 @@ export class ModelViewer {
     }
   }
 
-  // ── Promo mode ───────────────────────────────────────────────────────────
+  // ── Studio mode ───────────────────────────────────────────────────────────
   // Strips the viewer to the scene and the C64 READY. logo — no hint, no credit,
-  // no buttons — for screenshots and video. Everything hidden is CSS-only
-  // (.promo on the overlay), so the render loop, the camera and the live screen
+  // no buttons, no mouse pointer — for screenshots and video. Everything hidden is CSS-only
+  // (.studio on the overlay), so the render loop, the camera and the live screen
   // texture all carry on untouched.
   //
   // The shortcut is the only way in and out: Escape keeps its usual job of
-  // closing the viewer, promo or not, and takes no layer of its own.
-  // Remembered across opens, like the scene and the idle spin: `_promoWanted` is
-  // the preference, the .promo class is only how an OPEN viewer shows it. close()
+  // closing the viewer, in Studio mode or out of it, and takes no layer of its own.
+  // Remembered across opens, like the scene and the idle spin: `_studioWanted` is
+  // the preference, the .studio class is only how an OPEN viewer shows it. close()
   // strips the class without touching the preference, so the next open comes back
   // the way it was left.
-  isPromo() { return !!this.overlay?.classList.contains('promo'); }
+  isStudio() { return !!this.overlay?.classList.contains('studio'); }
 
-  setPromo(on) {
-    this._promoWanted = !!on;
-    try { localStorage.setItem(PROMO_KEY, on ? '1' : '0'); } catch { /* storage off */ }
-    this._applyPromo(on);
+  setStudio(on) {
+    this._studioWanted = !!on;
+    try { localStorage.setItem(STUDIO_KEY, on ? '1' : '0'); } catch { /* storage off */ }
+    this._applyStudio(on);
   }
 
-  togglePromo() { this.setPromo(!this.isPromo()); }
+  toggleStudio() { this.setStudio(!this.isStudio()); }
 
-  _applyPromo(on) {
-    if (!this.overlay || this.isPromo() === !!on) return;
+  _applyStudio(on) {
+    if (!this.overlay || this.isStudio() === !!on) return;
     // A control that is about to be display:none must not keep focus — the same
     // a11y rule close() follows when it hides the overlay.
     if (on && this.overlay.contains(document.activeElement)) document.activeElement.blur();
-    this.overlay.classList.toggle('promo', !!on);
+    this.overlay.classList.toggle('studio', !!on);
   }
 
   // ── Public API ───────────────────────────────────────────────────────────
@@ -1473,7 +1473,7 @@ export class ModelViewer {
     // handler could never express.
     this._escapeLayer ??= { close: () => this.close(), isOpen: () => this.isOpen() };
     pushEscapeLayer(this._escapeLayer);
-    this._applyPromo(this._promoWanted);   // promo, if that's how it was left
+    this._applyStudio(this._studioWanted);   // Studio mode, if that's how it was left
     if (this.onShow) this.onShow();
     // Pause + mute the machine up front: GL init, model load, scene build and the
     // first-frame shader compile all block the main thread; a running machine would
@@ -1506,10 +1506,10 @@ export class ModelViewer {
   }
 
   close() {
-    // The .promo class belongs to an OPEN viewer: drop it whichever way the close
+    // The .studio class belongs to an OPEN viewer: drop it whichever way the close
     // arrived — ✕, Escape, or the browser leaving fullscreen. The preference
     // behind it survives, and open() reapplies it.
-    this._applyPromo(false);
+    this._applyStudio(false);
     if (this._escapeLayer) popEscapeLayer(this._escapeLayer);
     if (this.overlay.hidden) return;   // idempotent — ✕, Esc, and fullscreenchange can all call this
     this._camTween = null;             // drop any in-flight fullscreen-framer glide

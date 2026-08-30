@@ -292,26 +292,34 @@
 }
 .model-viewer-credit-popup a:hover { text-decoration: underline; }
 
-/* ── Promo mode (Cmd+Shift+P / Ctrl+Shift+P) ─────────────────────────────────
+/* ── Studio mode (Cmd+Shift+P / Ctrl+Shift+P) ─────────────────────────────────
    Strips the viewer for screenshots and video: every control and caption goes,
    leaving the scene and the C64 READY. logo in the top-right corner. The logo
    only exists in this mode, so it is display:none by default rather than
    sitting invisible over the scene the rest of the time. The loading caption is
-   deliberately NOT hidden — entering promo straight from a closed viewer would
+   deliberately NOT hidden — entering Studio mode straight from a closed viewer would
    otherwise be a black screen with no sign that the model is on its way. */
-.model-viewer-promo-logo { display: none; }
+.model-viewer-studio-logo { display: none; }
 
-.model-viewer-overlay.promo .model-viewer-hint,
-.model-viewer-overlay.promo .model-viewer-credit,
-.model-viewer-overlay.promo .model-viewer-scene,
-.model-viewer-overlay.promo .model-viewer-fullscreen,
-.model-viewer-overlay.promo .model-viewer-vr,
-.model-viewer-overlay.promo .model-viewer-close,
-.model-viewer-overlay.promo .touch-controls {
+/* The pointer is chrome too: a capture wants the scene, not an arrow parked in
+   it. Set on the overlay so it cascades over the canvas as well — dragging to
+   rotate and framing the shot still work, just invisibly. */
+.model-viewer-overlay.studio,
+.model-viewer-overlay.studio * {
+  cursor: none;
+}
+
+.model-viewer-overlay.studio .model-viewer-hint,
+.model-viewer-overlay.studio .model-viewer-credit,
+.model-viewer-overlay.studio .model-viewer-scene,
+.model-viewer-overlay.studio .model-viewer-fullscreen,
+.model-viewer-overlay.studio .model-viewer-vr,
+.model-viewer-overlay.studio .model-viewer-close,
+.model-viewer-overlay.studio .touch-controls {
   display: none;
 }
 
-.model-viewer-overlay.promo .model-viewer-promo-logo {
+.model-viewer-overlay.studio .model-viewer-studio-logo {
   display: block;
   position: absolute;
   top: 26px;
@@ -325,7 +333,7 @@
 }
 
 @media (max-width: 720px) {
-  .model-viewer-overlay.promo .model-viewer-promo-logo {
+  .model-viewer-overlay.studio .model-viewer-studio-logo {
     top: 14px;
     right: 16px;
   }

@@ -41,7 +41,7 @@ const IS_WINDOWS =
 
 // ── Injected core hooks (assigned by initInput) ──────────────────────────────
 let downloadSnapshot, clearPendingPaste, cycleCrtEffect, toggleVibesZoom, pasteFromShortcut;
-let toggleVibesPromo;
+let toggleVibesStudio;
 
 // ── Control Port state ──────────────────────────────────────────────────────
 // C64 joystick bits: active-low
@@ -1845,8 +1845,8 @@ registerAppShortcut({
   run: () => toggleVibesZoom(),
 });
 registerAppShortcut({
-  code: 'KeyP', label: 'Retro Vibes promo mode',
-  run: () => toggleVibesPromo?.(),
+  code: 'KeyP', label: 'Retro Vibes Studio mode',
+  run: () => toggleVibesStudio?.(),
 });
 // Developer-only; on the same chord as the rest.
 registerAppShortcut({
@@ -2254,5 +2254,5 @@ document.addEventListener('pointerlockchange', () => {
 // ── Dependency injection ─────────────────────────────────────────────────────
 export function initInput(deps) {
   ({ downloadSnapshot, clearPendingPaste, cycleCrtEffect, toggleVibesZoom, pasteFromShortcut,
-     toggleVibesPromo } = deps);
+     toggleVibesStudio } = deps);
 }

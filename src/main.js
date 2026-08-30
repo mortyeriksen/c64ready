@@ -2819,13 +2819,13 @@ initInput({
   // clipboard plumbing is here; _pasteClaim keeps it from doubling up with the
   // native `paste` event below when the browser raises both.
   pasteFromShortcut: () => { if (running && _pasteClaim()) _pasteFromClipboard(); },
-  // Promo mode strips Retro Vibes to the scene and the logo. From a closed
-  // viewer the shortcut opens it straight into promo, which is what someone
+  // Studio mode strips Retro Vibes to the scene and the logo. From a closed
+  // viewer the shortcut opens it straight into Studio mode, which is what someone
   // reaching for it actually wants — one keystroke to a clean frame.
-  toggleVibesPromo: async () => {
+  toggleVibesStudio: async () => {
     const mv = await _ensureModelViewer();
-    if (mv.isOpen()) mv.togglePromo();
-    else { mv.open(); mv.setPromo(true); }
+    if (mv.isOpen()) mv.toggleStudio();
+    else { mv.open(); mv.setStudio(true); }
   },
 });
 
