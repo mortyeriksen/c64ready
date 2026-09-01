@@ -15,6 +15,9 @@
 //   byte frame        marker, 8 bits LSB first, then an odd parity bit
 //   block sync        $89…$81 counts down the first copy, $09…$01 the repeat
 //   header block      192 bytes: type, start lo/hi, end lo/hi, 16-byte name
+//   header type       1 relocatable, 3 absolute — which decides whether those
+//                     addresses are where the file lands or only where it was
+//                     saved from
 //
 // Turbo tapes are not this format — each loader invents its own — so those are
 // described one by one in src/tap-turbo-formats.js and asked in turn. A tape can
@@ -43,7 +46,20 @@ const LEAD_MAX_CYCLES = 8 * PAL_CPU_HZ;   // never wind back further than this
 
 // Header types. 2 is a data block rather than a header, and 5 marks the end of
 // the tape; neither names a file.
+//
+// 1 and 3 are both programs and both list as PRG, but they do not load to the
+// same place. A type 3 lands at the address in its header. A type 1 is
+// relocatable: a plain LOAD puts it at the BASIC start and its header addresses
+// say only where it was saved from. The two coincide for an ordinary BASIC
+// program and part company for the ones worth knowing about — a loader stub
+// saved out of high memory, which is where the tape loaders live. Measured on
+// the real ROM: a type 1 saved from $CC49 loads to $0801 under LOAD and to
+// $CC49 under LOAD"",1,1, while a type 3 goes to $CC49 either way.
+//
+// So `start` and `end` are the header's, as the tape states them, and
+// `relocatable` is what a caller needs to know whether they are the whole story.
 const TYPES = { 1: 'PRG', 3: 'PRG', 4: 'SEQ' };
+const RELOCATABLE = 1;
 
 import { TURBO_FORMATS, turboTape64Files, turboTape64Widths, TT_NOMINAL,
          novaloadWidths, NOVA_NOMINAL } from './tap-turbo-formats.js';
@@ -131,7 +147,9 @@ function headerName(block) {
  * The files on a tape, CBM and turbo alike.
  * @param {Uint8Array} tapData  pulse bytes, the 20-byte file header stripped
  * @param {object} opts  version / zeroGapCycles, as the datasette reports them
- * @returns {Array<{name, type, start, end, size, format}>} in tape order
+ * @returns {Array<{name, type, start, end, size, format, relocatable}>} in tape
+ *   order. `start`/`end` are what the tape's header states; see TYPES on why
+ *   `relocatable` decides whether they are also where the file lands.
  */
 /**
  * What can be said about the tape itself rather than its files: which formats it
@@ -251,6 +269,10 @@ export function tapDirectoryOfPulses(pulses) {
   while (next < wanted.length) { wanted[next][1][wanted[next][2]] = cycles; next++; }
   for (const f of list) {
     f.damaged = !!f.damage;
+    // Only the KERNAL's own format has anything to relocate: every turbo loader
+    // here writes to the address its header names, so the field is answered for
+    // all of them rather than left missing on most.
+    f.relocatable = !!f.relocatable;
     if (f.damage) {
       f.damage.seconds = (f.damage.holeCycles || 0) / PAL_CPU_HZ;
       f.damage.bytes = Math.round((f.damage.bits || 0) / 8);
@@ -368,6 +390,7 @@ function scanCbm(pulses) {
 
     const tail = copies[copies.length - 1];
     files.push({ name, type: TYPES[type], start, end, size, format: 'CBM',
+                 relocatable: type === RELOCATABLE,
                  atPulse: blocks[b].pulse,
                  endPulse: tail ? cbmBlockEnd(bytes, tail.at, size) : undefined,
                  damage: sound ? null : { kind: copies.length ? 'checksum' : 'short', at: 0 } });

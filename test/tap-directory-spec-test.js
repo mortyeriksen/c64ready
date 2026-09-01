@@ -289,6 +289,48 @@ function ttFile(out, { name, start, body }) {
     `and does not claim the tape after it, got ${facts.unread.toFixed(1)} s unread`);
 }
 
+// ── Relocatable and absolute programs ────────────────────────────────────────
+{
+  // Header type 1 and type 3 are both programs and both list as PRG, but only a
+  // type 3 lands at the address its header carries. A type 1 is relocatable: a
+  // plain LOAD puts it at the BASIC start, and its addresses then say where it
+  // was saved from and nothing about where it goes. Since the listing states
+  // those addresses either way, the difference has to ride along beside them —
+  // test/kernal-tape-relocatable-spec-test.js is where the real ROM settles what
+  // the flag means.
+  const p = [];
+  encodeFile(p, { name: 'ABSOLUTE', start: 0xCC49, body: new Uint8Array(64).fill(0x11), type: 0x03 });
+  encodeFile(p, { name: 'MOVES', start: 0xCC49, body: new Uint8Array(64).fill(0x22), type: 0x01 });
+  const files = tapDirectory(tapOf(p));
+  eq(files.map(f => f.name), ['ABSOLUTE', 'MOVES'], 'both headers list');
+  eq(files.map(f => f.type), ['PRG', 'PRG'], 'and both are programs');
+  eq(files.map(f => f.relocatable), [false, true], 'only the type 1 is relocatable');
+  eq(files.map(f => f.start), [0xCC49, 0xCC49], 'the listing states the header addresses either way');
+}
+{
+  // Every other format on a tape writes to the address its own header names, so
+  // the field is answered for all of them rather than left missing on most.
+  const p = [];
+  encodeFile(p, { name: 'KERNAL', start: 0x0801, body: new Uint8Array(40).fill(0xAA), type: 0x01 });
+  // Turbo Tape 64's 216 and 328 cycles, in the TAP units this file builds in.
+  const ZERO = 27, ONE = 41;
+  const bits = (out, v) => { for (let k = 7; k >= 0; k--) out.push((v >> k) & 1 ? ONE : ZERO); };
+  const turbo = (payload) => {
+    for (let i = 0; i < 200; i++) bits(p, 0x02);
+    for (let v = 9; v >= 1; v--) bits(p, v);
+    let x = 0;
+    for (const b of payload) { x ^= b; bits(p, b); }
+    bits(p, x);
+    for (let i = 0; i < 40; i++) p.push(255);        // silence, at 2040 cycles a pulse
+  };
+  const name = [...'TURBO           '].map(c => c.charCodeAt(0));
+  turbo([1, 0x01, 0x08, 0x28, 0x08, 0, ...name]);
+  turbo(Array.from({ length: 40 }, (_, i) => (i * 7) & 0xFF));
+  const files = tapDirectory(tapOf(p));
+  eq(files.map(f => f.format), ['CBM', 'Turbo Tape 64'], 'a tape of both kinds');
+  eq(files.map(f => f.relocatable), [true, false], 'a turbo file is never relocatable');
+}
+
 if (failures) {
   console.error(`\n${failures} tape directory assertion(s) failed`);
   process.exit(1);

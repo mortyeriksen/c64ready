@@ -305,6 +305,11 @@ The bootstrap layout writes pages in any order, so it states no load address and
 carries no name; the listing gives it the span they cover. Bomb Jack is 215
 bootstrap blocks and 32 resident ones, and all 247 add up.
 
+**A header says where a file was saved from.** Whether that is also where it
+loads depends on its type. Type 3 is absolute and lands there. Type 1 is
+relocatable, and a plain LOAD puts it at the BASIC start instead. Both list as
+PRG, so each entry carries `relocatable` beside its addresses.
+
 **Whether a file will load.** Each entry is judged from the tape, not from what
 an import happened to report, so a `.tap` opened directly is judged the same way
 as a recording:

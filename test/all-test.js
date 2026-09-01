@@ -94,6 +94,7 @@ const TESTS = [
   'test/vic2-sprite-shifter-spec-test.js',
   'test/datasette-record-test.js',
   'test/kernal-tape-load-test.js',
+  'test/kernal-tape-relocatable-spec-test.js',
   'test/kernal-tape-save-test.js',
   'test/turbo-tape-record-test.js',
   'test/cpu-port-ddr-spec-test.js',
