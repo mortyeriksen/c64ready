@@ -31,6 +31,12 @@ const byteMsbFirst = (bits, at) => {
   return v;
 };
 
+const byteLsbFirst = (bits, at) => {
+  let v = 0;
+  for (let k = 0; k < 8; k++) v |= (bits[at + k] || 0) << k;
+  return v;
+};
+
 /**
  * Blocks announced by a countdown — a run of bytes descending to 1, which is
  * how most of these formats mark "the data starts here" and how a loader
@@ -187,9 +193,9 @@ const TT_THRESHOLD = 272;               // between the two widths
 export const TT_NOMINAL = { zero: 216, one: 328 };
 const TT_NAME_AT = 6, TT_NAME_LEN = 16;
 // What could be a symbol of this format at all, however far off speed the deck
-// was: half the short one to twice the long one, give or take.
-const TT_SYMBOL_MIN = 100, TT_SYMBOL_MAX = 800;
-const TT_SYMBOL_MIN_PULSES = 1000;      // fewer than this says nothing about clusters
+// was: half the short one to twice the long one, give or take. Fewer pulses than
+// `minPulses` inside that range says nothing about where the clusters are.
+const TT_SYMBOL_RANGE = { min: 100, max: 800, minPulses: 1000 };
 const TT_THRESHOLD_SLACK = 8;           // a .tap step; no point reading twice for that
 
 /**
@@ -209,24 +215,25 @@ const TT_THRESHOLD_SLACK = 8;           // a .tap step; no point reading twice f
  * nothing at all. Returns null when the pulses do not look like two clusters,
  * which is the answer for a tape that is not this format.
  */
-function measuredThreshold(pulses) {
-  const buckets = new Map();
+function measuredThreshold(pulses, { min, max, minPulses }) {
+  // A .tap step per bucket, counted in a typed array rather than a map: this
+  // walks every pulse on the tape, and a tape is millions of them.
+  const buckets = new Uint32Array(Math.round(max / 8) + 1);
   let inRange = 0;
   for (let i = 0; i < pulses.length; i++) {
     const c = pulses[i];
-    if (c < TT_SYMBOL_MIN || c > TT_SYMBOL_MAX) continue;
-    const k = Math.round(c / 8);
-    buckets.set(k, (buckets.get(k) || 0) + 1);
+    if (c < min || c > max) continue;
+    buckets[Math.round(c / 8)]++;
     inRange++;
   }
-  if (inRange < TT_SYMBOL_MIN_PULSES) return null;
-  const busiest = [...buckets.entries()].sort((a, b) => b[1] - a[1]);
-  const first = busiest[0][0] * 8;
+  if (inRange < minPulses) return null;
+  const order = [...buckets.keys()].sort((a, b) => buckets[b] - buckets[a]);
+  const first = order[0] * 8;
   // The other cluster has to be a different symbol, not the same one a bucket
   // over — a quarter apart is far less than 216 is from 328.
-  const second = busiest.find(([k]) => Math.abs(k * 8 - first) > first * 0.25);
-  if (!second) return null;
-  const zero = Math.min(first, second[0] * 8), one = Math.max(first, second[0] * 8);
+  const second = order.find(k => buckets[k] && Math.abs(k * 8 - first) > first * 0.25);
+  if (second === undefined) return null;
+  const zero = Math.min(first, second * 8), one = Math.max(first, second * 8);
   return (zero + one) / 2;
 }
 
@@ -239,7 +246,7 @@ function measuredThreshold(pulses) {
  */
 export function turboTape64Files(pulses) {
   const nominal = filesAt(pulses, TT_THRESHOLD);
-  const measured = measuredThreshold(pulses);
+  const measured = measuredThreshold(pulses, TT_SYMBOL_RANGE);
   if (measured === null || Math.abs(measured - TT_THRESHOLD) < TT_THRESHOLD_SLACK) return nominal;
   const other = filesAt(pulses, measured);
   const sound = (list) => list.filter(f => f.data && f.data.checksumOk).length;
@@ -378,8 +385,215 @@ export function renderTurboTape64Block(bytes, { zero = 216, one = 328, countdown
   return out;
 }
 
+// ── Novaload (1984) ──────────────────────────────────────────────────────────
+// The commercial one. It is the loader that draws a picture and plays music
+// while the tape runs, and it says so itself: the KERNAL block that boots it
+// ends in the screen codes for `NOVALOAD`.
+//
+// It is also the first format here that could be read rather than measured. A
+// Novaload tape carries its own loader in the 192-byte tape-buffer header of
+// that KERNAL block, so the format is whatever those 171 bytes do, and what
+// follows is what they do. The resident loader the first block installs is read
+// the same way, out of the memory image it loads.
+//
+// One bit per pulse, LSB first: 304 cycles for a 0 and 688 for a 1 ($26 and $56
+// in .tap units). Nothing is counted down and no byte is framed. A block opens
+// with a pilot of 0 bits, which the loader shifts through one register until it
+// holds $80 — seven zeros and a one — and from that bit on the tape is whole
+// bytes. The first of them is $AA or the loader goes back to listening.
+//
+// Two layouts follow that sync, and every tape carries both:
+//
+//   bootstrap   $AA, the value the KERNAL stub primed its checksum with, then
+//               [page, 256 bytes, checksum] over and over until a page of $00 —
+//               which the run-out of 0 bits after the last block provides for
+//               free. The checksum is the page byte plus its 256. Pages are
+//               written in whatever order the file wants, so this layout says
+//               nothing about a start address and carries no name: it is the
+//               block that loads the loader.
+//   resident    $AA, a name length and that many bytes of name, then six bytes
+//               — the destination less one page, the end address, the length of
+//               the last block, and how many blocks — then a checksum. After it
+//               the blocks, 256 bytes and a checksum each, the last one short.
+//
+// The resident layout runs a single sum across everything after the $AA, its own
+// checksum bytes included, and each checksum is that total taken *before* the
+// checksum byte itself joins it. Bomb Jack (Elite, 1986) is 215 bootstrap blocks
+// and 32 resident ones, and every one of the 247 adds up.
+const NOVA_ZERO = 304, NOVA_ONE = 688;
+// Not a midpoint but the loader's own boundary. It restarts CIA1 timer A from
+// $03F4 on every pulse and takes bit 1 of the previous count's *high byte*, so
+// what decides the bit is which 256-cycle band the pulse fell in: 1012 − 500 is
+// where the high byte crosses from 2 to 1, and that is the whole test.
+//
+// Fixed, therefore, where Turbo Tape 64 above has to measure its own. It holds
+// from a deck 27% slow (688 down to 501) to one 64% fast (304 up to 500), which
+// is far more drift than a deck has, so there is nothing to gain by reading the
+// tape twice. Turbo Tape 64's 216 and 328 sit much closer together and 20% fast
+// already puts both under its threshold.
+const NOVA_THRESHOLD = 500;
+/** What the format writes, for measuring a deck's speed error against. */
+export const NOVA_NOMINAL = { zero: NOVA_ZERO, one: NOVA_ONE };
+const NOVA_SYNC = 0xAA;
+// Seven 0 bits and a 1 is all the loader waits for, and data runs into that
+// constantly — but a real block is preceded by seconds of pilot (2064 bits of it
+// on the tape measured), so a pilot is what is looked for here.
+const NOVA_PILOT_BITS = 32;
+const NOVA_NAME_MAX = 32;
+// Bit sync does not come back once it is lost — one pulse is one bit, so a
+// dropout shifts every bit behind it — and a run of failing blocks is therefore
+// noise being read as a file, not a file with holes in it. Stop reading.
+const NOVA_GIVE_UP = 4;
+
+/** Where a Novaload block could begin: pilot, the bit the loader syncs on, $AA. */
+function novaSyncBits(bits) {
+  const out = [];
+  let zeros = 0;
+  for (let i = 0; i + 9 <= bits.length; i++) {
+    if (!bits[i]) { zeros++; continue; }
+    if (zeros >= NOVA_PILOT_BITS && byteLsbFirst(bits, i + 1) === NOVA_SYNC) out.push(i);
+    zeros = 0;
+  }
+  return out;
+}
+
+/**
+ * A file as the resident loader reads it: named, and with its own header saying
+ * how much is coming. The header's checksum is what proves this is one — a name
+ * that prints and six bytes that agree with a sum is not something a stretch of
+ * program data falls into.
+ */
+function readNovaResident(bits, syncBit) {
+  let at = syncBit + 9;                 // past the sync bit and the $AA
+  let sum = 0;                          // which the $AA cleared
+  const room = n => at + 8 * n <= bits.length;
+  const take = () => { const v = byteLsbFirst(bits, at); at += 8; sum = (sum + v) & 0xFF; return v; };
+
+  if (!room(1)) return null;
+  const nameLen = take();
+  if (nameLen > NOVA_NAME_MAX || !room(nameLen + 7)) return null;
+  let name = '';
+  for (let i = 0; i < nameLen; i++) {
+    const c = take();
+    if (c < 0x20 || c === 0x7F || (c >= 0x80 && c <= 0x9F)) return null;
+    name += String.fromCharCode(c);
+  }
+  // The destination is written one page low: the loader steps it on before each
+  // block, this one included.
+  const destLo = take(), destHi = take();
+  take(); take();                       // the end address, which the block count gives again
+  const tail = take(), count = take();
+  const stated = sum;
+  if (take() !== stated) return null;
+
+  const start = ((destLo | (destHi << 8)) + 0x0100) & 0xFFFF;
+  // Every block but the last is 256 bytes; the last is `tail`, and a tail of 0
+  // means the file ended on the block before.
+  const size = count ? (count - 1) * 256 + tail : 0;
+  if (!size) return null;
+
+  const dataBit = at;
+  let bad = 0;
+  for (let b = 0; b < count; b++) {
+    const len = b === count - 1 ? tail : 256;
+    if (!len) break;
+    if (!room(len + 1)) return { name, start, end: start + size, size, dataBit,
+                                 endBit: bits.length, damage: { kind: 'short', at: 0 } };
+    for (let i = 0; i < len; i++) take();
+    const want = sum;                   // the total before this byte joins it
+    if (take() !== want) bad++;
+  }
+  return { name, start, end: start + size, size, dataBit, endBit: at, bad };
+}
+
+/**
+ * The block that carries the loader itself: pages in whatever order it wants
+ * them, ending on a page of $00. Two sound blocks are asked for before this is
+ * called a file — one is a checksum byte agreeing by chance once in 256, which
+ * over a tape's worth of candidate syncs is not rare enough to build a listing
+ * on. A block damaged that early cannot be read past anyway.
+ */
+function readNovaBootstrap(bits, syncBit) {
+  let at = syncBit + 17;                // past the sync bit, the $AA and the seed
+  const room = n => at + 8 * n <= bits.length;
+  let low = 0x100, high = -1, good = 0, bad = 0, run = 0, short = false;
+  const dataBit = at;
+  for (;;) {
+    // A tape cut off after its last block has no run-out to end on, and one cut
+    // inside a block has no checksum. What was read is still what is there, so
+    // it is reported rather than thrown away.
+    if (!room(1)) { short = true; break; }
+    const page = byteLsbFirst(bits, at);
+    if (page === 0) break;              // the run-out of 0 bits, or a page of them
+    at += 8;
+    if (!room(257)) { short = true; break; }
+    let want = page;
+    for (let i = 0; i < 256; i++) want = (want + byteLsbFirst(bits, at + 8 * i)) & 0xFF;
+    at += 8 * 256;
+    if (byteLsbFirst(bits, at) === want) { good++; run = 0; } else { bad++; if (++run >= NOVA_GIVE_UP) break; }
+    at += 8;
+    if (page < low) low = page;
+    if (page > high) high = page;
+  }
+  if (good < 2) return null;
+  return {
+    name: '', start: low << 8, end: (high << 8) + 256, size: (good + bad) * 256,
+    dataBit, endBit: at, bad,
+    damage: short ? { kind: 'short', at: 0 } : undefined,
+  };
+}
+
+/**
+ * Every Novaload file in a pulse stream. Each sync is offered to the resident
+ * layout first, since a header that adds up settles the question in ten bytes,
+ * and to the bootstrap layout only if that says no.
+ */
+function novaloadFilesAt(pulses, threshold) {
+  const bits = bitsByWidth(pulses, threshold);
+  const files = [];
+  let claimed = -1;
+  for (const sync of novaSyncBits(bits)) {
+    if (sync < claimed) continue;       // a sync inside a file already read
+    const f = readNovaResident(bits, sync) || readNovaBootstrap(bits, sync);
+    if (!f) continue;
+    files.push({
+      name: f.name, type: 'PRG', start: f.start, end: f.end, size: f.size,
+      format: 'Novaload', atPulse: sync, endPulse: f.endBit,
+      damage: f.damage || (f.bad
+        ? blockDamage(pulses, f.dataBit, f.endBit - f.dataBit, threshold) || { kind: 'checksum', at: 0 }
+        : null),
+    });
+    claimed = f.endBit;
+  }
+  return files;
+}
+
+/**
+ * The two widths this tape actually writes, measured over the files that add up
+ * — the deck's speed error is the ratio between them and what the format
+ * specifies, and a person looking at a listing deserves to know whether the
+ * fault is the oxide or the machine that recorded it.
+ */
+export function novaloadWidths(pulses, files) {
+  const low = [], high = [];
+  for (const f of files) {
+    if (f.damage || f.damaged) continue;
+    const to = Math.min(f.endPulse ?? 0, pulses.length);
+    // A few hundred samples settle a median; a Novaload file is a quarter of a
+    // million pulses. The stride is odd so it walks across bit positions rather
+    // than sampling the same one in every byte.
+    const stride = Math.max(1, Math.floor((to - f.atPulse) / 400)) | 1;
+    for (let i = f.atPulse; i < to; i += stride) {
+      (pulses[i] > NOVA_THRESHOLD ? high : low).push(pulses[i]);
+    }
+  }
+  const mid = l => (l.length ? l.sort((a, b) => a - b)[l.length >> 1] : 0);
+  return { zero: mid(low) || NOVA_ZERO, one: mid(high) || NOVA_ONE };
+}
+
 // ── The registry ─────────────────────────────────────────────────────────────
 export const TURBO_FORMATS = [
   { id: 'turbo-tape-64', name: 'Turbo Tape 64', scan: scanTurboTape64 },
   { id: 'grl-supertape', name: 'GRL-Supertape', scan: scanGrl },
+  { id: 'novaload', name: 'Novaload', scan: pulses => novaloadFilesAt(pulses, NOVA_THRESHOLD) },
 ];

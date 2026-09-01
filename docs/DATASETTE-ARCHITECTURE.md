@@ -252,7 +252,8 @@ the wrong symbol. There is nothing to cut around.
 
 A `.tap` has no directory (it is a pulse train), so listing its contents means
 decoding it the way a C64 would. This runs on demand, when the deck's magnifier
-is opened, and costs 2.5–5.8 ms for a whole tape (53k–126k pulse bytes measured).
+is opened, and costs 2.5 ms for a short tape up to 0.6 s for a two-hour one
+(53k–4.0M pulse bytes measured, over a dozen commercial tapes).
 
 There is no format-sniffing step. The entries become an array of pulse lengths in
 cycles **once**, and that array goes to every recogniser in turn: the CBM reader
@@ -262,24 +263,47 @@ its signature never appears. Results merge by position, and two claims within 64
 pulses of each other collapse to one, so a tape carrying several formats lists
 them all, in the order they were recorded.
 
-| | CBM (KERNAL) | Turbo Tape 64 | GRL-Supertape |
-| --- | --- | --- | --- |
-| `0` / `1` | short/medium and medium/short pairs | 216 / 328 cycles | 170 / 445 cycles |
-| bit order | LSB first, parity bit | MSB first, no parity | MSB first, no parity |
-| block sync | `$89…$81`, repeat `$09…$01` | `9…1` | `32…1` |
-| header | 192 B: type, addresses, 16-byte name | type, addresses, spare, 16-byte name padded with spaces | addresses, then an unpadded name |
-| also checked | XOR checksum after the block | XOR checksum after the data block; type 1–3, `end > start`, printable name | `end > start`, non-empty printable name |
+| | CBM (KERNAL) | Turbo Tape 64 | GRL-Supertape | Novaload |
+| --- | --- | --- | --- | --- |
+| `0` / `1` | short/medium and medium/short pairs | 216 / 328 cycles | 170 / 445 cycles | 304 / 688 cycles |
+| bit order | LSB first, parity bit | MSB first, no parity | MSB first, no parity | LSB first, no parity |
+| block sync | `$89…$81`, repeat `$09…$01` | `9…1` | `32…1` | a pilot of `0` bits, one `1` bit, then `$AA` |
+| header | 192 B: type, addresses, 16-byte name | type, addresses, spare, 16-byte name padded with spaces | addresses, then an unpadded name | name length and name, destination less one page, end, last block's length, block count |
+| also checked | XOR checksum after the block | XOR checksum after the data block; type 1–3, `end > start`, printable name | `end > start`, non-empty printable name | a running 8-bit sum: one over the header, one after every block |
 
-What separates the two turbo formats is the **countdown start**, not the widths:
-both bit-decode under either threshold, but each recogniser only accepts its own
-range. For CBM it is the checksum that separates a header from a data block whose
-bytes happen to read like one; without it a saved program can list itself twice.
-Clones retime rather than redesign (GWC Turbo 2 writes 232/344 where the rest
-write 216/328), so each threshold sits midway with room on either side.
+What separates the first two turbo formats is the **countdown start**, not the
+widths: both bit-decode under either threshold, but each recogniser only accepts
+its own range. For CBM it is the checksum that separates a header from a data
+block whose bytes happen to read like one; without it a saved program can list
+itself twice. Clones retime rather than redesign (GWC Turbo 2 writes 232/344
+where the rest write 216/328), so each threshold sits midway with room on either
+side.
 
 Adding a format means adding one entry to `TURBO_FORMATS`: a pulse threshold, a
 bit order, how blocks announce themselves, and where the header keeps its name
 and addresses. Nothing else changes.
+
+**Novaload is read out of its own loader.** A Novaload tape boots from an
+ordinary KERNAL block whose 192-byte header *is* the turbo reader, and the block
+that reader takes in installs a resident one for everything after. Disassembling
+the two gives the format exactly, the threshold included: the loader tests bit 1
+of CIA1 timer A's high byte, so the boundary is the 500-cycle band edge rather
+than a midpoint, and 304 and 688 sit far enough either side of it that the tape's
+own widths never need measuring.
+
+Two block layouts follow the sync, and every tape carries both:
+
+| | bootstrap | resident |
+| --- | --- | --- |
+| what it carries | the loader itself | every file the loader then loads |
+| after `$AA` | the seed the KERNAL stub primed its checksum with | a name length, that many bytes of name, then six header bytes and their sum |
+| a block | page, 256 bytes, checksum | 256 bytes and a checksum, the last block short |
+| the checksum | the page byte plus its 256 | one running sum over everything since the `$AA`, its own checksum bytes included, each compared against the total *before* itself |
+| ends on | a page byte of `$00`, which the run-out of `0` bits supplies | the block count in its header |
+
+The bootstrap layout writes pages in any order, so it states no load address and
+carries no name; the listing gives it the span they cover. Bomb Jack is 215
+bootstrap blocks and 32 resident ones, and all 247 add up.
 
 **Whether a file will load.** Each entry is judged from the tape, not from what
 an import happened to report, so a `.tap` opened directly is judged the same way
@@ -303,6 +327,11 @@ as a recording:
   to the end address inclusive and an XOR byte follows it, measured across these
   tapes, every block a real loader accepts checks out and every block it refuses
   does not, so the verdict is a proof rather than an estimate.
+- A **Novaload** file is sound if every block adds up. The resident layout can
+  say so for the whole file however badly it reads, its block count having come
+  from a header that proved itself; the bootstrap layout has no such header, so
+  it is asked for two sound blocks before it is called a file at all — one
+  agrees by chance once in 256.
 - Where that checksum fails, the pulse widths still say *what* went wrong, for
   the row that has to explain itself: any pulse that is neither of the two widths
   that stretch of tape was written with is a bit gained or lost. The widths are
@@ -360,8 +389,9 @@ watching for `←`. GRL-Supertape is the only genuine rewrite among them.
 Turbo 250 is the one seen in the wild rather than on a tools disk: it heads two
 digitised compilation tapes from the period, with a dozen games behind it that
 list as Turbo Tape 64, the loader and its tapes agreeing, from opposite
-directions. None of the commercial loaders (Novaload, Freeload, Cyberload,
-Burner, Visiload) are covered; each needs measuring and an entry of its own.
+directions. Of the commercial loaders only Novaload is covered, read off the
+6502 its own tapes carry; Freeload, Cyberload, Burner and Visiload each still
+need an entry of their own.
 
 ## 3. Playback engine
 

@@ -12,6 +12,10 @@ The version you are running is shown at the bottom of the About dialog.
 
 *Not out yet — what is finished and waiting for the next version.*
 
+- **Tapes that use Novaload can be read.** Novaload is the loader behind many
+  boxed games, and it draws a picture and plays music while the tape runs. Such
+  a tape used to show only its short boot program. The deck now lists everything
+  on it.
 - **Shortcuts that stay out of the C64's way.** App shortcuts now take
   **Cmd+Shift** on a Mac and **Ctrl+Shift** on Windows and Linux, both working
   everywhere: **V** pastes, **F** cycles the CRT look, **Z** zooms the VIBES

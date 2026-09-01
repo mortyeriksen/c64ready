@@ -50,6 +50,7 @@ const TESTS = [
   'test/wav-decode-spec-test.js',
   'test/tape-flag-cia-spec-test.js',
   'test/turbo-name-spec-test.js',
+  'test/novaload-spec-test.js',
   'test/turbo-threshold-spec-test.js',
   'test/tape-seek-spec-test.js',
   'test/tape-play-spec-test.js',

@@ -261,6 +261,11 @@ revisions:
   <https://www.lemon64.com/forum/viewtopic.php?t=84032>
 - **GRL-Supertape** (Geir Rune Ladehaug, 1986): measured off tapes it wrote; no
   published description used.
+- **Novaload** (1984): disassembled rather than measured or quoted. A Novaload
+  tape carries its own reader in the KERNAL block that boots it, and that reader
+  installs a second one for everything after. The pulse widths, the sync, both
+  block layouts and both checksum rules come from those two routines. No
+  published description used.
 
 The KERNAL saver's Timer B timings are measured against the real `901227-03` ROM,
 not quoted; published tables disagree in the low bits.

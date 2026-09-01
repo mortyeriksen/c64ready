@@ -45,7 +45,8 @@ const LEAD_MAX_CYCLES = 8 * PAL_CPU_HZ;   // never wind back further than this
 // the tape; neither names a file.
 const TYPES = { 1: 'PRG', 3: 'PRG', 4: 'SEQ' };
 
-import { TURBO_FORMATS, turboTape64Files, turboTape64Widths, TT_NOMINAL } from './tap-turbo-formats.js';
+import { TURBO_FORMATS, turboTape64Files, turboTape64Widths, TT_NOMINAL,
+         novaloadWidths, NOVA_NOMINAL } from './tap-turbo-formats.js';
 
 const classify = cycles => (cycles < SHORT_MAX ? S : cycles < MEDIUM_MAX ? M : L);
 
@@ -149,14 +150,20 @@ export function tapeFacts(tapData, { version = 1, zeroGapCycles = V0_ZERO_GAP_CY
   const files = tapDirectoryOfPulses(pulses);
   const formats = [...new Set(files.map(f => f.format))];
 
+  // Both symbols move together, so either ratio would do; the mean of the two is
+  // steadier against one cluster being thinly populated. Measured on files that
+  // add up, so a damaged one cannot drag the reading.
+  const error = (w, nominal) => {
+    const ratio = (w.zero / nominal.zero + w.one / nominal.one) / 2;
+    return { ratio, percent: Math.round((ratio - 1) * 1000) / 10 };
+  };
   let speed = null;
   const turbo = turboTape64Files(pulses);
   if (turbo.some(f => f.data && f.data.checksumOk)) {
-    const w = turboTape64Widths(pulses, turbo);
-    // Both symbols move together, so either ratio would do; the mean of the two
-    // is steadier against one cluster being thinly populated.
-    const ratio = (w.zero / TT_NOMINAL.zero + w.one / TT_NOMINAL.one) / 2;
-    speed = { ratio, percent: Math.round((ratio - 1) * 1000) / 10 };
+    speed = error(turboTape64Widths(pulses, turbo), TT_NOMINAL);
+  } else {
+    const nova = files.filter(f => f.format === 'Novaload' && !f.damage);
+    if (nova.length) speed = error(novaloadWidths(pulses, nova), NOVA_NOMINAL);
   }
   return {
     formats,
