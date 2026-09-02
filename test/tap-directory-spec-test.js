@@ -290,6 +290,56 @@ function ttFile(out, { name, start, body }) {
     `and does not claim the tape after it, got ${facts.unread.toFixed(1)} s unread`);
 }
 
+// ── One stretch of tape, one file ────────────────────────────────────────────
+{
+  // Six formats are asked the same question and they read the same bits: Turbo
+  // Tape 64 splits at 272 cycles and GRL-Supertape at 300, so 216 and 328 mean
+  // the same to both. A descending run inside one format's data is therefore
+  // the other's countdown, and what follows it can look like a header. Measured
+  // on a real tape: Tape 2 Side B listed a nineteenth file, a GRL-Supertape
+  // claim named from four bytes of a Turbo Tape 64 payload, and said the tape
+  // carried a format it does not.
+  //
+  // Comparing where two claims begin cannot see that, since the phantom starts
+  // well inside the real file. Comparing what they cover can.
+  const ZERO = 27, ONE = 41;                        // 216 and 328 cycles, in TAP units
+  const bits = (out, v) => { for (let k = 7; k >= 0; k--) out.push((v >> k) & 1 ? ONE : ZERO); };
+  const p = [];
+  const turbo = (payload) => {
+    for (let i = 0; i < 200; i++) bits(p, 0x02);
+    for (let v = 9; v >= 1; v--) bits(p, v);
+    let x = 0;
+    for (const b of payload) { x ^= b; bits(p, b); }
+    bits(p, x);
+    for (let i = 0; i < 40; i++) p.push(255);
+  };
+  const start = 0x0801, size = 400, end = start + size - 1;
+  const name = [...'REAL            '].map(c => c.charCodeAt(0));
+  turbo([1, start & 255, start >> 8, end & 255, end >> 8, 0, ...name]);
+  // A whole GRL-Supertape block, written into the middle of this one's payload:
+  // its countdown from 32, an address pair that runs forwards, and a name.
+  const grl = [];
+  for (let v = 32; v >= 1; v--) grl.push(v);
+  grl.push(0x00, 0x10, 0x00, 0x20, ...[...'FAKE'].map(c => c.charCodeAt(0)), 0x8B);
+  const payload = Array.from({ length: size + 1 }, (_, i) => (i * 7) & 0xFF);
+  payload.splice(80, grl.length, ...grl);
+  turbo(payload);
+  const files = tapDirectory(tapOf(p));
+  eq(files.map(f => [f.format, f.name]), [['Turbo Tape 64', 'REAL']],
+     'a block misread by another format does not become a second file');
+  eq(tapeFacts(tapOf(p)).formats, ['Turbo Tape 64'],
+     'and the tape does not claim a format it only appears to carry');
+}
+{
+  // And the rule does not merge files that merely follow one another. Two
+  // KERNAL files back to back stay two.
+  const p = [];
+  encodeFile(p, { name: 'FIRST', start: 0x0801, body: new Uint8Array(60).fill(0x11) });
+  encodeFile(p, { name: 'SECOND', start: 0x0801, body: new Uint8Array(60).fill(0x22) });
+  eq(tapDirectory(tapOf(p)).map(f => f.name), ['FIRST', 'SECOND'],
+     'files that abut are not one file');
+}
+
 // ── A checksum the tape itself got wrong ─────────────────────────────────────
 {
   // The KERNAL writes every block twice, and tape damage does not fall in the

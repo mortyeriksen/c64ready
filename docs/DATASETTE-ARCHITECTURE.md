@@ -259,9 +259,24 @@ There is no format-sniffing step. The entries become an array of pulse lengths i
 cycles **once**, and that array goes to every recogniser in turn: the CBM reader
 first, then each entry in `TURBO_FORMATS`. Each reads the tape in its own terms
 and returns what it finds; a format that is not present finds nothing, because
-its signature never appears. Results merge by position, and two claims within 64
-pulses of each other collapse to one, so a tape carrying several formats lists
-them all, in the order they were recorded.
+its signature never appears. Results merge by position, so a tape carrying
+several formats lists them all, in the order they were recorded.
+
+**Two claims on one stretch of tape collapse to one, and the overlap is
+measured.** The recognisers read the same bits: Turbo Tape 64 splits at 272
+cycles and GRL-Supertape at 300, so 216 and 328 mean the same to both, and a
+descending run inside one format's data is the other's countdown. Files do not
+overlap on a tape, one block ending before the next begins, so a claim covering
+tape another claim already covers is a second reading of one file, and the first
+in tape order is kept. Half of the shorter claim is the test: a block read twice
+overlaps almost entirely, while two files recorded back to back do not overlap at
+all. A claim with no extent to compare, a CBM header with no data block behind
+it, is given 64 pulses.
+
+Comparing only where two claims begin, which is what this did before, cannot see
+any of that. Tape 2 Side B listed a nineteenth file that way: a GRL-Supertape
+claim named from four bytes of a Turbo Tape 64 payload, 2,608 pulses into a real
+file, which also made the tape report a format it does not carry.
 
 | | CBM (KERNAL) | Turbo Tape 64 | GRL-Supertape | Novaload | US Gold / Datasoft | Gremlin Type 2 |
 | --- | --- | --- | --- | --- | --- | --- |

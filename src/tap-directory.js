@@ -42,6 +42,10 @@ const NAME_AT = 5, NAME_LEN = 16;
 // not enough — the KERNAL searched past the file and never found it — while
 // starting at the head of the lead-in reads it every time.
 const GAP_CYCLES = 2000;              // longer than this is silence, not signal
+// What a claim covers when it does not say. A CBM file with no data block behind
+// it has no end to compare, and two such claims at the same place are still one
+// file read twice.
+const CLAIM_FLOOR = 64;
 const LEAD_MAX_CYCLES = 8 * PAL_CPU_HZ;   // never wind back further than this
 
 // Header types. 2 is a data block rather than a header, and 5 marks the end of
@@ -237,10 +241,35 @@ export function tapDirectoryOfPulses(pulses) {
     try { found = fmt.scan(pulses) || []; } catch { found = []; }
     for (const f of found) files.push(f);
   }
-  // In tape order, and never two names for the same stretch of tape: a format
-  // that misreads another's blocks would otherwise double-list a file.
+  // In tape order, and never two names for the same stretch of tape: six formats
+  // are asked the same question, and one that misreads another's blocks would
+  // otherwise double-list a file.
+  //
+  // What counts as the same stretch is measured rather than guessed at from how
+  // close two claims begin. Files do not overlap on a tape, one block ending
+  // before the next starts, so a claim covering tape another claim already
+  // covers is a second reading of one file whichever format made it. Comparing
+  // only where they start cannot see that: two readings of a 46 KB block that
+  // begin a hundred pulses apart both survived it, while two genuine files
+  // recorded back to back did not have to.
+  //
+  // The first claim in tape order is kept. A claim with no extent to compare
+  // gets `CLAIM_FLOOR`, which is what the rule was before this one and is still
+  // the answer when there is nothing better.
   files.sort((a, b) => a.atPulse - b.atPulse);
-  const list = files.filter((f, i) => i === 0 || f.atPulse - files[i - 1].atPulse > 64);
+  const span = f => [f.atPulse, Math.max(f.endPulse ?? f.atPulse, f.atPulse + CLAIM_FLOOR)];
+  const list = [];
+  for (const f of files) {
+    const [from, to] = span(f);
+    const clash = list.some(kept => {
+      const [was, until] = span(kept);
+      const over = Math.min(to, until) - Math.max(from, was);
+      // Half of the shorter claim: a block read twice overlaps almost entirely,
+      // while two files that merely abut do not overlap at all.
+      return over > 0 && over * 2 > Math.min(to - from, until - was);
+    });
+    if (!clash) list.push(f);
+  }
 
   // Back up each one to the head of its lead-in, stopping at silence, at eight
   // seconds, or at the file before it — whichever comes first.
