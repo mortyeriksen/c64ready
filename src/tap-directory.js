@@ -346,6 +346,27 @@ function scanCbm(pulses) {
     return sums(at, end - at - 1);
   };
 
+  /**
+   * Two copies of a block that say exactly the same thing, checksum byte
+   * included. The KERNAL writes every block twice, and tape damage does not
+   * fall in the same place on both, so copies that agree to the byte are not a
+   * damaged file: they are what the tape was made carrying. A stored checksum
+   * that disagrees with them is then the master's arithmetic being wrong, not
+   * the oxide.
+   *
+   * The Goonies is such a tape. Its 168-byte boot block is byte-identical in
+   * both copies, both XOR to $F9 against a stored $F7, and the real KERNAL
+   * loads it without a ?LOAD ERROR. Judged on the checksum alone the whole tape
+   * listed as unreadable.
+   */
+  const copiesAgree = (copies, size) => {
+    if (copies.length < 2) return false;
+    const [x, y] = copies;
+    if (Math.max(x.at, y.at) + size >= bytes.length) return false;
+    for (let k = 0; k <= size; k++) if (bytes[x.at + k] !== bytes[y.at + k]) return false;
+    return true;
+  };
+
   for (let b = 0; b < blocks.length; b++) {
     const block = bytes.slice(blocks[b].at, blocks[b].at + HEADER_BYTES);
 
@@ -384,9 +405,11 @@ function scanCbm(pulses) {
 
     // The data copies are the two blocks past this header and its repeat. The
     // file is sound if either of them adds up — that is what a mended tape looks
-    // like, and what the KERNAL needs to get the file into memory.
+    // like, and what the KERNAL needs to get the file into memory — or if the
+    // two of them agree to the byte, which is a stronger statement about the
+    // tape than one checksum byte is.
     const copies = [blocks[b + 2], blocks[b + 3]].filter(Boolean);
-    const sound = copies.some(c => blockSums(c.at, size));
+    const sound = copies.some(c => blockSums(c.at, size)) || copiesAgree(copies, size);
 
     const tail = copies[copies.length - 1];
     files.push({ name, type: TYPES[type], start, end, size, format: 'CBM',

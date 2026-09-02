@@ -34,12 +34,12 @@ function encodeByte(out, value) {
   out.push(parity ? M : S, parity ? S : M);
 }
 
-function encodeBlock(out, payload, pilot, syncStart) {
+function encodeBlock(out, payload, pilot, syncStart, spoilSum = 0) {
   for (let i = 0; i < pilot; i++) out.push(S);
   for (let v = syncStart; v >= syncStart - 8; v--) encodeByte(out, v);
   let checksum = 0;
   for (const b of payload) { checksum ^= b; encodeByte(out, b); }
-  encodeByte(out, checksum);
+  encodeByte(out, checksum ^ spoilSum);
   out.push(L);
   for (let i = 0; i < 60; i++) out.push(S);
 }
@@ -47,7 +47,8 @@ function encodeBlock(out, payload, pilot, syncStart) {
 // One file: header written twice, then its data written twice. `claim` writes an
 // end address the body does not reach, which is what a loader stub does when it
 // means to fill the rest of the range itself.
-function encodeFile(out, { name, start, body, type = 0x03, claim = null }) {
+function encodeFile(out, { name, start, body, type = 0x03, claim = null,
+                          spoilSum = 0, spoilSecondCopy = null }) {
   const header = new Uint8Array(192).fill(0x20);
   const end = claim ?? (start + body.length);
   header[0] = type;
@@ -56,8 +57,8 @@ function encodeFile(out, { name, start, body, type = 0x03, claim = null }) {
   for (let i = 0; i < Math.min(16, name.length); i++) header[5 + i] = name.charCodeAt(i) & 0xFF;
   encodeBlock(out, header, 0x2000, 0x89);
   encodeBlock(out, header, 0x0400, 0x09);
-  encodeBlock(out, body, 0x0400, 0x89);
-  encodeBlock(out, body, 0x0400, 0x09);
+  encodeBlock(out, body, 0x0400, 0x89, spoilSum);
+  encodeBlock(out, spoilSecondCopy ?? body, 0x0400, 0x09, spoilSum);
 }
 
 const tapOf = pulses => Uint8Array.from(pulses);
@@ -287,6 +288,34 @@ function ttFile(out, { name, start, body }) {
   eq(facts.files, 2, 'the stub and the file past the stretch');
   assert(facts.unread > 50,
     `and does not claim the tape after it, got ${facts.unread.toFixed(1)} s unread`);
+}
+
+// ── A checksum the tape itself got wrong ─────────────────────────────────────
+{
+  // The KERNAL writes every block twice, and tape damage does not fall in the
+  // same place on both. So two copies agreeing to the byte is a stronger
+  // statement about what the tape carries than its one checksum byte is, and a
+  // stored checksum that disagrees with both of them is the master's arithmetic
+  // being wrong rather than the oxide. The Goonies is such a tape: identical
+  // copies, both XOR to $F9 against a stored $F7, and the real KERNAL loads it
+  // with no ?LOAD ERROR.
+  const p = [];
+  encodeFile(p, { name: 'MASTERED', start: 0x02A7, body: new Uint8Array(168).fill(0x77),
+                  spoilSum: 0x0E });
+  const files = tapDirectory(tapOf(p));
+  eq(files.map(f => f.name), ['MASTERED'], 'the file lists');
+  eq(files.map(f => f.damaged), [false],
+     'two copies that agree are not a damaged file, whatever the checksum says');
+}
+{
+  // And the rule does not blunt the real one: copies that disagree, neither of
+  // which adds up, is damage and still reads as damage.
+  const body = new Uint8Array(168).fill(0x77);
+  const other = Uint8Array.from(body); other[40] ^= 0xFF;
+  const p = [];
+  encodeFile(p, { name: 'TORN', start: 0x02A7, body, spoilSum: 0x0E, spoilSecondCopy: other });
+  eq(tapDirectory(tapOf(p)).map(f => f.damaged), [true],
+     'copies that differ and do not add up are still damaged');
 }
 
 // ── Relocatable and absolute programs ────────────────────────────────────────
