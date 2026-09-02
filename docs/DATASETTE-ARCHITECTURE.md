@@ -34,7 +34,7 @@ Four lines connect the deck to the machine:
   `setMotor(!(cpuPort & 0x20))`: the motor runs when bit 5 is driven **low**
   (and only while DDR bit 5 is an output; a floating input leaves the motor
   untouched). Because the latch stores all eight bits whatever the DDR says, a
-  write to `$00` re-evaluates the line too, handing pin 5 to an already-latched
+  write to `$00` re-evaluates the line too: handing pin 5 to an already-latched
   0 is itself a motor event, and that is the order the KERNAL uses.
 - **SENSE → CPU port `$01` bit 4.** `getSenseLevel()` returns `0` when **any**
   key is down, `1` when no button / no tape is present. The machine cannot tell
@@ -85,25 +85,25 @@ exist, and neither is an approximation:
   hiss, so zero-crossing alone invents edges. Speed variation needs no handling:
   each pulse is measured on its own. Output is a v1 `.tap`, so a `.wav` becomes
   an ordinary tape, plus the names of any turbo files it mended on the way (see
-  below). `wav-import.js` runs the whole of it in a worker (`onProgress` reports
-  each pass, the dialog draws a bar), and falls back to the main thread if a
-  worker cannot start. The recording is transferred rather than copied, so the
-  worker is handed the buffer only once it has said it loaded. It is read in
-  pieces: the detector takes two streaming passes over a chunked source, one for
-  the level model and one for the crossings, so no reading's samples are ever
-  held whole. Measured in node on a 29-minute stereo side, that took the peak
-  from 2.05 GB to 1.2 GB with the `.tap` byte-identical. The sampler is chosen
-  once per file format (a typed view for 16-bit PCM), bit classes are a byte
-  each, and a pulse's start sample is arithmetic on the crossings rather than a
-  second array the size of the first.
+  below).
+- **The import never holds the recording whole.** `wav-import.js` runs it in a
+  worker (`onProgress` reports each pass, the dialog draws a bar) and falls back
+  to the main thread if a worker cannot start. The buffer is transferred rather
+  than copied, and handed over only once the worker says it loaded. The detector
+  then takes two streaming passes over a chunked source, one for the level model
+  and one for the crossings. Measured in node on a 29-minute stereo side, that
+  took the peak from 2.05 GB to 1.2 GB with the `.tap` byte-identical. The
+  sampler is chosen once per file format (a typed view for 16-bit PCM), bit
+  classes are a byte each, and a pulse's start sample is arithmetic on the
+  crossings rather than a second array the size of the first.
 - **`dmpToTap()`** (`src/dmp-tape.js`) reads a DC2N dump, the tape as the
   cassette port saw it, one 2 MHz tick count per pulse, so there is no audio to
   decode. It honours the overflow rule (a sample at the maximum carries into the
   next) and scales ticks to cycles at the PAL clock whatever machine the dump
   names, since a pulse's real duration is what must survive; the machine is
   reported. It writes a v1 `.tap`, or v2 where a version-1 dump kept both
-  half-waves. Both
-  containers go out through `tap-encode.js`. Measured on two dumps of a
+  half-waves, and both containers go out through `tap-encode.js`. Measured on
+  two dumps of a
   Mastertronic tape: the stub loads, its own turbo reads the rest, the game
   comes up. The copy-merge repair applies as to any tape; the turbo mend does
   not, there being no recording to read again.
@@ -127,133 +127,41 @@ that is not moving draws a flat line rather than the last thing it saw.
 
 ### Reading a worn transfer, and mending it (`tap-repair.js`)
 
-**Widths are timed between centre crossings.** A played-back tape does not hold
-its shape: the head differentiates the signal and azimuth skews it. On tapes
-measured here one half of a wave ran 156 cycles against the other's 290. Timing
-from the trigger folds that skew into the width. Timing from the crossings does
-not. A crossing is interpolated between the two samples that straddle it and is
-counted only once the swing past the gate confirms it, so hiss cannot invent one.
+The copy-merge repair runs on `.wav` and `.dmp` import alike; the turbo mend
+below is `.wav` only, since it works by reading the recording again and a dump
+has none. Both report through the Status card and the foot of the listing, leave
+the recording untouched, and leave any file they cannot prove alone, and mark it.
 
-**A pulse spans two crossings.** Which of the two pairings is real is scored by
-fewest distinct widths. The trigger records a
-crossing only when the sign has changed. Crossings therefore alternate strictly
-and an index's parity is its edge's polarity. A dropout loses crossings in pairs
-and cannot turn the pairing over (111 of 111 windows across four tapes agree with
-the whole). A home tape can hold recordings from decks wired the other way up. So
-each stretch between silences of a second chooses its own pairing when it holds
-4000 crossings or more and the two pairings are clearly apart. Otherwise it
-follows the tape.
+| Step | How | Why it is there |
+| --- | --- | --- |
+| **Time widths between centre crossings** | Each crossing interpolated between the two samples that straddle it, and counted only once the swing past the gate confirms it, so hiss cannot invent one | The head differentiates the signal and azimuth skews it: one half of a wave ran 156 cycles against the other's 290, and timing from the trigger folds that skew into the width |
+| **Pair crossings into pulses** | Of the two pairings, the one with fewest distinct widths; each stretch between second-long silences chooses its own when it holds 4000 crossings or more and the two are clearly apart, otherwise it follows the tape | Crossings alternate strictly, so an index's parity is its edge's polarity, and a dropout loses them in pairs and cannot turn the pairing over — 111 of 111 windows across four tapes agree with the whole. A home tape can hold recordings from decks wired the other way up |
+| **Gate at 0.25 of the level** | `HYSTERESIS = 0.25`, the swing a crossing must pass before it counts | At 0.30 and above one transfer loses the second copy of a file, and everything from 0.15 to 0.25 reads it. A clean tape is unaffected either way |
+| **Take level and centre locally** | Windows of about 3 ms — 128 samples at 44.1 kHz, so a 96 kHz transfer is judged over the same stretch — smoothed across neighbours, with a floor at 0.05 of the whole recording so silence cannot drag the gate down to the hiss | A half-hour recording holds neither steady. The level falls away in patches, one passage to a quarter of the recording's for 7 ms, and two pulses merge into one; the centre wanders a twentieth of full scale inside a few milliseconds, more than a weak wave's own swing. Windowing took one tape's turbo blocks from 2 of 13 clean to 8 of 13 and tracking the centre to 9 of 13, while a 1024-sample window recovered almost none, which is what sized the window |
+| **Mend a KERNAL file from its second copy** | Where the first copy checks out and the repeat does not, the repeat is written again from the first, in place and at the length a sound copy would have, so what follows keeps its position; where neither adds up the two are merged, a byte failing parity or lost taken from the other pass, both orders tried | The KERNAL writes every block twice and reads both before it returns, so a transfer that lost the tail of the repeat leaves the file in memory and then hangs or answers ?LOAD ERROR. Three tapes here fail exactly that way. The block's checksum then says whether the result is the file, so a merge is proved or thrown away |
+| **Line the copies up by edit alignment** | Banded at `ALIGN_BAND = 64`, rather than by counting bytes or counting pulses | Neither count says how many went missing: one gap was two bytes wide but only 34 pulses long, where two bytes are 40. Position for position, two copies of a 2052-byte block differed in 1658 places; aligned they differed in none, and three files across two tapes came back whole and load |
+| **Read a stereo transfer four ways** | Both channels, their average, and the average with the second channel shifted onto the first, the delay measured once a minute (`LAG_WINDOW = 60 * rate`) over the loudest ten seconds and drawn straight between measurements, a silent minute taking its neighbours'; `wavToTap()` works from whichever proves the most files | Two head gaps reading one track carry an azimuth delay of one to four samples on every tape here, none inverted, so a plain average cancels the signal where they are out of phase. It lists 1 file of 8 on one tape where the lined-up reading lists 12 of 14, and on another loses two the plain one has. The ranking is by files proved rather than by any signal-quality score, no cheaper measure having ordered these recordings reliably. Each reading costs a pass; a mono file skips it |
+| **Read a failed turbo block again** | Its own stretch of the recording read every way — the other channel and both averages as they are, every reading at treble lifts of 1.5 to 5, and the difference of the channels, which is a lift with the shared noise cancelled | A turbo file has no second copy. A dropout is spacing loss, so the high end goes first and two symbols run into one, and lifting the treble puts those edges back: on one file 674 unreadable pulses became 296 at a lift of 3. Cost follows the damage |
+| **Make two readings agree** | A reading that checks out is held until a second matches it byte for byte; one alone is still put back but reported unconfirmed, and two that check out and disagree leave the file as it was | Eight bits let one wrong reading in 256 through, and measured over 927 rereads of proven files, one in 159. A checksum that adds up is a candidate, not proof |
+| **Splice where no whole reading checks out** | Each reading trusted except around pulses that are neither of the block's two widths; the walk takes whichever stays clean longest and cuts a margin short of its next fault, 30 ms then 10 then 1.5, each seam midway between two pulses | A fault every reading shares is walked through. A seam between pulses means a reading whose crossings sit a fraction of a sample away neither repeats nor drops one. The checksum judges the result, and a splice is always unconfirmed |
+| **Write every proved block back clean** | Proved bytes re-rendered at the two widths the tape uses elsewhere, on every tape whether or not anything needed mending, with the pulses to replace decided in samples rather than pulse numbers | A lifted or averaged signal shifts the widths — 217/338 became 221/331 on one tape — and a 1986 loader's threshold is fixed where ours adapts, so blocks with sound checksums have answered ?LOAD ERROR for exactly that. A damaged block holds fewer pulses than it was written with, and the gap behind it absorbs the difference, so nothing after the file moves |
 
-**The gate is 0.25 of the level.** At 0.30 and above one transfer loses the
-second copy of a file. Everything from 0.15 to 0.25 reads it. A clean tape is
-unaffected either way.
-
-**Level and centre line are local.** Both are taken in windows of about 3 ms and
-smoothed across neighbours. The window is a length of time (128 samples at
-44.1 kHz), so a 96 kHz transfer is judged over the same stretch. A half-hour
-recording holds neither steady:
-
-- The **level** falls away in patches. One passage dropped to a quarter of the
-  recording's level for 7 ms. A threshold set by the loud parts does not reach
-  it and two pulses merge into one. In a turbo format that shifts every bit after
-  it. A windowed gate took that tape's turbo blocks from 2 of 13 clean to 8 of
-  13. A 1024-sample window recovered almost none, which is what sized the window.
-- The **centre** wanders by a twentieth of full scale inside a few milliseconds.
-  That is more than a weak wave's own swing, so it crossed nothing. Tracking it
-  took the same tape to 9 of 13.
-
-The floor under both is 0.05 of the whole recording's level. Silence between
-files then cannot drag the threshold down to the hiss.
-
-**A KERNAL file is mended from its second copy.** The KERNAL writes every block
-twice and reads both before it returns. A transfer that lost the tail of the
-repeat leaves the file in memory and then hangs or answers ?LOAD ERROR. Three
-tapes here fail exactly that way. Where the first copy checks out and the repeat
-does not, `repairTape()` writes the repeat again from the first. It is written in
-place at the length a sound copy would have, so what follows keeps its position.
-
-Where neither copy adds up the two are merged. A byte that fails parity is taken
-from the other pass. A byte one copy lost is supplied by the other. The block's
-checksum then says whether the result is the file, so a merge is proved or thrown
-away. Both orders are tried.
-
-Lining the copies up is the whole difficulty. A dropout swallows bytes and the
-pulses they sat in. Neither counting bytes nor counting pulses says how many went
-missing: one gap was two bytes wide but only 34 pulses long, where two bytes are
-40. Compared position for position two copies of a 2052-byte block differed in
-1658 places. Aligned with a banded edit alignment they differed in none. Three
-files across two tapes came back whole that way and load.
-
-Repair runs on `.wav` import only. It reports through the Status card and the
-foot of the listing and leaves the recording untouched. A file that cannot be
-proved is left alone and marked.
-
-**A stereo transfer is four readings of the tape.** The two channels are
-separate passes of the same head and their noise differs. Their average cancels
-that noise where the channels are in phase and cancels the signal where they are
-not. They are rarely in phase: two head gaps reading one track carry an azimuth
-delay of one to four samples on every tape here, none inverted. So the fourth
-reading is the average with the second channel shifted onto the first. The delay
-steps between recording sessions and drifts within one. It is therefore measured
-once a minute over the loudest ten seconds of each and drawn straight between the
-measurements. On one tape the plain average lists 1 file of 8 and the lined-up
-one 12 of 14. On another the lined-up one loses two the plain one has. So
-`wavToTap()` reads all four and works from whichever proves the most files. That
-costs a pass of the recording each. A mono file skips it.
-
-Nothing cheaper ranks them. What separates two readings is a handful of pulses in
-a ninety-second file. Pulse spread and cluster tightness measured over sampled
-windows rank them at random, and on one tape exactly backwards.
-
-**A turbo file has no second copy, but the recording can be read again.** A
-dropout is spacing loss: the high end goes first and two symbols run into one.
-Lifting the treble puts those edges back. On one file 674 unreadable pulses
-became 296 at a lift of 3. Where a block's checksum fails its own stretch of the
-recording is read again every way. The other channel and both averages are read
-as they are. Every reading is read at lifts of 1.5 to 5. The difference of the
-channels is read too, which is a lift with the shared noise cancelled. Cost
-follows the damage.
-
-**A checksum that adds up is a candidate, not proof.** Eight bits let one wrong
-reading in 256 through. Measured over 927 rereads of proven files: one in 159. So
-a reading that checks out is held until a second agrees with it byte for byte.
-That is what mends the file. A file only one reading vouches for is still put
-back but reported as unconfirmed. Two that check out and disagree cannot both be
-right, and the file is then left as it was.
-
-Where no whole reading checks out the readings are spliced. Each is trusted
-except around pulses that are neither of the block's two widths. The walk takes
-whichever reading stays clean longest and cuts a margin short of its next fault.
-The margin is 30 ms first and then 10 and then 1.5. A fault every reading shares
-is walked through. Each seam lands midway between two pulses, so a reading whose
-crossings sit a fraction of a sample away neither repeats nor drops one. The
-checksum judges the result and a splice is always unconfirmed.
-
-**Every proved block is written back clean.** A lifted or averaged signal shifts
-the widths (217/338 became 221/331 on one tape). A 1986 loader's threshold is
-fixed where ours adapts, and blocks with sound checksums have answered ?LOAD
-ERROR for exactly that. So proved bytes are re-rendered at the two widths the
-tape uses elsewhere. This runs on every tape, whether or not anything on it
-needed mending. Which pulses to replace is decided in samples rather than pulse
-numbers: a damaged block holds fewer pulses than it was written with. The gap
-behind it absorbs the difference in length, so nothing after the file moves.
-
-Across the eight transfers: 66 of 129 files load without repair, 121 of 130
-with it. Every one was loaded through the real KERNAL or the tape's own loader
-to check.
+Across the eight transfers, 66 of 129 files load without repair and 121 of 130
+with it, every one checked by loading it through the real KERNAL or the tape's
+own loader.
 
 What is left is not something a reading can fix. Most of it is tape that carried
 nothing, 923 ms gone from one file and 685 from another. The rest fails with no
 faulty pulse at all: the block is complete and every pulse is a legal symbol, yet
-the checksum is out by two or three bits. A pulse landed inside the tolerance of
-the wrong symbol. There is nothing to cut around.
+the checksum is out by two or three bits, a pulse having landed inside the
+tolerance of the wrong symbol. There is nothing to cut around.
 
 ### What is on the tape (`tap-directory.js`, `tap-turbo-formats.js`)
 
 A `.tap` has no directory (it is a pulse train), so listing its contents means
 decoding it the way a C64 would. This runs on demand, when the deck's magnifier
-is opened, and costs 2.5 ms for a short tape up to 0.6 s for a two-hour one
-(53k–4.0M pulse bytes measured, over a dozen commercial tapes).
+is opened, and costs 72 ms for a short tape up to 0.65 s for a two-hour one,
+measured across 46 commercial tapes of 386k to 6.0M pulse bytes.
 
 There is no format-sniffing step. The entries become an array of pulse lengths in
 cycles **once**, and that array goes to every recogniser in turn: the CBM reader
@@ -278,77 +186,28 @@ any of that. Tape 2 Side B listed a nineteenth file that way: a GRL-Supertape
 claim named from four bytes of a Turbo Tape 64 payload, 2,608 pulses into a real
 file, which also made the tape report a format it does not carry.
 
-| | CBM (KERNAL) | Turbo Tape 64 | GRL-Supertape | Novaload | US Gold / Datasoft | Gremlin Type 2 |
+| Format | `0` / `1` | Threshold | Bit order | A block | Also checked | Its own |
 | --- | --- | --- | --- | --- | --- | --- |
-| `0` / `1` | short/medium and medium/short pairs | 216 / 328 cycles | 170 / 445 cycles | 304 / 688 cycles | 224 / 512 cycles | 424 / 840 cycles, the short one the `1` |
-| bit order | LSB first, parity bit | MSB first, no parity | MSB first, no parity | LSB first, no parity | MSB first, no parity | MSB first, each byte complemented |
-| block sync | `$89…$81`, repeat `$09…$01` | `9…1` | `32…1` | a pilot of `0` bits, one `1` bit, then `$AA` | `9…1`, then `$01 $96 $00` | a run of `0` bits, then `$FE` |
-| header | 192 B: type, addresses, 16-byte name | type, addresses, spare, 16-byte name padded with spaces | addresses, then an unpadded name | name length and name, destination less one page, end, last block's length, block count | load address, length negated, one spare; no name | two id characters, load address, length |
-| also checked | XOR checksum after the block | XOR checksum after the data block; type 1–3, `end > start`, printable name | `end > start`, non-empty printable name | a running 8-bit sum: one over the header, one after every block | nothing; the format has no checksum | nothing; the format has no checksum |
+| **CBM (KERNAL)** | Short/medium and medium/short pairs | The three pulse classes | LSB first, parity bit | `$89…$81`, repeated as `$09…$01`; a 192-byte header of type, addresses and a 16-byte name | XOR checksum after the block | Every block written twice, so one copy may fail |
+| **Turbo Tape 64** | 216 / 328 cycles | 272, and the tape's own widths measured as well | MSB first, no parity | `9…1`, a data block `9…0`; type, addresses, spare, 16-byte name padded with spaces | XOR checksum after the data block; type 1–3, `end > start`, printable name | Clones retime it, so the threshold cannot be trusted to the format |
+| **GRL-Supertape** | 170 / 445 cycles | 300 | MSB first, no parity | `32…1`; addresses, then a name | `end > start`, non-empty printable name | The name is unpadded and has to end itself |
+| **Novaload** | 304 / 688 cycles | 500, CIA1 timer A bit 1 of the high byte | LSB first, no parity | A pilot of `0` bits, one `1` bit, `$AA`; then a name and six header bytes, or a bare page | A running 8-bit sum: one over the header, one after every block | Boots from a KERNAL header that *is* the reader; two layouts, a named file or pages |
+| **US Gold / Datasoft** | 224 / 512 cycles | 363, CIA2 timer B from `$016B` | MSB first, no parity | `9…1`, then `$01 $96 $00`; load address, length negated, one spare | Nothing; the format has no checksum | The boot block decrypts itself, so the reader must be read out of memory |
+| **Gremlin Type 2** | 424 / 840 cycles, the short one the `1` | 592, CIA1 timer A from `$0A50`, high byte 8 or more | MSB first, each byte complemented | A run of `0` bits, then `$FE`; two id characters, load address, length | Nothing; the format has no checksum | A directory: ids from a table at `$0403`, and the caller names the block it wants |
+| **Ocean / Imagine** | 264–296 / 544–664 cycles | 480, CIA2 timer B from `$03E0`, high byte 2 or more | LSB first, no parity | A pilot of `0` bits, then one `1` bit; then `[flags, page, 256 bytes]` until a page of `$00` | No checksum; the page bytes must ascend | Keeps state by writing over a `JMP` target; pages, so the listing gives their span |
+| **Freeload** | 264 / 544 cycles | 360, CIA1 timer A from `$0368`, high byte 2 or more | MSB first, no parity | The register reaching `$40`, then `$5A`; load address and end address | An XOR after the data, and a block is claimed only if it agrees | Boots at `$0326`, IBSOUT, so it takes the machine at the next print |
+| **Wildload** | 384 / 576 cycles | 480, CIA1 timer A from `$03E0`, high byte 2 or more | LSB first, no parity | A run of `$A0` bytes, then `10…1`; top address, count, a flag | An XOR of the deciphered bytes, and a block is claimed only if it agrees | Fills downwards, and EORs each byte with the low byte of where it lands |
 
-What separates the first two turbo formats is the **countdown start**, not the
-widths: both bit-decode under either threshold, but each recogniser only accepts
-its own range. For CBM it is the checksum that separates a header from a data
-block whose bytes happen to read like one; without it a saved program can list
-itself twice. Clones retime rather than redesign (GWC Turbo 2 writes 232/344
-where the rest write 216/328), so each threshold sits midway with room on either
-side.
+Each was read off the tapes that carry it, by disassembling the loader rather
+than guessing at the pulses. Every commercial one measures a pulse the same way,
+by arming a CIA timer and reading its high byte at the next tape edge, so a
+threshold above is a band edge the loader itself fixes, not a midpoint between
+two widths.
 
-Adding a format means adding one entry to `TURBO_FORMATS`: a pulse threshold, a
-bit order, how blocks announce themselves, and where the header keeps its name
-and addresses. Nothing else changes.
-
-**Gremlin Type 2 keeps a directory, which none of the others do.** Its KERNAL boot block
-is not encrypted. It is a dispatcher: it pulls in a 512-byte loader at `$0400`
-with the KERNAL's own tape LOAD, then calls it with A = 0, 1, 2. The loader turns
-that into a two-character id from a table at `$0403` (`"01"`, `"02"`, `"03"`, …)
-and reads past every block whose id does not match, so the caller names the block
-it wants and the block says which it is. Those ids are the only names any turbo
-format here carries.
-
-Its symbols are 424 and 840 cycles, and which is which is the other way round
-from every other format: the bit is whether CIA1 timer A, armed with `$0A50`,
-still reads 8 or more in its high byte at the next edge, so the *short* pulse is
-the 1 and the boundary is 592. Each byte is then complemented. Both inversions
-are left alone in the scanner, since bits read the ordinary way round are the
-loader's complemented, and a byte read from those is its `EOR #$FF`. A block is
-the sync `$FE`, two id characters, the load address, the length counted down to
-zero, and the bytes. No checksum. It was read before it was named, and
-the loader is not one tape's: Masters of the Universe (Gremlin Graphics) and
-Cybernoid (Hewson) carry the same `$02A7` stub and the same `$0400` loader.
-
-**US Gold / Datasoft is a Turbo Tape 64 variant, read the same way.** Its KERNAL boot
-block decrypts itself before it runs, so the bytes on the tape say nothing and
-the reader has to be taken out of memory after the machine has run it. What it
-does is Turbo Tape 64's lead-in of `$02` bytes and countdown `$09…$01` at other
-widths, 224 and 512 cycles, followed by a header of its own: `$96`, `$00`, the
-load address, the length negated, one spare byte. The boundary is 363 cycles,
-which is CIA2 timer B armed with `$016B`. There is no checksum in the format at
-all, so a block is judged on its pulse widths as GRL-Supertape is. Read off The
-Goonies (US Gold, 1986); nothing in the stub names the loader, so it too was
-read before it was named.
-
-**Novaload is read out of its own loader.** A Novaload tape boots from an
-ordinary KERNAL block whose 192-byte header *is* the turbo reader, and the block
-that reader takes in installs a resident one for everything after. Disassembling
-the two gives the format exactly, the threshold included: the loader tests bit 1
-of CIA1 timer A's high byte, so the boundary is the 500-cycle band edge rather
-than a midpoint, and 304 and 688 sit far enough either side of it that the tape's
-own widths never need measuring.
-
-Two block layouts follow the sync, and every tape carries both:
-
-| | bootstrap | resident |
-| --- | --- | --- |
-| what it carries | the loader itself | every file the loader then loads |
-| after `$AA` | the seed the KERNAL stub primed its checksum with | a name length, that many bytes of name, then six header bytes and their sum |
-| a block | page, 256 bytes, checksum | 256 bytes and a checksum, the last block short |
-| the checksum | the page byte plus its 256 | one running sum over everything since the `$AA`, its own checksum bytes included, each compared against the total *before* itself |
-| ends on | a page byte of `$00`, which the run-out of `0` bits supplies | the block count in its header |
-
-The bootstrap layout writes pages in any order, so it states no load address and
-carries no name; the listing gives it the span they cover. Bomb Jack is 215
-bootstrap blocks and 32 resident ones, and all 247 add up.
+What separates the first two turbo formats is the countdown start, not the
+widths: both bit-decode under either threshold, but each recogniser accepts only
+its own range. Adding a format means adding one entry to `TURBO_FORMATS`, which
+is a row of that table and nothing else.
 
 **A header says where a file was saved from.** Whether that is also where it
 loads depends on its type. Type 3 is absolute and lands there. Type 1 is
@@ -357,40 +216,27 @@ PRG, so each entry carries `relocatable` beside its addresses.
 
 **Whether a file will load.** Each entry is judged from the tape, not from what
 an import happened to report, so a `.tap` opened directly is judged the same way
-as a recording:
+as a recording.
 
-- A **CBM** file is sound if either copy of its data block adds up, measured to
-  the block's **end marker**, the way the KERNAL reads it, not for as many bytes
-  as the header's addresses imply. Commercial stubs overstate that range because
-  the loader fills the rest itself: Head Over Heels claims 713 bytes and writes
-  636, and checking it against the header failed a tape that loads on hardware.
-- A **filename may contain control codes**: Batman's begins $05 $93, white and
-  clear-screen, so that LOAD prints tidily. What proves a block is a header is
-  its own checksum, so the name is only required to have a name in it.
-- The bit **threshold comes from the tape**, not from the format. Turbo Tape 64
-  specifies 216 and 328 cycles with 272 between them, but the widths move with
-  the deck and the threshold does not: 20% fast writes 173 and 262, both under
-  272, and the tape decodes to nothing. So the two busiest clusters are measured
-  and the midpoint tried as well, keeping whichever reading proves more files.
-  One tape here runs 3.1% fast, and reading it at 264 recovers a file that plays.
-- A **Turbo Tape 64** file is sound if its data block adds up. The payload runs
-  to the end address inclusive and an XOR byte follows it, measured across these
-  tapes, every block a real loader accepts checks out and every block it refuses
-  does not, so the verdict is a proof rather than an estimate.
-- A **Novaload** file is sound if every block adds up. The resident layout can
-  say so for the whole file however badly it reads, its block count having come
-  from a header that proved itself; the bootstrap layout has no such header, so
-  it is asked for two sound blocks before it is called a file at all — one
-  agrees by chance once in 256.
-- Where that checksum fails, the pulse widths still say *what* went wrong, for
-  the row that has to explain itself: any pulse that is neither of the two widths
-  that stretch of tape was written with is a bit gained or lost. The widths are
-  taken from the block itself rather than from the format's nominal figures, so a
-  slow deck or a clone that retimed its symbols is judged against what it wrote.
-  A format without a checksum (GRL-Supertape) is judged on the widths alone.
+| Format | Judged sound when |
+| --- | --- |
+| **CBM (KERNAL)** | Either copy of its data block adds up, measured to the block's **end marker** the way the KERNAL reads it, not for as many bytes as the header's addresses imply — commercial stubs overstate that range because the loader fills the rest itself, and Head Over Heels claims 713 bytes where it writes 636. Two byte-identical copies are sound whatever the checksum says, which is what a tape mastered with a wrong one needs |
+| **Turbo Tape 64** | Its data block's XOR agrees, and no stretch of dead tape sits inside the block, which outranks the checksum. Every block a real loader accepts checks out and every block it refuses does not, so the verdict is a proof rather than an estimate |
+| **GRL-Supertape** | The format has no checksum, so the pulse widths alone |
+| **Novaload** | Every block adds up. The resident layout can vouch for a whole file however badly it reads, its block count having come from a header that proved itself; the bootstrap layout has no such header, so two sound blocks are asked for before it is called a file at all, one agreeing by chance once in 256 |
+| **US Gold / Datasoft** | The format has no checksum, so the pulse widths alone |
+| **Gremlin Type 2** | The format has no checksum, so the pulse widths alone |
+| **Ocean / Imagine** | The format has no checksum, so a pilot inside a band narrow enough to exclude a KERNAL lead-in, eight blocks at least, and three quarters of the steps between page bytes ascending. Length proves nothing: a stream of noise does not stop, it runs until a page byte of `$00` turns up by chance |
+| **Freeload** | Its XOR agrees, or the block is not claimed at all. Two bytes of sync is one in 65536, which a tape's worth of bit positions supplies several times over, and the false candidates' addresses look as reasonable as the real ones |
+| **Wildload** | The XOR of its deciphered bytes agrees, or the block is not claimed. Deciphering is part of reading here, so the sum only agrees if the descending address was tracked correctly |
 
-The listing strikes such a file through. It is never removed; the head can still
-be wound to it, and it is still what is on the tape.
+Where a checksum fails, the pulse widths still say *what* went wrong, for the row
+that has to explain itself: any pulse that is neither of the two widths that
+stretch of tape was written with is a bit gained or lost. The widths are taken
+from the block itself rather than from the format's nominal figures, so a slow
+deck or a clone that retimed its symbols is judged against what it wrote. The
+listing strikes such a file through. It is never removed; the head can still be
+wound to it, and it is still what is on the tape.
 
 Two faults are counted apart, because they do not mean the same thing. A pulse
 far longer than either symbol is **silence**: the tape carried nothing there,
@@ -399,6 +245,18 @@ the two widths is **unreadable**: the signal is there, but two bits ran into
 one. Both are fatal all the same: one pulse is one bit, so a handful shifts
 everything after it. Measured on one tape: three of its four damaged files lost
 only 1–5 bytes each, the fourth 163, and all four answer ?LOAD ERROR.
+
+Two things do not follow the format. A **filename may contain control codes**:
+Batman's begins `$05 $93`, white and clear-screen, so that LOAD prints tidily.
+What proves a block is a header is its own checksum, so a name is only required
+to have a name in it. And **Turbo Tape 64's threshold comes from the tape**: it
+specifies 216 and 328 cycles with 272 between them, but the widths move with the
+deck and the threshold does not, and 20% fast writes 173 and 262, both under 272,
+which decodes to nothing. So its two busiest clusters are measured and the
+midpoint tried as well, keeping whichever reading proves more files; one tape
+here runs 3.1% fast and reading it at 264 recovers a file that plays. The other
+formats need no such measurement, their boundaries being band edges their own
+timers fix, far enough from both widths to survive a deck well off speed.
 
 **Where a file starts.** Not where its block starts: every block is preceded by a
 lead-in the loader must hear before it can read anything, and before a first
@@ -426,7 +284,7 @@ recorder's ÷8 carry lands a pulse either side of the true value.
 | GRL-Turbotape V2 (1985) | `SYS53100"NAME"`, loads `SYS53110` | 208–216 / 320–328 | Turbo Tape 64 |
 | GRL-Turbotape V.3 (1985) | `SYS53100"NAME"`, loads `SYS53110` | 208–216 / 320–328 | Turbo Tape 64 |
 | M.J-Turbotape (1986) | `SYS53100"NAME"`, loads `SYS53110` | 208–216 / 320–328 | Turbo Tape 64 |
-| Flash Turbo-Tape ABC | patches `SAVE`; a plain `SAVE"NAME",1` goes out at turbo speed | 208–216 / 320–328 | Turbo Tape 64 |
+| Flash Turbo-Tape ABC | Patches `SAVE`; a plain `SAVE"NAME",1` goes out at turbo speed | 208–216 / 320–328 | Turbo Tape 64 |
 | Super Tape Turbo (CCS) | `←S"NAME"`, loads `←L` | 208–216 / 320–328 | Turbo Tape 64 |
 | GWC Turbo 2 | `←S"NAME"`, loads `←L` | 232–240 / 336–344 | Turbo Tape 64, retimed |
 | FCS Turbo Tape | `←S"NAME"`, loads `←L` | 208–216 / 320–328 | Turbo Tape 64 |
@@ -439,9 +297,12 @@ watching for `←`. GRL-Supertape is the only genuine rewrite among them.
 Turbo 250 is the one seen in the wild rather than on a tools disk: it heads two
 digitised compilation tapes from the period, with a dozen games behind it that
 list as Turbo Tape 64, the loader and its tapes agreeing, from opposite
-directions. Three commercial loaders are covered, all read off the 6502 their own
-tapes carry: Novaload, Gremlin Type 2 and US Gold / Datasoft. Freeload,
-Cyberload, Burner and Visiload each still need an entry of their own.
+directions.
+
+Six commercial loaders are covered besides, all read off the 6502 their own tapes
+carry: Novaload, US Gold / Datasoft, Gremlin Type 2, Ocean / Imagine, Freeload
+and Wildload. Cyberload, Burner and Visiload each still need an entry of their
+own.
 
 ## 3. Playback engine
 
@@ -561,9 +422,9 @@ first pulses after motor-on are kept verbatim, since dropping them would corrupt
 a turbo saver that starts writing immediately, and the KERNAL's ten-second leader
 makes the question academic. On playback that window withholds FLAG *and* holds
 the tape still, where a real 1530 is already moving and smearing the flux it
-passes. Consuming those pulses would be closer to the machine; it is deliberately
-not done, because it can only lose loads that currently work; the head is wound
-to the start of a file's lead-in, and the lead-in is precisely what the first
-300 ms contains. Head bandwidth is likewise unmodelled: a one-cycle
+passes. Consuming those pulses would be closer to the machine, and is
+deliberately not done: it can only lose loads that currently work, because the
+head is wound to the start of a file's lead-in and the lead-in is precisely what
+the first 300 ms contains. Head bandwidth is likewise unmodelled: a one-cycle
 half-wave records faithfully even though no real head could write it. The counter
 advances linearly with tape time, where a real reel-driven one does not.
