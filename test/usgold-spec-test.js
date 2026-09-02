@@ -54,7 +54,7 @@ function tapOf(pulses) {
   tap.set(bytes, 20);
   return tap;
 }
-const usGold = (p) => tapDirectory(tapOf(p)).filter(f => f.format === 'US Gold / Datasoft');
+const usGold = (p, o) => tapDirectory(tapOf(p), o).filter(f => f.format === 'US Gold / Datasoft');
 
 // ── One block ────────────────────────────────────────────────────────────────
 {
@@ -124,6 +124,20 @@ const usGold = (p) => tapDirectory(tapOf(p)).filter(f => f.format === 'US Gold /
     eq(usGold(p).map(f => [f.start, f.size, f.damaged]), [[0x0400, 768, false]],
        `a deck running at ${rate}x still reads`);
   }
+}
+
+// ── The payload ──────────────────────────────────────────────────────────────
+// Asked for, the bytes come back with the file: `size` of them, covering
+// start..end, and the same ones that were written. Not asked for, they are not
+// built at all, a tape's worth being megabytes a listing has no use for.
+{
+  const p = [];
+  const data = body(600, 9);
+  block(p, { start: 0x8000, body: data });
+  eq(usGold(p)[0].bytes === undefined, true, 'no payload unless it is asked for');
+  const f = usGold(p, { payload: true })[0];
+  eq(f.bytes.length, f.size, 'the payload is as long as the size says');
+  eq([...f.bytes], data, 'and is byte for byte what the tape carries');
 }
 
 console.log(failures ? `us gold / datasoft spec: FAIL (${failures})` : 'us gold / datasoft spec: PASS');

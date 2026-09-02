@@ -178,17 +178,24 @@ let TT_0v = 0x1B, TT_1v = 0x29;                       // 216 and 328 cycles
 function ttByte(out, value) {
   for (let bit = 7; bit >= 0; bit--) out.push((value >> bit) & 1 ? TT_1v : TT_0v);
 }
-function ttBlock(out, payload) {
+function ttBlock(out, payload, { data = false } = {}) {
   for (let i = 0; i < 200; i++) out.push(TT_0v);
   for (let v = 9; v >= 1; v--) ttByte(out, v);
-  for (const b of payload) ttByte(out, b);
+  // A data block's countdown runs one byte further than a header's, down to
+  // $00, and the block closes with the XOR of everything after the $01. Read
+  // off real tapes: the payload begins after that zero, which is why an end
+  // address here means one past the last byte, exactly as the KERNAL's does.
+  if (data) ttByte(out, 0);
+  let sum = 0;
+  for (const b of payload) { sum ^= b; ttByte(out, b); }
+  if (data) ttByte(out, sum);
 }
 function ttFile(out, { name, start, body }) {
   const end = start + body.length;
   const header = [1, start & 0xFF, start >> 8, end & 0xFF, end >> 8, 0];
   for (let i = 0; i < 16; i++) header.push(i < name.length ? name.charCodeAt(i) & 0xFF : 0x20);
   ttBlock(out, header);
-  ttBlock(out, body);
+  ttBlock(out, body, { data: true });
 }
 
 {
@@ -408,6 +415,38 @@ function ttFile(out, { name, start, body }) {
   const files = tapDirectory(tapOf(p));
   eq(files.map(f => f.format), ['CBM', 'Turbo Tape 64'], 'a tape of both kinds');
   eq(files.map(f => f.relocatable), [true, false], 'a turbo file is never relocatable');
+}
+
+// ── The payload ─────────────────────────────────────────────────────────────
+// A listing carries figures; ask for `payload` and it carries the bytes too.
+// The contract is one thing: `size` bytes covering start..end, whatever the
+// format's own framing looks like. Turbo Tape 64 is the one worth stating
+// outright, because its data block puts a $00 before the payload and its XOR
+// after, so a reader that trusted the block's length would be one byte out at
+// both ends.
+{
+  const p = [];
+  const cbm = Array.from({ length: 300 }, (_, i) => (i * 11) & 0xFF);
+  const grl = Array.from({ length: 400 }, (_, i) => (i * 13) & 0xFF);
+  const tt = Array.from({ length: 500 }, (_, i) => (i * 17) & 0xFF);
+  encodeFile(p, { name: 'ONE', start: 0x0801, body: cbm });
+  grlFile(p, { name: 'TWO', start: 0x1000, body: grl });
+  ttFile(p, { name: 'THREE', start: 0x4000, body: tt });
+
+  const plain = tapDirectory(tapOf(p));
+  eq(plain.map(f => f.bytes === undefined), [true, true, true],
+     'no format builds a payload unless one is asked for');
+
+  const files = tapDirectory(tapOf(p), { payload: true });
+  eq(files.map(f => f.format), ['CBM', 'GRL-Supertape', 'Turbo Tape 64'],
+     'all three are still read');
+  eq(files.map(f => f.bytes.length === f.size), [true, true, true],
+     'and each payload is as long as its own size says');
+  eq([...files[0].bytes], cbm, 'the CBM payload is what was written');
+  eq([...files[1].bytes], grl, 'the GRL-Supertape payload is what was written');
+  eq([...files[2].bytes], tt, 'the Turbo Tape 64 payload is what was written');
+  eq([files[2].bytes[0], files[2].bytes[files[2].size - 1]], [tt[0], tt[499]],
+     'with neither the leading zero nor the trailing checksum in it');
 }
 
 if (failures) {

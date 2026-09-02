@@ -22,6 +22,22 @@
 // Turbo tapes are not this format — each loader invents its own — so those are
 // described one by one in src/tap-turbo-formats.js and asked in turn. A tape can
 // hold both kinds; the listing is whatever each recogniser finds, in tape order.
+//
+// A listing carries addresses and sizes, not bytes. Every recogniser decodes the
+// bytes on its way to those figures, and throws them away again, because a
+// listing is opened to be read and a tape's worth of payload is megabytes that
+// nothing looks at. Ask for `payload` and they are kept instead, on each entry
+// as `bytes`, which is what turns a listing into something a program can be
+// written out of.
+//
+// `bytes` is `size` long and covers start..end, for every format here: an end
+// address means one past the last byte, on tape as in the KERNAL. The two
+// exceptions are the loaders that name pages rather than a byte count, Novaload's
+// bootstrap block and Ocean / Imagine. Those scatter their pages and may leave
+// gaps, so `bytes` spans the lowest page to the highest, `end - start` long,
+// with any page the tape never wrote left as zeros, while `size` stays what it
+// was: how much the tape actually carries. Whether the bytes can be trusted is
+// what `damage` is for, and it is worth reading before writing them anywhere.
 
 const UNIT = 8;                       // a TAP unit is 8 cycles
 const PAL_CPU_HZ = 985248;
@@ -225,20 +241,21 @@ function unreadSeconds(pulses, files) {
   return total / PAL_CPU_HZ;
 }
 
-export function tapDirectory(tapData, { version = 1, zeroGapCycles = V0_ZERO_GAP_CYCLES } = {}) {
+export function tapDirectory(tapData, { version = 1, zeroGapCycles = V0_ZERO_GAP_CYCLES,
+                                        payload = false } = {}) {
   if (!tapData || !tapData.length) return [];
-  return tapDirectoryOfPulses(pulseCycles(tapData, version, zeroGapCycles));
+  return tapDirectoryOfPulses(pulseCycles(tapData, version, zeroGapCycles), { payload });
 }
 
 /**
  * The same listing, from pulse widths already recovered — no `.tap` in between.
  * @param {number[]} pulses  widths in cycles
  */
-export function tapDirectoryOfPulses(pulses) {
-  const files = scanCbm(pulses);
+export function tapDirectoryOfPulses(pulses, { payload = false } = {}) {
+  const files = scanCbm(pulses, { payload });
   for (const fmt of TURBO_FORMATS) {
     let found = [];
-    try { found = fmt.scan(pulses) || []; } catch { found = []; }
+    try { found = fmt.scan(pulses, { payload }) || []; } catch { found = []; }
     for (const f of found) files.push(f);
   }
   // In tape order, and never two names for the same stretch of tape: six formats
@@ -334,7 +351,7 @@ function cbmBlockEnd(bytes, at, size) {
 }
 
 /** The CBM format the KERNAL itself writes. */
-function scanCbm(pulses) {
+function scanCbm(pulses, { payload = false } = {}) {
   const bytes = decodeBytes(pulses);
   const files = [];
 
@@ -441,11 +458,19 @@ function scanCbm(pulses) {
     const sound = copies.some(c => blockSums(c.at, size)) || copiesAgree(copies, size);
 
     const tail = copies[copies.length - 1];
-    files.push({ name, type: TYPES[type], start, end, size, format: 'CBM',
-                 relocatable: type === RELOCATABLE,
-                 atPulse: blocks[b].pulse,
-                 endPulse: tail ? cbmBlockEnd(bytes, tail.at, size) : undefined,
-                 damage: sound ? null : { kind: copies.length ? 'checksum' : 'short', at: 0 } });
+    const file = { name, type: TYPES[type], start, end, size, format: 'CBM',
+                   relocatable: type === RELOCATABLE,
+                   atPulse: blocks[b].pulse,
+                   endPulse: tail ? cbmBlockEnd(bytes, tail.at, size) : undefined,
+                   damage: sound ? null : { kind: copies.length ? 'checksum' : 'short', at: 0 } };
+    // Out of whichever copy adds up, since the KERNAL would read it that way
+    // too; out of the first one when neither does, so a damaged file still
+    // hands over what it has and `damage` says what it is worth.
+    if (payload && copies.length) {
+      const from = copies.find(c => blockSums(c.at, size)) ?? copies[0];
+      file.bytes = Uint8Array.from({ length: size }, (_, k) => bytes[from.at + k] ?? 0);
+    }
+    files.push(file);
   }
   return files;
 }

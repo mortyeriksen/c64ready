@@ -263,11 +263,11 @@ revisions:
 The KERNAL saver's Timer B timings are measured against the real `901227-03` ROM,
 not quoted; published tables disagree in the low bits.
 
-Four of the turbo formats have no source to cite at all. GRL-Supertape (Geir
+Seven of the turbo formats have no source to cite at all. GRL-Supertape (Geir
 Rune Ladehaug, 1986) was measured off tapes it wrote. Novaload, US Gold /
-Datasoft and Gremlin Type 2 were each read out of the loader its own tapes
-carry, by disassembling it. So there is nothing published behind any of the
-four, and nothing here to credit. What they turned out to be is in
+Datasoft, Gremlin Type 2, Ocean / Imagine, Freeload and Wildload were each read
+out of the loader its own tapes carry, by disassembling it. So there is nothing
+published behind any of the seven, and nothing here to credit. What they turned out to be is in
 [datasette-architecture.html](DATASETTE-ARCHITECTURE.md).
 
 ### Recording container

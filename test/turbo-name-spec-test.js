@@ -21,9 +21,15 @@ const GRL = { zero: 170, one: 445 };
 const bitsOf = (out, v, w) => { for (let k = 7; k >= 0; k--) out.push((v >> k) & 1 ? w.one : w.zero); };
 const leadIn = (out, n, w) => { for (let i = 0; i < n; i++) bitsOf(out, 0x02, w); };
 
-function block(out, payload, { widths, countdown, pilot = 400, badSum = false }) {
+function block(out, payload, { widths, countdown, pilot = 400, badSum = false,
+                              tailZero = false }) {
   leadIn(out, pilot, widths);
   for (let v = countdown; v >= 1; v--) bitsOf(out, v, widths);
+  // A Turbo Tape 64 data block carries one more countdown byte than its header
+  // does, a $00 between the $01 and the payload. Read off tapes written by six
+  // different savers, on all of which it is there; the checksum covers it, and
+  // the payload starts after it.
+  if (tailZero) bitsOf(out, 0, widths);
   let sum = 0;
   for (const b of payload) { sum ^= b; bitsOf(out, b, widths); }
   bitsOf(out, badSum ? sum ^ 0xFF : sum, widths);
@@ -32,11 +38,11 @@ function block(out, payload, { widths, countdown, pilot = 400, badSum = false })
 
 /** A Turbo Tape 64 file whose 16-byte name field is given verbatim. */
 function turboFile(out, field, { size = 300, badSum = false } = {}) {
-  const start = 0x0801, end = start + size - 1;
+  const start = 0x0801, end = start + size;        // one past the last byte, as on tape
   block(out, [1, start & 255, start >> 8, end & 255, end >> 8, 0, ...field],
     { widths: TT, countdown: 9 });
   const body = Array.from({ length: size }, (_, i) => (i * 7) & 0xFF);
-  block(out, body, { widths: TT, countdown: 9, badSum });
+  block(out, body, { widths: TT, countdown: 9, badSum, tailZero: true });
 }
 
 /**

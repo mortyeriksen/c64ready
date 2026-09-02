@@ -102,8 +102,8 @@ function tapOf(pulses) {
   tap.set(bytes, 20);
   return tap;
 }
-const listing = (pulses) => tapDirectory(tapOf(pulses));
-const nova = (pulses) => listing(pulses).filter(f => f.format === 'Novaload');
+const listing = (pulses, o) => tapDirectory(tapOf(pulses), o);
+const nova = (pulses, o) => listing(pulses, o).filter(f => f.format === 'Novaload');
 
 // ── A named file ─────────────────────────────────────────────────────────────
 {
@@ -241,6 +241,34 @@ const nova = (pulses) => listing(pulses).filter(f => f.format === 'Novaload');
   // Within half a per cent: a .tap holds pulse lengths in steps of eight cycles,
   // so the widths written are not exactly the ones asked for.
   near(facts.speed.percent, 6, 0.5, 'and how far off speed the deck that wrote it ran');
+}
+
+// ── The payload ──────────────────────────────────────────────────────────────
+// Two layouts under one name, and they hand over their bytes differently. A
+// resident file is contiguous, so it is `size` bytes with the per-block
+// checksums taken out, which is the part worth asserting: they sit inside the
+// stream, one after every 256 bytes, and a payload that kept them would be
+// corrupt every 257th byte. A bootstrap block names pages, so it is a span.
+{
+  const p = [];
+  residentFile(p, { name: 'PAY', start: 0xC000, size: 600 });
+  eq(nova(p)[0].bytes === undefined, true, 'no payload unless it is asked for');
+  const f = nova(p, { payload: true })[0];
+  eq(f.bytes.length, 600, 'a resident file hands over exactly its size');
+  eq([...f.bytes], [...body(256, 0), ...body(256, 1), ...body(88, 2)],
+     'the blocks joined up, with the checksum between them dropped');
+}
+
+{
+  const p = [];
+  bootstrapBlock(p, [0x08, 0x09, 0x0B]);           // page $0A never written
+  const f = nova(p, { payload: true })[0];
+  eq([f.start, f.end], [0x0800, 0x0C00], 'the span covers the pages it wrote');
+  eq(f.size, 3 * 256, 'the size counts them');
+  eq(f.bytes.length, 0x0400, 'and the payload covers the span');
+  eq([...f.bytes.subarray(0, 256)], body(256, 0x08), 'each page lands at its own address');
+  eq([...f.bytes.subarray(0x300, 0x400)], body(256, 0x0B), 'including the one after the gap');
+  eq(f.bytes.subarray(0x200, 0x300).every(b => b === 0), true, 'and the gap stays empty');
 }
 
 console.log(failures ? `novaload spec: FAIL (${failures})` : 'novaload spec: PASS');

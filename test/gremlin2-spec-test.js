@@ -53,7 +53,7 @@ function tapOf(pulses) {
   tap.set(bytes, 20);
   return tap;
 }
-const gremlin = (p) => tapDirectory(tapOf(p)).filter(f => f.format === 'Gremlin Type 2');
+const gremlin = (p, o) => tapDirectory(tapOf(p), o).filter(f => f.format === 'Gremlin Type 2');
 
 // ── One block ────────────────────────────────────────────────────────────────
 {
@@ -115,6 +115,19 @@ const gremlin = (p) => tapDirectory(tapOf(p)).filter(f => f.format === 'Gremlin 
     eq(gremlin(p).map(f => [f.name, f.size, f.damaged]), [['01', 2000, false]],
        `a deck running at ${rate}x still reads`);
   }
+}
+
+// ── The payload ──────────────────────────────────────────────────────────────
+// Every byte of this format is stored complemented, so a payload handed back
+// uncomplemented would be the file inverted rather than the file.
+{
+  const p = [];
+  const data = body(600, 5);
+  block(p, { id: '07', start: 0x4000, body: data });
+  eq(gremlin(p)[0].bytes === undefined, true, 'no payload unless it is asked for');
+  const f = gremlin(p, { payload: true })[0];
+  eq(f.bytes.length, f.size, 'the payload is as long as the size says');
+  eq([...f.bytes], data, 'and is deciphered back to what was written');
 }
 
 console.log(failures ? `gremlin type 2 spec: FAIL (${failures})` : 'gremlin type 2 spec: PASS');

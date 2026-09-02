@@ -146,7 +146,7 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **See what is on a tape.** A `.tap` carries no directory, so the tape is read
   the way a C64 reads it and the programs on it are listed: KERNAL tapes, and
   turbo tapes in the formats it knows (Turbo Tape 64, which covers most of the
-  home turbo programs, GRL-Supertape, and three commercial loaders). The listing is
+  home turbo programs, GRL-Supertape, and six commercial loaders). The listing is
   laid out like the
   Library: a row per file with its format, size and start time. A click winds
   the tape to that file. Damaged files are struck through, and a line under the
