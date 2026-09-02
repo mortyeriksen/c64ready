@@ -591,9 +591,131 @@ export function novaloadWidths(pulses, files) {
   return { zero: mid(low) || NOVA_ZERO, one: mid(high) || NOVA_ONE };
 }
 
+// ── US Gold / Datasoft ───────────────────────────────────────────────────────
+// Read the same way Novaload was, out of the loader the tape carries, except
+// that this one hides first: its KERNAL boot block decrypts itself at $02CA
+// before running, so the bytes on the tape say nothing. What the machine
+// decrypts is a reader in the tape buffer, and that is what this describes.
+//
+// It is Turbo Tape 64's lead-in and countdown at other widths, with a header of
+// its own. A bit is one pulse, MSB first (`ROL $BD` eight times), 224 cycles for
+// a 0 and 512 for a 1. The threshold is not a midpoint: the loader arms CIA2
+// timer B with $016B and asks, at the next tape edge, whether it has run out, so
+// what separates the symbols is 363 cycles.
+//
+// A block is a lead-in of $02 bytes and a countdown from $09 to $01, exactly as
+// Turbo Tape 64 writes them, and then:
+//
+//   $01           one more byte, which the loader only checks is not $00
+//   $96           its sync byte
+//   $00
+//   lo, hi        where the block loads
+//   lo, hi        its length, negated: the loader counts up to zero
+//   one spare
+//
+// Then the bytes, and nothing after them. There is no checksum anywhere in the
+// format: the loader stores until its counter wraps and never adds anything up,
+// so a file here is judged on its pulse widths alone, as GRL-Supertape is.
+//
+// Read off The Goonies (US Gold, 1986). Nothing in the stub names the loader, so
+// it was read before it was named.
+const USGOLD_ZERO = 224, USGOLD_ONE = 512;
+const USGOLD_THRESHOLD = 363;          // CIA2 timer B, $016B, is the whole test
+const USGOLD_SYNC = 0x96;
+const USGOLD_HEADER = 8;               // bytes between the countdown and the data
+
+function scanUsGold(pulses) {
+  const bits = bitsByWidth(pulses, USGOLD_THRESHOLD);
+  const files = [];
+  for (const block of countdownBlocks(bits, byteMsbFirst, { from: [8, 16] })) {
+    const byte = i => byteMsbFirst(bits, block.dataBit + 8 * i);
+    if (byte(1) !== USGOLD_SYNC || byte(2) !== 0) continue;
+    const start = byte(3) | (byte(4) << 8);
+    const size = (0x10000 - (byte(5) | (byte(6) << 8))) & 0xFFFF;
+    // A block that runs off the top of memory, or holds nothing, is a countdown
+    // this format did not write.
+    if (!size || start + size > 0x10000) continue;
+    const dataBit = block.dataBit + 8 * USGOLD_HEADER;
+    const endBit = dataBit + 8 * size;
+    files.push({
+      name: '', type: 'PRG', start, end: start + size, size,
+      format: 'US Gold / Datasoft', atPulse: block.syncBit, endPulse: Math.min(endBit, pulses.length),
+      damage: endBit > pulses.length ? { kind: 'short', at: 0 }
+        : blockDamage(pulses, dataBit, 8 * size, USGOLD_THRESHOLD),
+    });
+  }
+  return files;
+}
+
+// ── Gremlin Type 2 ───────────────────────────────────────────────────────────
+// The third loader read out of the tape rather than described from outside, and
+// the only one here that keeps a directory. Its KERNAL boot block is not
+// encrypted: it is a dispatcher that pulls in a 512-byte loader at $0400 with
+// the KERNAL's own tape LOAD, then calls it with A = 0, 1, 2. The loader turns
+// that into a two-character id from a table at $0403 ("01", "02", "03", …) and
+// reads past every block whose id does not match. So the caller names the block
+// it wants, and the block says which it is.
+//
+// A bit is one pulse, MSB first, 424 cycles and 840. Which is which is the other
+// way round from every format above: the loader arms CIA1 timer A with $0A50 and
+// takes the bit from whether its high byte is still 8 or more at the next edge,
+// so the *short* pulse is the 1 and the boundary is 592 cycles. It then
+// complements each assembled byte. Both inversions are left alone here: bits
+// read the usual way round are the loader's bits complemented, and reading a
+// byte from them is its EOR $FF, so the two cancel and the bytes come out right.
+//
+// A block is a run of 0 bits and then:
+//
+//   $FE           read this way; the loader shifts until its own register is $01
+//   "0", "1"…     the two id characters
+//   lo, hi        where the block loads
+//   lo, hi        how long it is, counted down to zero rather than negated
+//
+// Then the bytes. There is no checksum, so a block is judged on its pulse widths
+// as GRL-Supertape and US Gold / Datasoft are.
+//
+// Read off Masters of the Universe: The Movie, whose two sides carry the same
+// three blocks, and found again on Cybernoid, which carries the same $02A7 stub
+// and the same $0400 loader. Gremlin Graphics published the first; the loader is
+// theirs and outlived their own catalogue.
+const GREMLIN2_ZERO = 840, GREMLIN2_ONE = 424;  // the short pulse is the 1 in this format
+const GREMLIN2_THRESHOLD = 592;             // CIA1 timer A from $0A50, high byte 8 or more
+const GREMLIN2_SYNC = 0xFE;
+const GREMLIN2_HEADER = 6;                  // two id characters, the address, the length
+const GREMLIN2_ID_MAX = 0x39;               // "9"; the table at $0403 never runs past it
+
+function scanGremlin2(pulses) {
+  const bits = bitsByWidth(pulses, GREMLIN2_THRESHOLD);
+  const files = [];
+  for (let i = 0; i + 8 * (GREMLIN2_HEADER + 2) <= bits.length; i++) {
+    if (byteMsbFirst(bits, i) !== GREMLIN2_SYNC) continue;
+    const byte = k => byteMsbFirst(bits, i + 8 * (1 + k));
+    const tens = byte(0), units = byte(1);
+    if (tens !== 0x30 || units < 0x31 || units > GREMLIN2_ID_MAX) continue;
+    const start = byte(2) | (byte(3) << 8);
+    const size = byte(4) | (byte(5) << 8);
+    // A block that holds nothing, or would load past the top of memory, is a
+    // coincidence rather than a header: three bytes of signature is not enough
+    // on its own over a tape's worth of bit positions.
+    if (!size || start + size > 0x10000) continue;
+    const dataBit = i + 8 * (1 + GREMLIN2_HEADER);
+    const endBit = dataBit + 8 * size;
+    files.push({
+      name: String.fromCharCode(tens, units), type: 'PRG', start, end: start + size, size,
+      format: 'Gremlin Type 2', atPulse: i, endPulse: Math.min(endBit, pulses.length),
+      damage: endBit > pulses.length ? { kind: 'short', at: 0 }
+        : blockDamage(pulses, dataBit, 8 * size, GREMLIN2_THRESHOLD),
+    });
+    i = endBit;                          // its bytes are not another block's sync
+  }
+  return files;
+}
+
 // ── The registry ─────────────────────────────────────────────────────────────
 export const TURBO_FORMATS = [
   { id: 'turbo-tape-64', name: 'Turbo Tape 64', scan: scanTurboTape64 },
   { id: 'grl-supertape', name: 'GRL-Supertape', scan: scanGrl },
   { id: 'novaload', name: 'Novaload', scan: pulses => novaloadFilesAt(pulses, NOVA_THRESHOLD) },
+  { id: 'us-gold-datasoft', name: 'US Gold / Datasoft', scan: scanUsGold },
+  { id: 'gremlin-type-2', name: 'Gremlin Type 2', scan: scanGremlin2 },
 ];

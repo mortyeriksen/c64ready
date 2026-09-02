@@ -51,6 +51,8 @@ const TESTS = [
   'test/tape-flag-cia-spec-test.js',
   'test/turbo-name-spec-test.js',
   'test/novaload-spec-test.js',
+  'test/usgold-spec-test.js',
+  'test/gremlin2-spec-test.js',
   'test/turbo-threshold-spec-test.js',
   'test/tape-seek-spec-test.js',
   'test/tape-play-spec-test.js',

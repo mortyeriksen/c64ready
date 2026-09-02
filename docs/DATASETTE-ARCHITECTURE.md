@@ -263,13 +263,13 @@ its signature never appears. Results merge by position, and two claims within 64
 pulses of each other collapse to one, so a tape carrying several formats lists
 them all, in the order they were recorded.
 
-| | CBM (KERNAL) | Turbo Tape 64 | GRL-Supertape | Novaload |
-| --- | --- | --- | --- | --- |
-| `0` / `1` | short/medium and medium/short pairs | 216 / 328 cycles | 170 / 445 cycles | 304 / 688 cycles |
-| bit order | LSB first, parity bit | MSB first, no parity | MSB first, no parity | LSB first, no parity |
-| block sync | `$89…$81`, repeat `$09…$01` | `9…1` | `32…1` | a pilot of `0` bits, one `1` bit, then `$AA` |
-| header | 192 B: type, addresses, 16-byte name | type, addresses, spare, 16-byte name padded with spaces | addresses, then an unpadded name | name length and name, destination less one page, end, last block's length, block count |
-| also checked | XOR checksum after the block | XOR checksum after the data block; type 1–3, `end > start`, printable name | `end > start`, non-empty printable name | a running 8-bit sum: one over the header, one after every block |
+| | CBM (KERNAL) | Turbo Tape 64 | GRL-Supertape | Novaload | US Gold / Datasoft | Gremlin Type 2 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `0` / `1` | short/medium and medium/short pairs | 216 / 328 cycles | 170 / 445 cycles | 304 / 688 cycles | 224 / 512 cycles | 424 / 840 cycles, the short one the `1` |
+| bit order | LSB first, parity bit | MSB first, no parity | MSB first, no parity | LSB first, no parity | MSB first, no parity | MSB first, each byte complemented |
+| block sync | `$89…$81`, repeat `$09…$01` | `9…1` | `32…1` | a pilot of `0` bits, one `1` bit, then `$AA` | `9…1`, then `$01 $96 $00` | a run of `0` bits, then `$FE` |
+| header | 192 B: type, addresses, 16-byte name | type, addresses, spare, 16-byte name padded with spaces | addresses, then an unpadded name | name length and name, destination less one page, end, last block's length, block count | load address, length negated, one spare; no name | two id characters, load address, length |
+| also checked | XOR checksum after the block | XOR checksum after the data block; type 1–3, `end > start`, printable name | `end > start`, non-empty printable name | a running 8-bit sum: one over the header, one after every block | nothing; the format has no checksum | nothing; the format has no checksum |
 
 What separates the first two turbo formats is the **countdown start**, not the
 widths: both bit-decode under either threshold, but each recogniser only accepts
@@ -282,6 +282,36 @@ side.
 Adding a format means adding one entry to `TURBO_FORMATS`: a pulse threshold, a
 bit order, how blocks announce themselves, and where the header keeps its name
 and addresses. Nothing else changes.
+
+**Gremlin Type 2 keeps a directory, which none of the others do.** Its KERNAL boot block
+is not encrypted. It is a dispatcher: it pulls in a 512-byte loader at `$0400`
+with the KERNAL's own tape LOAD, then calls it with A = 0, 1, 2. The loader turns
+that into a two-character id from a table at `$0403` (`"01"`, `"02"`, `"03"`, …)
+and reads past every block whose id does not match, so the caller names the block
+it wants and the block says which it is. Those ids are the only names any turbo
+format here carries.
+
+Its symbols are 424 and 840 cycles, and which is which is the other way round
+from every other format: the bit is whether CIA1 timer A, armed with `$0A50`,
+still reads 8 or more in its high byte at the next edge, so the *short* pulse is
+the 1 and the boundary is 592. Each byte is then complemented. Both inversions
+are left alone in the scanner, since bits read the ordinary way round are the
+loader's complemented, and a byte read from those is its `EOR #$FF`. A block is
+the sync `$FE`, two id characters, the load address, the length counted down to
+zero, and the bytes. No checksum. It was read before it was named, and
+the loader is not one tape's: Masters of the Universe (Gremlin Graphics) and
+Cybernoid (Hewson) carry the same `$02A7` stub and the same `$0400` loader.
+
+**US Gold / Datasoft is a Turbo Tape 64 variant, read the same way.** Its KERNAL boot
+block decrypts itself before it runs, so the bytes on the tape say nothing and
+the reader has to be taken out of memory after the machine has run it. What it
+does is Turbo Tape 64's lead-in of `$02` bytes and countdown `$09…$01` at other
+widths, 224 and 512 cycles, followed by a header of its own: `$96`, `$00`, the
+load address, the length negated, one spare byte. The boundary is 363 cycles,
+which is CIA2 timer B armed with `$016B`. There is no checksum in the format at
+all, so a block is judged on its pulse widths as GRL-Supertape is. Read off The
+Goonies (US Gold, 1986); nothing in the stub names the loader, so it too was
+read before it was named.
 
 **Novaload is read out of its own loader.** A Novaload tape boots from an
 ordinary KERNAL block whose 192-byte header *is* the turbo reader, and the block
@@ -394,9 +424,9 @@ watching for `←`. GRL-Supertape is the only genuine rewrite among them.
 Turbo 250 is the one seen in the wild rather than on a tools disk: it heads two
 digitised compilation tapes from the period, with a dozen games behind it that
 list as Turbo Tape 64, the loader and its tapes agreeing, from opposite
-directions. Of the commercial loaders only Novaload is covered, read off the
-6502 its own tapes carry; Freeload, Cyberload, Burner and Visiload each still
-need an entry of their own.
+directions. Three commercial loaders are covered, all read off the 6502 their own
+tapes carry: Novaload, Gremlin Type 2 and US Gold / Datasoft. Freeload,
+Cyberload, Burner and Visiload each still need an entry of their own.
 
 ## 3. Playback engine
 

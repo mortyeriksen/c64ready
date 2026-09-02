@@ -12,6 +12,9 @@ The version you are running is shown at the bottom of the About dialog.
 
 *Not out yet — what is finished and waiting for the next version.*
 
+- **Two more commercial tape loaders can be read**, Gremlin Type 2 and the US
+  Gold / Datasoft one. Tapes that use them used to show one or two small files
+  and minutes nothing could read. They now list everything on them.
 - **Tapes that use Novaload can be read.** Novaload is the loader behind many
   boxed games, and it draws a picture and plays music while the tape runs. Such
   a tape used to show only its short boot program. The deck now lists everything
