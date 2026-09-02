@@ -735,7 +735,33 @@ function mendTurbo({ pulses, startOf }, source, sampleRate, cpuHz, say = () => {
       say('mending', (done + n / tries.length) / broken.length);
       const read = detectPulses(wav.source(channel, from, to, { lift: k }), sampleRate, cpuHz);
       const got = turboTape64Files(read.pulses).find(g => g.name === f.name && g.size === f.size && g.data);
-      if (!got) continue;
+      // A reading that cannot find the file at all is still evidence for the
+      // stretch it covers, and it is often the only reading that is. A dropout
+      // long enough to swallow a countdown loses the whole file in that channel
+      // while the other channel plays cleanly straight through the same
+      // moment: measured on these tapes, at two thirds of the dropouts in a
+      // failing file the other channel is at full level. Discarding it left the
+      // splice with one reading and nothing to splice against. Where the block
+      // sits is known from the reading that did find it, since they share a
+      // clock, so the span is taken from there in samples and turned back into
+      // this reading's own pulse numbers.
+      if (!got) {
+        const a = pulseAt(read.startOf, read.pulses.length, startSample(f.data.syncBit) - from);
+        const b = pulseAt(read.startOf, read.pulses.length, startSample(f.data.endBit) - from);
+        // Only when the span really covers the block. A reading the window
+        // clipped, or one whose own damage moved everything, gives back a few
+        // pulses that hold no faults because they hold nothing, and the splice
+        // would then take the whole file from the one reading that never found
+        // it.
+        if (b - a > (f.data.endBit - f.data.syncBit) / 2) {
+          readings.push({
+            block: { from: a, to: b },
+            pulses: read.pulses,
+            sampleAt: (i) => read.startOf(i) ?? Infinity,
+          });
+        }
+        continue;
+      }
       if (!got.data.checksumOk) {
         readings.push({
           block: { from: got.data.syncBit, to: got.data.endBit },
