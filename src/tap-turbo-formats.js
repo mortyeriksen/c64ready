@@ -1033,14 +1033,22 @@ function scanWildload(pulses, { payload = false } = {}) {
 }
 
 // ── The registry ─────────────────────────────────────────────────────────────
+// `selfDriving` marks a format whose reader the tape carries and runs itself:
+// the boot block installs it, it reads the side in tape order, and no command
+// starts an individual file — a tape in such a format is loaded once and
+// judged as a tape. Only Turbo Tape 64 and GRL-Supertape answer to a command
+// per file. `resident` names the block a format keeps its reader in, where it
+// keeps one as a file of its own rather than in the boot block: that block is
+// part of the loader, not a program. The flags ride with the scanner so a new
+// format cannot arrive without saying which kind it is.
 export const TURBO_FORMATS = [
   { id: 'turbo-tape-64', name: 'Turbo Tape 64', scan: scanTurboTape64 },
   { id: 'grl-supertape', name: 'GRL-Supertape', scan: scanGrl },
-  { id: 'novaload', name: 'Novaload',
+  { id: 'novaload', name: 'Novaload', selfDriving: true,
     scan: (pulses, o) => novaloadFilesAt(pulses, NOVA_THRESHOLD, o?.payload) },
-  { id: 'us-gold-datasoft', name: 'US Gold / Datasoft', scan: scanUsGold },
-  { id: 'gremlin-type-2', name: 'Gremlin Type 2', scan: scanGremlin2 },
-  { id: 'ocean-imagine', name: 'Ocean / Imagine', scan: scanOcean },
-  { id: 'freeload', name: 'Freeload', scan: scanFreeload },
-  { id: 'wildload', name: 'Wildload', scan: scanWildload },
+  { id: 'us-gold-datasoft', name: 'US Gold / Datasoft', selfDriving: true, scan: scanUsGold },
+  { id: 'gremlin-type-2', name: 'Gremlin Type 2', selfDriving: true, scan: scanGremlin2 },
+  { id: 'ocean-imagine', name: 'Ocean / Imagine', selfDriving: true, scan: scanOcean },
+  { id: 'freeload', name: 'Freeload', selfDriving: true, resident: 0xE000, scan: scanFreeload },
+  { id: 'wildload', name: 'Wildload', selfDriving: true, scan: scanWildload },
 ];
