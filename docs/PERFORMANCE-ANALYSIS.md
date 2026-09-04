@@ -45,7 +45,7 @@ Structurally, that breaks down as:
 
 ## 2. Standing optimizations
 
-All of these are in place and on by default. The two with runtime switches live
+All of these are in place and on by default. Those with runtime switches live
 in `src/switches.js` and can be flipped for A/B without a
 rebuild: append `?NAME=0` to the URL in the browser, or set `NAME=0` as an env
 var for node harnesses.
@@ -76,19 +76,24 @@ var for node harnesses.
   the [6510 CPU](CPU-ARCHITECTURE.md) §4.
 - **Cheap, monomorphic per-cycle work.** Beyond avoiding allocation, the always-on
   path avoids *dead* work and unstable object shapes, both nearly free on desktop
-  V8 but real cost on a phone (§4). The VIC segment renderer scopes its
-  per-column span-buffer fills to the few columns actually painted rather than
-  the full 384-slot width. The CIA `read`/`peek` path computes a timer's visible
-  value only for the timer registers, not on every keyboard scan or ICR poll.
-  The SID sync stage skips its three oscillator probes when no voice has
-  hard-sync enabled. The
-  two CIAs null-initialise their port callbacks in the constructor so both instances
-  share one hidden class, keeping the shared hot I/O methods monomorphic.
-- **Lean audio-thread hot loop.** The default reSID engine is an all-integer
-  per-cycle pipeline (no libm in the loop; the transistor filter/mixer/volume
-  stages are pre-solved lookup tables), with the model-dependent tables and
-  DAC references cached on the voice/filter objects so the hot path is
-  branch-light and monomorphic. The heavyweight lever is the selectable **WASM
+  V8 but real cost on a phone (§4):
+  - the VIC segment renderer scopes its per-column span-buffer fills to the few
+    columns actually painted rather than the full 384-slot width;
+  - the CIA `read`/`peek` path computes a timer's visible value only for the
+    timer registers, not on every keyboard scan or ICR poll;
+  - the SID sync stage skips its three oscillator probes when no voice has
+    hard-sync enabled;
+  - the two CIAs null-initialise their port callbacks in the constructor so
+    both instances share one hidden class, keeping the shared hot I/O methods
+    monomorphic.
+- **Lean audio-thread hot loop.** The default reSID engine keeps the worklet
+  branch-light and monomorphic:
+  - an all-integer per-cycle pipeline: no libm in the loop; the transistor
+    filter/mixer/volume stages are pre-solved lookup tables;
+  - model-dependent tables and DAC references cached on the voice/filter
+    objects.
+
+  The heavyweight lever is the selectable **WASM
   engine**: the same model compiled from the Rust translation in `rust/sid/`,
   with bit-identical output. It renders a whole 128-sample block per call at
   ≈100 ms CPU per emulated second against ≈660 ms for the JS engine, which takes
@@ -103,10 +108,14 @@ var for node harnesses.
   import three.js only on first open, so the library stays out of the initial
   bundle. See [Retro Vibes](RETROVIBES-ARCHITECTURE.md).
 
-`src/switches.js` also carries two hardware-accuracy switches
-(`driveTrueClockRatio`, `iecEdgeLatency`, both default on). These tune drive/IEC
-timing fidelity, not performance; see the [1541 drive](DRIVE-ARCHITECTURE.md)
-§3 and the [machine orchestrator](MACHINE-ARCHITECTURE.md) §3.
+`src/switches.js` also carries hardware-accuracy switches, flipped the same
+way, `DRIVE_TRUE_CLOCK_RATIO` and `IEC_EDGE_LATENCY` among them (both default
+on).
+These tune hardware fidelity, not performance; see the [1541 drive](DRIVE-ARCHITECTURE.md)
+§3 and the [machine orchestrator](MACHINE-ARCHITECTURE.md) §3. Not every toggle
+lives there: the drive's mechanical timing models are compile-time constants at
+the top of `drive1541.js` ([1541 drive](DRIVE-ARCHITECTURE.md) §11), and the
+`c64Vic.*` console toggles belong to the debug surface in [TESTING](TESTING.md).
 
 ## 3. Throughput & footprint
 
@@ -158,15 +167,12 @@ forgiving:
   ample headroom. The WebGL presenter (§2) is chosen partly to spare mobile GPUs
   the `putImageData` path.
 - **UI-thread jank on the play path.** The on-screen touch joystick, the primary
-  mobile input, caches its pad geometry on `pointerdown`, resolves movement into
-  caller-owned scratch, and leaves joystick-byte synchronization to the existing
-  50 Hz emulation-frame boundary. Its knob transform is coalesced and capped at
-  60 Hz, written directly on the compositor-promoted knob rather than through
-  inherited CSS properties on the pad. Dragging therefore does no synchronous
-  layout, per-event allocation, or redundant control-port/indicator update against
-  the render loop's DOM writes. The base page is sized in `dvh` so iOS Safari's
-  dynamic toolbar doesn't shift it, and the paint-driven CRT effects (the HUM roll)
-  stop animating while the machine is paused rather than repainting a static screen.
+  mobile input, does no synchronous layout, per-event allocation, or redundant
+  control-port work while dragging: geometry is cached on `pointerdown`, the knob
+  is a compositor-promoted transform coalesced to 60 Hz, and joystick-byte
+  synchronization waits for the 50 Hz emulation-frame boundary. The base page is
+  sized in `dvh` so iOS Safari's dynamic toolbar doesn't shift it, and the
+  paint-driven CRT effects stop animating while the machine is paused.
 - **Background pause.** When the tab or app loses focus or is backgrounded,
   emulation freezes and the audio context is suspended, then thaws on return,
   so a backgrounded tab neither burns CPU nor spikes when it comes back.
@@ -190,9 +196,13 @@ the [machine orchestrator](MACHINE-ARCHITECTURE.md) §7.
 
 Never trust a performance comparison across a different thermal window. On an
 M1-class laptop, a heavy build, test run, or screenshot pass can change the next
-number enough to make a neutral change look like a large regression. Use a
-same-thermal A/B: measure the candidate, stash only the files under test,
-measure the baseline, then pop and measure the candidate again back-to-back.
+number enough to make a neutral change look like a large regression. Run a
+same-thermal A/B, back-to-back:
+
+1. Measure the candidate.
+2. Stash only the files under test.
+3. Measure the baseline.
+4. Pop the stash and measure the candidate again.
 
 Two traps are worth naming, because both produce confident nonsense:
 

@@ -25,25 +25,22 @@ The C64 cannot boot without its ROM chips. Dismiss it and the screen reads
 > never ships, hosts or downloads them.
 
 **Have VICE installed?** Press **CHOOSE…** and pick VICE's top folder; all four
-images are found inside it. Your browser may call that an upload, but nothing is
-sent anywhere.
-
-**Otherwise**, press **LOAD…** for each ROM. **🔍 help me find it** searches the
-web for that exact filename; the emulator never fetches it. A licensed set is
-sold at c64forever.com.
+images are found inside it (your browser may call that an upload; nothing is
+sent anywhere). **Otherwise**, press **LOAD…** for each ROM; **🔍 help me find
+it** searches the web for that exact filename (the emulator itself never
+fetches it), and a licensed set is sold at c64forever.com.
 
 **KERNAL**, **BASIC** and **CHARGEN** are required; **1541 DOS** is optional, for
-True Drive Emulation. Any compatible revision works. These are the names the
-search looks for:
+True Drive Emulation. Any compatible revision works; the search looks for:
 
 - **KERNAL**: `kernal.901227-03.bin` (8 KB)
 - **BASIC**: `basic.901226-01.bin` (8 KB)
 - **CHARGEN**: `characters.901225-01.bin` (4 KB)
 - **1541 DOS**: `1541-II.251968-03.bin` (16 KB, optional)
 
-The button reads **Done** once the three required ROMs are in. They are cached in
-your browser, so this is a one-time step; **⚙ OPTIONS ▸ ROM Files** shows what is
-loaded and can **CLEAR** it. See [Specifications](SPECIFICATIONS.md) on revisions.
+The button reads **Done** once the three required ROMs are in. This is a
+one-time step: they are cached in your browser, and **⚙ OPTIONS ▸ ROM Files**
+shows and clears them. See [Specifications](SPECIFICATIONS.md) on revisions.
 
 ---
 
@@ -55,8 +52,8 @@ picture of one.
 
 - **POWER** turns the machine on and off. Powering off tears the machine down;
   powering on builds a fresh one.
-- **↺ RESET** is a hard reset, the same as a power-cycle. Use it if a demo
-  wedges.
+- **↺ RESET** hard-resets the machine; more in
+  [Pause, reset, and save your place](#6-pause-reset-and-save-your-place).
 - Black screen, or an "Awaiting ROM files…" note? The ROMs are missing; go back
   to [Set up ROMs](#1-set-up-roms).
 
@@ -93,13 +90,15 @@ matrix. A few keys are remapped so the C64-only ones are reachable:
 
 | Host key | C64 key |
 |----------|---------|
-| `TAB` | INST/DEL |
+| `Backspace` / `TAB` | INST/DEL |
 | `F9` | RUN/STOP |
 | `F10` | Commodore (⌂) key |
 | `F11` | CLR / HOME |
 | `F12` | RESTORE (RUN/STOP + RESTORE resets BASIC) |
 
-Not sure where a symbol lives? **KEY MAP** shows a clickable on-screen keyboard.
+Not sure where a symbol lives? **KEY MAP** shows a clickable on-screen
+keyboard, and the [Key Map reference](USER-GUIDE.md#key-map) lists the full
+mapping.
 Need to get a BASIC listing in quickly? **📋 PASTE** types your clipboard into
 the machine.
 
@@ -129,7 +128,8 @@ The C64 has two control ports. Assign each on the
 ## 6. Pause, reset, and save your place
 
 - **⏸ PAUSE** freezes and mutes the machine where it is; press again to resume.
-- **↺ RESET** does a hard reset, the same as a power-cycle.
+- **↺ RESET** does a hard reset, the same as a power-cycle. Use it if a demo
+  wedges.
 - **💾 SAVE STATE** freezes the whole machine (RAM, every chip, and whatever
   disk, tape or cartridge is inserted) into a named slot with a thumbnail. Pick
   it up later with **📂 LOAD STATE**. Save is available while a program runs.
@@ -195,5 +195,7 @@ audio blip and no catch-up stutter.
   and dialog.
 - **[Features](FEATURES.md)**: everything the emulator supports, from the
   user's side.
+- **[Known Issues](KNOWN-ISSUES.md)**: something looks wrong? Check here
+  first: it may be the real machine being itself.
 - **[Architecture](ARCHITECTURE.md)**: how the machine is wired together, and
   the way into every chip's deep-dive.

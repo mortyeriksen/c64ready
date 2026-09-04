@@ -55,7 +55,7 @@ centres the picture on the whole screen with bars around it.
 
 - **Click the screen** to give it keyboard focus, needed before typing or
   before a game that polls the keyboard will see your keys.
-- **Drag & drop** a `.PRG`, `.D64`, `.CRT`, `.TAP`, `.WAV` or `.REU` file onto the
+- **Drag & drop** a `.PRG`, `.D64`, `.CRT`, `.TAP`, `.WAV`, `.DMP` or `.REU` file onto the
   screen to load it (pointer devices). The hint below the monitor reminds you.
 - **On touch devices**, tap the screen to raise the on-screen keyboard; the hint
   changes to say so.
@@ -140,7 +140,7 @@ available over the 3D scene.
 | **⛶** | Glides the camera to a head-on view that fills the frame with the monitor, a virtual fullscreen. Drag or scroll to break out of it. |
 | **🥽 ENTER VR** | View in VR (shown when a headset or the WebXR emulator is available). |
 | **ⓘ model credit** | Shows attribution for the 3D model. |
-| **Cmd+Shift+P** / **Ctrl+Shift+P** | **Studio mode**: hides everything else in this table — the mouse pointer included — and leaves the scene alone with the C64 READY. logo, for screenshots and video. The same keys bring the controls back. It is remembered, so the scene reopens the way you left it. |
+| **Cmd+Shift+P** / **Ctrl+Shift+P** | **Studio mode**: hides everything else in this table (the mouse pointer included) and leaves the scene alone with the C64 READY. logo, for screenshots and video. The same keys bring the controls back. It is remembered, so the scene reopens the way you left it. |
 | **✕** or **Esc** | Close and return to the emulator. |
 
 ### Scenes
@@ -176,13 +176,12 @@ and the button becomes **⏹ STOP RECORDING**. Press stop and the file downloads
 as `c64ready-<date-and-time>.mp4`.
 
 - **It records everything on screen**, [fullscreen](#controls) and
-  [Retro Vibes](#retro-vibes) included. The button lives in the side panel, so
-  start recording *before* you enter those modes; the capture keeps running. To
-  stop from inside them, use the browser's "Stop sharing" control, or leave the
-  mode and press **⏹ STOP RECORDING**.
-- **To record fullscreen or Retro Vibes, share "Entire Screen"** in the
-  browser's prompt. A window or tab share does not follow the picture into
-  fullscreen; a screen share covers both.
+  [Retro Vibes](#retro-vibes) included: share **"Entire Screen"** in the
+  browser's prompt for those, since a window or tab share does not follow the
+  picture into fullscreen. The button lives in the side panel, so start
+  recording *before* you enter those modes; to stop from inside them, use the
+  browser's "Stop sharing" control, or leave the mode and press
+  **⏹ STOP RECORDING**.
 - **The audio is the emulator's own output**, tapped directly, so it stays clean
   and in sync even while the machine is muted.
 - **The video has a resolution ceiling**, set by **RECORDER** in
@@ -219,11 +218,11 @@ registers and inserted media) saved in this browser. Each row carries a
 thumbnail of the frozen frame, the state's name and how long ago it was saved.
 
 Restoring makes the machine *become* the snapshot, so its media replaces
-whatever is inserted now. A state saved without a cartridge therefore removes
-the one you have in; the expansion port is part of the machine it froze, and
-its ROM would land under a program that never ran with it there. Put the cart
-back from the [Library](#library-dialog), or save the state with it already
-inserted so it comes back too.
+whatever is inserted now, the expansion port included. A state saved without a
+cartridge therefore removes the one you have in: its ROM would land under a
+program that never ran with it there. If that happens, put the cart back from
+the [Library](#library-dialog), or save states with the cartridge already
+inserted, so it comes back on its own.
 
 | Control | What it does |
 | --- | --- |
@@ -245,14 +244,15 @@ dialog is empty, with just an **IMPORT** button:
 
 ![The Library dialog listing three cached disk images, each with a D64 type badge, its filename, size and load time and a ✕ remove button, with a filter box and the IMPORT / EXPORT / CLEAR ALL buttons.](/guide/library-loaded.webp)
 
-Opened with **📂 LOAD LIB**. Every `.PRG` / `.D64` / `.CRT` / `.TAP` / `.WAV` you open is
+Opened with **📂 LOAD LIB**. Every `.PRG` / `.D64` / `.CRT` / `.TAP` / `.WAV` / `.DMP` you open is
 cached here so you can reload it without picking it from disk again. Each row is
 tagged with its file type and shows the name, size and when you loaded it.
 
 A `.WAV` is the exception: cassette audio is around twenty times the size of the
 tape it encodes (a six-minute side runs to some 17 MB against 700 KB), so the
 recording itself is not kept. It is converted to a tape as it loads, and that
-`.TAP` is what lands in the library.
+`.TAP` is what lands in the library. A `.DMP` dump is converted the same way,
+and lands as its `.TAP` too.
 
 | Control | What it does |
 | --- | --- |
@@ -454,10 +454,13 @@ with it. The contents are included in save states, so a snapshot taken partway
 through a demo resumes properly.
 
 A cartridge can stay inserted while an expansion is fitted; on real hardware
-that combination needs a port expander. Action Replay, Final Cartridge III and
-EasyFlash use the same corner of the expansion port as the RAM Expansion, so
-those three don't get along with it; the other cartridges are fine. Switching
-the expansion on says so, since it holds whichever you insert first.
+that combination needs a port expander. Two limits:
+
+- **Action Replay, Final Cartridge III and EasyFlash** use the same corner of
+  the expansion port as the RAM Expansion, so those three don't get along with
+  it; the other cartridges are fine.
+- **With one of those three, the port holds whichever you insert first**:
+  switching the expansion on says so.
 
 ---
 
@@ -468,103 +471,14 @@ the expansion on says so, since it holds whichever you insert first.
 A 1530 Datasette for `.tap` tape images: it reads them, records them, and can
 play them out loud.
 
-It also takes `.wav` recordings of real cassettes. A C64 tape stores its data as
-audible pulses, so a recording of one still is the data: the pulses are recovered
-and it becomes an ordinary tape.
+It also takes `.wav` recordings of real cassettes (a C64 tape stores its data
+as audible pulses, so a recording of one still is the data) and `.dmp` dumps
+from a DC2N, which are pulses already. **Either becomes a `.tap`**: that is what
+the deck holds and what goes into your Library. Downloading it as `.WAV` again
+re-renders the audio from those pulses, so you get the same data back as clean
+square edges, not your original recording.
 
-It also takes `.dmp` dumps from a DC2N, which records a tape at the cassette
-port. Those are pulses already, so there is nothing to recover.
-
-**A loaded `.wav` or `.dmp` becomes a `.tap`**; that is what the deck holds and
-what goes into your Library. Downloading it as `.WAV` again re-renders the audio from those
-pulses, so you get the same data back as clean square edges, not your original
-recording.
-
-**This is a preservation tool, not just a way to play a recording.** Point it at
-a transfer of a 1980s cassette and it recovers the tape, damage and all, then
-mends what the tape can prove. On the eight worn cassettes it was built against
-it went from 66 of 129 programs loading to 121 of 130. What it does, in order:
-
-1. **Reads the recording**: every common WAV format, and both channels of a
-   stereo transfer.
-2. **Finds the pulses.** A C64 tape stores data in the *width* of each pulse, so
-   the widths are measured between centre crossings, with the level and the
-   centre line tracked locally: an old recording holds neither steady. The widths
-   a tape was written at are measured too, so a deck that ran fast or slow still
-   reads.
-3. **Compares the readings.** The two channels of a stereo transfer, their
-   average, and their average with the channels lined up (they sit a few
-   samples apart on every tape) are four readings of the same tape, and they
-   disagree. All four are read and the one that hands over the most files is kept.
-4. **Mends what it can prove.** Where a file does not add up, its own stretch of
-   the recording is read again (the other channel, the averages, the treble
-   lifted) until two readings agree on its bytes and the checksum passes. A file
-   only one reading vouches for is put back but said to be unconfirmed.
-   Standard-format files are mended from the tape's second copy as well, or the
-   two copies merged.
-5. **Writes it back clean.** Every file whose bytes are proved is rewritten at the
-   two pulse widths that tape uses, so the loader from 1986 gets a pristine block
-   rather than a marginal one.
-
-Nothing is invented: every repair has to pass a checksum that was written to the
-tape in the first place, and a file that cannot be proved is left alone and
-marked in the listing. What stays broken is mostly tape that no longer carries a
-signal: a second of silence in the middle of a file is a second of the program
-gone, and no reading brings it back.
-
-It takes a while (a 30-minute side is a few hundred megabytes of audio, read
-several times over), so a dialog says which pass it is on while it works, and the
-emulator keeps running behind it.
-
-The Status card reports what came out of the recording: how long it was, how
-many files, and whether any needed mending. A C64 tape records every block
-twice and the machine reads both, so a damaged second copy makes a load hang
-even though the program arrived; the second copy is then rewritten from the
-first, or the two are merged where neither is whole on its own. A turbo tape
-has no second copy, so its files are read again with the treble lifted, which is
-what a worn tape loses first. The listing says what was mended at its foot.
-
-**🔊** beside the card title plays the tape out loud, the real signal the head
-is reading, not a sound effect. A loader sounds like a loader.
-
-**The scope** to its left draws that same signal instead of playing it. There is
-no visualisation to invent here: a C64 tape *is* a square wave, and the data is
-in the width of each pulse, so the trace is the signal itself, read from the
-`.tap` entries passing under the head, pulse for pulse.
-
-![The Tape signal dialog: a green square wave of varying pulse widths on a graticule, reading PLAYING at the bottom left and "43 pulses · 20 ms window · 384–688 cycles" at the right.](/guide/tape-scope.webp)
-
-The window is about 20 ms of tape (a few dozen pulses), and the readout under it
-says what the deck is doing and what has just gone past: how many pulses, and the
-shortest and longest of them in C64 cycles. On a KERNAL tape those settle at 384,
-528 and 688 cycles, the three widths the format is built from; a lead-in is one
-width repeated, so the trace goes evenly striped, and data mixes all three as
-above. A turbo tape uses two much shorter ones.
-
-It is independent of the speaker, so you can watch with the sound off, and it
-works while recording too; there the trace is what has just been written. A deck
-that is not moving draws a flat line rather than the last thing it saw.
-
-**🔍** at the end of the tape's info row lists what is on the tape. A `.tap`
-carries no directory, so the tape is read the way the C64 reads it and the file
-headers are picked out. It reads on the press, not on insert, and takes a few
-milliseconds.
-
-The listing is laid out like the Library: a row per file with the format it was
-written in, its size, and the time it starts. **Click a row to wind the tape to
-that file**: the head lands at the start of its lead-in, ready for the loader.
-
-![The tape listing for a tape called 80S MIXTAPE: seven rows, each with a CBM or TURBO badge, a filename, its size and its start time. One filename is struck through in red, and a note under the list says one file is struck through because the tape lost part of it.](/guide/tape-listing.webp)
-
-A filename **struck through** could not be read whole. Damaged tapes are normal,
-and nothing is hidden: the file stays in the listing and the head can still be
-wound to it, but it will not load. Hover it to see why, and the note under the
-list says how many there are and what was mended on the way in.
-
-Turbo tapes are read too, in the formats the emulator knows: the
-[Datasette architecture](DATASETTE-ARCHITECTURE.md) page lists which loaders
-those are. A tape written by one that isn't known yet says so rather than
-listing anything.
+### The buttons
 
 In the order they sit on the deck:
 
@@ -582,35 +496,90 @@ In the order they sit on the deck:
 | **⏺ REC** | Presses RECORD. `SAVE"NAME",1` from the C64 then writes to the tape. RECORD engages PLAY with it, so both keys light up; that is the mechanism, not a glitch. |
 | **⏪ REW** / **⏩ FF** | **Hold** to wind, let go to stop. They release themselves if the tape reaches an end. |
 
-Click or drag the bar to move the tape. A tape under a pressed key is moving past
-the head, so a key that is down comes up first; clicking while it plays means
-stop here, and while it records it means stop, keep what was written, and move.
+### The bar
 
 The bar shows tape position and turns red while recording; the dot beside it
-lights when the motor is running; the three-digit counter and the timer track
-the tape. As animated above: insert a tape (or press **▶ PLAY**) and, with
-AUTORUN on, the motor dot turns green, the bar fills, and the counter climbs
-from 0m00s.
+lights when the motor runs; the three-digit counter and the timer track the
+tape. It is also a scrubber: click or tap anywhere on it to move the tape
+there, drag along it to hunt, and hover first to preview: the timer shows the
+tape time under your pointer without moving anything. With the bar focused,
+← and → step by 2 % (hold Shift for 10 %), and Home and End jump to the ends.
 
-**The bar is also a scrubber.** Click or tap anywhere on it to move the tape
-there, or drag along it to hunt. Hovering first previews the spot: the timer
-shows the tape time under your pointer without moving anything. With the bar
-focused, ← and → step by 2 % (hold Shift for 10 %), and Home and End jump to the
-ends. Scrubbing is refused while RECORD is engaged; a real deck can't move the
-head mid-write either.
+A tape under a pressed key is moving past the head, so the key comes up first:
+clicking while it plays means stop here, and while it records it means stop,
+keep what was written, and move. Scrubbing is refused while RECORD is engaged;
+a real deck can't move the head mid-write either.
 
-**To save to tape:** press **📼 BLANK**, then **⏺ REC**, then `SAVE"NAME",1` in
-BASIC. Recording is instead of playing, so the tape is written from wherever the
-head is and anything past that point is overwritten; a real head erases as it
-goes. When you're done, **⏹ STOP** and **⤓ .TAP** to keep the file. A recorded
-tape is also folded into the Library automatically, so a reload doesn't lose it.
+### Saving to tape
 
-**Winding needs the computer.** A real datasette's motor is switched by the C64,
-not by the deck, so **REW** and **FF** only move tape while the machine has the
-motor line on. The KERNAL turns it on as soon as a key goes down, so in practice
-they simply work. That is why a real deck sits silent with PLAY held and starts
-by itself at the `READY.` prompt. The one liberty taken: the wind keys run only
-while held, where a real deck latches them until STOP.
+Press **📼 BLANK**, then **⏺ REC**, then `SAVE"NAME",1` in BASIC. Recording is
+instead of playing: the tape is written from wherever the head is and anything
+past that point is overwritten, as a real head erases as it goes. When you're
+done, **⏹ STOP** and **⤓ .TAP** to keep the file; a recorded tape is also
+folded into the Library automatically, so a reload doesn't lose it.
+
+### Winding
+
+A real datasette's motor is switched by the C64, not by the deck, so **REW**
+and **FF** only move tape while the machine has the motor line on. The KERNAL
+turns it on as soon as a key goes down (a freshly pressed key starts the tape
+by itself at the `READY.` prompt), but right after a load the deck sits parked
+even with PLAY still latched, until the key is released. The one liberty taken:
+the wind keys run only while held, where a real deck latches them until STOP.
+
+### Restoring real cassettes
+
+Point the deck at a transfer of a 1980s cassette and it recovers the tape,
+damage and all, then mends what the tape can prove: the readings a transfer
+offers (the other channel of a stereo recording, the treble lifted, a standard
+tape's second copy) are played against each other until two agree and the
+file's own checksum passes. Nothing is invented: a file that cannot be proved
+is left alone and struck through in the listing. On the eight worn cassettes
+this was built against, it went from 66 of 129 programs loading to 121 of 130.
+The full method is on the [Datasette architecture](DATASETTE-ARCHITECTURE.md)
+page.
+
+It takes a while (a 30-minute side is a few hundred megabytes of audio, read
+several times over); a dialog says which pass it is on, and the emulator keeps
+running behind it. The Status card reports what came out: how long the tape
+was, how many files, and whether any needed mending.
+
+### Hearing and seeing the signal
+
+**🔊** beside the card title plays the tape out loud, the real signal the head
+is reading, not a sound effect. A loader sounds like a loader.
+
+**The scope** to its left draws that same signal instead of playing it: a C64
+tape *is* a square wave, so the trace is the signal itself, read from the
+`.tap` entries passing under the head, pulse for pulse.
+
+![The Tape signal dialog: a green square wave of varying pulse widths on a graticule, reading PLAYING at the bottom left and "43 pulses · 20 ms window · 384–688 cycles" at the right.](/guide/tape-scope.webp)
+
+The window is about 20 ms of tape, and the readout under it says what the deck
+is doing and what has just gone past: how many pulses, and the shortest and
+longest of them in C64 cycles. A KERNAL tape settles at 384, 528 and 688, the
+three widths the format is built from; a turbo tape uses two much shorter
+ones. The scope is independent of the speaker, works while recording (there
+the trace is what has just been written), and a deck that is not moving draws
+a flat line.
+
+### What is on the tape
+
+**🔍** at the end of the tape's info row lists the tape's contents. A `.tap`
+carries no directory, so the tape is read the way the C64 reads it and the
+file headers are picked out (on the press, in a few milliseconds).
+
+![The tape listing for a tape called 80S MIXTAPE: seven rows, each with a CBM or TURBO badge, a filename, its size and its start time. One filename is struck through in red, and a note under the list says one file is struck through because the tape lost part of it.](/guide/tape-listing.webp)
+
+The listing is laid out like the Library: a row per file with the format it was
+written in, its size, and the time it starts. **Click a row to wind the tape to
+that file**: the head lands at the start of its lead-in, ready for the loader.
+A filename **struck through** could not be read whole: the file stays in the
+listing and the head can still be wound to it, but it will not load. Hover it
+to see why; the note under the list counts them and says what was mended on
+the way in. Turbo tapes are read too, in the formats the
+[Datasette architecture](DATASETTE-ARCHITECTURE.md) page lists; a tape written
+by a loader that isn't known yet says so rather than listing anything.
 
 ---
 
@@ -684,9 +653,8 @@ run the [Setup dialog](#setup-c64-ready) walks you through loading them.
 | **LOAD…** (per ROM) | Loads a ROM file from your device for KERNAL, BASIC, CHARGEN or 1541 DOS. |
 | **CLEAR** | Removes all cached ROM uploads from browser storage. |
 
-> ⚠️ The KERNAL, BASIC, CHARGEN and 1541 ROMs are Commodore's copyrighted
-> property and are **not** bundled; you must supply them legally. See
-> [Getting Started](GETTING-STARTED.md#1-set-up-roms).
+> ⚠️ Commodore's ROMs are copyrighted and **not** bundled. Supply them
+> legally; see [Getting Started](GETTING-STARTED.md#1-set-up-roms).
 
 ---
 
@@ -695,14 +663,11 @@ run the [Setup dialog](#setup-c64-ready) walks you through loading them.
 ![The Setup C64 READY. dialog: "Get ROM files from VICE" with a CHOOSE… button, above "Upload each ROM file" with a LOAD… and a "help me find it" search per ROM.](/guide/setup-dialog.webp)
 
 Appears automatically on first run, when no ROMs are found; the C64 can't boot
-without them. Two routes: **CHOOSE…** takes all four images out of an installed
-VICE folder, or **LOAD…** takes one file at a time. **🔍 help me find it**
-searches the web for a filename; the emulator never downloads anything itself.
-The closing button reads **Find them later** until the three required ROMs are
-in, then **Done**.
+without them. The closing button reads **Find them later** until the three
+required ROMs are in, then **Done**.
 
-[Getting Started](GETTING-STARTED.md#1-set-up-roms) has the walkthrough, the
-filenames and the licensing note.
+[Getting Started](GETTING-STARTED.md#1-set-up-roms) has the walkthrough: the
+two loading routes, the filenames and the licensing note.
 
 ---
 
@@ -720,7 +685,7 @@ The special keys are worth memorising:
 | **F11** | CLR/HOME |
 | **F12** | RESTORE (NMI) |
 | **Enter** | RETURN |
-| **Backspace / Delete** | INST/DEL |
+| **Backspace / Delete / Tab** | INST/DEL |
 | **Arrows** | CRSR movement |
 | **^** | ↑ · **_** produces ← |
 | **Esc** | reserved (closes dialogs, exits fullscreen) |
@@ -770,14 +735,14 @@ on every platform.
 | **V** | Pastes the clipboard into the C64 as keystrokes, same as **PASTE**. |
 | **F** | Cycles the CRT look, same as the CRT button in [Options](#options). |
 | **Z** | Zooms the VIBES button to 10x, so the little pixel demo running inside it can be watched properly: magnified, and running at your display's refresh rate. It stays a working button: clicking it opens [Retro Vibes](#retro-vibes). Press it again (or **Esc**) to send it back. |
-| **P** | Opens [Retro Vibes](#retro-vibes) in Studio mode — the 3D scene and the C64 READY. logo, nothing else. Press it again to bring the controls back. The mode is remembered between visits. |
+| **P** | Opens [Retro Vibes](#retro-vibes) in Studio mode: the 3D scene and the C64 READY. logo, nothing else. Press it again to bring the controls back. The mode is remembered between visits. |
 
 Only those letters are borrowed. **Ctrl** on its own is a real C64 key and still
 reaches the machine, and a text box keeps its own keys.
 
 The same list is in the **KEY MAP** dialog under *App shortcuts*, which is
 generated from the shortcuts themselves and so is always current. It adds
-**S** — a debug snapshot, handy when reporting a bug.
+**S**, a debug snapshot, handy when reporting a bug.
 
 ### Reserved keys
 

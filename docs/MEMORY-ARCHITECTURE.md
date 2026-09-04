@@ -102,9 +102,11 @@ truth table:
 | BASIC ROM (`$A000-$BFFF`) | LORAM && HIRAM |
 | CHAR ROM (`$D000-$DFFF`) | !CHAREN (and CHAREN ⇒ I/O instead) |
 | I/O (`$D000-$DFFF`) | (LORAM \|\| HIRAM) && CHAREN |
-| RAM | otherwise (ROM regions still take writes; ROM is a read shadow) |
+| RAM | otherwise |
 
-Cartridge modes (8k/16k/ultimax) override this; see §6.
+ROM is a **read shadow**: a page mapped to ROM still takes writes into the RAM
+underneath (ultimax ROM pages drop them instead). Cartridge modes
+(8k/16k/ultimax) override the table above; see §6.
 
 ---
 
@@ -115,7 +117,7 @@ Cartridge modes (8k/16k/ultimax) override this; see §6.
 | `read(addr)` | **yes** (device reads clear flags / advance state) | yes | normal CPU reads |
 | `write(addr, val)` | yes | yes (except `$00`/`$01`) | normal CPU writes |
 | `dmaRead(addr)` / `dmaWrite(addr, val)` | yes | yes | an external bus master (the REU); identical to `read`/`write` except the 6510 port at `$00`/`$01` does not answer |
-| `peek(addr)` | **no**, never pokes a device; returns the bus latch for I/O pages | no | VIC sampling the byte a BA-stalled CPU drives (§3.14.6 invalid c-reads) |
+| `peek(addr)` | **no**, never pokes a device; returns the bus latch for I/O pages | no | VIC sampling the byte a BA-stalled CPU drives (Bauer §3.14.6 invalid c-reads) |
 | `peekForCpu(addr)` | **no** read side effects, but returns the value an I/O **register** read would place on the bus (`_peekIO`) | no | CPU opcode predecode (`peek(pc)`), so decoding doesn't ack a CIA ICR etc. |
 
 The split matters: the CPU decodes the next opcode with `peekForCpu` so the
@@ -153,7 +155,9 @@ The expansion and the cartridge occupy separate slots (`reu` and `cartridge`),
 so both can be attached at once; on real hardware that combination needs a
 port expander. The expansion answers only its eleven registers and hands
 everything else to the cartridge, which is conflict-free except for the three
-cartridge types that use IO2 themselves (see KNOWN-ISSUES).
+cartridge types that use IO2 themselves (see KNOWN-ISSUES). The expansion
+touches Memory at three points in all: this `$DF00` register window, the
+`dmaRead`/`dmaWrite` access pair (§4), and the `$FF00` trigger snoop (§6).
 
 ---
 
@@ -177,20 +181,17 @@ Registered devices:
 
 - **Generic** (type 0): fixed 8K, 16K, or Ultimax mapping.
 - **Action Replay v4.x/v5/v6** (type 1): four 8 KB ROM banks, 8 KB RAM,
-  mirrored IO1 control, IO2 ROM/RAM page, cartridge kill, and latched
-  RESET/FREEZE/NMI behavior. An IO1 CPU read clocks the current phi1 external
-  bus byte into its register; opcode predecode uses `ioPeek` and does not cause
-  that side effect. The unusual `$22` ROML state takes the read hook to combine
-  the simultaneously driven C64 and cartridge RAM bytes.
+  IO1/IO2 control, cartridge kill, and latched RESET/FREEZE/NMI behavior.
 - **Final Cartridge III** (type 3): four 16 KB banks, IO1/IO2 ROM mirror,
   `$DFFF` latch, and RESET/FREEZE/NMI behavior.
 - **Magic Desk** (type 19): 64 possible 8 KB banks and mirrored IO1 control.
 - **EasyFlash** (type 32): 64 ROML/ROMH banks, bank/control registers, and
   its 256-byte IO2 RAM.
 
-ROM regions are normally **read shadows**: underlying C64 RAM still receives
-writes. Ultimax ROM pages normally drop writes; devices can explicitly publish
-a writable ROML target for cartridge RAM.
+Per-device electrical exceptions (Action Replay's IO1 bus-byte clocking and its
+`$22` ROML read hook among them) live with the devices in `src/cartridges/*`.
+ROM regions follow the read-shadow rule (§3); a device can explicitly publish a
+writable ROML target for cartridge RAM.
 
 ### The RAM Expansion's `$FF00` snoop
 
@@ -282,8 +283,8 @@ regression:
   reads return pins (incl. cassette sense), writes latch all 8 bits.
 - **`peek` vs `peekForCpu` vs `read`**: only `read` has device side effects and
   drives the bus; predecode/VIC-sampling use the peeks to avoid acking I/O.
-- **ROM is a read shadow**: writes fall through to the underlying RAM (except
-  ultimax, which drops them).
+- **ROM is a read shadow** (§3): writes fall through to the underlying RAM
+  (except ultimax, which drops them).
 - **Color RAM is 4-bit**; the upper nibble is open bus (the VIC phi1 byte).
 - **`externalDataBus8` is shared with the VIC**: VIC fetches drive it too, which
   is how open-bus reads and the color-RAM upper nibble stay byte-faithful.

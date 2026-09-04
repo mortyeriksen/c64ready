@@ -83,8 +83,10 @@ Live engine switches replay the full `$D400-$D418` register file from a worklet-
 
 ### Lean clock paths (JS voice core)
 
-Both JS roles share `SIDVoice` but call different lean methods; under `wasm`
-the module does the player's work and the shadow still uses the JS column.
+This is the hot-path contract both consumers hold `SIDVoice` to; the chip model
+itself follows in §2–§7. Both JS roles share `SIDVoice` but call different lean
+methods; under `wasm` the module does the player's work and the shadow still
+uses the JS column.
 
 | Voice | Player (`resid`) | Shadow (always) |
 |-------|------------------|-----------------|
@@ -112,9 +114,8 @@ The shared feedback runs in all three, so each lean variant is
 order `_outputPre → _osc3Read → _outputPost` is load-bearing: the OSC3 read must
 see the pre-writeback noise latch and the previous cycle's pulse rail. Locked by
 `test/sid-outputstage-skip-equiv-spec-test.js` (both models, 60k cycles, and it
-asserts the skip genuinely happens). Measured: the shadow's audio-skip trims
-~30% off its per-cycle `outputStage`; the worklet's OSC3-skip 3–13% (most on
-8580 tri/saw, which skips `_triSaw12()`).
+asserts the skip genuinely happens); the savings are real on both sides, largest
+on the 8580 tri/saw path (which skips `_triSaw12()`).
 
 **Keep both sides in sync:** same bus writes; same chip model (`setSidModel` on
 the shadow, the worklet `model` message, and `sid_set_model` when WASM is live);
@@ -155,12 +156,13 @@ CTRL bits (`SIDVoice.write` / `_computeWaveform12`): GATE `0x01`, SYNC `0x02`,
 RING `0x04`, TEST `0x08`, TRI `0x10`, SAW `0x20`, PULSE `0x40`, NOISE `0x80`.
 Global-block decode lives in `SIDChip.write` (`sid-worklet.js`).
 
-All registers except POTX/POTY/OSC3/ENV3 are write-only. Reading one returns
-the **SID data-bus value**: the last byte written to *any* SID register, or
-returned by a readable-register read (which also loads the bus). It fades to 0
-after ~`$1D00` cycles on the 6581 and ~`$A2000` on the 8580 (reSID `sid.cc`,
-real-chip `bitfade`/`delayfrq0.prg` measurements). `SIDProxy.regs` still records
-current register values for save-states; CPU reads do not serve from it.
+> **All registers except POTX/POTY/OSC3/ENV3 are write-only: reading one does
+> not return the register.** It returns the **SID data-bus value**: the last
+> byte written to *any* SID register, or returned by a readable-register read
+> (which also loads the bus), fading to 0 after ~`$1D00` cycles on the 6581 and
+> ~`$A2000` on the 8580 (reSID `sid.cc`, real-chip `bitfade`/`delayfrq0.prg`
+> measurements). `SIDProxy.regs` still records current register values for
+> save-states; CPU reads do not serve from it.
 
 ---
 
@@ -245,130 +247,83 @@ Routing in `_computeWaveform12`:
 ## 5. Noise LFSR (`sid-voice.js`)
 
 Byte-verified against headless VICE x64sc reSID on both models: a 16-cycle OSC3
-sampler over five windows (slow walk, fast stream, noise+pulse writeback,
-noise+saw writeback, TEST-held fade) matches 100.0%. The register never shifts
-before the first non-zero frequency write, so the series is deterministic from
-power-on with no alignment tricks.
+sampler over five windows (slow walk, fast stream, both writeback modes,
+TEST-held fade) matches 100.0%. The register never shifts before the first
+non-zero frequency write, so the series is deterministic from power-on with no
+alignment tricks.
 
-- **23-bit Fibonacci LFSR**, power-up `0x7FFFFE`: the all-ones register clocked
-  once when reset releases (reSID `wave.cc reset()`). Feedback `bit22 ⊕ bit17`.
+The generator is reSID's **23-bit Fibonacci LFSR** (power-up `0x7FFFFE`,
+feedback `bit22 ⊕ bit17`), ported bit-for-bit: tap positions, fade step curves
+and shift-completion feedback are reSID's (`wave.cc`), not re-derived here. The
+facts the rest of the chip model leans on:
+
 - **Shift trigger: rising edge of phase bit 19** (detected from the ADD, so a
-  hard sync cannot cancel it), not the 24-bit wrap: ~16 shifts per phase cycle.
-  **The shift lands 2 cycles later** via `shiftPipeline` (detect → phase 1 →
-  phase 2, reSID `shift_pipeline`); the pipeline counts down only on edge-free
-  cycles, and a TEST rise flushes it.
-- **The output is a LATCH** (`noiseVal`), refreshed only on shift / writeback /
-  fade, never recomputed per cycle. Taps `{20,18,14,11,9,5,2,0}` (MSB→LSB, per
-  reSID / `noisetest`, `NOISE_TAPS`); `_setNoiseOutput`:
-  ```
-  noiseVal = (lfsr&0x100000)>>13 | (lfsr&0x040000)>>12 | (lfsr&0x004000)>>9
-           | (lfsr&0x000800)>>7  | (lfsr&0x000200)>>6  | (lfsr&0x000020)>>3
-           | (lfsr&0x000004)>>1  | (lfsr&0x000001);
-  ```
-- **TEST held** stops clocking and the SRAM cells fade toward all-1s. VICE's
-  resid refines reSID 1.0's single `$8000`-cycle jump into a measured
-  **gradual fade**: first step after 35000 cycles of TEST, then one per 1000
-  (6581); 2519864 / 315000 (8580). Each step lights bit 0 and every set bit
-  pulls its left neighbour up (`_shiftregBitfade`).
-- **TEST released** completes the held shift with the *release* feedback
-  `bit0 = (bit22|test) ⊕ bit17 = ¬bit17`, refreshing the latch. If the previous
-  waveform combined noise with another, the selector output is first flushed
-  into the register (**pre-writeback**), with reSID's per-model exceptions
-  (`do_pre_writeback`: never from noise+pulse on the 6581, only into `$9`/`$E`
-  from it on the 8580, never on 6581 tri↔saw swaps). It **does** fire when
-  writing back INTO plain noise (`wf===8`): reSID gates that behind `#if 0`
-  ("needs more investigation"), so it is not active there and not gated here
-  either; `noiselfsrinit/simple`'s `$F8→$80` init dance needs it (real 8580 +
-  VICE = `$7F`). Trade-off, VICE-aligned: firing it makes 13
-  `wb_testsuite/noisewriteback` X→8 combined-noise cases fail, but VICE 3.10
-  fails them identically (a shared reSID combined-waveform-model limit; no
-  waveform rule separates them). See `_doPreWriteback` and §13.
+  hard sync cannot cancel it), ~16 shifts per phase cycle, and **the shift
+  lands 2 cycles later** via `shiftPipeline`; a TEST rise flushes the pipeline.
+- **The output is a LATCH** (`noiseVal`, 8 tap bits feeding waveform bits
+  11..4), refreshed only on shift / writeback / fade, never recomputed per
+  cycle.
+- **TEST held** stops clocking and fades the register gradually toward all-1s
+  (`_shiftregBitfade`; per-model timing in the §12 table). **TEST released**
+  completes the held shift with the release feedback `¬bit17`, refreshing the
+  latch. When the previous waveform combined noise with another, the release is
+  preceded by the **pre-writeback** flush of the selector output into the
+  register (`_doPreWriteback`; its per-model rules and the VICE-aligned
+  trade-off are §13's).
 - **Combined-NOISE zero-clobbering**: with NOISE + another waveform the selector
-  output writes back into the register's tap bits **every cycle** (not just on
-  shifts), except under TEST and except the single cycle before a pipelined
-  shift lands (`shiftPipeline === 1`). Bits can only be cleared, and the latch
-  degrades immediately (`noiseVal &= out12 >> 4`): combined noise collapses to
-  silence within cycles, as on hardware; a TEST pulse or the fade recovers it.
+  output writes back into the register's tap bits **every cycle** (except under
+  TEST and the single cycle before a pipelined shift lands). Bits can only be
+  cleared, so combined noise collapses to silence within cycles, as on
+  hardware; a TEST pulse or the fade recovers it.
 
 ---
 
 ## 6. Envelope generator (ADSR)
 
 A port of reSID's **cycle-accurate pipelined** `EnvelopeGenerator` (VICE
-`resid/envelope.h`+`.cc`): a three-state machine (`state`: 1=attack,
-2=decay/sustain, 0=release, matching ATTACK / DECAY_SUSTAIN / RELEASE), an 8-bit
-`env` counter (the per-voice amplitude multiplier), and a **one-cycle readback
-latch `env3`**: `$D41C` returns the value sampled at the START of each clock, so
-a CPU read sees the counter as it stood one cycle earlier. Three deferred-work
-pipelines model the extra cycle(s) before an effect lands:
+`resid/envelope.h`+`.cc`): a three-state machine (attack, decay/sustain,
+release), an 8-bit `env` counter (the per-voice amplitude multiplier), and a
+**one-cycle readback latch `env3`**: `$D41C` returns the value sampled at the
+START of each clock, so a CPU read sees the counter as it stood one cycle
+earlier. Three deferred-work pipelines (`statePipeline`, `envPipeline`,
+`expPipeline` plus the deferred rate-counter reset) model the extra cycle(s)
+between a cause (a GATE write, a rate or exponential match) and its effect
+landing on `env`; the pipeline orderings, the 16-entry rate table the ATK/DEC/
+REL nibbles index, and the counter mechanics are reSID's, carried over
+literally rather than re-derived here.
 
-- **State pipeline** (`statePipeline` / `_stateChange`): a GATE write schedules
-  the ATTACK/RELEASE transition a couple of cycles out. Attack rate takes over on
-  the *second* attack cycle; release from attack/decay resolves at its own
-  offset. Each transition reloads the comparator `ratePeriod` from the new
-  state's rate nibble.
-- **Envelope pipeline** (`envPipeline`): a rate/exp match arms the counter step
-  one cycle out; the `env` ±1 lands on the next clock.
-- **Exponential pipeline** (`expPipeline`) + **deferred rate-counter reset**
-  (`resetRateCounter`), resolved in reSID's else-if order (exp first, else the
-  rate reset queued last cycle).
+The consequences the tests gate on, each verified against reSID:
 
-Mechanics, each verified against reSID:
-
-- **Rate periods** `RATE_PERIODS[16]` (cycles per step, Yannes/reSID table,
-  identical on both chips; the ATK/DEC/REL nibbles index it):
-  ```
-  [9, 32, 63, 95, 149, 220, 267, 313, 392, 977, 1954, 3126, 3907, 11720, 19532, 31251]
-  ```
-  A 15-bit prescaler `rateCounter` counts up to the comparator
-  **`ratePeriod` = `RATE_PERIODS − 1`** (`RATE_CMP`): on an equality match the
-  counter does not increment but arms `resetRateCounter`, so the clear lands
-  the *next* cycle (effective period `comparator + 1`). The prescaler is never
-  reset by register writes or gate flips, only by that deferred match-reset;
-  the **comparator is reloaded** on AD/SR/control writes and state transitions
-  when the *current* state's rate nibble changes (reSID `rate_period`). On wrap
-  the counter **skips zero** (`$7FFF → $0001`). Together: the **ADSR delay
-  bug**: shrinking the period below the running counter stalls the envelope up
-  to 32767 cycles until the wrap comes around (vs VICE reSID: 1916-sample stall,
-  ±1 boot-phase).
-- **Attack** ramps `env` 0→255 linearly, then drops into decay. Every rate match
-  in attack **resets the exponential counter** even though attack doesn't divide.
-- **Decay / Release** use an **exponential divider**: `expCounter` counts to a
-  divisor **latched when `env` lands on a boundary value** (`_setExpPeriod`,
-  exact match, not `<=`): `$FF→1, $5D→2, $36→4, $1A→8, $0E→16, $06→30, $00→1`
-  (reSID `set_exponential_counter`; a mid-segment env keeps the previous
-  divisor). The `<=` cascade survives only as the save-state restore fallback
-  in `deserialize`; a wrong boundary makes envelopes run ~3% fast. A full
-  A=D=R=15 envelope takes exactly `0x7E60` cycles (`envtime.prg`).
-- **Decrement pipeline**: with divisor ≠ 1 a rate+exp match arms a 1-cycle
-  pipeline and the decrement lands on the **next** clock (`envelope_pipeline`).
-- **Counter wrap + freeze-at-zero** (reSID `hold_zero`): `env` wraps both ways
-  (attack step at `$FF` → `$00`; release/decay step at `$00` → `$FF`). Landing
-  on `$00` either way **freezes** the counter; only GATE 0→1 unlocks it. So a
+- **The ADSR delay bug.** The 15-bit rate prescaler is never reset by register
+  writes or gate flips (only by its own deferred match-reset), and on wrap it
+  skips zero, so shrinking the period below the running counter stalls the
+  envelope up to 32767 cycles until the wrap comes around (vs VICE reSID: a
+  1916-sample stall, ±1 boot-phase).
+- **Decay/release divide through an exponential counter** whose divisor is
+  latched when `env` lands **exactly** on a boundary value (`_setExpPeriod`,
+  not `<=`; the `<=` cascade survives only as the save-state restore fallback,
+  and a wrong boundary runs envelopes ~3% fast). A full A=D=R=15 envelope takes
+  exactly `0x7E60` cycles (`envtime.prg`).
+- **Counter wrap + freeze-at-zero** (reSID `hold_zero`): `env` wraps both ways,
+  and landing on `$00` either way **freezes** it; only GATE 0→1 unlocks. So a
   re-gate with env at `$FF` snaps it to `$00` and mutes the voice until the
-  next gate-off/on pair (hard-restart interaction), and an unlocked release at
-  env 0 runs a full `$FF`-down curve.
-- **Sustain** is not a separate state: inside decay/sustain the compare
-  `env === (s<<4)|s` is re-evaluated on **every exponential tick** while the
-  rate/exponential counters keep running (reSID DECAY_SUSTAIN). Hence
-  **lowering SR while gated resumes decay** to the new level (SR=`$00` drains
-  to 0 at the decay rate: the GoatTracker/JCH *hard restart*), and **raising SR
-  above the current env is never honoured** (the equality can't match on the
-  way down; the envelope decays past it to 0).
-- GATE 1→0 forces release (via the state pipeline); GATE 0→1 restarts attack
-  from the current level and clears the zero-freeze. reSID quirk: on gate-on
-  the decay register is "accidentally" active for the **first cycle**
-  (`state←DECAY`, comparator←`RATE_CMP[d]`); attack takes over two cycles later
-  when `_stateChange` flips to ATTACK (`env_test` measures this).
+  next gate-off/on pair (the hard-restart interaction), and an unlocked release
+  at env 0 runs a full `$FF`-down curve.
+- **Sustain is not a separate state**: inside decay/sustain the compare
+  `env === (s<<4)|s` re-evaluates on every exponential tick, so **lowering SR
+  while gated resumes decay** to the new level (SR=`$00` drains to 0 at the
+  decay rate: the GoatTracker/JCH *hard restart*), and **raising SR above the
+  current env is never honoured** (the equality can't match on the way down).
+- **Gate-on runs one "accidental" decay cycle** before attack takes over two
+  cycles later (reSID quirk; `env_test` measures it). GATE 1→0 forces release
+  via the state pipeline.
 
 Verification: the full VICE `env_test/*` testprog suite passes (all 8;
 `ra_0000 = 0/192` vs the real-HW table, `resid-test/envdelay` = `$8011`), and a
-16-cycle ENV3 sampler over five windows (attack/decay, release, flip-freeze,
-unlock+wrap, delay bug) gives identical step-value sequences with run lengths
-within ±1 sample. Absolute edge timing between emulators is not comparable at
-1-cycle precision: the rate prescaler has no software reset (unlike the
-oscillator's TEST bit), so each emulator carries an uncontrollable power-on
-phase constant.
+16-cycle ENV3 sampler over five windows gives identical step-value sequences
+with run lengths within ±1 sample. Absolute edge timing between emulators is
+not comparable at 1-cycle precision: the rate prescaler has no software reset,
+so each emulator carries an uncontrollable power-on phase constant.
 
 **Voice amplitude** = `(WAVE_DAC[out12] − wave_zero) · ENV_DAC[env]`, reSID's
 integer voice product (±2047×255). The waveform passes through the model's R-2R
@@ -484,24 +439,11 @@ model table builds ≈0.2–0.36 s vs ≈1.2 s.
 ### User master volume (app-level, not `$D418`)
 
 The **Options ▸ Sound** slider is a Web Audio `GainNode` (`masterGain` in
-`main.js`) *downstream* of the worklet and outside the SID model; it never
-touches the emulated chip or the DAC math.
-
-```
- sidNode (worklet) + drive sounds ─► masterGain ─► AudioContext.destination ─► speakers
-```
-
-- **Slider position, tapered gain.** `masterVolume` (0..1, persisted
-  `c64emu.volume`, default **0.7**) is the position; the node gain is the
-  square-law perceptual taper `volumeToGain(v) = v·v`: 70% = 0.49 (≈ −6 dB),
-  50% = 0.25 (−12 dB), 100% = 1.0 (unity). Linear gain sounded loud across most
-  of the travel; squaring spreads the useful range over the top half.
-- **Why 0.7.** With `$D418` at 15 the mix rides to ±1.0 (0 dBFS), authentically
-  hot and louder than loudness-normalised apps at the same system volume; ~−6 dB
-  of default headroom fixes that without distorting, unity is one drag away.
-- **One node trims everything.** MUTE pins the same `masterGain` to 0, and the
-  synthesised drive sounds route through it too. User-facing behaviour: User
-  Guide, Sound section.
+`main.js`) *downstream* of the worklet and outside the SID model: a square-law
+perceptual taper on the slider position (default 70% ≈ −6 dB of headroom
+against the authentically hot 0 dBFS chip mix). MUTE pins the same node to 0,
+and the synthesised drive sounds route through it too. User-facing behaviour:
+the [User Guide](USER-GUIDE.md), Sound section.
 
 ---
 
@@ -592,8 +534,15 @@ Everything not listed here is calibrated against VICE's reSID (per-topic
 sections above) and is byte- or near-byte-exact.
 
 - **13 combined-*noise* cases in VICE's `wb_testsuite` differ**, identically to
-  VICE 3.10 (a shared reSID combined-waveform-model limit); accepted trade-off
-  (§5).
+  VICE 3.10, the accepted pre-writeback trade-off. `_doPreWriteback` follows
+  reSID's per-model rules (never from noise+pulse on the 6581, only into
+  `$9`/`$E` from it on the 8580, never on 6581 tri↔saw swaps) but **does** fire
+  when writing back into plain noise (`wf===8`), which reSID gates behind
+  `#if 0` ("needs more investigation"): `noiselfsrinit/simple`'s `$F8→$80` init
+  dance needs it (real 8580 + VICE = `$7F`). Firing it makes the 13
+  `wb_testsuite/noisewriteback` X→8 combined-noise cases fail, but VICE 3.10
+  fails them identically: a shared reSID combined-waveform-model limit; no
+  waveform rule separates the two sets (§5).
 - **`$D417` EXT IN routing (bit 3) is a no-op**: no expansion-port audio is
   mixed into the filter (EXT IN is grounded on a stock C64).
 
@@ -602,31 +551,18 @@ sections above) and is byte- or near-byte-exact.
 ## 14. Offline testing & the A/B harness (no browser)
 
 An offline SID render harness (developer tooling, not part of the shipped tree)
-renders SID audio to WAV **without the browser, AudioContext or RAF**: it feeds
-an event stream through the real `SIDChip`/`SIDProcessor` and writes a `.wav`
-plus FFT metrics. Audio changes are gated on its output, paired with headless
-VICE x64sc captures of the same scenes.
+feeds an event stream through the real `SIDChip`/`SIDProcessor` and writes WAV
+plus FFT metrics **without the browser, AudioContext or RAF**. Audio changes are
+gated on its output (spectrum, aliasing energy, byte comparison; the WASM
+engine's byte-identical WAV gate runs there), paired with headless VICE x64sc
+captures of the same scenes.
 
-- **Three transports** isolate where a difference comes from: *direct* (events
-  at their exact cycle, the ideal), *worklet* (the real SharedArrayBuffer ring +
-  pending-ring path, including the live event-lookahead delay, so
-  direct-vs-worklet shows transport effects and is not byte-identical without
-  delay alignment), *burst* (a deterministic RAF-clump model of main-thread
-  batching).
-- **Scenes**: digi (square/sine Mahoney-style aliasing probes), plain tones,
-  per-chip combined-waveform probes, captured `[cycle,reg,val]` traces, and
-  full **headless demo capture** (boot a real C64, load a `.prg`/`.d64`/`.sid`,
-  record every SID write, render the music).
-- **Metrics**: spectrum peaks, in-band SNR, >15 kHz aliasing energy, WAV output
-  for listening or byte comparison (the WASM engine's 32/32 byte-identical WAV
-  gate runs here).
-
-The harness has **no independent audio clock**: it models the *mechanism* of
-transport issues and can A/B fixes, but cannot measure how *often* drift-induced
-bursting happens live; that needs the `c64Trace.sidDiag` counters in the
-browser. Verify audio changes with it plus `test/sid-*-spec-test.js`;
-cycle-sync / second-load / power-cycle behaviour has focused tests but still
-deserves a browser ear-check after transport changes.
+What a contributor acts on: verify audio changes with
+`test/sid-*-spec-test.js`, and give cycle-sync / second-load / power-cycle
+behaviour a browser ear-check after transport changes. The harness has no
+independent audio clock, so it can A/B the *mechanism* of a transport issue but
+not measure how *often* drift-induced bursting happens live; that needs the
+`c64Trace.sidDiag` counters in the browser.
 
 ---
 

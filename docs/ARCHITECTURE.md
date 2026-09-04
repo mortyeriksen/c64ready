@@ -112,22 +112,15 @@ module graph stays acyclic. Shared, reassigned singletons live in `state.js` as
 ES-module live bindings (read directly, written through setters); every DOM
 handle lives in `dom.js`.
 
-| Component | File | Role |
-|-----------|------|------|
-| **main.js** | `main.js` | Entry point / orchestrator: machine lifecycle (power / reset / re-wire), audio init, the rAF frame loop + framebuffer → canvas blit, chip-variant & toggle prefs, the auto-load / boot-warp sequencer, ROM status, clipboard paste, PWA install, and wiring the UI modules below. |
-| **dom.js** | `dom.js` | Single inventory of every top-level DOM element reference, imported by the UI modules. |
-| **state.js** | `state.js` | Shared runtime singletons (`machine`, `loader`, `sidNode`, `running`, cold-boot gates) as live bindings + setters, so modules share mutable state without importing one another. |
-| **input.js** | `input.js` | All user input: control ports (joystick / gamepad / NEOS / mouse / paddle), the on-screen Key Map keyboard, the joy-key redefine dialog, the physical keyboard → CIA1 matrix bridge, and the **app-shortcut registry** that the dispatcher and the KEY MAP dialog's *App shortcuts* section both read. Exports `updateJoyPorts` / `installNeosHook` / `_releaseAllLatched`. |
-| **media.js** | `media.js` | Content & peripherals UI: file library, save / load state, PRG / CRT / D64 (drives 8 & 9) / TAP loading, the disk-directory renderer, drag-and-drop, and VICE-format snapshot export. Owns the "what media is inserted" caches. |
-| **dialogs.js** | `dialogs.js` | Styled `confirmDialog` / `promptDialog`, replacing the native browser dialogs. |
-| **escape-stack.js** | `escape-stack.js` | The single owner of the **Escape** key. Dialogs push a layer on open and pop it on close; Escape closes the topmost one, so priority follows what is on screen rather than module import order. |
-| **debug.js** | `debug.js` | DevTools console helpers installed on `window`: `c64Trace` (per-raster + SID-write capture), `c64Vic`, `c64Bus`. |
-| **roms.js** | `roms.js` | ROM loading (localStorage cache → bundled → file picker) for KERNAL/BASIC/CHAR/1541. |
-| **crt.js** | `crt.js` | `.CRT` cartridge file parser (header + CHIP packets). |
-| **cartridges/** | `cartridges/registry.js` + device modules | Hardware-type registry and cartridge-owned ROM/RAM banking, I/O, reset, freeze, and save-state behavior. |
-| **control-port.js** | `control-port.js` | DOM-free joystick / NEOS-mouse byte builders (used by `input.js`). |
-| **filelibrary.js** / **statelibrary.js** | `filelibrary.js` / `statelibrary.js` | Browser-local (IndexedDB) caches of loaded `.prg/.d64/.crt/.tap/.wav` and of save-states. |
-| **pausedemo.js** / **retrovibes.js** | `pausedemo.js` / `retrovibes.js` | Lazy-loaded three.js: the attract-mode animation, and the Retro Vibes 3D model viewer ([deep-dive](RETROVIBES-ARCHITECTURE.md)). The attract demo refuses software WebGL and measures its own frame rate (`frame-rate-guard.js`), handing the powered-off screen back to main.js's static boot hint when a GPU can't keep up. |
+The load-bearing modules: **`main.js`** owns the machine lifecycle, the rAF
+frame loop + framebuffer blit, and the auto-load sequencer; **`input.js`** owns
+every input path (physical keyboard → CIA1 matrix, control ports, the
+app-shortcut registry); **`media.js`** owns file/state loading, drag-and-drop,
+and the "what media is inserted" caches; **`roms.js`**, **`crt.js`** and
+**`cartridges/`** handle ROM loading and the cartridge device registry;
+**`debug.js`** installs the DevTools console helpers. The lazy-loaded three.js
+pieces (the attract-mode animation and the Retro Vibes viewer) have their own
+[deep-dive](RETROVIBES-ARCHITECTURE.md). §9 routes the rest.
 
 ---
 
@@ -140,26 +133,22 @@ models real hardware's phi1 (VIC/CIA) → phi2 (CPU)
 split** and is the single most important correctness invariant in the codebase:
 
 ```
-   per master cycle:
-     1. shadow SID voices clock          (OSC3/ENV3 readback)
-     2. POT sample-and-hold (÷512)
-     3. apply PREVIOUS cycle's IRQ/NMI    ← the per-source interrupt delay
-     4. vic2.clock(1)        [phi1]       ← VIC acts first; sets BA/AEC
-     5. cia1/cia2.clock(1)   [phi1]       ← timers count, ICR→IR latch
-     6. cpu.clock()          [phi2]       ← unless RDY/AEC blocks it, or load trap
-     7. vic2.phi2()                        ← reconcile same-cycle CPU writes
-     8. datasette.clock(1)                 ← tape edge → CIA1 FLAG
-     9. drive1541.clock(steps)             ← steps=1 or 2 (true PAL ratio), or idle-skip
+   per master cycle (abridged):
+     apply PREVIOUS cycle's IRQ/NMI        ← the staged interrupt delay
+     phi1:  VIC clocks first (sets BA/AEC), then the CIAs count
+     phi2:  CPU steps — unless RDY/AEC/DMA blocks it, or the load trap fires
+     then:  VIC phi2 reconciliation, datasette edge, 1541 drive step(s)
    ── after 19656 cycles: cia1/cia2.tick50Hz() (TOD), then blit ──
 ```
 
-Key consequences (detailed in the [machine orchestrator](MACHINE-ARCHITECTURE.md)):
+The full annotated cycle (every step, in order, with the rationale for each)
+is the [machine orchestrator](MACHINE-ARCHITECTURE.md) §3. Key consequences:
 - **A CPU write this cycle is visible to VIC/CIA only next cycle.**
-- **Bus stalling**: the VIC's BA/AEC lines stall the CPU on bad lines / sprite
-  DMA: `RDY` halts reads (and internal cycles), `AEC` halts everything.
+- **Bus stalling**: the VIC's BA/AEC lines (and REU DMA) stall the CPU on the
+  exact cycles real hardware would; the rules live in the
+  [machine orchestrator](MACHINE-ARCHITECTURE.md) §4.
 - **Interrupts are applied from the previous cycle's pending state**: that lag
-  *is* the modelled IRQ/NMI latency, tuned per source (VIC 1 / CIA1 1 / CIA2-NMI
-  1 machine stage) to match the VICE oracle.
+  *is* the modelled IRQ/NMI latency, staged per source to match the VICE oracle.
 
 ---
 
@@ -177,25 +166,16 @@ the [VIC-II](VIC2-ARCHITECTURE.md).
 
 #### Rendering pipeline & performance switches
 
-The VIC-II records the machine state it needs **every cycle** (register
-snapshots, border flip-flops, fetch state, the correctness foundation), but
-pixel emission is **line-batched by default**: a raster line's
-paints are deferred and replayed in one burst at line end, coalescing runs of
-unchanged cycles into wide segments through the same segment renderer. Any
-mid-line event the CPU could observe (collision-register reads, arming
-collision IRQs, fetch-config changes, a write into the RAM the line fetches
-graphics from) triggers an immediate catch-up replay, so the result is
-byte-identical to per-cycle rendering at every CPU-observable point (verified
-by a lockstep equivalence suite, framebuffer hashes, 195 reference screenshots
-and the demo status board; measured ~15% faster on sprite-heavy and ~26% on
-graphics-heavy demos). The finished framebuffer reaches the canvas through a
-WebGL presenter (one texture upload + one triangle per displayed frame, with an
-automatic 2D `putImageData` fallback).
-
-Both paths are switchable at runtime for A/B or triage via `src/switches.js`:
-append `?LINE_BATCH=0` (per-cycle rendering) or `?WEBGL_PRESENTER=0` (2D
-presenter) to the URL, or set the same names as env vars in node harnesses.
-Details in the [VIC-II](VIC2-ARCHITECTURE.md) §14.
+The VIC-II records the machine state it needs **every cycle** (the correctness
+foundation), but pixel emission is **line-batched by default**: a raster line's
+paints are replayed in one burst at line end, with an immediate catch-up replay
+whenever the CPU could observe mid-line state, so the result is byte-identical
+to per-cycle rendering at every CPU-observable point (verified by a lockstep
+equivalence suite, framebuffer hashes, ≈200 reference screenshots and the demo
+status board), and measurably faster on sprite- and graphics-heavy demos. The
+finished framebuffer reaches the canvas through a WebGL presenter, with an
+automatic 2D `putImageData` fallback. Both pipelines, and the runtime switches
+that A/B them, are detailed in the [VIC-II](VIC2-ARCHITECTURE.md) §8 and §14.
 
 ### Audio  (CPU → SID → speakers): crosses the thread boundary
 ```
@@ -243,7 +223,7 @@ access is a single typed-array load; only I/O and the CPU port take a slow path.
 ```
   $0000-$0001  6510 I/O port (DDR / data)          ← banking control + datasette
   $0002-$9FFF  RAM
-  $8000-$9FFF  cartridge ROML        (when present)
+    └ $8000-$9FFF  cartridge ROML overlays it when a cartridge maps one
   $A000-$BFFF  BASIC ROM / RAM / cartridge ROMH
   $C000-$CFFF  RAM
   $D000-$DFFF  I/O  ┬ $D000 VIC-II   ($D000-$D3FF)   ← or CHAR ROM (CHAREN=0)
@@ -258,10 +238,10 @@ A shared `externalDataBus8` latch, driven by both CPU and VIC accesses, models
 open-bus reads (e.g. the color-RAM upper nibble, empty `$DE00`). See
 the [memory & banking](MEMORY-ARCHITECTURE.md).
 
-In Ultimax mode the VIC's own local `$3000-$3FFF` window reads the upper 4 KB
-of cartridge ROMH in every CIA-selected VIC bank. This PLA path is separate
-from the CPU's `$E000-$FFFF` ROMH mapping and is used directly by freezer
-cartridges including Action Replay and Final Cartridge III.
+In Ultimax mode the VIC also gets its own window into cartridge ROMH: a PLA
+path separate from the CPU's `$E000-$FFFF` mapping, relied on by freezer
+cartridges; see [memory & banking](MEMORY-ARCHITECTURE.md) §6 and the
+[VIC-II](VIC2-ARCHITECTURE.md) §4.
 
 ---
 

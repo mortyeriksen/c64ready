@@ -19,9 +19,8 @@ subsystem with the gaps called out, see [Component status](COMPONENT-STATUS.md).
 
 Most demos and games run faithfully, but:
 
-- **Fastloaders and copy-protected disks** need **True Drive Emulation (TDE)**
-  turned on and a 1541 ROM loaded. With the fast built-in loader they may hang
-  or refuse to load.
+- **Fastloaders and copy-protected disks** need **True Drive Emulation**
+  ([details below](#with-true-drive-emulation-off)).
 - **NTSC-only productions won't run**: the machine is PAL (see below).
 - **Multi-disk** demos: eject and load the next disk yourself when the program
   asks you to flip.
@@ -49,25 +48,17 @@ Bug reports help push the emulation closer to real hardware.
 
 ## Unmodelled hardware quirks
 
-Deliberate simplifications inside otherwise-emulated chips. These are
-model-specific glitches or corner cases with negligible impact on practical
-software. [Component status](COMPONENT-STATUS.md) rates each subsystem in
-full; what follows is the subset worth naming:
+Deliberate simplifications inside otherwise-emulated chips, each a
+model-specific glitch or corner case with negligible impact on practical
+software. [Component status](COMPONENT-STATUS.md) records the specifics:
 
-- **6569 fetch-address glitch**: on the original 6569 (not 8565), a c-access
-  transitioning between RAM and CHAR-ROM fetches latches the address LSB from the
-  previous cycle and the upper bits from the current cycle. No known demo depends
-  on it.
-- **C64C glue-logic bank glitch + NMOS DDR bank-change delay**: the code paths
-  exist (`vic2.c64cBankGlitch`, `vic2.nmosBankDelay`) but are **off by default**
-  because the behavior is variant-specific and unstable on real chips. Toggle via
-  `c64Vic.bankGlitch(true)` / `c64Vic.bankDelay(true)` in DevTools to A/B a demo
-  that relies on it (the 8565 glitch only activates when `vicVariant === '8565'`).
-- **CIA serial shift register (SDR), physical pins and input mode**: output-mode
-  shifting (SDR write → 16 Timer A underflows → SP IRQ on ICR bit 3) is modelled,
-  but the physical SP/CNT pins carry no serial data and input-mode shifting isn't
-  implemented. These only matter for user-port hardware; the IEC bus is bit-banged
-  on CIA2 Port A and is unaffected.
+- **6569 fetch-address glitch**: an obscure video-fetch artifact of the original
+  6569 (not the 8565) is not reproduced. No known demo depends on it.
+- **C64C glue-logic glitches**: two variant-specific banking glitches exist in
+  the code but are off by default, because real chips are unstable about them.
+- **CIA serial port, physical pins**: the serial register works as software uses
+  it, but the physical SP/CNT pins carry no data. That only matters for
+  user-port hardware, which isn't emulated anyway.
 
 ## Unsupported file formats
 
@@ -82,29 +73,28 @@ The supported set is `.prg`, `.d64`, `.crt`, `.tap`, `.wav`, `.dmp` and `.reu` (
 
 ## D64 disk images
 
-The `.d64` parser (`src/d64.js`) covers the standard directory, file types
-(including DEL/scratched entries), BAM free-block totals, all six image-size
-variants (35-, 40- and 42-track, each with or without an error table), and the
-per-sector error codes, which the drive reproduces as real read failures.
-Remaining gaps:
+The `.d64` parser covers the standard directory, file types, BAM free-block
+totals, all six image sizes and the per-sector error codes, which the drive
+reproduces as real read failures. Remaining gaps, none of which affect ordinary
+loading:
 
-1. **REL files**: the side-sector track/sector (`+$15/$16`) and record length
-   (`+$17`) aren't parsed. With TDE on the drive's own DOS handles relative
-   files; the built-in loader only ever returns the data chain.
-2. **GEOS files**: a GEOS disk is recognised (its ASCII names render as text,
-   and its VLIR `USR` files aren't offered as loadable), but the per-entry GEOS
-   info bytes (`+$18–$1D`) aren't parsed.
-3. **40-track BAM extension**: tracks 36–40 count only when the image uses one
-   of the three known layouts (DolphinDOS `$AC`, SpeedDOS `$C0`, PrologicDOS
-   `$90`). An unrecognised one leaves those tracks alone rather than guessing.
+1. **REL files** need True Drive Emulation, where the drive's own DOS handles
+   them; the built-in loader only ever returns a file's data chain.
+2. **GEOS disks** are recognised and their filenames render as text, but the
+   per-entry GEOS info bytes are ignored.
+3. **40-track images**: tracks 36–40 count only for the three known BAM-extension
+   layouts; an unrecognised one leaves those tracks alone rather than guessing.
+
+The parser-level specifics are in [Component status](COMPONENT-STATUS.md).
 
 ## With True Drive Emulation off
 
-TDE is on by default and the real 1541 ROM then answers everything. With it off
-the built-in loader is **LOAD only**. No drive sits on the serial bus, so SAVE,
-`OPEN`/`PRINT#`/`GET#` and the command channel (`N:`, `S:`, `R:`, block and
-memory commands) report DEVICE NOT PRESENT. The directory and LOAD by name,
-wildcards included, work as usual.
+TDE is on by default, and the real 1541 ROM then answers everything, which is
+what fastloaders and copy-protected disks need; with the fast built-in loader
+they may hang or refuse to load. With TDE off the built-in loader is **LOAD
+only**. No drive sits on the serial bus, so SAVE, `OPEN`/`PRINT#`/`GET#` and
+the command channel (`N:`, `S:`, `R:`, block and memory commands) report DEVICE
+NOT PRESENT. The directory and LOAD by name, wildcards included, work as usual.
 
 ## Keyboard shortcuts
 
@@ -126,23 +116,23 @@ See the [key map and shortcut list](USER-GUIDE.md#keyboard-shortcuts).
 
 ## Audio
 
-- The SID engine is the reSID transistor-level model, verified against VICE.
-  Options ▸ Sound offers two engines: reSID WASM (default, falls back to reSID
-  JS if WebAssembly can't start) and reSID JS (same sound, more CPU). If
-  something sounds off, try switching engine and please report it.
 - On tab switch or phone standby the machine **pauses and mutes**; audio resumes
   when you return (on some mobile browsers the first tap after returning is what
   actually restarts the sound).
+
+## VR (WebXR), experimental
+
+- **Enter VR** in the 3D viewer needs a real headset or the desktop WebXR
+  emulator; phones and iOS have no WebXR. The neon post-processing (bloom and
+  grade) is skipped in VR, so the look is flatter there.
 
 ## Performance
 
 - Performance is still being improved. On mobile and older machines the heaviest
   demos can dip below full frame rate; simpler software runs at full speed.
-- Mobile devices are inherently less predictable than desktops: they usually have
-  tighter memory limits, smaller JavaScript heaps, more aggressive background
-  process pressure, and thermal throttling. Other apps, browser tabs, or system
-  services can take capacity away mid-run, so the same demo may be reliable on a
-  desktop but intermittently slow or stutter on a phone.
+  Phones are also less predictable than desktops (tighter memory, thermal
+  throttling, and background apps can take capacity away mid-run), so the same
+  demo may be reliable on a desktop but intermittently slow on a phone.
 
 ---
 

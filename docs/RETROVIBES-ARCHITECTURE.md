@@ -56,16 +56,18 @@ the camera, hides the overlay, exits fullscreen, stops the loop
 the scene and reloads the model onto the same context; the module-level procedural
 texture caches and the IBL cubemap survive (tagged `_shared`), resident across opens.
 
-The context is kept because WebKit does not reclaim a discarded WebGL context's
-memory (`forceContextLoss()` is not honoured there), so creating one per open let a
-few enter/exit cycles climb into the gigabytes and tripped Safari's "significant
-memory" tab reload. With one persistent context, teardown instead frees every
-per-open GPU resource explicitly: geometry, materials **and their textures**, each
-post-processing pass's render targets (three's `EffectComposer.dispose()` frees only
-its own ping-pong targets, not the passes), reflector/shadow-map render targets, and
-instanced buffers, via `_disposeObject()`. (One residual: a `THREE.Water` reflection
-target in the IK+ scene, which Water exposes no handle to free.) A lost context is
-recovered by a `webglcontextrestored` handler that rebuilds the open scene.
+**Why the context is kept**: WebKit does not reclaim a discarded WebGL
+context's memory (`forceContextLoss()` is not honoured there), so a context per
+open lets a few enter/exit cycles climb into the gigabytes and trip Safari's
+"significant memory" tab reload.
+
+**What teardown frees instead**, explicitly, via `_disposeObject()`: geometry,
+materials **and their textures**, each post-processing pass's render targets
+(three's `EffectComposer.dispose()` frees only its own ping-pong targets, not
+the passes), reflector/shadow-map render targets, and instanced buffers. (One
+residual: a `THREE.Water` reflection target in the IK+ scene, which Water
+exposes no handle to free.) A lost context is recovered by a
+`webglcontextrestored` handler that rebuilds the open scene.
 
 ## 2. The three.js scene
 
@@ -105,13 +107,14 @@ The default view orbits and dollies around the **live screen**: the orbit target
 the centre of the `monitor_screen` mesh, and because `zoomToCursor` is off, zooming
 moves the camera straight toward the monitor; the CRT is the star. If a saved view
 exists it is restored instead (dolly limits are widened so the saved distance is not
-clamped away). Three small `localStorage` keys persist viewer state:
+clamped away). Four small `localStorage` keys persist viewer state:
 
 | Key | Holds |
 |-----|-------|
 | `c64emu.modelViewerCamera` | camera position + orbit target (`_saveCamera`, on the controls `end` event and on close) |
 | `c64emu.modelViewerScene` | active scene index (§5) |
 | `c64emu.modelViewerAutoRotate` | idle-spin on/off (§6) |
+| `c64emu.modelViewerStudio` | Studio mode on/off (§6) |
 
 ## 4. The live screen: emulator framebuffer → CRT texture
 
@@ -164,11 +167,11 @@ the index.
 
 | # | `name` | Backdrop / mood | Post pipeline |
 |---|--------|-----------------|---------------|
-| 0 | **Synthwave** | gently undulating dark neon highway aimed at an irregular banded sun, hierarchical scrolling shoulder grid, layered mountain silhouettes with sparse foreground contours, rhythmic palms, restrained stars and single-piece extruded arcade-road chevrons | basic; raw tone map (`NoToneMapping`), sun and horizon glow faked in-shader |
-| 1 | **Starry Plain** | dark Tron-grid plain with a slow scanner ripple, twinkling star layers, a visible blue-violet procedural Milky-Way band with dust lanes, hazy horizon and shooting stars | basic; raw tone map |
-| 2 | **Spotlight** | near-black studio, physically attenuated off-axis overhead spotlight, matte textured floor with reinforced contact shadows and sparse beam dust, dynamically screen-coloured directional CRT spill | **full composer** (bloom dialled near-off + grade + SMAA) |
-| 3 | **IK+ Sunset** | tapered, weathered stone courtyard at dusk, torii and striped low sun over reflective water, autumn maple, clustered shore props, village and layered headlands | **full composer** (bloom + warm halation + dusk split-tone grade); cool-shadow sunset IBL via `envMap`; ACES exposure 0.66, purple haze fog |
-| 4 | **80s Bedroom** | messy teenager's bedroom at night: C64 in a localized amber desk-lamp pool, plaid-duvet bed, subtle moon shaft and blind shadows, posters + corkboard, wood-grain CRT, boombox on milk crates, warm and moonlit drifting dust | **full composer** (bloom + amber halation + teal/amber grade) |
+| 0 | **Synthwave** | dark neon highway toward a banded sun: scrolling grid, mountain silhouettes, palms, stars | basic; raw tone map (`NoToneMapping`), sun and horizon glow faked in-shader |
+| 1 | **Starry Plain** | dark Tron-grid plain: scanner ripple, star layers, a procedural Milky-Way band, shooting stars | basic; raw tone map |
+| 2 | **Spotlight** | near-black studio: overhead spotlight, beam dust, screen-coloured CRT spill | **full composer** (bloom dialled near-off + grade + SMAA) |
+| 3 | **IK+ Sunset** | stone courtyard at dusk: torii and low sun over reflective water, autumn maple, layered headlands | **full composer** (bloom + warm halation + dusk split-tone grade); cool-shadow sunset IBL via `envMap`; ACES exposure 0.66, purple haze fog |
+| 4 | **80s Bedroom** | messy teenager's bedroom at night: amber desk-lamp pool, moon shaft, posters, wood-grain CRT, drifting dust | **full composer** (bloom + amber halation + teal/amber grade) |
 
 Scenes flagged `basic` render with a plain `renderer.render` and bypass the composer;
 the **bloom + grade + SMAA** pipeline runs for the non-basic scenes
@@ -185,6 +188,15 @@ water normal map, checker floor) are built once and cached at module level.
 - **Idle auto-spin.** A plain click (press + release under a 5 px threshold, so a
   rotate-drag never triggers it) toggles the `OrbitControls` idle spin; each restart
   reverses direction. The choice is saved to `localStorage`.
+- **Studio mode (Cmd/Ctrl+Shift+P).** Strips the viewer to the scene and the
+  C64 READY. logo (no hint, no credit, no buttons, no mouse pointer) for
+  screenshots and video. Everything hidden is CSS-only (a `.studio` class on the
+  overlay), so the render loop, the camera and the live screen texture carry on
+  untouched. The shortcut is the only way in and out (from a closed viewer it
+  opens straight into Studio mode); Esc keeps its usual job of closing the
+  viewer. The preference persists (`isStudio()` / `setStudio()` /
+  `_applyStudio()`), so the viewer reopens as bare or as furnished as it was
+  left.
 - **Keycap press.** The RETURN keycap on the `computer_keyboard` mesh gets a small
   press animation (`attachKeycapPresses`, advanced each frame via `this._keycap.update()`).
 - **Power LEDs.** The GLB bakes each LED lens into a shared mesh. `_wireLeds` /
@@ -282,11 +294,30 @@ loop is already stopped.
 - **Runs only while open.** The render loop is a `setAnimationLoop` started in `open()`
   and cleared in `close()`, so the viewer costs nothing when closed; `_updateScreen`
   also bails unless `running`.
-- **Scene teardown on close.** `_teardownGL()` disposes the per-open geometries,
-  materials and their textures, per-pass/reflector/shadow render targets, instanced
-  buffers, controls and the CRT texture, and drops every per-open reference, but
-  keeps the renderer/context alive for the next open (see §1). Cached module-level
-  textures and the IBL cubemap are intentionally kept (`_shared`), resident across
-  opens rather than re-uploaded.
+- **Scene teardown on close.** `_teardownGL()` frees every per-open resource and
+  reference but keeps the renderer/context and the `_shared` module-level caches
+  alive for the next open; the full disposal inventory and the WebKit rationale
+  are §1's.
 - **Cheaper scenes skip the composer.** `basic` scenes render plain (§5), and the
   device-adaptive model (§8) keeps phones on the light asset.
+
+## 11. Key invariants & gotchas (quick reference)
+
+- **One WebGL context for the app lifetime**: only the per-open scene is ever
+  rebuilt. Never create a context per open: WebKit does not give the memory
+  back (§1).
+- **The fullscreen element owns pointer input**: the touch-control element is
+  reparented into the overlay before fullscreen is requested and restored on
+  *every* close path, keeping its listeners and joystick state (§9).
+- **The CRT material is unlit and tone-map-exempt** (`toneMapped: false`), so
+  the live screen shows the true VIC palette untouched by scene lighting or
+  grading (§4).
+- **Every heavy transition runs inside the busy hooks** (open, close, scene
+  swap, VR entry); an unpaused machine would starve the SID worklet's ring and
+  the sound would jerk (§9).
+- **VR skips the composer** (plain render + a hemisphere fill light), and the
+  desktop camera pose is restored synchronously on session end; a headset pose
+  is never persisted (§7).
+- **Esc is an escape-stack layer, not a `keydown` listener**: the overlay
+  outranks dialogs beneath it while every other key stays live to the C64 (§1),
+  and it closes the viewer in Studio mode too (§6).

@@ -3,31 +3,28 @@
 
 # What's New
 
-What changed in each release of C64 READY., in plain language — newest first.
+What changed in each release of C64 READY., in plain language, newest first.
 The version you are running is shown at the bottom of the About dialog.
 
 ---
 
 ## Next release
 
-*Not out yet — what is finished and waiting for the next version.*
+*Not out yet: what is finished and waiting for the next version.*
 
-- **Five more commercial tape loaders can be read**: Gremlin Type 2, Freeload,
-  Wildload, Ocean / Imagine, and the US Gold / Datasoft one. Tapes that use them
-  used to show one or two small files and minutes nothing could read. They now
-  list what is on them.
-- **Tapes that use Novaload can be read.** Novaload is the loader behind many
-  boxed games, and it draws a picture and plays music while the tape runs. Such
-  a tape used to show only its short boot program. The deck now lists everything
-  on it.
+- **Six commercial tape loaders can be read**: Novaload (the loader behind many
+  boxed games, drawing a picture and playing music while the tape runs), Ocean /
+  Imagine, Freeload, Wildload, Gremlin Type 2, and the US Gold / Datasoft one.
+  Tapes that use them used to show one or two small files and minutes nothing
+  could read. The deck now lists everything on them.
 - **Shortcuts that stay out of the C64's way.** App shortcuts now take
   **Cmd+Shift** on a Mac and **Ctrl+Shift** on Windows and Linux, both working
   everywhere: **V** pastes, **F** cycles the CRT look, **Z** zooms the VIBES
   button. **Ctrl** on its own stays the machine's, and text boxes keep their own
   keys. The [KEY MAP](USER-GUIDE.md#key-map) dialog lists them.
 - **Studio mode for Retro Vibes.** **Cmd+Shift+P** / **Ctrl+Shift+P** strips the
-  [3D scene](USER-GUIDE.md#retro-vibes) to the machine and the C64 READY. logo —
-  no buttons, no pointer — for screenshots and video. Remembered between visits.
+  [3D scene](USER-GUIDE.md#retro-vibes) to the machine and the C64 READY. logo
+  (no buttons, no pointer) for screenshots and video. Remembered between visits.
 - **A smoother welcome.** The **POWER ON** glow was redrawn on the processor
   every frame; it now runs on the graphics card. Same look, none of the cost.
   Thanks to the reader who
@@ -35,6 +32,8 @@ The version you are running is shown at the bottom of the About dialog.
 - **The idle demo knows when to sit one out.** It steps aside for reduced-motion
   settings, or graphics that can't keep up, leaving the "press power to boot"
   hint. **ATTRACT MODE** in [Options](USER-GUIDE.md#options) still has the say.
+- **Clearer documentation.** The docs pages got a readability and accuracy pass:
+  shorter guides, corrected details, less repetition.
 
 ---
 
@@ -81,8 +80,9 @@ folder pick away.
 
 ## 2026.8.4 — August 26, 2026
 
-A release about cassettes. A recording of a worn tape is read for everything it
-can still give. Nothing is trusted until the tape itself has proved it.
+A release about cassettes. A recording of a worn tape is read for everything
+that can still be recovered, and nothing is trusted until the tape itself has
+proved it.
 
 - **Your old cassettes may play again.** Record a worn tape to `.wav` and drop
   it on the screen. The [deck](USER-GUIDE.md#datasette) reads what is left and
@@ -92,9 +92,9 @@ can still give. Nothing is trusted until the tape itself has proved it.
   average are read. So are the two lined up: they sit a hair apart on every
   tape, and lining them up rescued whole sides. The reading that hands over the
   most files wins. A file it cannot prove is read again from all the others.
-- **A mend has to be agreed on.** A checksum alone lets one wrong reading in 256
-  through. A file goes back only when two readings agree on its bytes. One that
-  nobody else could confirm is still put back, and says so in the listing.
+- **Repairs need agreement.** A checksum alone lets one wrong reading in 256
+  through, so a file goes back only when two readings agree on its bytes. One
+  that nobody else could confirm is still put back, and says so in the listing.
 - **Proved files load like new.** Every file the tape can prove is rewritten at
   clean pulse widths. A loader from 1986 is never handed a marginal one. One
   game whose bytes checked out but whose loader tripped on two such pulses loads
@@ -117,7 +117,8 @@ can still give. Nothing is trusted until the tape itself has proved it.
   - Datasette: a reset lifts the PLAY key, and a SAVE plays out loud as it is
     written.
   - Drive 9 starts with True Drive Emulation on.
-  - Tooltips wait two seconds.
+  - Tooltips wait two seconds before appearing, so they stay out of the way
+    while you work.
   - [YouTube channel](https://www.youtube.com/@c64ready) link in the header.
     Subscribe for updates!
 
@@ -128,7 +129,7 @@ can still give. Nothing is trusted until the tape itself has proved it.
 Tooltips that turn up where they belong, and fixes for using C64 READY. on a phone.
 
 - **Tooltips stay with their control.** The explanation appears just under the
-  button, in the app's own colours — no more arriving late and halfway across the
+  button, in the app's own colours; no more arriving late and halfway across the
   page.
 - **The touch joystick leaves your keyboard alone.** Pressing the
   [touch joystick](USER-GUIDE.md#touch-joystick) or a fire button no longer raises
@@ -154,22 +155,22 @@ originals, a side panel you can pare back to what you use, and 3D scenes worth
 sitting in.
 
 - **A RAM Expansion Unit.** Switch one on in the
-  [RAM Expansion](USER-GUIDE.md#ram-expansion) card — a 1700, 1764, 1750, 1750 XL
-  or a generic unit up to 16 MB — and the demos and programs that want expansion
+  [RAM Expansion](USER-GUIDE.md#ram-expansion) card (a 1700, 1764, 1750, 1750 XL
+  or a generic unit up to 16 MB), and the demos and programs that want expansion
   RAM will find it, working the way it does on real hardware. You can fill it from
   a `.reu` file, save it back out, or wipe it, and whatever is in it comes along
   inside a save state.
 - **Disks that keep their quirks.** [40- and 42-track](USER-GUIDE.md#disk-drive-8)
-  `.d64` images load, not just the usual 35 — a 42-track image used to be read as
+  `.d64` images load, not just the usual 35; a 42-track image used to be read as
   an ordinary 35-track disk. If an image records the errors on the original
   floppy, those are honoured too, so a game protected by a sector that has to fail
   to read still loads the way it was meant to. GEOS disks show readable filenames.
 - **Hide the cards you don't use.** Drag a side-panel card to the corner and drop
-  it, and it is [gone from the panel](USER-GUIDE.md#hiding) — a **+** appears in
+  it, and it is [gone from the panel](USER-GUIDE.md#hiding); a **+** appears in
   that corner to bring any of them back. Your arrangement is remembered either
   way.
 - **Shortcuts that work on every platform.** App shortcuts now take **Cmd** on a
-  Mac and **Alt** (or **Alt+Shift**) on Windows and Linux — all three work
+  Mac and **Alt** (or **Alt+Shift**) on Windows and Linux; all three work
   everywhere, and the [KEY MAP](USER-GUIDE.md#key-map) dialog lists them. Windows
   and Linux get a paste shortcut at last. **Ctrl** is left alone, because the C64
   needs it.
@@ -191,18 +192,18 @@ Loading got simpler, the controls are yours to arrange, and the picture keeps it
 shape whatever you do to the window.
 
 - **One button for any file.** [LOAD ANY](USER-GUIDE.md#media-load) takes a
-  `.prg`, `.d64`, `.crt`, `.tap` or `.wav` and works out what to do with it — the same
+  `.prg`, `.d64`, `.crt`, `.tap` or `.wav` and works out what to do with it: the same
   thing dropping a file on the screen already did. No more picking the right
   button for the file in your hand.
 - **A .prg arrives on a disk.** Load a program and it is
   [written onto a disk of its own](USER-GUIDE.md#loading-a-prg) instead of being
   dropped into memory. It shows up in the directory, you can load it again, and
   you can save it back out as a `.d64`. It also means loading a program no longer
-  resets the machine — putting a disk in a real C64 doesn't either.
+  resets the machine; putting a disk in a real C64 doesn't either.
 - **Hear the tape.** A speaker button on the
   [Datasette](USER-GUIDE.md#datasette) plays what the C64 is actually reading:
   the real screech, not an imitation.
-- **Tapes as sound files.** Save a tape as a `.wav` — the actual cassette audio —
+- **Tapes as sound files.** Save a tape as a `.wav` (the actual cassette audio)
   and play it into a real C64 to load it there. It works the other way too: record
   a real cassette to a `.wav` and [load it here](USER-GUIDE.md#datasette).
 - **Arrange the controls.** Every card in the side panel has a grip handle. Drag
@@ -216,11 +217,11 @@ shape whatever you do to the window.
   ten times the size. Switch it off in Options if you'd rather have a plain button.
 - **A picture that is never stretched.** Turning a phone on its side used to
   squash the C64 screen out of shape. It now always keeps the machine's own
-  proportions — at any size, any window shape, and with any
-  [CRT look](user-guide.html#options) — and the frame stays tight around it
+  proportions (at any size, any window shape, and with any
+  [CRT look](USER-GUIDE.md#options)), and the frame stays tight around it
   instead of running wider.
-- **A new MAX size.** [SIZE](user-guide.html#controls) gains **MAX**, which fills
-  the width available rather than stepping in whole multiples — useful where no
+- **A new MAX size.** [SIZE](USER-GUIDE.md#controls) gains **MAX**, which fills
+  the width available rather than stepping in whole multiples, useful where no
   multiple quite fits. Sizes too big for your window are left out of the cycle
   now, instead of being shown clamped to a size they are not, so the button
   always changes something. It is available on phones too, where it used to be
@@ -252,7 +253,7 @@ Better sound, and a way to get your work out of the emulator.
   It all runs through the real 1541 DOS, so a program cannot tell the difference.
 - **Tapes you can record.** The [datasette](USER-GUIDE.md#datasette) now writes as
   well as reads. Insert a BLANK tape, press REC, and `SAVE"NAME",1` puts your
-  program on it — then download it as a .tap file. The full five keys are there
+  program on it. Then download it as a .tap file. The full five keys are there
   (REC, PLAY, REW, FF, STOP) with a tape counter, and the write-protect tabs block
   recording the way a real cassette does. Turbo savers work too: the write line is
   timed to the cycle, so what lands on the tape is what a real C64 would have

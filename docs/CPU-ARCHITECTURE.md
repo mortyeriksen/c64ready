@@ -9,7 +9,7 @@ interrupt model (IRQ/NMI sampling, the NMOS I-flag shadow, branch delay), reset,
 illegal/unstable opcodes, decimal mode, and how the chip plugs into the machine.
 
 This document describes *the implementation* and points at the real method and
-field names so it can be used as a guide into `cpu.js` (~1.6k lines). The 6510 is
+field names so it can be used as a guide into `cpu.js`. The 6510 is
 the C64's CPU (a 6502 core + an on-chip 6-bit I/O port); the same `CPU` class
 also drives the 1541 drive's 6502. The behavioural references cited in the code
 (Bauer §3.x, "Bruce Clark §I-flag-delay", "groepaz NMOS 6510 Unintended
@@ -48,9 +48,8 @@ NMOS chip would use.
 
 The live engine is **`_beginMicroInstruction` + the `_queue*MicroOps` builders**:
 a single cycle-accurate path covering the full 256-opcode space (official +
-illegal + JAM). (The module-local `CYCLES` array is only a reference cycle-count
-table; the cycle-audit tests keep an independent copy in sync with it; the live
-engine derives its timing from the micro-op programs, not this table.)
+illegal + JAM); the module-local `CYCLES` array is only a reference table for
+the cycle-audit tests, not a timing source.
 
 ---
 
@@ -128,10 +127,10 @@ cycle the real chip would have stalled.
 Dispatch is driven by a **pre-built per-opcode micro-op program table**.
 `_queueOpcode(op)` is a giant `switch (op)` mapping each opcode to a
 `_queue*MicroOps` builder (families below). Running that switch every instruction
-would allocate a fresh set of micro-op closures per dispatch, invisible on V8
-(escape analysis elides it) but the single largest idle allocation on
-JavaScriptCore/mobile (~88 % of it). So the constructor runs the switch **once
-per opcode** (`_buildOpcodeTable`) and snapshots each opcode's `(fns, kinds, len)`
+would allocate a fresh set of micro-op closures per dispatch, on some engines
+the dominant idle allocation (see the
+[performance doc](PERFORMANCE-ANALYSIS.md)). So the constructor runs the switch
+**once per opcode** (`_buildOpcodeTable`) and snapshots each opcode's `(fns, kinds, len)`
 into the `_prog*` table. At run time `_installOpcode(op)` **aliases** that program
 into the live arrays by reference: O(1), zero allocation. Opcodes that mutate CPU
 state at *build* time (BRK arms the interrupt sequence, JAM sets `halted`) are
@@ -214,9 +213,7 @@ dummy PC reads, push PCH/PCL, push P (with B=0), set I, read vector low/high.
 the software twin: same shape but pushes P with B=1 and advances PC.
 
 The 7 sequence ops are **pre-created once** in the constructor and pushed by
-reference; no per-interrupt closure or array-literal allocation. An IRQ fires
-~once per idle frame (KERNAL raster/timer), so pre-creating them keeps idle
-frames allocation-free (see the [performance doc](PERFORMANCE-ANALYSIS.md)). They are
+reference, with no per-interrupt allocation. They are
 capture-free: cy6 resolves its vector from a stable `_intSeqBaseVector`
 published each call, because a mid-sequence NMI **hijack** (`_seqResolveVector`)
 rewrites the live `_intSeqVector`.
@@ -235,17 +232,20 @@ rewrites the live `_intSeqVector`.
   pending IRQ, a following `SEI` cannot retract it; the poll that admitted it
   already ran with `_pollI = 0`. This falls straight out of the `_pollI` lag; no
   separate deferral flag is needed.
-- **Branch-no-cross IRQ delay** (`_branchIrqNoCrossDelay` / `_branchNmiNoCrossDelay`,
-  VICE-verified NMOS quirk): a *taken branch with no page cross* polls IRQ one
-  cycle early; if that early poll missed the line, interrupt recognition is
-  deferred by one boundary. The `sampledIrqPrev`/late-tag machinery decides
-  whether the early poll counts, so a tight branch loop with a continuously
-  asserted IRQ doesn't defer forever (the stable-raster pattern). The taken
-  cycle's op (`_branchTakenOp`, which houses this early-poll decision) and the
-  page-cross cycle's op (`_branchCrossOp`) are **pre-created once** in the
-  constructor and appended by reference (the decode cycle first publishes the
-  target into `_branchTarget`/`_branchCrossed`), so a taken branch allocates
-  nothing, which JSC/mobile charges for.
+#### Branch-no-cross IRQ delay
+
+Pinned by the `cpu-branch-irq-delay` and `cpu-nmi-branch-nocross-delay` spec
+tests (a VICE-verified NMOS quirk): a *taken branch with no page cross* polls
+IRQ one cycle early; if that early poll missed the line, interrupt recognition
+is deferred by one boundary (`_branchIrqNoCrossDelay` /
+`_branchNmiNoCrossDelay`, tracked per source). The `sampledIrqPrev`/late-tag
+machinery decides whether the early poll counts, so a tight branch loop with a
+continuously asserted IRQ doesn't defer forever (the stable-raster pattern).
+The taken cycle's op (`_branchTakenOp`, which houses this early-poll decision)
+and the page-cross cycle's op (`_branchCrossOp`) are **pre-created once** in
+the constructor and appended by reference (the decode cycle first publishes the
+target into `_branchTarget`/`_branchCrossed`), so a taken branch allocates
+nothing.
 
 ---
 
@@ -253,25 +253,17 @@ rewrites the live `_intSeqVector`.
 
 `cpu.js` exposes the pins; `machine.js` wires the timing. Two pieces matter:
 
-**Per-source delay pipeline** (`_sampleCpuInterrupts`, run each master cycle
-before `cpu.clock()`): IRQ sources (CIA1 + VIC) and the NMI source (CIA2) each
-carry a tuned number of "machine stages" so net CPU-visible latency matches the
-VICE oracle:
-- **VIC raster IRQ**: 1 machine stage. Deassertion is held one extra cycle
-  (symmetric with the 1-cycle assertion latency) so an IRQ raised and acked by
-  the *same* `ASL/INC $D019` RMW is still delivered (the Hat raster-wall case).
-- **CIA1 IRQ**: 1 machine stage; the in-CIA ICR data→IR latch supplies the
-  other cycle, which is also what makes the 6526 interrupt-acknowledge bug behave.
-- **CIA2 NMI**: 1 machine stage. NMI is recognised from the immediately-latched
-  `nmiEdge` FF (it skips the IRQ line's extra sampled cycle), so a single stage
-  already matches IRQ's net latency; adding a compensating stage makes NMI
-  arrive a cycle too late.
+**Per-source delay pipeline**: each interrupt source (VIC, CIA1, CIA2-NMI) is
+staged through the machine's `_sampleCpuInterrupts` so the net CPU-visible
+latency matches the VICE oracle. The stage counts and per-source subtleties are
+the machine's contract; see the
+[machine orchestrator](MACHINE-ARCHITECTURE.md) §5.
 
-**RDY / AEC stalling** (in `_runMasterCycle`): the machine reads
-`peekNextBusKind()` and the VIC's `isBaLow()` / `isAecLowPhi2()`. A non-write
-cycle under BA-low (RDY) or any cycle under AEC-low (VIC owns the bus) blocks
-`cpu.clock()` for that cycle, and while blocked, IRQ sampling is *not* refreshed
-(Bauer: IRQs are only recognized when RDY is high).
+**RDY / AEC stalling**: a non-write cycle under BA-low (RDY), or any cycle under
+AEC-low, blocks `cpu.clock()` for that cycle, and while blocked, IRQ sampling is
+*not* refreshed (Bauer: IRQs are only recognized when RDY is high). The machine
+classifies the pending cycle via `peekNextBusKind()`; the arbitration rules live
+in the [machine orchestrator](MACHINE-ARCHITECTURE.md) §4.
 
 ---
 

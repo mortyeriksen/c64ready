@@ -60,13 +60,12 @@ bit-bang the bus / count cycles) behave correctly.
 - **KERNAL load trap** (TDE off): the machine intercepts the KERNAL LOAD entry
   `$FFD5` and reads the file straight from the D64. Fast, but only handles standard
   LOADs (and `SAVE`/format are never trapped, so they still reach the real drive).
-  The trap is not silent: it runs the ROM's own `SEARCHING FOR` (`$F5AF`) and
-  `LOADING` (`$F5D2`) routines first, each returning to `$FFD5` so the third pass
-  does the load. Intros that hand over by printing commands and stuffing RETURNs
-  read those lines back off the screen, so skipping them leaves the cursor two
-  rows out. Calling the ROM also gets the `MSGFLG` direct-mode test for free, a
-  program-initiated LOAD still prints nothing. Guarded on the ROM actually
-  holding those routines; a replacement KERNAL falls back to a silent load.
+  The trap is not silent: it runs the ROM's own `SEARCHING FOR` and `LOADING`
+  printing first, so the screen and cursor end up exactly where a real load
+  leaves them (intros that read their next command back off the screen count
+  on that), while a program-initiated LOAD still prints nothing. Guarded on the
+  ROM actually holding those routines; a replacement KERNAL falls back to a
+  silent load.
 - **True Drive Emulation** (TDE on, the default): `$FFD5` is left to the real IEC
   protocol, so the full `Drive1541` services LOADs, fastloaders, protected disks,
   and all writes.
@@ -125,10 +124,10 @@ The constructor builds a complete machine:
     cpu.clock()                          // drive 6502 micro-op
 ```
 
-Peripherals tick first so a GCR byte-ready V-flag latch or a VIA timer IRQ that
-occurred *this* cycle is visible to the CPU's micro-op when it samples them;
-reversing the order made `BVS`/IRQ-poll loops miss events by a cycle (looks like
-a read error → blinking LED). The machine clocks an attached drive through a
+Peripherals tick first so a GCR byte-ready V-flag latch or a VIA timer IRQ
+raised *this* cycle is visible to the CPU's micro-op when it samples them; with
+the order reversed, the DOS's `BVS`/IRQ-poll loops see events a cycle late and
+reads fail. The machine clocks an attached drive through a
 16.16 drive:C64 accumulator: default true PAL ratio is 1 MHz / 985248 Hz
 (`driveTrueClockRatio`), while the lockstep switch pins it to exact 1:1.
 
@@ -361,13 +360,10 @@ variants:
   the BAM (outward from the directory track, 10-sector interleave, the way DOS
   fills a disk), chains them, and adds a closed PRG directory entry. Long files
   extend the directory chain with another track-18 sector when the first is full.
-- **`createPRGDisk(filename, bytes)`**: a blank image with one program written
-  into it, named after the file. This is how a `.prg` loads: it goes on a disk
-  and the disk goes in the drive, so it arrives through the ordinary
-  `LOAD"*",8,1` path instead of being poked into RAM. The disk is
-  write-protected. `prgAutostart()` then decides what to type: `RUN` when the
-  file really is BASIC (validated by its line header, not just a `$0801` load
-  address), nothing for machine code, whose entry point the file never states.
+- **`createPRGDisk(filename, bytes)`**: a blank write-protected image with the
+  program written into it: how a `.prg` arrives through the ordinary
+  `LOAD"*",8,1` path; the loading policy around it (`prgAutostart()`) belongs to
+  the [machine orchestrator](MACHINE-ARCHITECTURE.md) (§8).
 
 ---
 
@@ -397,10 +393,11 @@ feature-flagged:
 | `DRIVE_HEAD_SETTLE_ENABLED` | **off** | ~10 ms (10k cy) after a half-track step before reads are stable |
 | `DRIVE_SO_DELAY_ENABLED` | **off** | VICE's P1-aligned delay between the bit-8 boundary and the CPU's V-flag set (risky above ~18 cy) |
 
-All three default **off**; the DOS has its own delay loops and instant framing
-is safe, so they exist mainly for A/B experiments. When spin-up / head-settle is
-enabled its window keeps the disk turning (bit position advances) but suppresses
-SYNC and byte framing until it elapses.
+All three are compile-time constants at the top of `drive1541.js` (not
+`switches.js` entries) and default **off**; the DOS has its own delay loops and
+instant framing is safe, so they exist mainly for A/B experiments. When
+spin-up / head-settle is enabled its window keeps the disk turning (bit
+position advances) but suppresses SYNC and byte framing until it elapses.
 
 ---
 
@@ -417,9 +414,6 @@ idle scheduler before the first LOAD, so the C64 doesn't time out racing the boo
 
 ## 13. Key invariants & gotchas (quick reference)
 
-- **The drive is a real computer**: its 6502 runs the DOS ROM; the read protocol
-  emerges from GCR bits + byte-ready, not from shortcuts. That's why fastloaders
-  work.
 - **Peripherals clock before the CPU** each cycle, and an attached drive uses the
   true PAL drive:C64 ratio by default, with an exact 1:1 lockstep switch for
   investigations.
@@ -442,4 +436,3 @@ idle scheduler before the first LOAD, so the C64 doesn't time out racing the boo
 - **Idle 1541 cycles are skipped, not free-run forever**: only after the drive
   is in a recognized idle loop with bus/motor/LED/IRQ quiet; VIA timer time is
   batched and settled on wake.
-- **Mechanical timing is opt-in**; spin-up, head-settle, and the SO delay all default off.

@@ -26,8 +26,8 @@ installs as an app. For a step-by-step walkthrough see the
   network connection.
 - **Mobile touch keyboard**: tap the screen to summon your device's keyboard
   and type into the C64.
-- **Mobile touch joystick**: assign **Touch Joystick** to either control port
-  for an eight-way stick and two-button overlay above the screen and UI.
+- **Mobile touch joystick**: an on-screen stick for touch devices; see
+  **Control-port devices** below.
 - **Background-safe**: switching apps pauses and mutes the machine; returning
   resumes cleanly with no audio blip or catch-up stutter. **RUN IN BACKGROUND**
   (Options ▸ Other, off by default) keeps the machine running instead.
@@ -46,8 +46,8 @@ installs as an app. For a step-by-step walkthrough see the
   An image's recorded error table is honoured, so a disk protected by a sector
   that must fail to read still behaves like the original. GEOS disks show
   readable filenames.
-- **`.crt` cartridges**: generic 8K/16K/Ultimax, Action Replay v4.x/v5/v6,
-  Final Cartridge III, Magic Desk, and EasyFlash.
+- **`.crt` cartridges**: the supported families are listed under
+  **Cartridges & expansions** below.
 - **`.tap` tapes**: datasette images (v0 / v1 / v2), played like real hardware.
 - **`.wav` tape recordings**: a recording of a real cassette loads as an
   ordinary tape (and any tape downloads as one).
@@ -95,7 +95,7 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **PETSCII directory listings**: disk directories render through the real
   character ROM, so custom cracker-art charsets display correctly.
 - **App shortcuts**: **Cmd+Shift** on a Mac, **Ctrl+Shift** on Windows and Linux
-  — both work everywhere — for paste, the CRT look, the VIBES zoom and Retro
+  (both work everywhere) for paste, the CRT look, the VIBES zoom and Retro
   Vibes Studio mode; the **KEY MAP** dialog lists them. Only those letters are
   borrowed; **Ctrl** on its own is still the C64's.
 
@@ -103,13 +103,11 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 
 - **Two drives**: device **8** and device **9**.
 - **Directory artwork viewer**: every inserted disk lists its files in the drive
-  panel; a **🔍** button in the corner of the listing reopens it enlarged in its
-  own window, showing just the filenames (no block counts or file types), so the
-  PETSCII artwork many demos hide in their directory reads clearly. The window
-  sizes itself to the art, and the names are tinted as a **C64 raster rainbow**:
-  a continuous vertical colour sweep through the authentic hues of your selected
-  palette (**Colodore** or **Pepto**), flowing unbroken down the whole listing the
-  way a demo cycles its raster bars.
+  panel, and a **🔍** button reopens the listing enlarged in its own window,
+  just the filenames, so the PETSCII artwork many demos hide in their directory
+  reads clearly. The names are tinted as a **C64 raster rainbow**, a continuous
+  colour sweep through the hues of your selected palette (see
+  [Directory zoom](USER-GUIDE.md#directory-zoom)).
 - **True Drive Emulation (TDE)**, on by default: a real emulated 1541 (its own
   CPU + DOS) for fastloaders, cracked intros, demos, and copy-protected disks.
 - **Fast loading**: with TDE off, an instant built-in shortcut load for plain
@@ -144,27 +142,23 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **Watch the tape.** Beside it, a scope draws that same signal: the waveform
   under the head, pulse for pulse, whether or not the sound is on.
 - **See what is on a tape.** A `.tap` carries no directory, so the tape is read
-  the way a C64 reads it and the programs on it are listed: KERNAL tapes, and
-  turbo tapes in the formats it knows (Turbo Tape 64, which covers most of the
-  home turbo programs, GRL-Supertape, and six commercial loaders). The listing is
-  laid out like the
-  Library: a row per file with its format, size and start time. A click winds
-  the tape to that file. Damaged files are struck through, and a line under the
-  list says what is wrong and what was mended.
+  the way a C64 reads it and the programs on it are listed: a row per file with
+  its format, size and start time; a click winds the tape to that file. It reads
+  KERNAL tapes and the turbo formats it knows: Turbo Tape 64 (which covers most
+  of the home turbo programs), GRL-Supertape, and six commercial loaders.
+  Damaged files are struck through, and a line under the list says what is
+  wrong and what was mended.
 - **`.wav` in and out.** Load a recording of a real cassette and the pulses are
   recovered into an ordinary tape; download any tape as a `.wav` that loads on
   real hardware. A DC2N `.dmp` loads the same way, with no recovering to do.
 - **Tape preservation.** A recording of a worn cassette is recovered, not just
-  played. The signal level and centre line are tracked locally, so an old
-  transfer still decodes; both channels of a stereo transfer, their average and
-  their aligned average are read as four readings and the one that yields the
-  most files is kept. A file that does not add up is read again (the other
-  channel, the treble lifted) until two readings agree and its checksum passes,
-  or is mended from the tape's second copy; every proved file is written back at
+  played: several readings of the signal are compared, a file is mended only
+  when the tape itself proves the fix, and every proved file is written back at
   clean pulse widths. Nothing is invented: a file that cannot be proved is left
-  as it is and marked in the listing. On the eight worn cassettes this was built
-  against, 121 of 130 programs load, up from 66. Recordings are read in pieces,
-  so a long side fits in a phone's memory.
+  as it is and marked in the listing (the method is in the
+  [user guide](USER-GUIDE.md#datasette)). On the eight worn cassettes this was
+  built against, 121 of 130 programs load, up from 66. Recordings are read in
+  pieces, so a long side fits in a phone's memory.
 
 ## Cartridges & expansions
 
@@ -184,12 +178,11 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **CRT display modes**: a single button cycles: scanlines → phosphor-mask
   colour tube → black-and-white tube → bright arcade → tube with a rolling
   mains-hum bar → off.
-- **Picture size**: 1X / 2X / 2.5X / 3X, each a whole multiple of the C64's
-  own 384x272 screen so no scaling step softens a pixel, plus **MAX** to fill
-  the width and **fullscreen**. A size too big for the window is left out of the
-  cycle rather than shown clamped, so on a phone it is 1X and MAX. The picture
-  is never stretched: it keeps the C64's own proportions at any size, window
-  shape or CRT look.
+- **Picture size**: 1X / 2X / 2.5X / 3X (each a whole multiple of the C64's
+  own 384x272 screen so no scaling step softens a pixel), plus **MAX** to fill
+  the width and **fullscreen**; sizes too big for the window are left out of
+  the cycle. The picture is never stretched: it keeps the C64's own proportions
+  at any size, window shape or CRT look.
 - **VIC-II model**: switch between **6569** (original PAL) and **8565** (C64C).
 - **Colour palette**: **Colodore** (modern, saturated) or **Pepto** (classic
   2001 measurements).
@@ -228,41 +221,30 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 
 - **Retro Vibes 3D viewer**: a full-screen 3D scene of the C64 whose on-screen
   TV mirrors the live emulator picture, with several switchable lighting/backdrop
-  moods (synthwave, starry plain, a studio spotlight with live CRT-coloured spill,
-  IK+ sunset, 80s bedroom).
-  Opened with the **VIBES** button in Controls (icon: a retro sun in the ⛶
-  fullscreen brackets); double-click the model to power on, **Esc** / ✕ to return.
-  **Cmd+Shift+P** / **Ctrl+Shift+P** is Studio mode: every control and the mouse
-  pointer disappear, leaving the scene with just the C64 READY. logo, for
-  screenshots and video.
-  On a WebXR device an **🥽 Enter VR** button appears to step into the scene in
-  stereo with head tracking (experimental, see the note below).
-- **VR (WebXR), experimental**: if the browser reports a headset (or the WebXR
-  emulator), the 3D viewer offers an **Enter VR** mode. It needs a VR headset or
-  the desktop WebXR emulator; phones and iOS have no WebXR. The neon
-  post-processing (bloom/grade) is skipped in VR, so the look is flatter there.
-- **Record to MP4**: capture the whole browser window, with sound, to an
-  `.mp4` file from the **● RECORD** button in Controls. It records everything on
-  screen (fullscreen and Retro Vibes included) with the emulator's own audio,
-  at 1080p by default (the RECORDER setting raises the ceiling up to native
-  size), and saves as `c64ready-<date>.mp4`. Desktop Chrome (and other
-  Chromium browsers) and desktop Safari; see the
+  moods. Opened with the **VIBES** button in Controls; **Esc** / ✕ returns.
+  **Cmd+Shift+P** / **Ctrl+Shift+P** is Studio mode, stripping the scene to the
+  machine and the C64 READY. logo for screenshots and video (see
+  [Retro Vibes](USER-GUIDE.md#retro-vibes)).
+- **VR (WebXR), experimental**: on a device with a headset the 3D viewer offers
+  an **🥽 Enter VR** mode: the scene in stereo with head tracking. Its limits
+  are noted in [Known Issues](KNOWN-ISSUES.md#vr-webxr-experimental).
+- **Record to MP4**: capture the whole browser window, with sound, from the
+  **● RECORD** button in Controls: everything on screen, fullscreen and Retro
+  Vibes included, with the emulator's own audio, saved as `c64ready-<date>.mp4`.
+  Browser support and the resolution setting are in the
   [user guide](USER-GUIDE.md#recording).
-- **Rearrangeable side panel**: every control card has a grip handle in front
-  of its title. Drag the cards into whatever order suits how you use the
-  emulator, move them between the two columns, or put them all in one and leave
-  the other empty; the browser remembers the arrangement. Drop a card on the
-  **Hide** square that appears while dragging to take it out of the panel
-  altogether; a **+** in that corner lists what you have hidden and puts a card
-  back. The handles work from the keyboard too, and **Options ▸ Display** resets
-  everything, hidden cards included.
+- **Rearrangeable side panel**: drag the control cards into whatever order and
+  columns suit you, hide the ones you never use, and the browser remembers the
+  arrangement; the handles work from the keyboard too, and **Options ▸ Display**
+  resets everything (see
+  [Rearranging the interface](USER-GUIDE.md#rearranging-the-interface)).
 - **VIBES button demo**: a small pixel demo runs inside the VIBES button itself;
   **Cmd+Shift+Z** / **Ctrl+Shift+Z** zooms it to ten times the size. Switch it off in
   Options ▸ Other.
 - **Powered-off attract animation**: an animated idle screen (toggleable). It
   bows out by itself where it would cost more than it is worth: under
   `prefers-reduced-motion`, on software WebGL, and on any GPU that cannot hold
-  the frame rate — the static boot hint takes over.
+  the frame rate; the static boot hint takes over.
 - **About**: a short in-app project note, with full specifications, source
   material, and credits in the docs.
 

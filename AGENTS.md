@@ -60,6 +60,9 @@ is git-ignored and excluded from the PWA precache for that reason).
 - Env switches go in `src/switches.js`, read via `switchOn('name')` — no inline
   `process?.env`.
 - Don't create new `*.md` docs without an explicit request.
+- No em dashes in docs prose: none in paragraphs, lists, or table cells.
+  Use a comma, colon, parentheses, or a sentence split instead. The
+  `## <version> — <date>` release titles in `WHATS-NEW.md` keep theirs.
 - Keep user docs current in the same change (`FEATURES`, `GETTING-STARTED`,
   `COMPONENT-STATUS`, `KNOWN-ISSUES`, `TESTING`, `SPECIFICATIONS`,
   `PERFORMANCE-ANALYSIS`). Docs state current behavior, not history — remove

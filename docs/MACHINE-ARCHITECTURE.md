@@ -10,7 +10,7 @@ coupling, SID audio, input, the load paths (ROM/PRG/cartridge/disk/tape), and th
 reset model.
 
 This document describes *the implementation* and points at the real method and
-field names so it can be used as a guide into `machine.js` (~1.65k lines). The
+field names so it can be used as a guide into `machine.js`. The
 machine owns no chip behaviour itself; it **wires** the `CPU`, `CIA` ×2, `VIC2`,
 `Memory`, `Drive1541`, `Datasette`, and SID together and clocks them in the
 correct order. For the chips' internals see the sibling docs
@@ -65,7 +65,7 @@ callbacks:
 | `cia1/cia2/vic2.irqHandler` | feed the per-source interrupt delay pipeline (see §5) |
 | `cpu.onInterruptAccept` | diagnostic; forwards accept events to the VIC frame trace |
 | `datasette.flagCallback` → `cia1.setFlag` | tape pulse edges raise the CIA1 FLAG line |
-| `reu.busHoldHandler` / `irqHandler` | an attached RAM Expansion drives `_reuBusHold` (the arbitration boolean in §4) and `_reuIrqPending` (the /IRQ level in §5) |
+| `reu.busHoldHandler` / `irqHandler` *(optional)* | only when a RAM Expansion is attached: it drives `_reuBusHold` (the arbitration boolean in §4) and `_reuIrqPending` (the /IRQ level in §5) |
 
 `SIDProxy` (top of file) is the object Memory sees as "the SID": writes forward
 to `_sidWrite` (worklet ring + shadow voices); reads serve POTX/POTY
@@ -102,14 +102,11 @@ each step (read by the VIC IRQ handler's late-tag and the bus trace).
    BA/AEC for the cycle.
 6. **`cia1/cia2.clock(1)`, phi1**. Timers count + the ICR data→IR latch advance
    before the CPU's phi2, so a CPU register read this cycle sees this cycle's
-   underflow (the 6526 interrupt-acknowledge race). The timer *counter* read is
-   separate: `beginMasterCycle()` snapshots `$DC04-$DC07` **before** this cycle's
-   count, so it reads deliberately one behind the ICR/IR-latch read above.
+   underflow (the 6526 interrupt-acknowledge race), while the timer *counter*
+   registers deliberately read one cycle behind.
 7. **`reu.dmaCycle()`, phi2**, when a RAM Expansion transfer holds the bus and
-   the VIC has not taken this cycle. One C64-bus access per call, under its own
-   `_masterPhase = 'reu'` tag so a transfer's writes are not mistaken for CPU
-   writes by the VIC IRQ late-tag. The CPU is skipped entirely on these cycles
-   (see §4).
+   the VIC has not taken this cycle: one C64-bus access per call, tagged as its
+   own bus master; the CPU is skipped entirely on these cycles (see §4).
 8. **`cpu.clock()`, phi2**, *unless* blocked (see §4), or the **KERNAL load
    trap** fires instead (see §8).
 9. **`vic2.phi2()`**: VIC behaviour that depends on same-cycle CPU writes (the
@@ -273,21 +270,26 @@ trap is disabled and the real drive ROM + IEC protocol do the work.
 
 ## 9. Reset model
 
-Three layers, mirroring real hardware:
+Three public entry points, mirroring real hardware, all ending in the shared
+`_resetChips()` tail:
 
 - **`reset()`**: cold boot / power cycle: `mem.reset()` regenerates DRAM with the
-  VICE-style power-up pattern, then `_resetChips()`.
+  VICE-style power-up pattern.
 - **`softReset({allowSoft:true})`**: a `/RESET` line pulse: `mem.softReset()`
   preserves RAM (real `/RESET` doesn't touch DRAM; the KERNAL boot re-inits
-  screen + zero page), applies each cartridge's reset-line behavior (FC3 keeps
-  its latch), then `_resetChips()`. The UI reset button uses the full `reset()`.
+  screen + zero page) and applies each cartridge's reset-line behavior (FC3 keeps
+  its latch). The UI RESET button uses neither entry point: `main.js` destroys
+  the machine and builds a fresh one, identical to a power cycle, so an in-place
+  reset can never leave the 1541 mid-IEC-handshake.
 - **`resetCartridge()`**: asks the attached cartridge device to press its
   physical RESET control, pulses the chip reset path, and preserves DRAM.
   Action Replay and Final Cartridge III expose this capability.
-- **`_resetChips()`**: resets CIA1/CIA2/VIC2/SID, clears all interrupt-pipeline
-  flags + IEC line caches + joystick bytes, resets the datasette, resets any
-  attached drive (a plain `/RESET`, not a boot-to-idle), brings the CPU out of reset (fetches `$FFFC`), and
-  pre-copies the char ROM into the Bank-1 `$6800` shadow.
+
+`_resetChips()`, the shared tail, resets CIA1/CIA2/VIC2/SID, clears all
+interrupt-pipeline flags + IEC line caches + joystick bytes, resets the
+datasette, resets any attached drive (a plain `/RESET`, not a boot-to-idle),
+brings the CPU out of reset (fetches `$FFFC`), and pre-copies the char ROM into
+the Bank-1 `$6800` shadow.
 
 ---
 

@@ -6,6 +6,12 @@
 How to run the tests, what the suite covers, the diagnostic and trace tools, and the
 VICE cross-checking workflow. Run the whole thing any time with `npm test`.
 
+The document is in two parts: first the **test & VICE runbook** (running the
+suite, the diagnostic tools, cross-checking against VICE, coverage, fixtures);
+then, from "Debug console (DevTools)" on, the **DevTools debug and inspection
+surface**: console helpers and live model toggles for triaging behaviour in
+the browser.
+
 The suite is around 390 spec files, registered in the `TESTS` array of
 `test/all-test.js` and run by `npm test`. Between them they hold a few thousand
 labelled tests, plus some unlabelled internal assertions.
@@ -17,8 +23,9 @@ labelled tests, plus some unlabelled internal assertions.
 npm test                         # alias for: node test/all-test.js
 node test/all-test.js
 
-# Tune concurrency
-node test/all-test.js --jobs=8   # more parallelism
+# Tune concurrency (keep it modest: saturating the machine skews any
+# timing-sensitive run happening alongside)
+node test/all-test.js --jobs=4
 node test/all-test.js --jobs=1   # force sequential (isolated failure debugging)
 
 # A single test file (fastest iteration during development)
@@ -37,13 +44,13 @@ A skipping test exits 0, which on its own is indistinguishable from a pass, so i
 | `# SKIP <reason>` at line start | the file did no real work | `SKIP`, listed under **Skipped files** |
 | `ok  - <check> # SKIP <reason>` | the file ran; one check did not | `PASS`, listed under **Partially skipped** |
 
-Both lists print the reason (from `missingNote(key)`, which names the manifest entry and its environment variable), so a green run still shows exactly which fixtures went missing. A test that skips without a directive is reported as a plain `PASS` — that is the bug the directive exists to prevent.
+Both lists print the reason (from `missingNote(key)`, which names the manifest entry and its environment variable), so a green run still shows exactly which fixtures went missing. A test that skips without a directive is reported as a plain `PASS`: that is the bug the directive exists to prevent.
 
 ## Test categories
 
 | Category | Representative files | What's locked in |
 | --- | --- | --- |
-| **CPU** | `cpu-test.js`, `cpu-page-cross-spec-test.js`, `klaus-test.js`, `illegal-opcode-cycle-audit-test.js`, `legal-opcode-cycle-audit-test.js`, `cycle-audit-test.js`, `branch-cycle-accounting-spec-test.js`, `rti-cycle-accounting-spec-test.js` | Every opcode and cycle count; legal and illegal cycle audits; Klaus Dormann's exhaustive 6502 functional test (binary resolves via `test/external-assets.json`, skips if absent — the suite's only external-asset test). |
+| **CPU** | `cpu-test.js`, `cpu-page-cross-spec-test.js`, `klaus-test.js`, `illegal-opcode-cycle-audit-test.js`, `legal-opcode-cycle-audit-test.js`, `cycle-audit-test.js`, `branch-cycle-accounting-spec-test.js`, `rti-cycle-accounting-spec-test.js` | Every opcode and cycle count; legal and illegal cycle audits; Klaus Dormann's exhaustive 6502 functional test (binary resolves via `test/external-assets.json`, skips if absent; the suite's only external-asset test). |
 | **VIC-II core / cycle timing** | `clock-cycle-spec-test.js`, `master-cycle-spec-test.js`, `ba-aec-matrix-spec-test.js`, `vic2-sprite-ba-cycles-test.js`, `bus-kind-audit-test.js` | Master-cycle ordering, BA/AEC handshake, bad-line and sprite DMA steals, per-cycle bus-kind accounting. |
 | **VIC-II raster + IRQ** | `vic2-raster-irq-edge-trigger-spec-test.js`, `vic2-raster-irq-chain-spec-test.js`, `irq-pipeline-spec-test.js`, `irq-ba-stall-spec-test.js` | Bauer §3.12 mid-line $D011/$D012 fires, edge-triggered raster IRQ, IRQ pipeline and entry under BA/RDY. |
 | **VIC-II stable raster** | `irq-d016-cycle-alignment-spec-test.js`, `stable-irq-sprite-ba-drift-spec-test.js`, `stable-raster-jitter-absorb-spec-test.js`, `ba-contour-3ad-spec-test.js`, `vic2-raster-time-spinner-spec-test.js` | Double-IRQ jitter absorption, stable-raster realignment, BA-contour timing, raster-time spinner and dejitter. |
@@ -73,10 +80,10 @@ The **reference-demo screenshot pass** (`test/commit-screenshots.mjs`) runs the 
 node test/commit-screenshots.mjs
 ```
 
-The **demo crash/hang status board** (`test/demo-status.mjs`) boots each tracked open-bug demo (disk 1) headless and classifies the outcome as `CRASH` (JAM/KIL opcode, PC and time), `runs clean`, or `DISPLAY FROZEN` (a possible silent hang; it is framebuffer-based, since PC sampling cannot tell a silent hang from a healthy interrupt-driven spin). Each outcome is compared to its expected status (`✓` / `✗ CHANGED`), so the board doubles as a regression detector. Each demo loads via the chunked keyboard buffer (the UI path) and runs for **3 minutes**, saving a screenshot **every 10 s** plus the end frame (`<demo>-<YYYYMMDD-HHMMSS>[-sNNN].png`, to a git-ignored output directory created on demand), so a demo's progression, and exactly where it visually breaks, is visible. The demo disk images resolve through the collection roots in `test/external-assets.json`. SID defaults to 8580 to match the UI. Crash disks are booted directly (for example Mojo disk 4). It is a `*.mjs` tool, so the `all-test.js` runner skips it, like `commit-screenshots.mjs`.
+The **demo crash/hang status board** (`test/demo-status.mjs`) boots each tracked demo (disc 1) headless and classifies the outcome as `CRASH` (JAM/KIL opcode, PC and time), `runs clean`, or `DISPLAY FROZEN` (a possible silent hang; it is framebuffer-based, since PC sampling cannot tell a silent hang from a healthy interrupt-driven spin). Each outcome is compared to its expected status (`✓` / `✗ CHANGED`); most entries expect `RUNS`, so the board is first a regression detector over demos that must keep running clean. Each demo loads via the chunked keyboard buffer (the UI path) and runs its per-demo frame budget (around eight minutes of demo time), saving a screenshot **every 10 s** plus the end frame (`<demo>-<YYYYMMDD-HHMMSS>[-sNNN].png`, to a git-ignored output directory created on demand), so a demo's progression, and exactly where it visually breaks, is visible. The demo disk images resolve through the collection roots in `test/external-assets.json`. SID defaults to 8580 to match the UI. Multi-disc demos boot their crash disc directly (for example Mojo disc 4). It is a `*.mjs` tool, so the `all-test.js` runner skips it, like `commit-screenshots.mjs`.
 
 ```bash
-# Crash/hang status board over the open-bug demos (screenshots + ✓/✗ vs expected)
+# Crash/hang status board over the tracked demos (screenshots + ✓/✗ vs expected)
 node test/demo-status.mjs                 # all tracked demos
 node test/demo-status.mjs coma next       # filter by demo name
 SID=6581 node test/demo-status.mjs        # force the original 6581 SID
@@ -105,6 +112,22 @@ VICE (`x64sc`) is the ground-truth oracle for VIC-II, CPU, sprite and timing que
 - Match the two runs by **demo state** (which scene, pose or digit is on screen), never by absolute frame or cycle count. Our boot timing differs from VICE's, so the runs drift apart in wall-clock time.
 - VICE flag polarity is the reverse of common CLI intuition: `-NAME` enables a resource and `+NAME` disables it. For example, `-drive8truedrive` turns true drive on.
 
+For testprogs suites that ship a `references/` directory of VICE screenshots, reach for the shared comparator first, instead of writing a new render-and-diff script:
+
+```bash
+node test/ref-compare.mjs <prg> <refPng> [boot=200] [run=80] [refPalette=pepto|colodore]
+```
+
+`test/ref-compare.mjs` boots the KERNAL, loads and runs the PRG, and compares in palette-independent colour-index space. It handles the two common false positives for these references:
+
+- **Palette mismatch.** Testprogs VICE screenshots are usually Pepto, while the emulator default is Colodore. Raw RGB diffs are palette noise; the shared tool quantizes both sides to their own 16-colour palette. If you capture a raw PNG yourself for RGB diffing or eyeballing, set the emulator palette to Pepto first with `setVicPalette('pepto')`.
+- **Crop offset.** VICE PNG row 0 is raster 16 while our framebuffer row 0 is raster 15. The comparator searches small `dx,dy` offsets; `PERFECT (1-line crop offset)` is a pass.
+
+VICE's external Pepto palette still runs through its gamma and contrast curve. Tiny residual index diffs confined to 1px features, where position matches and only colour differs, are usually this curve rather than a rendering bug. For those cases, read the VIC registers over the monitor (`m d027 d02e`, masking colour-register reads with `& 0x0f`) before chasing pixels.
+
+When the shared comparator does not fit (no reference PNG, or you need
+breakpoints and traces rather than pixels), capture raw:
+
 **Capture style A, headless one-shot screenshot** (fast, fully deterministic; best for pixel diffs):
 
 ```bash
@@ -125,19 +148,6 @@ The PAL screenshot is 384×272, the same crop as our `frameBuffer`, so pixels al
 2. Capture VICE ground truth: a per-instruction `(PC, LIN, CYC)` trace, and/or per-line register stores with their `CYC`, and/or a screenshot.
 3. Build the **same** trace headlessly from our emulator: drive `machine._runMasterCycle()` in a loop (19656 cycles = one PAL frame) and record `(cpu.pc, vic2.raster, vic2.cycleInLine − 1)` at each `cpu.atInstructionBoundary()`. Boot with about 200 warm-up frames before `loadPRG` + `injectRun`, or KERNAL init clobbers the injected RUN.
 4. Diff by **PC**, not by time; the instruction stream is identical. A divergent `CYC` for the same PC points straight at the cycle where our timing differs. A `CYC` *gap* on one side is a CPU stall (bad-line or sprite-DMA BA) that the other side doesn't have.
-
-For testprogs suites that ship a `references/` directory of VICE screenshots, use the shared comparator instead of writing a new render-and-diff script:
-
-```bash
-node test/ref-compare.mjs <prg> <refPng> [boot=200] [run=80] [refPalette=pepto|colodore]
-```
-
-`test/ref-compare.mjs` boots the KERNAL, loads and runs the PRG, and compares in palette-independent colour-index space. It handles the two common false positives for these references:
-
-- **Palette mismatch.** Testprogs VICE screenshots are usually Pepto, while the emulator default is Colodore. Raw RGB diffs are palette noise; the shared tool quantizes both sides to their own 16-colour palette. If you capture a raw PNG yourself for RGB diffing or eyeballing, set the emulator palette to Pepto first with `setVicPalette('pepto')`.
-- **Crop offset.** VICE PNG row 0 is raster 16 while our framebuffer row 0 is raster 15. The comparator searches small `dx,dy` offsets; `PERFECT (1-line crop offset)` is a pass.
-
-VICE's external Pepto palette still runs through its gamma and contrast curve. Tiny residual index diffs confined to 1px features, where position matches and only colour differs, are usually this curve rather than a rendering bug. For those cases, read the VIC registers over the monitor (`m d027 d02e`, masking colour-register reads with `& 0x0f`) before chasing pixels.
 
 ### RAM Expansion (REU) testprogs
 
@@ -161,18 +171,16 @@ each mismatch.
 
 ## SID testprog sweep (VICE `testprogs/SID`)
 
-The SID testprogs are driven headlessly: boot, load, run, then read the border / `$d7ff` verdict. Each program's own captured register stream is also re-rendered through the shipping worklet, to check that the selected engine actually carried it. Anything that fails or looks odd is re-run under VICE 3.10 and compared. A full sweep covers all 26 folders across both chip models; results below.
+The SID testprogs are driven headlessly: boot, load, run, then read the border / `$d7ff` verdict. Each program's own captured register stream is also re-rendered through the shipping worklet, to check that the selected engine actually carried it. Anything that fails or looks odd is re-run under VICE 3.10 and compared.
 
-| Folder | Result |
-| --- | --- |
-| `busvalue`, `detect`, `detectmirrors`, `env_test`, `envelope`, `exp_counter_reset`, `mapping`, `noiselfsrinit`, `osc3-wave0`, `osc_topbit`, `oscinit`, `ringmod`, `writedelay` | PASS on both models. `noiselfsrinit/simple` = `$7F`, the real-8580 value. |
-| `resid-test` | PASS. `boundary.prg` and `envsample.prg` need their bundled `.d64` attached. |
-| `sidcheck` | `2/5` (6581), `4/5` (8580); both identical to VICE 3.10. |
-| `wf12nsr` | `quicktest` = 252, the real-hardware maximum (VICE reports 255). `wf12nsr-8580` fails, matching VICE character for character. |
-| `noisewriteback`, `wb_testsuite` | The failures are all the combined-noise `X→C` / `X→8` / `9→8` family, which fails identically under VICE: a shared reSID limit, not a local gap. No waveform rule satisfies both these and `noiselfsrinit`, and the trade-off went to `noiselfsrinit` matching hardware. |
-| `bitfade` | `delayosc3` / `delayenv3` / `delayfrq0` match VICE within 3 cycles. `delaynoise` is not a stable measurement; see below. |
-| `waveforms`, `paddles`, `paddlescope`, `testwave00`, `stereo`, `zerolevel` | No automatic verdict: bitmap plots, analog meters, printed values, or waiting on a keypress. `paddles` prints the same POT values as VICE. |
-| `csid-light-tests` | 15 audio-only tunes, so nothing for a headless run to assert. Wrapped as PRGs and fingerprinted against VICE: 13 of 15 audible on both sides, **median 84 %** at a shared offset. `noisewfsweep` scores low (broadband noise has no stable peaks to lock onto); `delaybug` and `fltphasetest` are near-silent on both sides, so their scores mean nothing. |
+A full sweep covers all 26 folders across both chip models. In outcome: every
+folder with an automatic verdict passes, lands on the real-hardware value, or
+fails exactly as VICE 3.10 does; the failures that remain (`noisewriteback` /
+`wb_testsuite`'s combined-noise family) are a shared reSID limit, not a local
+gap, and the trade-off went to `noiselfsrinit` matching hardware. The
+bitmap-plot and analog-meter programs have no automatic verdict. The standing
+summary lives in [Component status](COMPONENT-STATUS.md); what stays here is
+how to drive the suite and what trips it up.
 
 **Gotchas that make this suite look broken when it isn't:**
 
@@ -207,25 +215,18 @@ node tools/coverage.mjs /tmp/cov
 
 The instrumented suite runs about eight times slower than plain `npm test`.
 
-Read the number in two parts. Measured 2026-08-29:
+Read the number in two parts:
 
-- **96.8 % of the code lines in the 51 `src/` files the tests import.** Every
-  imported file is above 90 %: 27 of them at 100 (among them `roms.js`,
-  `panel-order.js`, `tape-sound.js`, `wav-import.js`, `switches.js`, every
-  cartridge device), `machine.js` 99.4, `6522.js` 98.7, `cpu.js` 96.5, the
-  `vic2*` family 94-97, `cia.js` 94.5, `memory.js` 94.6, `drive1541.js` 92.0.
-  The lowest is `input-key-ownership.js` at 90.9 (30 of 33 lines). What is left
-  uncovered is mostly defensive `catch` blocks and engine-specific branches
-  (the WebKit path in `vibes-btn-fx.js`, the 6569 bank-delay branch in
-  `machine.js`).
-- **50.6 % of all of `src/`.** The other 32 files (13 000 code lines) have no Node
-  entry point: `main.js`, `media.js`, `input.js`, the Retro Vibes scenes,
-  `pausedemo.js`, `webgl-presenter.js`, `sw.js`, the dialogs, tooltips and
-  splash. They run only in a browser, and the suite does not drive one; the
-  screenshot and demo tools cover them by hand. Two entries in that list are
-  artefacts: `sid-filter.js` and `sid-worklet.js` are exercised, but through
-  `sid-test-loader.js`, which evaluates them in a `vm` context, so V8 credits
-  the evaluated script rather than the file.
+- **~97 % of the code lines in the `src/` files the tests import**, every
+  imported file above 90 %. What is left uncovered is mostly defensive `catch`
+  blocks and engine-specific branches.
+- **About half of all of `src/`.** The rest has no Node entry point:
+  `main.js`, `media.js`, `input.js`, the Retro Vibes scenes, the dialogs,
+  tooltips and splash run only in a browser, and the suite does not drive one;
+  the screenshot and demo tools cover them by hand. Two entries in that list
+  are artefacts: `sid-filter.js` and `sid-worklet.js` are exercised, but
+  through `sid-test-loader.js`, which evaluates them in a `vm` context, so V8
+  credits the evaluated script rather than the file.
 
 ## Shared fixtures
 

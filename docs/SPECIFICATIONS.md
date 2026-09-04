@@ -3,9 +3,10 @@
 
 # Specifications, source material and credits
 
-The emulator follows publicly-available hardware references. VICE (`x64sc`)
-is also the runtime cross-check oracle; the diff workflow is documented in
-[testing.html](TESTING.md#cross-checking-against-vice-reference-oracle).
+Three things live on this page: the hardware references the emulator follows,
+subsystem by subsystem; the file formats it reads and writes; and the credits.
+VICE (`x64sc`) is also the runtime cross-check oracle; the diff workflow is
+documented in [Testing](TESTING.md#cross-checking-against-vice-reference-oracle).
 
 With gratitude to the VICE team. The following was important to the success of
 this project:
@@ -96,26 +97,29 @@ this project:
   <https://trondal.com/c64sid/yannes.html>
 - **reSID** by Dag Lem: the SID engine is substantially a JavaScript
   translation of reSID (GPL-2.0-or-later, conveyed within this
-  GPL-3.0-or-later project): oscillator/waveform/noise timing, the pipelined
-  ADSR envelope, the measured combined-waveform tables (OSC3 samplings of
-  real chips, embedded verbatim), the R-2R DAC models with subthreshold
-  leakage, the transistor-level filter / mixer / nonlinear volume stage
-  (`filter8580new`), the C64 external RC filter, and the Kaiser-sinc audio
-  resampler. The selectable WASM engine is the same model twice removed: a
-  Rust translation of this project's JavaScript (`rust/sid/`, the
-  corresponding source), compiled to WebAssembly and embedded; its output
-  is bit-identical to the JavaScript engine by test.
+  GPL-3.0-or-later project).
   <https://github.com/daglem/reSID>
+  - **What is ported**: oscillator/waveform/noise timing, the pipelined ADSR
+    envelope, the measured combined-waveform tables (OSC3 samplings of real
+    chips, embedded verbatim), the R-2R DAC models with subthreshold leakage,
+    the transistor-level filter / mixer / nonlinear volume stage
+    (`filter8580new`), the C64 external RC filter, and the Kaiser-sinc audio
+    resampler.
+  - **The WASM engine** is the same model twice removed: a Rust translation of
+    this project's JavaScript (`rust/sid/`, the corresponding source), compiled
+    to WebAssembly and embedded; its output is bit-identical to the JavaScript
+    engine by test.
 - **VICE (The VICE Team)**: the port is pinned to reSID **as distributed in
-  VICE 3.10's modified `src/resid` tree**, because headless VICE x64sc is
-  this project's byte-level regression oracle. Some ported behaviors exist
-  only in VICE's tree (the measured gradual TEST-bit fade of the noise shift
-  register; the improved 8580 filter model VICE's default build compiles),
-  and the runtime parameter conventions of VICE's reSID wrapper (filter
-  bias, resampler passband/gain, output amplification) are followed for
-  oracle parity. The exact upstream pin (official VICE 3.10 source release,
-  tarball sha256) is recorded in NOTICE.txt.
+  VICE 3.10's modified `src/resid` tree**.
   <https://vice-emu.sourceforge.io/>
+  - **Why VICE's tree**: headless VICE x64sc is this project's byte-level
+    regression oracle, and some ported behaviors exist only there (the measured
+    gradual TEST-bit fade of the noise shift register; the improved 8580 filter
+    model VICE's default build compiles). The runtime parameter conventions of
+    VICE's reSID wrapper (filter bias, resampler passband/gain, output
+    amplification) are followed for oracle parity.
+  - **Where the pin is recorded**: the exact upstream (official VICE 3.10
+    source release, tarball sha256) is in NOTICE.txt.
 - **Combined-waveform sample lineage**: the embedded wave tables descend
   from OSC3 samplings of 6581 R1/R3/R4 and 8580 R5 chips provided to reSID
   by **Tibor Biczo, Andreas Boose, and André Fachat** (reSID THANKS).
@@ -260,26 +264,21 @@ revisions:
   project's own measurements of tapes written by nineteen Turbo Tape 64 savers.
   <https://www.lemon64.com/forum/viewtopic.php?t=84032>
 
-The KERNAL saver's Timer B timings are measured against the real `901227-03` ROM,
-not quoted; published tables disagree in the low bits.
+- **KERNAL saver Timer B timings**: measured against the real `901227-03` ROM,
+  not quoted; published tables disagree in the low bits.
 
-Seven of the turbo formats have no source to cite at all. GRL-Supertape (Geir
-Rune Ladehaug, 1986) was measured off tapes it wrote. Novaload, US Gold /
+Seven of the turbo formats have no published source to cite. GRL-Supertape
+(Geir Rune Ladehaug, 1986) was measured off tapes it wrote; Novaload, US Gold /
 Datasoft, Gremlin Type 2, Ocean / Imagine, Freeload and Wildload were each read
-out of the loader its own tapes carry, by disassembling it. So there is nothing
-published behind any of the seven, and nothing here to credit. What they turned out to be is in
-[datasette-architecture.html](DATASETTE-ARCHITECTURE.md).
+out of the loader its own tapes carry, by disassembling it. What they turned
+out to be is in the [Datasette architecture](DATASETTE-ARCHITECTURE.md) notes.
 
 ### Recording container
 
-- **ISO base media file format**: ISO/IEC 14496-12: the boxes `src/mp4-remux.js`
-  walks (`moof`/`traf`/`tfhd`/`tfdt`/`trun`) and rebuilds (`stts`/`stsc`/`stsz`/
-  `stco`/`stss`/`ctts`) to turn `MediaRecorder`'s fragmented MP4 into a
-  progressive, indexed one that editors will trim. `tfdt` carries each fragment's
-  true span, which is what lets the remux restore the duration capture stalls lose.
-- **MP4 file format**: ISO/IEC 14496-14, for the emitted file's brand and
-  structure; **AVC in ISO base media**, ISO/IEC 14496-15, only because the `avcC`
-  sample entry is copied through byte for byte. The remux does no codec work.
+- **ISO base media / MP4 file format**: ISO/IEC 14496-12 and 14496-14 define
+  the fragmented-MP4 structure `src/mp4-remux.js` walks and the progressive,
+  indexed file it rebuilds so editors will trim it. The remux does no codec
+  work; the codec configuration is copied through byte for byte.
 
 ## Credits
 
@@ -326,7 +325,7 @@ A special thanks goes to the following:
   <https://rsms.me/inter/>
 - **Share Tech Mono** by Carrois Type Design, SIL OFL 1.1.
   <https://fonts.google.com/specimen/Share+Tech+Mono>
-- **PetMe64**, **Giana**, and **Berkelium** (GEOS font) by Rebecca Bettencourt /
+- **PetMe64**, **Giana**, and **Berkelium64** (GEOS font) by Rebecca Bettencourt /
   Kreative Korporation, Kreative free-use license.
   <https://www.kreativekorp.com/software/fonts/c64.shtml>
 

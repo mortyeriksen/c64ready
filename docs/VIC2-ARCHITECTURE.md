@@ -257,15 +257,17 @@ Per-sprite state: `spriteDmaOn`, `spriteDisplayOn`, `spriteMC`, `spriteMCBase`,
 
 - The **display flip-flop is owned exclusively by cy 58 rule 4**; DMA start at
   cy 55/56 never touches it. This is the "restart on the last display line"
-  trick (`spriterestart`, nine.prg maskers).
+  trick.
 - **MxE re-check at cy 58**: DMA start (cy 55/56) and display turn-on (cy 58)
   read `$D015` independently, so a CPU rewrite between them lets DMA run (and
-  steal cycles) while the sprite never displays (testprogs `spriteenable` cores
-  1/2/4).
+  steal cycles) while the sprite never displays.
 - **Late-DMA open-bus byte 0** (`_spriteByte0Floats`): a sprite enabled so late
   that only the cy-56 check catches it has not completed the BA→AEC lead-in by
   its byte-0 fetch, so that byte reads the floating bus (`$FF`). Only sprite 0
   can hit this.
+
+Proven by: testprogs `spriterestart` (the nine.prg maskers use the trick) and
+`spriteenable` cores 1/2/4.
 
 ### Sprite memory fetch
 Pointer p-access + 3 data s-accesses per sprite, scheduled by the fixed
@@ -310,7 +312,9 @@ deduped (§14).
 ### Segments and the register-snapshot pipeline
 `_buildCycleRasterSegment(cycle)` produces one cycle's 8-pixel render segment.
 Which snapshot each field samples matters, because VIC subsystems latch at
-different points in the pixel pipeline:
+different points in the pixel pipeline. The rule of thumb throughout: the later
+the snapshot offset, the later the pipeline stage it models, the closer to the
+beam:
 
 | Field on `seg` | Snapshot | Why |
 |----------------|----------|-----|
@@ -342,30 +346,22 @@ after each g-access", XSCROLL delaying the reload 0-7 pixels. Modelled
 explicitly:
 
 - **Line-start preload.** The first reload lands at canvas `32 + XSCROLL`;
-  before it the shifter is empty (drained since the previous line's last
-  g-access) and emits "0" bits, which take the mode's **idle background**:
-  `$D021` in text modes, the adjacent column's matrix low nibble in standard
-  bitmap (VICE-oracle-verified), **black** in the invalid modes and hires-bitmap
-  idle. Display state handles this in `_renderCycleSegmentGraphics`
-  (`isStdBitmap` / `isInvalidMode` filler gates), idle state via the cycle-15
-  `_fillSegmentBg0` preload. With CSEL=0 the widened left border (canvas ≤38)
-  covers the whole preload; nothing may leak into x≥39.
+  until then the shifter is empty and emits "0" bits, which take the mode's
+  **idle background**: `$D021` in text modes, the adjacent column's matrix low
+  nibble in standard bitmap, black in the invalid modes and hires-bitmap idle.
+  With CSEL=0 the widened left border covers the whole preload.
 - **Drain zone.** Inside the line, each 8-pixel group's first XSCROLL pixels
-  still shift out the **previous** g-access byte before the delayed reload. In
-  idle state the segment carries both (`seg.idleByte` fetched at `regCycle+1`,
-  `seg.idleBytePrev` one g-access earlier) and `_renderOpenBorderIdleSpan`
-  switches source at `cycleStart + XSCROLL` (bit phase 0, so bit/pair indexing
-  is continuous). Steady idle lines make the two identical; the split is
-  observable only across a mid-line idle-fetch change (ECM flip, VIC bank
-  switch, or a VSP glitch flipping the idle byte `$00↔$FF` at both screen
-  edges). In display state the same continuity falls out of the column span
-  math (`srcX` offsets).
+  still shift out the **previous** g-access byte before the delayed reload; the
+  split is observable only across a mid-line idle-fetch change (an ECM flip, a
+  VIC bank switch, a VSP glitch flipping the idle byte).
 - **Opened-right-border tail.** XSCROLL moves the whole 320-pixel stream, so its
-  last XSCROLL pixels land at canvas `352..351+XSCROLL`. The right border
-  normally overlays them; when the cycle-56 CSEL trick keeps the border open,
-  `_renderRightXscrollSpill` exposes the tail using the final display column's
-  fetch/mode snapshot before the side zone settles to its empty-shifter
-  background.
+  last XSCROLL pixels land at canvas `352..351+XSCROLL`, normally overlaid by
+  the right border; when the cycle-56 CSEL trick keeps the border open,
+  `_renderRightXscrollSpill` exposes the tail.
+
+The pixel-level mechanics (which segment fields carry the two g-bytes, the
+per-mode filler gates, bit-phase continuity) live in the source comments
+around `_renderOpenBorderIdleSpan` and `_fillSegmentBg0` in `vic2-render.js`.
 
 ### Border re-color
 Borders are painted on the **X-coordinate timeline** at line end by
@@ -397,17 +393,11 @@ snapshot so a re-render doesn't double-count). Segments straddling a border
 edge are split by `_splitRasterSegmentAtBorderEdges`.
 
 The queue is allocation-free by design: entries are **pooled** (rented from a
-free-list by `_rentFFEntry`, which resets them to safe defaults so no field
-leaks across the `hRightSet`/`hLeftReset` kinds, recycled on drain) and the
-queue is a **stable-capacity array with a manual `_ffCount`**.
-`_evaluatePendingTransitions` compacts in place over `[0, _ffCount)` and never
-does `q.length = w`: the border pushes ~2 transitions per line (~500/frame)
-that drain within ~3 cycles, and oscillating the length to 0 each line made V8
-right-trim and reallocate the backing store every raster line, the dominant
-idle allocation. A drained slot keeps its recycled entry with `kind` blanked
-(scans and serialize skip it; the FF is never >1-deep, so a kept entry is never
-slid over a live slot). The churn is invisible on V8 (escape analysis) but real
-on JavaScriptCore/mobile; see the [performance doc](PERFORMANCE-ANALYSIS.md).
+free-list, reset to safe defaults, recycled on drain) and the queue is a
+**stable-capacity array with a manual `_ffCount`** whose length never
+oscillates, so the backing store is not reallocated every raster line on
+engines that right-trim arrays; see the
+[performance doc](PERFORMANCE-ANALYSIS.md).
 
 ---
 
@@ -567,11 +557,11 @@ back); spec tests that assert per-cycle render internals pin
 live vs deferred machines through collision reads at the detection cycle,
 same-cycle sprite-X writes, rasterbars, armed IRQs and mid-line serialize.
 
-Verified: full suite green in both modes, orbit framebuffer hash and all 195
-reference screenshots byte-identical, demo-status board parity. Measured (clean
-interleaved A/B): **orbit −14.5%, raster_time_gp −25.8% ms/frame**; the win
-scales with how quiet the content's lines are (a line with a mid-line write or
-observer simply renders live; FLI-class content keeps the per-cycle cost).
+Both modes run the full suite green, with the orbit framebuffer hash, the
+reference screenshots and the demo-status board byte-identical between them.
+The win scales with how quiet the content's lines are: a line with a mid-line
+write or observer simply renders live, so FLI-class content keeps the per-cycle
+cost.
 
 ---
 

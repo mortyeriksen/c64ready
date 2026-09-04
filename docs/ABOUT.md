@@ -17,7 +17,7 @@ It's a Commodore 64 rebuilt from the silicon up, running right in your browser. 
 ### What it does
 
 - **Runs the demos that stump other emulators.** The wildest custom fastloaders load and run, cycle for cycle. → [the 1541 drive](/docs/drive-architecture.html)
-- **Backed by 2,400+ labeled tests.** The default `npm test` suite spans about 400 registered spec files covering the CPU, VIC-II, SID, CIA, PLA, drive, datasette, cartridges, input, save states, and integration edge cases. → [the test suite](/docs/testing.html)
+- **Backed by 2,400+ labeled tests**, covering the CPU, VIC-II, SID, CIA, PLA, drive, datasette, cartridges, input, save states, and integration edge cases. → [the test suite](/docs/testing.html)
 - **Save state, resume anytime.** Snapshot the exact machine to a file and pick up right where you left off, mid-demo or mid-boss-fight. → [the user guide](/docs/user-guide.html)
 - **Sounds the way it was written.** Both SID chips, 6581 and 8580, filters and all. → [the SID](/docs/sid-architecture.html)
 - **Bring your own everything.** Disk, tape, cartridge or .prg; joystick, gamepad or keyboard. → [getting started](/docs/getting-started.html)
@@ -30,7 +30,7 @@ Step into an 80s bedroom bathed in synthwave light, your C64 humming on the desk
 
 ### How it started
 
-It began as a plan to drop a SID tune into my vibe-coded retro game, [Cosmic Bounce](https://www.cosmicbounce.xyz) (which already had a MOD player). The SID player came together fast, and then the obvious-in-hindsight question hit: *could I build the whole machine in a browser?* A breadbin's worth of tokens and late nights later, here we are.
+It began as a plan to drop a SID tune into my retro game, [Cosmic Bounce](https://www.cosmicbounce.xyz) (which already had a MOD player). The SID player came together fast, and then the obvious-in-hindsight question hit: *could I build the whole machine in a browser?* A breadbin's worth of tokens and late nights later, here we are.
 
 And along the way it became the best kind of learning project: a deep dive into every corner of the C64's hardware and software, and where I learned to build something this complex by vibe coding.
 
@@ -44,7 +44,7 @@ It's a work in progress: a few small visual glitches remain, and there's more pe
 
 ### Privacy
 
-Everything runs in your browser. Your ROMs, disks, tapes, cartridges and save states stay in the browser's own storage and are never uploaded. There are no cookies and no third-party scripts. The only thing counted is a few anonymous page hits the app makes, once per launch or ROM setup, so the hosting service's server-side statistics show how many sessions run installed or with ROMs; they carry no data and no identifier.
+Everything runs in your browser. Your ROMs, disks, tapes, cartridges and save states stay in the browser's own storage and are never uploaded. There are no cookies and no third-party scripts. The only thing counted is a few anonymous page hits the app makes, once per launch or ROM setup. Those hits let the hosting service's server-side statistics show how many sessions run installed or with ROMs; they carry no data and no identifier.
 
 ### About the author
 
