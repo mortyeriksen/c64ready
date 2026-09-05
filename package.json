@@ -1,7 +1,7 @@
 {
   "name": "c64ready-app",
   "private": true,
-  "version": "2026.8.6",
+  "version": "2026.9.0",
   "license": "GPL-3.0-or-later",
   "type": "module",
   "scripts": {

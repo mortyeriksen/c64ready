@@ -8,9 +8,7 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
-## Next release
-
-*Not out yet: what is finished and waiting for the next version.*
+## 2026.9.0 — September 5, 2026
 
 - **C64 READY. gets a command line.** `npx c64rdy` puts a terminal in front of
   the same tape and disk engine: turn a shelf of cassette recordings into

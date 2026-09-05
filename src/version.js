@@ -9,4 +9,4 @@
 // version and date, and sync the version in package.json.
 //
 // Shown in the About dialog and in the footer of every generated docs page.
-export const VERSION = '2026.8.6';
+export const VERSION = '2026.9.0';
