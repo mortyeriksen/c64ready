@@ -248,6 +248,15 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **About**: a short in-app project note, with full specifications, source
   material, and credits in the docs.
 
+## Command line (c64rdy)
+
+The same tape and disk engine with a terminal in front of it. `npx c64rdy`
+converts, inspects, repairs and runs cassettes, cartridges and disks in
+batches: a shelf of `.wav` recordings into mended `.tap` files in one command,
+formats converted in every honest direction, or every program on a tape side
+booted headless and tiled into one captioned sheet. Node 20.19 or newer,
+no dependencies; the [CLI guide](USER-GUIDE-CLI.md) walks every command.
+
 ---
 
 New here? Start with the [Getting Started](GETTING-STARTED.md) guide, or dive
