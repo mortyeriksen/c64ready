@@ -2860,7 +2860,7 @@ initInput({
 initMedia({
   setStatus, _powerOn, _hardReset, _createAndWireMachine, _setPaused, startLoop,
   resumeAudio, suspendAudio, resetSidWorklet, _syncPowerStateClass, _punchLogo,
-  _syncToggleLabels, _stopBootHint, _queueAutoLoad,
+  _syncToggleLabels, _stopBootHint, _queueAutoLoad, _basicReady,
   releaseAllLatched: _releaseAllLatched,
   stopPauseDemo: () => pauseDemo?.stop(),
   cancelAutoLoad: () => { _autoSeq = null; },

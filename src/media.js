@@ -40,7 +40,7 @@ import { tapDirectory, tapeFacts } from './tap-directory.js';
 import { stateList, stateSave, stateLoad, stateDelete, stateRename, stateClear, stateExport, stateExportAll, stateImportFile } from './statelibrary.js';
 
 // ── Injected core dependencies (assigned by initMedia) ───────────────────────
-let setStatus, _powerOn, _hardReset, _createAndWireMachine, _setPaused, startLoop, resumeAudio, suspendAudio, resetSidWorklet, _syncPowerStateClass, _punchLogo, _syncToggleLabels, _stopBootHint, _queueAutoLoad, stopPauseDemo, cancelAutoLoad, resetFrameTiming, resyncSid, releaseAllLatched, applyLoadedVariants, getIs8580, getVicVariantPref, getAutorunEnabled, isPaused;
+let setStatus, _powerOn, _hardReset, _createAndWireMachine, _setPaused, startLoop, resumeAudio, suspendAudio, resetSidWorklet, _syncPowerStateClass, _punchLogo, _syncToggleLabels, _stopBootHint, _queueAutoLoad, _basicReady, stopPauseDemo, cancelAutoLoad, resetFrameTiming, resyncSid, releaseAllLatched, applyLoadedVariants, getIs8580, getVicVariantPref, getAutorunEnabled, isPaused;
 
 // ── Media-domain state: media is the sole writer; main.js reads via import ────
 export let currentD64 = null;
@@ -2656,9 +2656,11 @@ function showD64Directory(disk, ui = DRIVE8_UI) {
 }
 
 // Clicking a file in the directory loads it the way you would by hand: BASIC
-// types the LOAD, the drive answers, and the name is on screen. The machine is
-// reset first (unless it is still pristine) so the load starts clean — the disk
-// survives that, since the rebuild re-attaches it.
+// types the LOAD, the drive answers, and the name is on screen. At the READY
+// prompt the command types straight in, no reset. Mid-program it never could —
+// nothing drains the keyboard buffer — so that case hard-resets back to a prompt
+// first (the disk survives: the rebuild re-attaches it). A machine still cold-
+// booting is already headed for READY, so it just waits.
 //
 // A name full of PETSCII art can't be typed between quotes; those fall back to
 // reading the file straight into RAM, which is how every entry used to load.
@@ -2684,19 +2686,21 @@ function loadD64Entry(entry, disk = currentD64) {
     return;
   }
 
+  // Both drive panels share this handler — address whichever drive holds the disk.
+  const dev = disk === currentD64Drive9 ? 9 : 8;
   // BASIC programs go in with SA=0 so BASIC relinks; everything else absolute.
-  const cmd = addr === 0x0801 ? `LOAD"${entry.name}",8\r` : `LOAD"${entry.name}",8,1\r`;
+  const cmd = addr === 0x0801 ? `LOAD"${entry.name}",${dev}\r` : `LOAD"${entry.name}",${dev},1\r`;
   const runCmd = addr === 0x0801 ? 'RUN\r' : `SYS ${addr}\r`;
   const autorunOn = getAutorunEnabled();
 
-  if (!_pristineBoot && !_hardReset()) return;
+  if (!_pristineBoot && !_basicReady() && !_hardReset()) return;
   _queueAutoLoad([
     { ready: true },
     { type: cmd },
     { loadDone: true },
     ...(autorunOn ? [{ type: runCmd }] : []),
   ]);
-  setStatus(autorunOn ? `LOAD"${entry.name}",8 + ${runCmd.trim()}…` : `LOAD"${entry.name}",8…`, 'running');
+  setStatus(autorunOn ? `LOAD"${entry.name}",${dev} + ${runCmd.trim()}…` : `LOAD"${entry.name}",${dev}…`, 'running');
 }
 
 // ── Directory "zoom" viewer ──────────────────────────────────────────────────
@@ -3178,7 +3182,7 @@ _dropZone.addEventListener('drop', async e => {
 // ── Dependency injection + deferred import-time restore ──────────────────────
 export function initMedia(deps) {
   ({
-    setStatus, _powerOn, _hardReset, _createAndWireMachine, _setPaused, startLoop, resumeAudio, suspendAudio, resetSidWorklet, _syncPowerStateClass, _punchLogo, _syncToggleLabels, _stopBootHint, _queueAutoLoad, stopPauseDemo, cancelAutoLoad, resetFrameTiming, resyncSid, releaseAllLatched, applyLoadedVariants, getIs8580, getVicVariantPref, getAutorunEnabled, isPaused,
+    setStatus, _powerOn, _hardReset, _createAndWireMachine, _setPaused, startLoop, resumeAudio, suspendAudio, resetSidWorklet, _syncPowerStateClass, _punchLogo, _syncToggleLabels, _stopBootHint, _queueAutoLoad, _basicReady, stopPauseDemo, cancelAutoLoad, resetFrameTiming, resyncSid, releaseAllLatched, applyLoadedVariants, getIs8580, getVicVariantPref, getAutorunEnabled, isPaused,
   } = deps);
   // Deferred from import time: reads loader, which main.js creates AFTER this
   // module is first evaluated, so the restore must wait until deps are wired.
