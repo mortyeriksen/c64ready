@@ -108,12 +108,16 @@ site.
 
 ## More
 
-The [full user guide](https://github.com/mortyeriksen/c64ready/blob/main/docs/USER-GUIDE-CLI.md) walks every command with real
-captured output.
+The [full user guide](https://github.com/mortyeriksen/c64ready/blob/main/docs/USER-GUIDE-CLI.md) walks every command with real captured
+output, and the [specifications](https://github.com/mortyeriksen/c64ready/blob/main/docs/SPECIFICATIONS.md) credit the format references and
+source material the tool is built on.
 
 ## License
 
-GPL-3.0-or-later. © Morten Øien Eriksen.
+GPL-3.0-or-later. © Morten Øien Eriksen. This package bundles part of the
+C64 Ready emulator; the third-party materials it builds on (reSID and the
+rest) are credited in
+[NOTICE.txt](https://github.com/mortyeriksen/c64ready/blob/main/NOTICE.txt).
 
 ## Release notes
 

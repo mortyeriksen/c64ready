@@ -1,7 +1,7 @@
 {
   "name": "c64rdy",
   "private": true,
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Command-line tool for Commodore 64 tapes and disks — turn cassette recordings into .tap files, list what a tape or disk holds, mend damage, build disk images, and boot programs headless",
   "license": "GPL-3.0-or-later",
   "type": "module",

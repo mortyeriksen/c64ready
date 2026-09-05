@@ -68,12 +68,13 @@ const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'cli/package.json'), 'utf
 delete pkg.private;
 delete pkg.scripts;
 pkg.bin = { c64rdy: './cli/c64rdy.mjs' };
-pkg.files = ['cli', 'src'];
+pkg.files = ['cli', 'src', 'NOTICE.txt'];
 fs.writeFileSync(path.join(OUT, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
 fs.writeFileSync(path.join(OUT, 'cli/package.json'),
   JSON.stringify({ name: pkg.name, version: pkg.version, type: 'module' }, null, 2) + '\n');
 
 copy(path.join(ROOT, 'LICENSE'), path.join(OUT, 'LICENSE'));
+copy(path.join(ROOT, 'NOTICE.txt'), path.join(OUT, 'NOTICE.txt'));
 copy(path.join(ROOT, 'cli/README.md'), path.join(OUT, 'README.md'));
 
 const out = execFileSync('npm', ['pack', '--pack-destination', DIST], { cwd: OUT, encoding: 'utf8' });
