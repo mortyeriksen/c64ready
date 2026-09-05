@@ -12,6 +12,12 @@ The version you are running is shown at the bottom of the About dialog.
 
 *Not out yet: what is finished and waiting for the next version.*
 
+- **C64 READY. gets a command line.** `npx c64rdy` puts a terminal in front of
+  the same tape and disk engine: turn a shelf of cassette recordings into
+  `.tap` files in one go, list what a tape, disk or cartridge holds, repair
+  damage, and boot programs headless — down to every program on a tape side
+  tiled into one captioned sheet. No install, no dependencies. The new
+  [CLI guide](USER-GUIDE-CLI.md) covers it all.
 - **Six commercial tape loaders can be read**: Novaload (the loader behind many
   boxed games, drawing a picture and playing music while the tape runs), Ocean /
   Imagine, Freeload, Wildload, Gremlin Type 2, and the US Gold / Datasoft one.
