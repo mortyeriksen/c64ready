@@ -483,6 +483,50 @@ export class D64 {
   }
 
   /**
+   * Scratch every file matching `name`, the way the DOS `S0:name` command does:
+   * clear each directory entry's file-type byte and give its blocks back to the
+   * BAM. The name accepts the same '*'/'?' wildcards and "0:" prefix LOAD does.
+   * @param {string} name
+   * @returns {{ scratched: string[], blocks: number }}
+   */
+  scratch(name) {
+    const pattern = dosPattern(name);
+    const scratched = [];
+    let blocks = 0;
+    // Walk the directory sectors, matching entries and clearing them in place —
+    // readSec hands back a view into the image, so the edits land in the file.
+    let dt = 18, ds = 1, guard = 0;
+    while (dt !== 0 && guard++ < 100) {
+      const sec = readSec(this.img, dt, ds);
+      for (let e = 0; e < 8; e++) {
+        const b = e * 32;
+        if ((sec[b + 2] & 0x07) === 0) continue;          // empty or already scratched
+        const nm = petName(sec, b + 5, 16);
+        if (!matchDirName(nm, pattern)) continue;
+        // Give the file's chain back to the BAM, reading each link before it is
+        // freed, and stopping on a link that leaves the disk or loops.
+        const bam = readSec(this.img, 18, 0);
+        let t = sec[b + 3], s = sec[b + 4];
+        const seen = new Set();
+        while (t >= 1 && t <= this.trackCount) {
+          const key = (t << 8) | s;
+          if (seen.has(key)) break;
+          seen.add(key);
+          const link = readSec(this.img, t, s);
+          this._bamFree(bam, t, s);
+          blocks++;
+          t = link[0]; s = link[1];
+        }
+        sec[b + 2] = 0;                                    // scratched: type byte cleared
+        scratched.push(nm.trim());
+      }
+      dt = sec[0]; ds = sec[1];
+    }
+    if (scratched.length) { this._parse(); this.dirty = true; }
+    return { scratched, blocks };
+  }
+
+  /**
    * Synthesise the directory as a BASIC program (for LOAD "$",8).
    * Returns Uint8Array starting with the 2-byte PRG load address ($01 $08).
    * @param {string} [pattern] what followed the '$' — LOAD"$:A*" lists only the
