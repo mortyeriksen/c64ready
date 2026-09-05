@@ -253,6 +253,10 @@ revisions:
   Specifications 1.0_): the container `src/wav-tape.js` reads and
   `src/tap-audio.js` writes, including `WAVE_FORMAT_EXTENSIBLE`.
   <https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/riffmci.pdf>
+- **Peter Schepers**: _T64 (Tape image / archive)_: the 64-byte header and
+  32-byte directory entries `cli/t64.mjs` reads and writes; the used-entries
+  count and end addresses are not trusted, and memory snapshots are skipped.
+  <https://ist.uwaterloo.ca/~schepers/formats/T64.TXT>
 - **Michael Steil (pagetable.com)**: _A Minimal C64 Datasette Program Loader_: the
   pulse trio in TAP units with the `$39`/`$4E` read thresholds, byte frame and
   countdown, which `test/kernal-tape-save-test.js` decodes a recording against.
@@ -273,12 +277,17 @@ Datasoft, Gremlin Type 2, Ocean / Imagine, Freeload and Wildload were each read
 out of the loader its own tapes carry, by disassembling it. What they turned
 out to be is in the [Datasette architecture](DATASETTE-ARCHITECTURE.md) notes.
 
-### Recording container
+### Capture formats
 
 - **ISO base media / MP4 file format**: ISO/IEC 14496-12 and 14496-14 define
   the fragmented-MP4 structure `src/mp4-remux.js` walks and the progressive,
   indexed file it rebuilds so editors will trim it. The remux does no codec
   work; the codec configuration is copied through byte for byte.
+- **W3C**: _Portable Network Graphics (PNG) Specification, Third Edition_
+  (ISO/IEC 15948): the chunks, CRC-32 and deflated scanlines `cli/png.mjs`
+  writes with only zlib, and the APNG chunks (`acTL`, `fcTL`, `fdAT`) that film
+  a run as changed rectangles.
+  <https://www.w3.org/TR/png/>
 
 ## Credits
 

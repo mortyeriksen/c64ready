@@ -43,6 +43,7 @@ const ORDER = [
   'ABOUT',
   'GETTING-STARTED',
   'USER-GUIDE',
+  'USER-GUIDE-CLI',
   'SPECIFICATIONS',
   'FEATURES',
   'KNOWN-ISSUES',
@@ -64,8 +65,8 @@ const ORDER = [
 // lead the landing page in their own "Overview & guides" band; everything else
 // falls into the "Architecture & internals" grid.
 const GUIDES = new Set([
-  'WHATS-NEW', 'GETTING-STARTED', 'USER-GUIDE', 'FEATURES', 'KNOWN-ISSUES',
-  'SPECIFICATIONS', 'ABOUT',
+  'WHATS-NEW', 'GETTING-STARTED', 'USER-GUIDE', 'USER-GUIDE-CLI', 'FEATURES',
+  'KNOWN-ISSUES', 'SPECIFICATIONS', 'ABOUT',
 ]);
 
 // Hand-written teasers for specific landing-page cards, overriding the
@@ -76,6 +77,7 @@ const CARD_TEASERS = {
   'whats-new': 'What changed in each release, in plain language.',
   specifications: 'The hardware references, tools, and people this emulator is built on.',
   about: "What it is, what it stands for, and who's behind it.",
+  'user-guide-cli': 'The command line for your cassettes, cartridges and disks: convert, inspect, repair and run them in batches.',
 };
 
 const TEXT_DOCS = [

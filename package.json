@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:docs": "node tools/build-docs.mjs",
+    "build:cli": "node tools/build-cli.mjs",
     "preview": "vite preview",
     "test": "node test/all-test.js"
   },

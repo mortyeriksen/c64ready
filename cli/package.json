@@ -1,0 +1,35 @@
+{
+  "name": "c64rdy",
+  "private": true,
+  "version": "0.9.0",
+  "description": "Command-line tool for Commodore 64 tapes and disks — turn cassette recordings into .tap files, list what a tape or disk holds, mend damage, build disk images, and boot programs headless",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "bin": {
+    "c64rdy": "./c64rdy.mjs"
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "test": "node test/all-test.js"
+  },
+  "keywords": [
+    "c64",
+    "commodore",
+    "tape",
+    "tap",
+    "datasette",
+    "d64",
+    "emulator"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mortyeriksen/c64ready.git",
+    "directory": "cli"
+  },
+  "homepage": "https://github.com/mortyeriksen/c64ready/tree/main/cli#readme",
+  "bugs": {
+    "url": "https://github.com/mortyeriksen/c64ready/issues"
+  }
+}
