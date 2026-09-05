@@ -1823,9 +1823,12 @@ export function registerAppShortcut(entry) {
 // cannot stop these, so nothing may be bound to them. W/T/N/Q are new window,
 // new tab, reopen tab and quit — Ctrl+Shift+ and Cmd+Shift+ alike, with
 // Cmd+Shift+Q logging the Mac out; M and H are macOS minimise and hide; I/J/C
-// open Chrome's DevTools from Ctrl+Shift+ and never reach the page.
+// open Chrome's DevTools from Ctrl+Shift+ and never reach the page. P is the
+// private window in Firefox and Edge, and Firefox marks that shortcut reserved —
+// the browser acts on it before content sees the event, so preventDefault never
+// gets a say.
 const RESERVED_CODES = new Set([
-  'KeyW', 'KeyT', 'KeyN', 'KeyQ', 'KeyM', 'KeyH', 'KeyI', 'KeyJ', 'KeyC',
+  'KeyW', 'KeyT', 'KeyN', 'KeyQ', 'KeyM', 'KeyH', 'KeyI', 'KeyJ', 'KeyC', 'KeyP',
 ]);
 
 // The app's own shortcuts. `run` closes over the injected hooks, which initInput
@@ -1845,7 +1848,7 @@ registerAppShortcut({
   run: () => toggleVibesZoom(),
 });
 registerAppShortcut({
-  code: 'KeyP', label: 'Retro Vibes Studio mode',
+  code: 'KeyX', label: 'Retro Vibes Studio mode',
   run: () => toggleVibesStudio?.(),
 });
 // Developer-only; on the same chord as the rest.

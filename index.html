@@ -297,7 +297,7 @@
                 title="Freeze emulation where it stands; audio stops and the picture holds. Press again to carry on." disabled>⏸ PAUSE</button>
             </div>
             <div class="btn-group btn-group-toggles u-mb-8">
-              <button class="btn btn-vibes" id="btn-vibes" title="Retro Vibes — open a full-screen 3D scene of the C64. Cmd+Shift+P / Ctrl+Shift+P opens it in Studio mode: just the scene and the logo."><svg class="btn-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><defs><linearGradient id="vibesSun" x1="0" y1="7" x2="0" y2="17" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffd36b"/><stop offset=".55" stop-color="#ff6ad5"/><stop offset="1" stop-color="#b362c4"/></linearGradient><mask id="vibesSunMask"><rect width="24" height="24" fill="#fff"/><rect y="12.4" width="24" height="0.9" fill="#000"/><rect y="14.4" width="24" height="0.9" fill="#000"/><rect y="16.4" width="24" height="0.9" fill="#000"/></mask></defs><g stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5V4.5A1.5 1.5 0 0 1 4.5 3h4"/><path d="M15.5 3h4A1.5 1.5 0 0 1 21 4.5v4"/><path d="M21 15.5v4a1.5 1.5 0 0 1-1.5 1.5h-4"/><path d="M8.5 21h-4A1.5 1.5 0 0 1 3 19.5v-4"/></g><circle cx="12" cy="12" r="5" fill="url(#vibesSun)" mask="url(#vibesSunMask)"/></svg> VIBES</button>
+              <button class="btn btn-vibes" id="btn-vibes" title="Retro Vibes — open a full-screen 3D scene of the C64. Cmd+Shift+X / Ctrl+Shift+X opens it in Studio mode: just the scene and the logo."><svg class="btn-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><defs><linearGradient id="vibesSun" x1="0" y1="7" x2="0" y2="17" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffd36b"/><stop offset=".55" stop-color="#ff6ad5"/><stop offset="1" stop-color="#b362c4"/></linearGradient><mask id="vibesSunMask"><rect width="24" height="24" fill="#fff"/><rect y="12.4" width="24" height="0.9" fill="#000"/><rect y="14.4" width="24" height="0.9" fill="#000"/><rect y="16.4" width="24" height="0.9" fill="#000"/></mask></defs><g stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5V4.5A1.5 1.5 0 0 1 4.5 3h4"/><path d="M15.5 3h4A1.5 1.5 0 0 1 21 4.5v4"/><path d="M21 15.5v4a1.5 1.5 0 0 1-1.5 1.5h-4"/><path d="M8.5 21h-4A1.5 1.5 0 0 1 3 19.5v-4"/></g><circle cx="12" cy="12" r="5" fill="url(#vibesSun)" mask="url(#vibesSunMask)"/></svg> VIBES</button>
               <button class="btn" id="btn-size" title="Picture size: whole multiples of the C64's own 384x272 screen — 1X, 2X (default), 2.5X, 3X — plus MAX, which fills the width. Never stretched. A multiple too big for the window is skipped, since it would only be clamped to the same size as MAX.">SIZE: 1X</button>
               <button class="btn btn-fullscreen" id="btn-fullscreen" title="Enter fullscreen">⛶ FULL</button>
             </div>
@@ -1041,7 +1041,7 @@
 
   <!-- Retro Vibes — 3D model viewer (opened by the 🌇 Retro Vibes button). Fills
        the browser window; the Three.js canvas is injected into .model-viewer-stage.
-       Cmd+Shift+P / Ctrl+Shift+P strips it to the model and the logo (.studio). -->
+       Cmd+Shift+X / Ctrl+Shift+X strips it to the model and the logo (.studio). -->
   <div class="model-viewer-overlay" id="model-viewer-overlay" hidden aria-hidden="true">
     <div class="model-viewer-stage"></div>
     <div class="model-viewer-loading">LOADING MODEL…</div>
@@ -1068,7 +1068,7 @@
       title="View in VR (needs a headset or the WebXR emulator)" aria-label="Enter VR">🥽 ENTER VR</button>
     <button class="model-viewer-close" id="btn-model-viewer-close" type="button"
       title="Close (Esc)" aria-label="Close 3D view">✕</button>
-    <!-- Studio mode (Cmd+Shift+P / Ctrl+Shift+P): every control above is hidden and
+    <!-- Studio mode (Cmd+Shift+X / Ctrl+Shift+X): every control above is hidden and
          this is all that's left over the scene. -->
     <img class="model-viewer-studio-logo" src="/logos/c64ready-logo.png" width="1003" height="94"
       alt="C64 READY." aria-hidden="true">

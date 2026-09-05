@@ -222,7 +222,7 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **Retro Vibes 3D viewer**: a full-screen 3D scene of the C64 whose on-screen
   TV mirrors the live emulator picture, with several switchable lighting/backdrop
   moods. Opened with the **VIBES** button in Controls; **Esc** / ✕ returns.
-  **Cmd+Shift+P** / **Ctrl+Shift+P** is Studio mode, stripping the scene to the
+  **Cmd+Shift+X** / **Ctrl+Shift+X** is Studio mode, stripping the scene to the
   machine and the C64 READY. logo for screenshots and video (see
   [Retro Vibes](USER-GUIDE.md#retro-vibes)).
 - **VR (WebXR), experimental**: on a device with a headset the 3D viewer offers

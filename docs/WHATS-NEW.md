@@ -22,7 +22,7 @@ The version you are running is shown at the bottom of the About dialog.
   everywhere: **V** pastes, **F** cycles the CRT look, **Z** zooms the VIBES
   button. **Ctrl** on its own stays the machine's, and text boxes keep their own
   keys. The [KEY MAP](USER-GUIDE.md#key-map) dialog lists them.
-- **Studio mode for Retro Vibes.** **Cmd+Shift+P** / **Ctrl+Shift+P** strips the
+- **Studio mode for Retro Vibes.** **Cmd+Shift+X** / **Ctrl+Shift+X** strips the
   [3D scene](USER-GUIDE.md#retro-vibes) to the machine and the C64 READY. logo
   (no buttons, no pointer) for screenshots and video. Remembered between visits.
 - **A smoother welcome.** The **POWER ON** glow was redrawn on the processor

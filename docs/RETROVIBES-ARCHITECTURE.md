@@ -188,7 +188,7 @@ water normal map, checker floor) are built once and cached at module level.
 - **Idle auto-spin.** A plain click (press + release under a 5 px threshold, so a
   rotate-drag never triggers it) toggles the `OrbitControls` idle spin; each restart
   reverses direction. The choice is saved to `localStorage`.
-- **Studio mode (Cmd/Ctrl+Shift+P).** Strips the viewer to the scene and the
+- **Studio mode (Cmd/Ctrl+Shift+X).** Strips the viewer to the scene and the
   C64 READY. logo (no hint, no credit, no buttons, no mouse pointer) for
   screenshots and video. Everything hidden is CSS-only (a `.studio` class on the
   overlay), so the render loop, the camera and the live screen texture carry on

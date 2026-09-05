@@ -134,7 +134,7 @@ const SCENE_KEY = 'c64emu.modelViewerScene';
 // Persisted idle-spin (auto-rotate) on/off, so the viewer reopens rotating or
 // standstill exactly as the user last left it.
 const ROTATE_KEY = 'c64emu.modelViewerAutoRotate';
-// Persisted Studio mode (Cmd/Ctrl+Shift+P), so the viewer reopens as bare or as
+// Persisted Studio mode (Cmd/Ctrl+Shift+X), so the viewer reopens as bare or as
 // furnished as it was left — someone shooting a sequence of scenes should not
 // have to strip the chrome again on every open.
 const STUDIO_KEY = 'c64emu.modelViewerStudio';
@@ -215,7 +215,7 @@ export class ModelViewer {
         return Number.isInteger(v) ? Math.min(Math.max(v, 0), SCENES.length - 1) : 0;
       } catch { return 0; }
     })();
-    // Studio mode (Cmd/Ctrl+Shift+P): remembered like the scene above.
+    // Studio mode (Cmd/Ctrl+Shift+X): remembered like the scene above.
     this._studioWanted = (() => {
       try { return localStorage.getItem(STUDIO_KEY) === '1'; } catch { return false; }
     })();

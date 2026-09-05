@@ -140,7 +140,7 @@ available over the 3D scene.
 | **⛶** | Glides the camera to a head-on view that fills the frame with the monitor, a virtual fullscreen. Drag or scroll to break out of it. |
 | **🥽 ENTER VR** | View in VR (shown when a headset or the WebXR emulator is available). |
 | **ⓘ model credit** | Shows attribution for the 3D model. |
-| **Cmd+Shift+P** / **Ctrl+Shift+P** | **Studio mode**: hides everything else in this table (the mouse pointer included) and leaves the scene alone with the C64 READY. logo, for screenshots and video. The same keys bring the controls back. It is remembered, so the scene reopens the way you left it. |
+| **Cmd+Shift+X** / **Ctrl+Shift+X** | **Studio mode**: hides everything else in this table (the mouse pointer included) and leaves the scene alone with the C64 READY. logo, for screenshots and video. The same keys bring the controls back. It is remembered, so the scene reopens the way you left it. |
 | **✕** or **Esc** | Close and return to the emulator. |
 
 ### Scenes

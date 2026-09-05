@@ -292,7 +292,7 @@
 }
 .model-viewer-credit-popup a:hover { text-decoration: underline; }
 
-/* ── Studio mode (Cmd+Shift+P / Ctrl+Shift+P) ─────────────────────────────────
+/* ── Studio mode (Cmd+Shift+X / Ctrl+Shift+X) ─────────────────────────────────
    Strips the viewer for screenshots and video: every control and caption goes,
    leaving the scene and the C64 READY. logo in the top-right corner. The logo
    only exists in this mode, so it is display:none by default rather than
