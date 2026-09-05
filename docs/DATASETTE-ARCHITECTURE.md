@@ -498,11 +498,25 @@ recorder's ÷8 carry lands a pulse either side of the true value.
 | GWC Turbo 2 | `←S"NAME"`, loads `←L` | 232–240 / 336–344 | Turbo Tape 64, retimed |
 | FCS Turbo Tape | `←S"NAME"`, loads `←L` | 208–216 / 320–328 | Turbo Tape 64 |
 | Turbo 250 (MR.Z) | `←S"NAME"`, loads `←L` | 208–216 / 320–328 | Turbo Tape 64 |
+| 61K Turbo | `←S"NAME"`, loads `←L` | 208–216 / 320–328 | Turbo Tape 64 |
+| Noddy's TT249 | `←S"NAME"`, loads `←L` | 208–216 / 320–328 | Turbo Tape 64 |
+| Ultra Turbo Tape 61K | `←S"NAME"`, loads `←L` | 208–216 / 320–328 | Turbo Tape 64 |
+| Turbo 2002 (CGC) | `←S"NAME"`, loads `←L` | 216–224 / 320–328 | Turbo Tape 64, retimed |
+| ABC-Turbo V2.1 | patches `SAVE`; a plain `SAVE"NAME",1`, loads `LOAD"NAME",1` | 208–216 / 320–328 | Turbo Tape 64 |
+| Shift Turbo 2 | patches `SAVE`; a plain `SAVE"NAME",1`, loads `LOAD"NAME",1` | 208–216 / 320–328 | Turbo Tape 64 |
+| Turbo 202 | patches `SAVE`; a plain `SAVE"NAME",1`, loads `LOAD"NAME",1` | 208–216 / 320–328 | Turbo Tape 64 |
+| ABC Turbo II | patches `SAVE`; a plain `SAVE"NAME",1`, loads `LOAD"NAME",1` | 216–224 / 328–336 | Turbo Tape 64, retimed |
+| ABC III (KNS) | patches `SAVE`; a plain `SAVE"NAME",1`, loads `LOAD"NAME",1` | 216–224 / 328–336 | Turbo Tape 64, retimed |
 
-Ten programs, two encodings: Turbo Tape 64 is the one everybody copied
-(several of these are the same tool rebadged) and GRL-Supertape the only
-genuine rewrite. Turbo 250 is the one seen in the wild, heading digitised
-compilation tapes whose games list as Turbo Tape 64.
+Nineteen programs, still two encodings: Turbo Tape 64 is the one everybody
+copied — GRL-Supertape is the only genuine rewrite in the lot. What varies among
+the copies is not the format but how it is driven: the ←-wedge tools save `←S`
+and load `←L`, the ABC/Shift/202 family patches the KERNAL's `SAVE`/`LOAD` so a
+plain `SAVE"NAME",1` goes out at turbo speed, and the GRL-Turbotape family calls
+its saver with a `SYS`. A tape written in Turbo Tape 64 is read by any of them;
+only the command differs, and a few retime the widths (GWC, Turbo 2002, the ABC
+II/III variants) without changing what the bits mean. Turbo 250 is the one seen
+in the wild, heading digitised compilation tapes whose games list as Turbo Tape 64.
 
 Six commercial loaders are covered besides, all read off the 6502 their own tapes
 carry: Novaload, US Gold / Datasoft, Gremlin Type 2, Ocean / Imagine, Freeload
