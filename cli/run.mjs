@@ -629,7 +629,19 @@ async function tapesInParallel(tapes, flags, keep, render) {
       const p = tapes[answer.index];
       if (answer.usage) { usage ??= answer.error; failed = true; }
       else if (answer.error) { fail(`${p}: ${answer.error}`); failed = true; }
-      else if (render(p, answer) !== 0) failed = true;
+      else {
+        // What render throws is this tape's failure, not the batch's — a .d64
+        // already on disk refuses without --force — and thrown here it would
+        // escape the worker's message event as a crash that takes the other
+        // tapes' output with it. The same terms as eachTape.
+        try {
+          if (render(p, answer) !== 0) failed = true;
+        } catch (e) {
+          if (e instanceof UsageError) usage ??= e.message;
+          else fail(`${p}: ${e.message}`);
+          failed = true;
+        }
+      }
       bar();
     },
   });

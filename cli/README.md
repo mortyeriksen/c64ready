@@ -121,6 +121,23 @@ rest) are credited in
 
 ## Release notes
 
+### Next version
+
+*Not out yet: what is finished and waiting for the next `npm` release.*
+
+- **PROCASS tapes list their files.** US Gold's own loader, the one under Out
+  Run and Forgotten Worlds: `dir` now names every file on such a tape, and the
+  converters explain its blocks as stages the game's own loader streams in.
+- **A refused overwrite no longer stops a batch.** With `--jobs`, a `.d64`
+  already on disk used to crash the whole run with a stack trace. It is now
+  that one tape's failure line: the other tapes still get their disks, and
+  `--force` still writes over.
+
+### 0.9.1
+
+Credits travel with the package: `NOTICE.txt` ships in the tarball, and the
+README links the specifications and credits pages.
+
 ### 0.9.0 (first public release)
 
 The full tape and disk toolchain from the terminal. `wav2tap` turns recordings

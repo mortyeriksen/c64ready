@@ -81,6 +81,14 @@ is git-ignored and excluded from the PWA precache for that reason).
 - Bump `src/version.js` (`YEAR.MONTH.FIX`) only on request. In the same commit:
   retitle **Next release** to `## <version> — <Month D, YYYY>`, write its lead
   paragraph if the release deserves one, and sync `package.json`'s `version`.
+- The CLI versions separately (`cli/package.json`, semver) and is bumped only
+  when the user says so, since a bump is a publish decision: a fix or feature
+  landing in `cli/` is not permission, and neither is an emulator release.
+- A user-facing CLI change is written up as it lands, like the emulator's, in
+  `cli/README.md` under a **Next version** heading at the top of **Release
+  notes** (add the heading if a bump consumed it). On a CLI version bump,
+  retitle it to `### <semver>` in the same commit. Shipped entries are history
+  there too and are never revised.
 - Shipped sections are history and are never revised: each says what that version
   did, so a later change to the same feature belongs in Next release, not edited
   into the old one. Next release itself is still open — an entry there may be
