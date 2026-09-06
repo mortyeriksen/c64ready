@@ -6,7 +6,8 @@
 // at cli/ alone would ship with every import broken. This stages dist/c64rdy/
 // with cli/ beside exactly the src/ files the CLI reaches (followed
 // transitively), a manifest npm can publish, the README and the LICENSE, then
-// runs `npm pack` there. The source tree is not touched; dist/ is git-ignored.
+// runs `npm pack` there. The test suite runs first; a failure aborts the
+// build. The source tree is not touched; dist/ is git-ignored.
 //
 //   npm run build:cli        → dist/c64rdy-<version>.tgz
 
@@ -46,6 +47,11 @@ const copy = (from, to) => {
   fs.mkdirSync(path.dirname(to), { recursive: true });
   fs.copyFileSync(from, to);
 };
+
+// Never pack from a failing suite: the tests run first, and a non-zero exit
+// throws here, before anything is staged.
+console.log('running the test suite\u2026');
+execFileSync('npm', ['--prefix', 'cli', 'test'], { cwd: ROOT, stdio: 'inherit' });
 
 fs.rmSync(OUT, { recursive: true, force: true });
 
