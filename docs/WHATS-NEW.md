@@ -8,6 +8,17 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
+## Next release
+
+*Not out yet: what is finished and waiting for the next version.*
+
+- **A seventh commercial tape loader can be read: PROCASS**, US Gold's own
+  mastering system, the one on Out Run and Forgotten Worlds. Its tapes used to
+  show a few small files and minutes nothing could read; the deck now lists
+  every file, by name — the only commercial format here that has them.
+
+---
+
 ## 2026.9.0 — September 5, 2026
 
 - **C64 READY. gets a command line.** `npx c64rdy` puts a terminal in front of

@@ -1032,6 +1032,84 @@ function scanWildload(pulses, { payload = false } = {}) {
   return files;
 }
 
+// ── PROCASS ──────────────────────────────────────────────────────────────────
+// US Gold's own mastering system, under the label's late-eighties tapes (Out
+// Run, Forgotten Worlds) and the Epyx titles the label duplicated. Its reader
+// measures a pulse exactly as Freeload does — CIA1 timer A armed with $0368,
+// the bit whether the high byte still reads 2 or more, so the boundary is
+// 872 − 512 = 360 cycles — and rolls left, so bytes are MSB first:
+//
+//   LDA $DC05 / LDY #$19 / STY $DC0E / EOR #$02 / LSR / LSR / ROL $FB
+//
+// What sets it apart is where it lives and how it is called. The boot block,
+// twice XOR-encrypted with the second key pulled off the stack so a tracer
+// breaks it, copies the reader entirely below $0400 — the stack page, $02A7,
+// $0330 — and points the ILOAD vector into it, so the game multiloads with
+// plain LOAD"NAME" calls and the reader skips blocks until the name matches.
+// This is the one commercial format here that names its files.
+//
+// A block is a pilot of repeated $20 bytes, one $FF, a 16-byte space-padded
+// name, load and end addresses, the bytes, and one byte holding their XOR.
+// The loader never reads that last byte, and its author has said masters
+// sometimes carried a deliberately wrong one to trip crackers' tools. So the
+// checksum can prove a block but cannot fail one: sixteen aligned $20 bytes
+// make the claim, and a block whose XOR disagrees is judged by its pulse
+// widths instead, the way the formats that carry no checksum are.
+//
+// Read off Out Run and Forgotten Worlds (US Gold, 1988 and 1989).
+const PRO_ZERO = 264, PRO_ONE = 552;
+const PRO_THRESHOLD = 360;              // CIA1 timer A from $0368, high byte 2 or more
+const PRO_PILOT = 0x20, PRO_SYNC = 0xFF;
+const PRO_PILOT_BYTES = 16;             // 64 on every tape here; 16 is a floor
+const PRO_NAME_LEN = 16;
+const PRO_HEADER = PRO_NAME_LEN + 4;    // the name and the two addresses
+
+function scanProcass(pulses, { payload = false } = {}) {
+  const bits = bitsByWidth(pulses, PRO_THRESHOLD);
+  const files = [];
+  const room = (at, bytes) => at + 8 * bytes <= bits.length;
+  for (let i = 0; room(i, PRO_PILOT_BYTES + 1 + PRO_HEADER + 1); i++) {
+    if (byteMsbFirst(bits, i) !== PRO_PILOT) continue;
+    // The run holds $20 only at one bit offset — every other offset reads a
+    // rotation — so however long it is, it is claimed or cleared in one look.
+    let at = i, run = 0;
+    while (room(at, 1) && byteMsbFirst(bits, at) === PRO_PILOT) { run++; at += 8; }
+    if (run < PRO_PILOT_BYTES || !room(at, 1 + PRO_HEADER + 1) ||
+        byteMsbFirst(bits, at) !== PRO_SYNC) { i = at - 1; continue; }
+    const byte = k => byteMsbFirst(bits, at + 8 * (1 + k));
+    const start = byte(PRO_NAME_LEN) | (byte(PRO_NAME_LEN + 1) << 8);
+    const end = byte(PRO_NAME_LEN + 2) | (byte(PRO_NAME_LEN + 3) << 8);
+    const size = end - start;
+    if (size <= 0 || start < 0x0100) { i = at - 1; continue; }
+    const dataBit = at + 8 * (1 + PRO_HEADER);
+    const endBit = dataBit + 8 * (size + 1);
+    if (endBit > bits.length) { i = at - 1; continue; }    // not all of it is on the tape
+    // The space padding off and the control codes out, as a KERNAL header's
+    // name is read: what is left is what LOAD"NAME" was given.
+    let nameEnd = PRO_NAME_LEN;
+    while (nameEnd > 0 && byte(nameEnd - 1) === 0x20) nameEnd--;
+    let name = '';
+    for (let k = 0; k < nameEnd; k++) {
+      const c = byte(k);
+      if (c < 0x20 || c === 0x7F || (c >= 0x80 && c <= 0x9F)) continue;
+      name += String.fromCharCode(c);
+    }
+    let x = 0;
+    for (let k = 0; k < size; k++) x ^= byteMsbFirst(bits, dataBit + 8 * k);
+    const agrees = x === byteMsbFirst(bits, dataBit + 8 * size);
+    files.push({
+      name: name.trim(), type: 'PRG', start, end, size,
+      bytes: payload ? bytesFrom(bits, dataBit, size, byteMsbFirst) : undefined,
+      format: 'PROCASS', atPulse: i, endPulse: Math.min(endBit, pulses.length),
+      // An XOR that agrees is proof; one that does not accuses no one, the
+      // masters having lied with it on purpose, so the widths answer instead.
+      damage: agrees ? null : blockDamage(pulses, dataBit, endBit - dataBit, PRO_THRESHOLD),
+    });
+    i = endBit;                                    // its bytes are not another sync
+  }
+  return files;
+}
+
 // ── The registry ─────────────────────────────────────────────────────────────
 // `selfDriving` marks a format whose reader the tape carries and runs itself:
 // the boot block installs it, it reads the side in tape order, and no command
@@ -1051,4 +1129,5 @@ export const TURBO_FORMATS = [
   { id: 'ocean-imagine', name: 'Ocean / Imagine', selfDriving: true, scan: scanOcean },
   { id: 'freeload', name: 'Freeload', selfDriving: true, resident: 0xE000, scan: scanFreeload },
   { id: 'wildload', name: 'Wildload', selfDriving: true, scan: scanWildload },
+  { id: 'procass', name: 'PROCASS', selfDriving: true, scan: scanProcass },
 ];

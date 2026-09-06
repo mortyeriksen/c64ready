@@ -258,8 +258,8 @@ export function tapDirectoryOfPulses(pulses, { payload = false } = {}) {
     try { found = fmt.scan(pulses, { payload }) || []; } catch { found = []; }
     for (const f of found) files.push(f);
   }
-  // In tape order, and never two names for the same stretch of tape: six formats
-  // are asked the same question, and one that misreads another's blocks would
+  // In tape order, and never two names for the same stretch of tape: every format
+  // is asked the same question, and one that misreads another's blocks would
   // otherwise double-list a file.
   //
   // What counts as the same stretch is measured rather than guessed at from how

@@ -145,7 +145,7 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   the way a C64 reads it and the programs on it are listed: a row per file with
   its format, size and start time; a click winds the tape to that file. It reads
   KERNAL tapes and the turbo formats it knows: Turbo Tape 64 (which covers most
-  of the home turbo programs), GRL-Supertape, and six commercial loaders.
+  of the home turbo programs), GRL-Supertape, and seven commercial loaders.
   Damaged files are struck through, and a line under the list says what is
   wrong and what was mended.
 - **`.wav` in and out.** Load a recording of a real cassette and the pulses are

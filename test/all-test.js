@@ -56,6 +56,7 @@ const TESTS = [
   'test/ocean-spec-test.js',
   'test/freeload-spec-test.js',
   'test/wildload-spec-test.js',
+  'test/procass-spec-test.js',
   'test/turbo-threshold-spec-test.js',
   'test/tape-seek-spec-test.js',
   'test/tape-play-spec-test.js',

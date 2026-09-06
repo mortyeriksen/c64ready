@@ -406,6 +406,7 @@ format the tape does not carry.
 | **Ocean / Imagine** | 264–296 / 544–664 cycles | 480, CIA2 timer B from `$03E0`, high byte 2 or more | LSB first, no parity | A pilot of `0` bits, then one `1` bit; then `[flags, page, 256 bytes]` until a page of `$00` | No checksum; the page bytes must ascend | Keeps state by writing over a `JMP` target; pages, so the listing gives their span |
 | **Freeload** | 264 / 544 cycles | 360, CIA1 timer A from `$0368`, high byte 2 or more | MSB first, no parity | The register reaching `$40`, then `$5A`; load address and end address | An XOR after the data, and a block is claimed only if it agrees | Boots at `$0326`, IBSOUT, so it takes the machine at the next print |
 | **Wildload** | 384 / 576 cycles | 480, CIA1 timer A from `$03E0`, high byte 2 or more | LSB first, no parity | A run of `$A0` bytes, then `10…1`; top address, count, a flag | An XOR of the deciphered bytes, and a block is claimed only if it agrees | Fills downwards, and EORs each byte with the low byte of where it lands |
+| **PROCASS** | 264 / 552 cycles | 360, CIA1 timer A from `$0368`, high byte 2 or more | MSB first, no parity | A pilot of `$20` bytes, one `$FF`; a 16-byte space-padded name, load address and end address | An XOR after the data, which can prove a block but not fail one: the loader never reads it, and masters carried deliberately wrong ones to trip crackers' tools | US Gold's own system. The reader lives below `$0400` off the ILOAD vector, so the game multiloads with plain `LOAD"NAME"` calls — the one commercial format here that names its files |
 
 Each was read off the tapes that carry it, by disassembling the loader rather
 than guessing at the pulses. Every commercial one measures a pulse the same way,
@@ -438,6 +439,7 @@ as a recording.
 | **Ocean / Imagine** | The format has no checksum, so a pilot inside a band narrow enough to exclude a KERNAL lead-in, eight blocks at least, and three quarters of the steps between page bytes ascending. Length proves nothing: a stream of noise does not stop, it runs until a page byte of `$00` turns up by chance |
 | **Freeload** | Its XOR agrees, or the block is not claimed at all. Two bytes of sync is one in 65536, which a tape's worth of bit positions supplies several times over, and the false candidates' addresses look as reasonable as the real ones |
 | **Wildload** | The XOR of its deciphered bytes agrees, or the block is not claimed. Deciphering is part of reading here, so the sum only agrees if the descending address was tracked correctly |
+| **PROCASS** | Its XOR agrees, which is proof; where it does not, the pulse widths alone, because a disagreeing XOR accuses no one on this format — the loader never reads the byte, and its author has said masters sometimes carried a deliberately wrong one to trip crackers' tools. The claim itself rests on the pilot: sixteen aligned `$20` bytes and the `$FF` after them do not happen by chance |
 
 Where a checksum fails, the pulse widths still say *what* went wrong, for the row
 that has to explain itself: any pulse that is neither of the two widths that
@@ -518,7 +520,7 @@ only the command differs, and a few retime the widths (GWC, Turbo 2002, the ABC
 II/III variants) without changing what the bits mean. Turbo 250 is the one seen
 in the wild, heading digitised compilation tapes whose games list as Turbo Tape 64.
 
-Six commercial loaders are covered besides, all read off the 6502 their own tapes
-carry: Novaload, US Gold / Datasoft, Gremlin Type 2, Ocean / Imagine, Freeload
-and Wildload. Cyberload, Burner and Visiload each still need an entry of their
-own.
+Seven commercial loaders are covered besides, all read off the 6502 their own
+tapes carry: Novaload, US Gold / Datasoft, Gremlin Type 2, Ocean / Imagine,
+Freeload, Wildload and PROCASS. Cyberload, Burner and Visiload each still need
+an entry of their own.
