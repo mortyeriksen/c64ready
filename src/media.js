@@ -40,7 +40,7 @@ import { tapDirectory, tapeFacts } from './tap-directory.js';
 import { stateList, stateSave, stateLoad, stateDelete, stateRename, stateClear, stateExport, stateExportAll, stateImportFile } from './statelibrary.js';
 
 // ── Injected core dependencies (assigned by initMedia) ───────────────────────
-let setStatus, _powerOn, _hardReset, _createAndWireMachine, _setPaused, startLoop, resumeAudio, suspendAudio, resetSidWorklet, _syncPowerStateClass, _punchLogo, _syncToggleLabels, _stopBootHint, _queueAutoLoad, _basicReady, stopPauseDemo, cancelAutoLoad, resetFrameTiming, resyncSid, releaseAllLatched, applyLoadedVariants, getIs8580, getVicVariantPref, getAutorunEnabled, isPaused;
+let setStatus, _powerOn, _hardReset, _createAndWireMachine, _setPaused, startLoop, resumeAudio, suspendAudio, resetSidWorklet, _syncPowerStateClass, _punchLogo, _syncToggleLabels, _stopBootHint, _queueAutoLoad, _basicReady, stopPauseDemo, cancelAutoLoad, resetFrameTiming, resyncSid, releaseAllLatched, applyLoadedVariants, getIs8580, getVicVariantPref, getAutorunEnabled, getTdeEnabled, setTdeEnabled, isPaused;
 
 // ── Media-domain state: media is the sole writer; main.js reads via import ────
 export let currentD64 = null;
@@ -238,7 +238,7 @@ async function _loadLibraryEntry(entry) {
       // dialog closes and would otherwise jump straight into a loading tape.
       await _loadTape(data, name, { playDelayMs: 1000 });
     } else if (type === 'prg') {
-      _insertPRG(data, 'loaded', name);
+      await _insertPRG(data, 'loaded', name);
     } else if (type === 'reu') {
       return _loadReuImage(data, name);
     } else {
@@ -846,13 +846,36 @@ function _prgSizeError(data, fileName = '') {
   return `${name} does not fit in the C64's memory — ${kb} KB loading at $${hex} runs past $FFFF`;
 }
 
+// The disk a .prg is wrapped in holds one plain program: no fastloader, no
+// protection, nothing the real 1541 exists for. True drive emulation still
+// loads it at 1541 speed, so offer to switch it off. Only when it is on, and
+// only before the disk goes in. A decline is remembered (a question on every
+// load is a nag); switching emulation on by hand re-arms it (main.js).
+const _PRG_TDE_DECLINED_KEY = 'c64emu.prgTdeDeclined';
+function _prgTdeOfferDeclined() {
+  // No storage to remember an answer in: stay silent rather than ask every time.
+  try { return localStorage.getItem(_PRG_TDE_DECLINED_KEY) === 'on'; } catch { return true; }
+}
+/** Let a PRG load offer to switch true drive emulation off again. */
+export function rearmPrgTdeOffer() {
+  try { localStorage.removeItem(_PRG_TDE_DECLINED_KEY); } catch {}
+}
+async function _offerTdeOffForPrg() {
+  if (!getTdeEnabled?.() || _prgTdeOfferDeclined()) return;
+  const yes = await confirmDialog(
+    'True Drive Emulation loads this at real 1541 speed. This program does not need it.',
+    { title: 'Load faster?', okLabel: 'Turn TDE off', cancelLabel: 'Keep TDE on' });
+  if (yes) setTdeEnabled(false);
+  else { try { localStorage.setItem(_PRG_TDE_DECLINED_KEY, 'on'); } catch {} }
+}
+
 // A .prg is put on a disk of its own and inserted, so it behaves exactly like a
 // .d64 from here on: a real LOAD by name, listable, re-loadable and exportable,
 // AUTORUN deciding whether it starts, and the drive honouring the TDE setting.
 // Inserting a disk does not reboot a C64, so this doesn't either — swapping one
 // in goes through the same eject-then-attach the drive already does. Used by
 // every PRG entry point (file picker, drag-drop, library).
-function _insertPRG(data, verb = 'loaded', fileName = '') {
+async function _insertPRG(data, verb = 'loaded', fileName = '') {
   const sizeError = _prgSizeError(data, fileName);
   if (sizeError) { setStatus(sizeError, 'error'); return; }
   // No drive to put a disk in (1541 ROM missing) — fall back to dropping the
@@ -874,6 +897,8 @@ function _insertPRG(data, verb = 'loaded', fileName = '') {
 
   disk._libName = fileName || `${disk.diskName}.d64`;
   const startCmd = prgAutostart(data);
+  // Before the disk goes in, so the answer is in force for the LOAD that follows.
+  await _offerTdeOffForPrg();
   _loadDisk(disk, { startCmd });
   // Powered off, the disk still goes in — but nothing will run until there is a
   // machine to run it, so say so rather than leaving a bare "disk loaded".
@@ -1217,7 +1242,7 @@ if (d64Btn && d64Input) {
       if (mediaTypeOf(file.name) === 'prg') {
         _libRemember('prg', file.name, data);
         d64Input.value = '';
-        _insertPRG(data, 'loaded', file.name);
+        await _insertPRG(data, 'loaded', file.name);
         return;
       }
       const sizeError = _d64SizeError(data, file.name);
@@ -3182,7 +3207,7 @@ _dropZone.addEventListener('drop', async e => {
 // ── Dependency injection + deferred import-time restore ──────────────────────
 export function initMedia(deps) {
   ({
-    setStatus, _powerOn, _hardReset, _createAndWireMachine, _setPaused, startLoop, resumeAudio, suspendAudio, resetSidWorklet, _syncPowerStateClass, _punchLogo, _syncToggleLabels, _stopBootHint, _queueAutoLoad, _basicReady, stopPauseDemo, cancelAutoLoad, resetFrameTiming, resyncSid, releaseAllLatched, applyLoadedVariants, getIs8580, getVicVariantPref, getAutorunEnabled, isPaused,
+    setStatus, _powerOn, _hardReset, _createAndWireMachine, _setPaused, startLoop, resumeAudio, suspendAudio, resetSidWorklet, _syncPowerStateClass, _punchLogo, _syncToggleLabels, _stopBootHint, _queueAutoLoad, _basicReady, stopPauseDemo, cancelAutoLoad, resetFrameTiming, resyncSid, releaseAllLatched, applyLoadedVariants, getIs8580, getVicVariantPref, getAutorunEnabled, getTdeEnabled, setTdeEnabled, isPaused,
   } = deps);
   // Deferred from import time: reads loader, which main.js creates AFTER this
   // module is first evaluated, so the restore must wait until deps are wired.

@@ -5,15 +5,15 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://c64ready.com/</loc>
-    <lastmod>2026-09-06</lastmod>
+    <lastmod>2026-09-07</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/</loc>
-    <lastmod>2026-09-06</lastmod>
+    <lastmod>2026-09-07</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/whats-new.html</loc>
-    <lastmod>2026-09-06</lastmod>
+    <lastmod>2026-09-07</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/about.html</loc>
@@ -25,7 +25,7 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/user-guide.html</loc>
-    <lastmod>2026-09-05</lastmod>
+    <lastmod>2026-09-07</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/user-guide-cli.html</loc>
@@ -37,7 +37,7 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/features.html</loc>
-    <lastmod>2026-09-06</lastmod>
+    <lastmod>2026-09-07</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/known-issues.html</loc>
@@ -53,7 +53,7 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/machine-architecture.html</loc>
-    <lastmod>2026-09-04</lastmod>
+    <lastmod>2026-09-08</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/cpu-architecture.html</loc>
@@ -73,7 +73,7 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/drive-architecture.html</loc>
-    <lastmod>2026-09-04</lastmod>
+    <lastmod>2026-09-08</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/datasette-architecture.html</loc>
@@ -89,7 +89,7 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/testing.html</loc>
-    <lastmod>2026-09-04</lastmod>
+    <lastmod>2026-09-08</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/license.html</loc>

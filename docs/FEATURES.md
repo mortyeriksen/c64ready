@@ -111,7 +111,8 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **True Drive Emulation (TDE)**, on by default: a real emulated 1541 (its own
   CPU + DOS) for fastloaders, cracked intros, demos, and copy-protected disks.
 - **Fast loading**: with TDE off, an instant built-in shortcut load for plain
-  games.
+  games. Loading a `.prg` with TDE on offers to switch it off, since nothing on
+  that disk needs the real drive.
 - **Disk writing**: the drive writes back to the `.d64`: `SAVE`, scratch, and
   rename all run through the real 1541 DOS. Modified disks auto-save to your
   browser Library, and the directory listing updates itself as files change.

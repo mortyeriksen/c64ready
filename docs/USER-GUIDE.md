@@ -357,6 +357,10 @@ it loads like anything else, shows up in the directory, and can be exported as a
 `.d64`. Inserting a disk doesn't reboot a C64, so this doesn't either, and the
 **TDE** setting applies as usual.
 
+Nothing on that disk needs the real drive, so with **TDE** on, loading a `.prg`
+offers to switch it off and load at once. Declining is remembered until you
+switch **TDE** on again yourself.
+
 The disk arrives write-protected. Flip the tabs to `SAVE` onto it.
 
 With **AUTORUN** on, BASIC programs are `RUN`. Machine code is left at `READY.`

@@ -32,7 +32,7 @@ import { registerAudioContext } from './debug.js';
 import {
   initMedia, _onCRTLoaded, _onTapLoaded, _syncCartridgeControls, _syncDrive9TdeBtn, _applyDrive9Tde,
   _syncTapeButtons, _applyReu,
-  _flashDrive9Led, drive9LedActive, updateMediaIndicators, downloadSnapshot,
+  _flashDrive9Led, drive9LedActive, updateMediaIndicators, downloadSnapshot, rearmPrgTdeOffer,
   currentD64, currentD64Drive9, drive9Enabled, drive9TdeEnabled,
   _cachedCartData, _cachedTapData, _cachedTapName, _cachedTapProtected, _cacheTapeFromDeck,
   _cachedTapDeck, _restoreDeck,
@@ -868,14 +868,25 @@ function _syncTdeBtn() {
   tdeToggleBtn.classList.toggle('tde-on', tdeEnabled);
 }
 
+// Switch true drive emulation, remember the choice, and relabel the button.
+// The toggle and the offer a PRG load makes both come through here, so there is
+// one place that changes it.
+function _applyTde(on) {
+  tdeEnabled = !!on;
+  try { localStorage.setItem('c64emu.tde', tdeEnabled ? 'on' : 'off'); } catch {}
+  machine?.setTrueDrive(tdeEnabled);
+  _syncTdeBtn();
+}
+
 // Only enabled after 1541.bin loads.
 if (tdeToggleBtn) {
   tdeToggleBtn.addEventListener('click', () => {
-    if (!machine.drive1541) return;
-    tdeEnabled = !tdeEnabled;
-    try { localStorage.setItem('c64emu.tde', tdeEnabled ? 'on' : 'off'); } catch {}
-    machine.setTrueDrive(tdeEnabled);
-    _syncTdeBtn();
+    if (!machine?.drive1541) return;
+    _applyTde(!tdeEnabled);
+    // Switching it back on by hand is a deliberate choice about the drive, so
+    // the next PRG load may offer to switch it off again even if that offer was
+    // turned down before. Turning it down is otherwise remembered for good.
+    if (tdeEnabled) rearmPrgTdeOffer();
   });
 }
 
@@ -2889,6 +2900,8 @@ initMedia({
   getIs8580: () => is8580,
   getVicVariantPref: () => vicVariantPref,
   getAutorunEnabled: () => autorunEnabled,
+  getTdeEnabled: () => tdeEnabled,
+  setTdeEnabled: _applyTde,
   isPaused: () => paused,
 });
 

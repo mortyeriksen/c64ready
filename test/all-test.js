@@ -145,6 +145,7 @@ const TESTS = [
   'test/load-state-filter-spec-test.js',
   'test/state-rename-spec-test.js',
   'test/media-eject-ui-spec-test.js',
+  'test/prg-tde-offer-spec-test.js',
   'test/cartridge-controls-sync-spec-test.js',
   'test/save-state-default-name-spec-test.js',
   'test/irq-sampling-spec-test.js',

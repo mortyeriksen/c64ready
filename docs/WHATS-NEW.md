@@ -12,6 +12,10 @@ The version you are running is shown at the bottom of the About dialog.
 
 *Not out yet: what is finished and waiting for the next version.*
 
+- **Loading a program offers to load it faster.** Nothing on the disk a `.prg`
+  arrives on needs the emulated 1541, but True Drive Emulation still loads it at
+  the speed of the real thing. Loading one now offers to switch that off.
+  Declining is remembered.
 - **Clicking a file in a disk directory works with True Drive Emulation off.**
   It used to load the program to the wrong place in memory, which did nothing at
   best and blacked out the screen at worst.

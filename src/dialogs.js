@@ -41,7 +41,11 @@ function _closeConfirm(result) {
 // okOnly hides the Cancel button for a single-button informational dialog
 // (the ✕ / Escape still dismiss it). The Cancel visibility is reset on every
 // call so it reappears for normal confirms sharing this modal.
-export function confirmDialog(message, { title = 'Confirm', okLabel = 'OK', okOnly = false } = {}) {
+//
+// cancelLabel names the other way out, for a dialog offering a choice rather
+// than asking to go ahead with something: "CANCEL" reads as "abandon this",
+// which is wrong when both answers carry on. It is reset on every call too.
+export function confirmDialog(message, { title = 'Confirm', okLabel = 'OK', cancelLabel = 'CANCEL', okOnly = false } = {}) {
   // Fall back to native confirm/alert if the modal markup isn't present.
   if (!confirmModal) {
     if (okOnly) { window.alert(message); return Promise.resolve(true); }
@@ -52,7 +56,10 @@ export function confirmDialog(message, { title = 'Confirm', okLabel = 'OK', okOn
   if (confirmModalMsg)    confirmModalMsg.textContent = message;
   if (confirmModalTitle)  confirmModalTitle.textContent = title;
   if (confirmModalOk)     confirmModalOk.textContent = okLabel;
-  if (confirmModalCancel) confirmModalCancel.hidden = okOnly;
+  if (confirmModalCancel) {
+    confirmModalCancel.textContent = cancelLabel;
+    confirmModalCancel.hidden = okOnly;
+  }
   confirmModal.hidden = false;
   pushEscapeLayer(_confirmEscape);
   if (confirmModalOk) confirmModalOk.focus();
