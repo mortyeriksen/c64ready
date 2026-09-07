@@ -433,6 +433,10 @@ idle scheduler before the first LOAD, so the C64 doesn't time out racing the boo
   all it serves; SAVE, sequential files and the command channel need TDE on.
 - **The trap still prints the KERNAL's load messages** via the ROM's own
   routines; a program reading its next command off the screen counts on them.
+- **`$FFD5`'s register arguments are banked before those routines run**: A picks
+  LOAD or VERIFY, X/Y carry the address a secondary address of 0 loads at, and the
+  message routines return with their own leftovers in the registers. The ROM banks
+  all three into zero page before printing; the trap has to do the same.
 - **Idle 1541 cycles are skipped, not free-run forever**: only after the drive
   is in a recognized idle loop with bus/motor/LED/IRQ quiet; VIA timer time is
   batched and settled on wake.

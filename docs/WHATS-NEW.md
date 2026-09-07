@@ -12,6 +12,9 @@ The version you are running is shown at the bottom of the About dialog.
 
 *Not out yet: what is finished and waiting for the next version.*
 
+- **Clicking a file in a disk directory works with True Drive Emulation off.**
+  It used to load the program to the wrong place in memory, which did nothing at
+  best and blacked out the screen at worst.
 - **A seventh commercial tape loader can be read: PROCASS**, US Gold's own
   mastering system, the one on Out Run and Forgotten Worlds. Its tapes used to
   show a few small files and minutes nothing could read; the deck now lists

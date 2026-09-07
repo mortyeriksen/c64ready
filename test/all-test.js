@@ -353,6 +353,7 @@ const TESTS = [
   'test/d64-format-spec-test.js',
   'test/d64-error-table-dos-spec-test.js',
   'test/kernal-load-wildcard-spec-test.js',
+  'test/kernal-load-trap-address-spec-test.js',
   'test/klaus-test.js',
   'test/nosdos-bootstrap-test.js',
   'test/vic2-bitmap-mode-spec-test.js',

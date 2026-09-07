@@ -261,7 +261,10 @@ Several entry points get code into the machine:
 KERNAL LOAD entry `$FFD5` with device 8, the machine intercepts it. It reads the
 file straight from the D64 (`buildDirectoryPRG` for `$`, `loadFile` for a name
 or `*` wildcard), writes it into RAM, fixes up the KERNAL end-of-load pointers
-and the carry/X/Y return state, then simulates the `RTS`. A deferred
+and the carry/X/Y return state, then simulates the `RTS`. The call's own
+arguments (A for LOAD vs. VERIFY, X/Y for where a secondary address of 0 loads
+at) are banked on the first pass, because printing the load messages runs ROM
+code that returns with the registers holding its leftovers. A deferred
 `_pendingAutoRun`
 (from `injectLoadAndRun`) types `RUN\r` once the load succeeds. With TDE on, the
 trap is disabled and the real drive ROM + IEC protocol do the work.

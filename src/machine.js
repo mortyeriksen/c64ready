@@ -144,6 +144,9 @@ export class C64Machine {
     }
     this.mem = new Memory();
     this._loadTrapPhase = 0;   // see _trapLoad: 0 = load, 1/2 = printing the KERNAL's messages
+    this._loadTrapA = 0;       // $FFD5 call arguments, banked at phase 0 — see _trapLoad
+    this._loadTrapX = 0;
+    this._loadTrapY = 0;
     this.cpu = new CPU(this.mem);
     this.cia1 = new CIA(1);
     this.cia2 = new CIA(2);
@@ -923,6 +926,19 @@ export class C64Machine {
   }
 
   _trapLoad(disk) {
+    // $FFD5 takes its arguments in the registers: A picks LOAD ($00) or VERIFY
+    // ($01), and X/Y carry the address to load at when the secondary address is
+    // 0 — for BASIC's own LOAD"NAME",8 that is the start of program text. The
+    // real KERNAL banks all three into zero page (VERCK, EAL/EAH) in its first
+    // three instructions, before it prints a thing. This trap stands in for that
+    // whole routine, so it has to bank them too: the message routines below are
+    // ordinary ROM code, and they return with the registers holding whatever
+    // they last worked with.
+    if (this._loadTrapPhase === 0) {
+      this._loadTrapA = this.cpu.a;
+      this._loadTrapX = this.cpu.x;
+      this._loadTrapY = this.cpu.y;
+    }
     // Before fetching a byte the KERNAL prints SEARCHING FOR <name> and then
     // LOADING, and those two lines are part of what a program sees: tape and
     // disk intros that hand over by stuffing RETURNs read their commands back
@@ -939,7 +955,7 @@ export class C64Machine {
 
     const dev = this.mem.ram[0xBA];
     if (this.onLoadTrap) { try { this.onLoadTrap(dev); } catch { } }
-    const isVerify = this.cpu.a === 1;
+    const isVerify = this._loadTrapA === 1;
     const nameLen = this.mem.ram[0xB7];
     const namePtr = this.mem.ram[0xBB] | (this.mem.ram[0xBC] << 8);
     let fileName = '';
@@ -962,8 +978,8 @@ export class C64Machine {
       const fileAddr = data[0] | (data[1] << 8);
       const sa = this.mem.ram[0xB9]; // secondary address
 
-      // SA=0 -> use X/Y, otherwise use file addr
-      let loadAddr = (sa === 0) ? (this.cpu.x | (this.cpu.y << 8)) : fileAddr;
+      // SA=0 -> use the X/Y passed to $FFD5, otherwise the file's own address
+      const loadAddr = (sa === 0) ? (this._loadTrapX | (this._loadTrapY << 8)) : fileAddr;
       const endAddr = loadAddr + data.length - 2;
 
       if (!isVerify) {
