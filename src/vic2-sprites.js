@@ -171,25 +171,15 @@ export const spriteOps = {
     return this._isBaLowCycle(cycle) && this._isBaLowCycle(cycle - 3);
   },
 
-  // Historical-lookback variant. The c-3 sample is read from the
-  // per-cycle external-BA buffer captured in _captureCycleState (and
-  // rotated to prevLineExternalBaLow at _beginRasterLine). At cy 1..3
-  // the lookback wraps to cy 61..63 of the PREVIOUS line — using the
-  // history avoids projecting current spriteDmaOn[]/raster state onto
-  // a cycle that already happened with different state.
-  _spriteAecLowHistoric(cycle) {
-    if (!this._isBaLowCycle(cycle)) return false;
-    // AEC is the BA *delay line* (Bauer §3.6.1): it drops only after BA has
-    // been low for 3 CONTINUOUS cycles, and a single BA-high cycle resets the
-    // delay. So require BA low at c-1, c-2 AND c-3 — not just the c-3 endpoint.
-    // Endpoint-only (BA(c) && BA(c-3)) is identical for any contiguous BA-low
-    // run (sprite DMA, natural bad line) but WRONG across a 1-cycle gap: e.g.
-    // the cycle-11 lull between the sprite-DMA tail (…cy10) and a *cancelled*
-    // bad line's cy12 BA. There BA is low at cy9,10 and cy12,13 but high at
-    // cy11, so AEC must stay HIGH at cy12-13. The old test reported AEC low and
-    // stalled the pending CPU write 2cy — which made Coma Light 13's per-line
-    // STY $D011 store creep past its FLI bad-line cancel deadline and collapse
-    // the plasma into flat bands.
+  // The preceding three BA samples come from the per-cycle external-BA
+  // buffer, rotated to prevLineExternalBaLow at the start of each line.
+  // At cycles 1..3 the lookback reaches the previous line's tail, whose
+  // sprite DMA and bad-line state can differ from the current state.
+  _spriteAecLowHistoric(cycle, baLow = this._isBaLowCycle(cycle)) {
+    if (!baLow) return false;
+    // Bauer §3.6.1: AEC requires three continuous BA-low lead cycles.
+    // A single BA-high gap resets the delay, including the cycle-11 gap
+    // between a sprite DMA tail and bad-line BA starting at cycle 12.
     return this._historicExternalBaLow(cycle - 1)
       && this._historicExternalBaLow(cycle - 2)
       && this._historicExternalBaLow(cycle - 3);

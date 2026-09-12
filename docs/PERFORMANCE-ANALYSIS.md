@@ -81,6 +81,9 @@ var for node harnesses.
     columns actually painted rather than the full 384-slot width;
   - graphics collision and sprite priority share one foreground buffer, so
     graphics rendering and fixups write each foreground value only once;
+  - the VIC shares its BA sample after memory fetches with history capture,
+    and its canonical AEC result with CPU arbitration, avoiding repeated
+    bus-state calculations within the cycle;
   - the CIA `read`/`peek` path computes a timer's visible value only for the
     timer registers, not on every keyboard scan or ICR poll;
   - the SID sync stage skips its three oscillator probes when no voice has

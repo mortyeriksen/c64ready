@@ -764,6 +764,7 @@ export class VIC2 {
     this._prevLineStartD011 = 0x1B;
     this.baLow = false;
     this.aecLow = false;
+    this._aecLowPhi2 = false;
     this.spriteBaLowOnly = false;
 
     // Reusable scratch segment objects — _buildCycleRasterSegment and
@@ -972,7 +973,11 @@ export class VIC2 {
 
       vicSeizesCpu = this._runTextPhase2Access(this.cycleInLine) || vicSeizesCpu;
       this._spriteSequencerRowAccess(this.cycleInLine);
-      if (this._spriteStealsCpuCycle(this.cycleInLine)) {
+      // Fetches can change the live bad-line BA contribution. Sample it here
+      // for both external-BA history and this cycle's CPU bus arbitration.
+      const externalBaLow = this._isBaLowCycle(this.cycleInLine);
+      this._aecLowPhi2 = this._spriteAecLowHistoric(this.cycleInLine, externalBaLow);
+      if (this._aecLowPhi2) {
         vicSeizesCpu = true;
       }
       this.aecLow = vicSeizesCpu;
@@ -985,7 +990,7 @@ export class VIC2 {
       this._advanceVerticalBorderFlipFlop();
       this._advanceHorizontalBorderState(this.cycleInLine, this.regs);
 
-      this._captureCycleState(this.cycleInLine, vBorderBefore, hBorderBefore);
+      this._captureCycleState(this.cycleInLine, vBorderBefore, hBorderBefore, externalBaLow);
 
       // Cycle-incremental render: as soon as a cycle's state is captured,
       // render that cycle's segment (graphics + sprite pixels). This
@@ -1297,9 +1302,8 @@ export class VIC2 {
   getRaster() { return this.raster; }
   isBaLow() { return !!this.baLow; }
   isAecLow() { return !!this.aecLow; }
-  // Canonical AEC formula for the current cycle's phi2: BA was low this
-  // cycle AND BA was low 3 cycles ago. This is the spec definition (Bauer
-  // §3.6.1: AEC follows BA after 3 cycles of BA-low lead-in). Differs
+  // Canonical AEC for phi2 requires BA low now and in each of the three
+  // preceding cycles (Bauer §3.6.1: three continuous cycles of lead-in). Differs
   // from isAecLow() which is `vicSeizesCpu` and over-reports during the
   // invalid-c-read window (cycles where a c-access fires but BA hasn't
   // been low for 3 cycles yet, so AEC is actually still high in real
@@ -1310,7 +1314,10 @@ export class VIC2 {
   // clock() wraps cycleInLine to 0 BEFORE phi2() runs, so reading
   // cycleInLine here would query cy 0 of the next line. _thisCycleInLine
   // preserves the just-completed cycle's index across that wrap.
-  isAecLowPhi2() {
+  // The sampled form exposes clock()'s arbitration result before CPU phi2.
+  // The default live form also supports directly staged VIC state.
+  isAecLowPhi2(sampled = false) {
+    if (sampled) return this._aecLowPhi2;
     const cy = this._thisCycleInLine !== undefined ? this._thisCycleInLine : this.cycleInLine;
     return this._spriteAecLowHistoric(cy);
   }
@@ -1988,6 +1995,7 @@ export class VIC2 {
     this.hBorderActive = true;
     this.baLow = false;
     this.aecLow = false;
+    this._aecLowPhi2 = false;
     this.spriteBaLowOnly = false;
     this._cselComparator = 1;
     this._lastCselChangeRaster = -1;
@@ -2147,6 +2155,7 @@ export class VIC2 {
   }
 
   deserialize(s) {
+    this._aecLowPhi2 = false; // Transient arbitration sample, refreshed by clock().
     this._lineDeferred = false;   // saved states are canonical (see serialize)
     this.regs.set(s.regs);
     this.raster = s.raster | 0; this.cycleInLine = s.cycleInLine | 0;

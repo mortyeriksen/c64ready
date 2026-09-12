@@ -1701,12 +1701,12 @@ export class C64Machine {
     // stops ANY non-write cycle (reads + opcode fetches + dummy reads +
     // internal cycles), not just explicit reads.
     //
-    // AEC: canonical Bauer §3.6.1 formula via isAecLowPhi2() — BA low at
-    // current cycle AND BA low 3 cycles ago. When AEC is low VIC owns
+    // AEC: use the VIC's phi1 sample, requiring BA low now and throughout
+    // the preceding three cycles (Bauer §3.6.1). When AEC is low VIC owns
     // the address bus during phi2 and EVERY CPU bus phase is blocked.
     const baLow = this.vic2.isBaLow();
     const aecLowPhi2 = this.vic2.isAecLowPhi2
-      ? this.vic2.isAecLowPhi2()
+      ? this.vic2.isAecLowPhi2(true)
       : this.vic2.isAecLow();
     // RDY (BA low) stalls any non-write CPU bus cycle; writes proceed.
     let rdyBlocked = false;

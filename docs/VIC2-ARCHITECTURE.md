@@ -272,8 +272,15 @@ Proven by: testprogs `spriterestart` (the nine.prg maskers use the trick) and
 ### Sprite memory fetch
 Pointer p-access + 3 data s-accesses per sprite, scheduled by the fixed
 `SPRITE_PTR_ACCESS` / `SPRITE_ROW_ACCESS` tables. Sprite `BA`/`AEC` come from
-`_spriteBaLow` / `_spriteAecLow` (a c-3 lookback that wraps across the line
-boundary via `prevLineExternalBaLow`). With DMA **off**, the three buffer bytes
+`_spriteBaLow` / `_spriteAecLowHistoric`. AEC requires unified BA low now and
+in each of the preceding three cycles, wrapping across the line boundary via
+`prevLineExternalBaLow`. After memory fetches, `clock()` computes one BA sample
+for history capture and one canonical AEC sample for CPU arbitration.
+The earlier `baLow` sample remains separate because completing a matrix fetch
+can change the live bad-line contribution. `isAecLowPhi2(true)` returns the
+transient arbitration sample; the default form evaluates live state. Reset
+and state restore clear the transient sample, and the next `clock()` refreshes
+it before CPU arbitration. With DMA **off**, the three buffer bytes
 come from three distinct half-cycles (VIC-Addendum "sprite idle fetch"): byte 0
 = p-cycle phi2 bus, byte 1 = `$3FFF` ghost access, byte 2 = s-cycle phi2 bus
 (`_spritePCyclePhi2Bus`, `_spriteSCyclePhi1Ghost`, `spriteIdleFetchLeakEnabled`).

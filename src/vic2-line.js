@@ -14,16 +14,15 @@ import {
 // VIC2 chip instance. See the partial-class assembly note there.
 export const lineOps = {
 
-  _captureCycleState(cycle, vBorderBefore = this.vBorderActive, hBorderBefore = this.hBorderActive) {
+  _captureCycleState(cycle, vBorderBefore = this.vBorderActive, hBorderBefore = this.hBorderActive,
+    externalBaLow = this._isBaLowCycle(cycle)) {
     if (cycle < 1 || cycle > CYCLES_PER_LINE) return;
 
     // Per-cycle unified BA sample — populated every cycle of EVERY line (not
-    // gated on trace or visibility) so _spriteAecLow's c-3 lookback (which
-    // crosses line boundaries via prevLineExternalBaLow) can read historical
-    // state. Live evaluation here is correct because we're recording the
-    // present cycle's BA, not a back-reference.
-    this.lineCycleExternalBaLow[cycle] =
-      (this._isBadLineBaLow(cycle) || this._spriteBaLow(cycle)) ? 1 : 0;
+    // gated on trace or visibility) so _spriteAecLowHistoric can read each
+    // of the preceding three cycles, including prevLineExternalBaLow at a
+    // line boundary. The sample reflects this cycle after memory fetches.
+    this.lineCycleExternalBaLow[cycle] = externalBaLow ? 1 : 0;
 
     // Idle g-access ($3FFF / $39FF). Bauer §3.13: the VIC re-reads the idle
     // source LIVE every cycle, so a mid-line CPU write to it applies on the

@@ -139,8 +139,9 @@ Bauer §3.5 / §3.6.1:
   dummy reads, internal cycles, all of which do a real bus access). Writes
   proceed. The next CPU op's kind comes from `cpu.peekNextBusKind()`.
 - **AEC low (phi2)** means the VIC owns the address bus: **every** CPU bus phase
-  is blocked, write or not. `isAecLowPhi2()` is the canonical "BA low now AND BA
-  low 3 cycles ago" formula.
+  is blocked, write or not. `isAecLowPhi2(true)` reads the VIC's arbitration
+  sample from the current `clock()`: BA low now and in each of the preceding
+  three cycles. The default, no-argument form evaluates live state.
 - **REU DMA (`_reuBusHold`)** behaves like AEC low, not like RDY: the processor
   is halted outright, writes included, for every cycle of the transfer. The
   boolean lives on the machine (driven by the device's `busHoldHandler`) so the

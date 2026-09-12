@@ -76,6 +76,7 @@ const TESTS = [
   'test/vic2-badline-cancel-boundary-spec-test.js',
   'test/vic2-badline-late-caccess-line-local-spec-test.js',
   'test/vic2-sprite-ba-cycles-test.js',
+  'test/vic2-aec-sample-spec-test.js',
   'test/clock-cycle-spec-test.js',
   'test/vic2-border-edge-spec-test.js',
   'test/vic2-midline-register-spec-test.js',
