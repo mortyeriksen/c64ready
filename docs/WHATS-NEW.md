@@ -12,6 +12,8 @@ The version you are running is shown at the bottom of the About dialog.
 
 *Not out yet: what is finished and waiting for the next version.*
 
+- **A small graphics performance improvement in Safari.** The renderer does
+  less repeated work while keeping the same picture and sprite behavior.
 - **Loading a program offers to load it faster.** Nothing on the disk a `.prg`
   arrives on needs the emulated 1541, but True Drive Emulation still loads it at
   the speed of the real thing. Loading one now offers to switch that off.

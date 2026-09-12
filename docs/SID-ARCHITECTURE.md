@@ -472,6 +472,21 @@ The CPU thread and the audio thread share one lock-free **SPSC ring** in a
   burst of writes before playback reaches dense `$D418` sample streams. The same
   snap serves as **desync recovery** whenever the head event is >0.5 s away in
   either direction (power-cycle / second-load stale bursts).
+- **Rate drift is measured, never corrected.** Both snaps and the backlog
+  ceiling act on POSITION; nothing reconciles the two clocks' rates, so an audio
+  device whose real rate differs from its nominal one slides one way forever.
+  The `diag-period` report names it as `drift` / `driftAvg` in ppm (positive =
+  the main thread produces emulated time faster than the device plays it),
+  measured as how far the producer's newest stamp LEADS `currentCycle`, averaged
+  over every block of a report period and differenced across
+  `DRIFT_WINDOW_REPORTS` (8) periods. `oldestFutureΔ` is not that reading: it is
+  the distance to the next write, so it wraps as the head is consumed and
+  carries drift only up to the gap between writes, and against a once-a-second
+  report it slides 2448 cycles per report (`985248 mod 19656`) on perfectly
+  locked clocks. Averaging the lead is what removes that raster-grid alias; a
+  period with no arrivals clears the short-term window, retaining the last
+  long-term average and its anchor. Any clock re-anchor voids both readings
+  rather than reporting the jump as a rate.
 
 ---
 

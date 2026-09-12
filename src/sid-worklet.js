@@ -49,6 +49,22 @@ const EVENT_LOOKAHEAD_CYCLES = 24576;
 // audio lateness. Excursions BELOW the ceiling are handled by the trim, so this
 // only has to catch jumps too large to bleed off smoothly.
 const MAX_BACKLOG_CYCLES = 147787;              // 0.15 s at 985248 Hz
+// Diagnostic reporting period: one second of the worklet's own clock.
+const DIAG_REPORT_CYCLES = 985248;
+// Span, in report periods, that the drift figure is measured across. The
+// producer hands over a whole frame's writes in one burst and then goes quiet,
+// so its newest stamp leads the audio clock by a sawtooth of one burst interval
+// (~19656 cycles) on top of the real lead. Averaging that lead across every
+// block of a report period leaves about a fiftieth of the sawtooth, and
+// differencing two such averages eight periods apart puts the residual under
+// ~50 ppm, well inside the thousands of ppm a mismatched clock produces. It
+// also keeps the figure responsive: a drift that starts mid-session is named
+// eight seconds later.
+const DRIFT_WINDOW_REPORTS = 8;
+// Ceiling on the long-run average's span. currentCycle is a uint32 and wraps
+// every ~4295 s, so a span read from an older anchor would be garbage;
+// re-anchoring well inside that starts a fresh average instead.
+const DRIFT_ANCHOR_MAX_PERIODS = 512;
 
 class SIDChip {
   // is8580 picks which reSID filter model's tables are built (lazily per
@@ -195,6 +211,35 @@ class SIDProcessor extends AudioWorkletProcessor {
     this._lastDrained = 0;    // ring entries drained by the most recent block
     this._backlogStreak = 0;  // producer writes seen while over the ceiling
     this.diagLastReportCycle = 0;
+
+    // Producer-vs-consumer rate, in ppm. How far the producer's newest stamp
+    // leads currentCycle is the accumulated difference between the main
+    // thread's clock and this worklet's sample-driven one, so how far that lead
+    // travels across a span of report periods is the drift over that span:
+    // positive means the main thread produces emulated time faster than the
+    // audio device plays it. Reported over DRIFT_WINDOW_REPORTS periods and,
+    // for the long run, from an anchor. Any clock re-anchor voids both.
+    //
+    // oldestFutureΔ cannot serve as that observable, though it measures the
+    // same two clocks: it is the distance to the NEXT write, so it wraps every
+    // time the head is consumed and reads as drift modulo the gap between
+    // writes — for a player writing 25 times a frame, anything past ~100 ppm
+    // aliases to nothing. The lead does not wrap.
+    this._tailCycle = 0;           // newest stamp drained from the ring
+    this._tailSeen = false;
+    this._leadSum = 0;             // lead accumulated over this report period
+    this._leadCount = 0;           // blocks in that sum
+    this._driftCC = new Uint32Array(DRIFT_WINDOW_REPORTS + 1);
+    this._driftLead = new Float64Array(DRIFT_WINDOW_REPORTS + 1);
+    this._driftAt = 0;             // next slot to write; once full, the oldest
+    this._driftHeld = 0;           // consecutive periods sampled into the ring
+    this._driftAnchorCC = 0;
+    this._driftAnchorLead = 0;
+    this._driftAnchored = false;
+    this._driftAnchorPeriods = 0;
+    this._driftPPM = null;         // over the window; null until it fills
+    this._driftAvgPPM = null;      // since the anchor, whole windows only
+    this._driftAvgSeconds = 0;
 
     // Engine selection: 'resid' or 'wasm' (the app default —
     // main.js persists and sends it at init) — carried across resets;
@@ -447,6 +492,7 @@ class SIDProcessor extends AudioWorkletProcessor {
     this.regShadow.fill(0);
     this.pendHead = 0;
     this.pendCount = 0;
+    this._driftVoidHistory();
     // Reset the resampler state and re-arm the fade-in so the SID's first
     // ~16 ms of extfilt settling doesn't audibly pop.
     this._resetResampleState();
@@ -492,6 +538,12 @@ class SIDProcessor extends AudioWorkletProcessor {
       ri = (ri + 1) & 0x7FFFFFFF;
     }
     Atomics.store(this.sidCtrl, 1, ri);
+    if (depth > 0) {
+      // Newest stamp handed over, which tracks the producer's clock whether or
+      // not the event has been applied yet (the drift figure samples it).
+      this._tailCycle = this.sidRing32[((ri - 1) & (RING_CAPACITY - 1)) * 2] >>> 0;
+      this._tailSeen = true;
+    }
     if (this.pendCount > this.diagMaxDepth) this.diagMaxDepth = this.pendCount;
   }
 
@@ -515,6 +567,69 @@ class SIDProcessor extends AudioWorkletProcessor {
 
   _syncClockToEvent(cycle) {
     this.currentCycle = (cycle - EVENT_LOOKAHEAD_CYCLES) >>> 0;
+    this._driftVoidHistory();
+  }
+
+  // A clock re-anchor (initial sync, desync snap, backlog fast-forward, reset)
+  // moves currentCycle by an arbitrary amount, so the lead either side of it is
+  // measured against a different clock and the difference between them is not a
+  // rate. Report nothing until a fresh span has accumulated.
+  _driftVoidHistory() {
+    this._leadSum = 0;
+    this._leadCount = 0;
+    this._driftHeld = 0;
+    this._driftAnchored = false;
+    this._driftAnchorPeriods = 0;
+    this._driftPPM = null;
+    this._driftAvgPPM = null;
+    this._driftAvgSeconds = 0;
+  }
+
+  // One sample per report period: the mean lead over that period, or null when
+  // nothing arrived and the producer's clock cannot be compared at all.
+  _sampleDrift(lead) {
+    if (this._driftAnchored) this._driftAnchorPeriods++;
+    if (lead === null) {
+      // A gap breaks the window, whose residual depends on its span being
+      // exactly DRIFT_WINDOW_REPORTS periods. The anchor survives it: its span
+      // is read from the clock, which advanced across the gap regardless.
+      this._driftHeld = 0;
+      this._driftPPM = null;
+      return;
+    }
+    const cc = this.currentCycle;
+    const at = this._driftAt;
+    this._driftCC[at] = cc;
+    this._driftLead[at] = lead;
+    this._driftAt = (at + 1) % (DRIFT_WINDOW_REPORTS + 1);
+    if (this._driftHeld < DRIFT_WINDOW_REPORTS + 1) this._driftHeld++;
+    if (this._driftHeld === DRIFT_WINDOW_REPORTS + 1) {
+      // Ring full, so the next slot to write is the sample one window back.
+      const oldest = this._driftAt;
+      const span = (cc - this._driftCC[oldest]) >>> 0;
+      this._driftPPM = span > 0
+        ? Math.round((lead - this._driftLead[oldest]) * 1e6 / span)
+        : null;
+    }
+    if (!this._driftAnchored) {
+      this._driftAnchorCC = cc;
+      this._driftAnchorLead = lead;
+      this._driftAnchored = true;
+      this._driftAnchorPeriods = 0;
+    } else if (this._driftAnchorPeriods % DRIFT_WINDOW_REPORTS === 0) {
+      // Whole windows only, so the average is never published over a span too
+      // short to have averaged the burst sawtooth out of the lead.
+      const span = (cc - this._driftAnchorCC) >>> 0;
+      if (span > 0) {
+        this._driftAvgPPM = Math.round((lead - this._driftAnchorLead) * 1e6 / span);
+        this._driftAvgSeconds = Math.round(span / DIAG_REPORT_CYCLES);
+      }
+      if (this._driftAnchorPeriods >= DRIFT_ANCHOR_MAX_PERIODS) {
+        this._driftAnchored = false;
+        this._driftAvgPPM = null;
+        this._driftAvgSeconds = 0;
+      }
+    }
   }
 
   // Collapse a backlog that the head-distance snap cannot see. That check reads
@@ -774,13 +889,28 @@ class SIDProcessor extends AudioWorkletProcessor {
     Atomics.store(this.sidCtrl, 2, this.sid.v3.readOsc3());
     Atomics.store(this.sidCtrl, 3, this.sid.v3.env3);
 
+    // Drift observable: one reading of the producer's lead per block, summed so
+    // the report can average the burst sawtooth out of it.
+    if (this._tailSeen) {
+      this._leadSum += (this._tailCycle - this.currentCycle) | 0;
+      this._leadCount++;
+    }
+
     // Diagnostic: every ~1 second, post stats summarizing event flow
     // so we can verify cycle-sync across power-cycles.
-    if ((this.currentCycle - this.diagLastReportCycle) >>> 0 >= 985248) {
+    if ((this.currentCycle - this.diagLastReportCycle) >>> 0 >= DIAG_REPORT_CYCLES) {
       const pendingDepth = this.pendCount;
       const oldestFuture = pendingDepth > 0
         ? ((this.pendCycle[this.pendHead] - this.currentCycle) | 0)
         : 0;
+      // No arrivals this period means the producer's clock stopped rather than
+      // ran at a different rate (a frozen machine, a tune that writes nothing),
+      // so there is no rate to compare and the figure reads n/a.
+      this._sampleDrift(this._leadCount > 0 && this.diagDrained > 0
+        ? this._leadSum / this._leadCount
+        : null);
+      this._leadSum = 0;
+      this._leadCount = 0;
       this.port.postMessage({
         type: 'diag-period',
         currentCycle: this.currentCycle,
@@ -792,6 +922,9 @@ class SIDProcessor extends AudioWorkletProcessor {
         pendingDepth,
         maxDepth: this.diagMaxDepth,
         oldestFutureΔ: oldestFuture,
+        driftPPM: this._driftPPM,
+        driftAvgPPM: this._driftAvgPPM,
+        driftAvgSeconds: this._driftAvgSeconds,
         lateMax: this.diagLateMax,
         late: this.diagLate,
         overrun: this.diagOverrun,

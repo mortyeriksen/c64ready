@@ -79,6 +79,8 @@ var for node harnesses.
   V8 but real cost on a phone (§4):
   - the VIC segment renderer scopes its per-column span-buffer fills to the few
     columns actually painted rather than the full 384-slot width;
+  - graphics collision and sprite priority share one foreground buffer, so
+    graphics rendering and fixups write each foreground value only once;
   - the CIA `read`/`peek` path computes a timer's visible value only for the
     timer registers, not on every keyboard scan or ICR poll;
   - the SID sync stage skips its three oscillator probes when no voice has

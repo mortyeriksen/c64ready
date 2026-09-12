@@ -230,11 +230,9 @@ export class VIC2 {
     // currently being rendered (cleared per line in _initRenderRasterLine,
     // never read across a line boundary), so a single CANVAS_W-wide line
     // buffer suffices — indexed by canvas column, not canvasY*CANVAS_W+x.
-    // #2 merge: the graphics collision + priority buffers held bit-identical
-    // data at every pixel, so they share ONE backing store. Both names alias
-    // it (the collision-read site at _processSpritePixelCollision, the
-    // priority-read site at _drawSpritePixel, and machine.js's debug snapshot
-    // all keep working). The paired writes below thus target the same buffer.
+    // Graphics collision and sprite priority use the same foreground bit.
+    // Both names alias one buffer; graphics rendering writes it once through
+    // graphicsPriorityBuffer, and both consumers read the shared result.
     this.graphicsPriorityBuffer = new Uint8Array(CANVAS_W);  // foreground / collidable graphics pixels
     this.graphicsCollisionBuffer = this.graphicsPriorityBuffer; // alias — see above
     this.spriteCollisionBuffer = new Uint8Array(CANVAS_W); // tracks emitted sprite pixels for collision latches
@@ -281,7 +279,6 @@ export class VIC2 {
     // and restore the left half from these scratch slots.
     this._fixupSplitL = new Uint32Array(8);
     this._fixupSplitLPri = new Uint8Array(8);
-    this._fixupSplitLCol = new Uint8Array(8);
     this._fixupSplitLBor = new Uint8Array(8);
     this.imageData = null;    // created lazily by blit(), wrapping frameBuffer
 

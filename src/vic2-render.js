@@ -194,7 +194,6 @@ export const renderOps = {
     const segXscroll = regs[0x16] & 0x07;
     const shifterByte = seg.idleByte;
     const fb32 = this.fb32;
-    const collisionBuf = this.graphicsCollisionBuffer;
     const priorityBuf = this.graphicsPriorityBuffer;
     const black = 0xFF000000 | 0;   // signed, so it shares PALETTE_RGBA's Smi representation
 
@@ -343,7 +342,6 @@ export const renderOps = {
 
       const pIdx = rowOffset + x;
       fb32[pIdx] = color;
-      collisionBuf[x] = fg;   // line buffers (#1); collisionBuf === priorityBuf (#2)
       priorityBuf[x] = fg;
     }
   },
@@ -373,13 +371,11 @@ export const renderOps = {
       // Idle background is BLACK in this mode — the idle byte's bits are
       // irrelevant (no $D021 path), so fill solid black.
       const fb32b = this.fb32;
-      const collisionBufB = this.graphicsCollisionBuffer;
       const priorityBufB = this.graphicsPriorityBuffer;
       const black = 0xFF000000 | 0;   // signed, so it shares PALETTE_RGBA's Smi representation
       for (let x = startX; x < endX; x++) {
         const pIdx = rowOffset + x;
         fb32b[pIdx] = black;
-        collisionBufB[x] = 0;   // line buffers (#1)
         priorityBufB[x] = 0;
       }
       return;
@@ -398,12 +394,10 @@ export const renderOps = {
       ? this._firstPixelBgColorShifted(seg.bgPrevRegs[0x21], reg21)
       : this._firstPixelBgColor(prevRegs, 0x21, reg21, bg0Cur);
     const fb32 = this.fb32;
-    const collisionBuf = this.graphicsCollisionBuffer;
     const priorityBuf = this.graphicsPriorityBuffer;
     for (let x = startX; x < endX; x++) {
       const pIdx = rowOffset + x;
       fb32[pIdx] = (x === cycleStart) ? bg0First : bg0Cur;
-      collisionBuf[x] = 0;   // line buffers (#1)
       priorityBuf[x] = 0;
     }
   },
@@ -1035,7 +1029,6 @@ export const renderOps = {
       const segBg0First = seg.bgRegs
         ? this._firstPixelBgColorShifted(seg.bgPrevRegs[0x21], segBgRegs[0x21])
         : this._firstPixelBgColor(prevRegs, 0x21, seg.regs[0x21], segBg0);
-      const collisionBuf = this.graphicsCollisionBuffer;
       const priorityBuf = this.graphicsPriorityBuffer;
       const borderBuf = this.borderBuffer;
       // (A3) The boundary-pixel bg override only differs from segBg0 when the
@@ -1091,11 +1084,9 @@ export const renderOps = {
         if (spanX >= 0 && spanX < spanLimit) {
           const fgVal = spanFgMap[spanX];
           const pxVal = spanPixels[spanX];
-          collisionBuf[canvasX] = fgVal;   // line buffers (#1); collisionBuf===priorityBuf (#2)
           priorityBuf[canvasX] = fgVal;
           fb32[pIdx] = (!fgVal && pxVal === segBg0) ? bgPixel : pxVal;
         } else {
-          collisionBuf[canvasX] = 0;
           priorityBuf[canvasX] = 0;
           fb32[pIdx] = fillerActive ? (spanX < 0 ? fillerLeft : fillerRight) : bgPixel;
         }
@@ -1173,11 +1164,9 @@ export const renderOps = {
 
     const sourceStart = 8 - spillWidth + (spillStart - GRAPHICS_WINDOW_END);
     const fb32 = this.fb32;
-    const collisionBuf = this.graphicsCollisionBuffer;
     const priorityBuf = this.graphicsPriorityBuffer;
     for (let x = spillStart, source = sourceStart; x < spillEnd; x++, source++) {
       fb32[rowOffset + x] = pixels[source];
-      collisionBuf[x] = fgMap[source];
       priorityBuf[x] = fgMap[source];
     }
   },
@@ -1215,12 +1204,10 @@ export const renderOps = {
     }
     const spanBaseX = firstCol * 8;
     const spanLimit = spanCols * 8;
-    const collisionBuf = this.graphicsCollisionBuffer;
     const priorityBuf = this.graphicsPriorityBuffer;
     for (let canvasX = visibleStart; canvasX < visibleEnd; canvasX++) {
       const spanX = (canvasX - sourceOriginX) - segXscroll - spanBaseX;
       const fgVal = (spanX >= 0 && spanX < spanLimit) ? spanFgMap[spanX] : 0;
-      collisionBuf[canvasX] = fgVal;   // line buffers (#1); collisionBuf===priorityBuf (#2)
       priorityBuf[canvasX] = fgVal;
     }
   },
@@ -1261,11 +1248,11 @@ export const renderOps = {
     if (mid <= xs) return;
     const rowOffset = canvasY * CANVAS_W;
     const fb32 = this.fb32, pri = this.graphicsPriorityBuffer,
-          coll = this.graphicsCollisionBuffer, bor = this.borderBuffer;
+          bor = this.borderBuffer;
     const L = this._fixupSplitL, LP = this._fixupSplitLPri,
-          LC = this._fixupSplitLCol, LB = this._fixupSplitLBor;
+          LB = this._fixupSplitLBor;
     for (let x = xs, i = 0; x < mid; x++, i++) {
-      const p = rowOffset + x; L[i] = fb32[p]; LP[i] = pri[x]; LC[i] = coll[x]; LB[i] = bor[x];
+      const p = rowOffset + x; L[i] = fb32[p]; LP[i] = pri[x]; LB[i] = bor[x];
     }
     seg.modeRegs = s3;
     seg.xscrollRegs = s3;
@@ -1274,7 +1261,7 @@ export const renderOps = {
     seg.rowColors = this.lineCycleRowColors[c3];
     this._renderCycleSegmentGraphics(seg, canvasY);
     for (let x = xs, i = 0; x < mid; x++, i++) {
-      const p = rowOffset + x; fb32[p] = L[i]; pri[x] = LP[i]; coll[x] = LC[i]; bor[x] = LB[i];
+      const p = rowOffset + x; fb32[p] = L[i]; pri[x] = LP[i]; bor[x] = LB[i];
     }
   },
 
@@ -1365,7 +1352,6 @@ export const renderOps = {
     const spriteVisible = this.spriteVisibleBuffer;
     const spriteOwner = this.spriteOwnerBuffer;
     const priorityBuf = this.graphicsPriorityBuffer;
-    const collisionBuf = this.graphicsCollisionBuffer;
     const spriteHiddenBySpecFg = this._fixupSpriteHiddenBySpecFg;   // pre-built in ctor
 
     // Batch-render fast path: instead of re-rendering all 48 cycles twice, touch
@@ -1448,8 +1434,7 @@ export const renderOps = {
           fb32[pIdx] = spriteHiddenBySpecFg(pIdx, x)
             ? gfx2[x]
             : ((spriteVisible[x] || saved[x] !== g1) ? saved[x] : gfx2[x]);   // line buffers (#1)
-          priorityBuf[x] = gfx2Fg[x];   // collisionBuf === priorityBuf (#2)
-          collisionBuf[x] = gfx2Fg[x];
+          priorityBuf[x] = gfx2Fg[x];
         }
       }
       return;
@@ -1496,8 +1481,7 @@ export const renderOps = {
       fb32[pIdx] = spriteHiddenBySpecFg(pIdx, x)
         ? gfx2[x]
         : ((spriteVisible[x] || saved[x] !== gfx1) ? saved[x] : gfx2[x]);   // line buffers (#1)
-      priorityBuf[x] = gfx2Fg[x];   // collisionBuf === priorityBuf (#2)
-      collisionBuf[x] = gfx2Fg[x];
+      priorityBuf[x] = gfx2Fg[x];
     }
   },
 };

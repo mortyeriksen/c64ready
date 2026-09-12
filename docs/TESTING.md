@@ -340,6 +340,48 @@ c64Bus.traceStop()              // disable + free
 c64Bus.traceDump(64)            // print + return last N entries (oldest first)
 ```
 
+### SID transport and clock drift
+
+The worklet sends one summary report per second of its own clock. Console
+logging is off by default; opt in with:
+
+```js
+c64Trace.sidDiag = true    // plain property, unlike avMarkerOn(); a reload clears it
+```
+
+```
+[sid] cy=… applied=… future=… drained=…      event flow
+      pending=…/…                            mirror occupancy (unapplied events, peak)
+      oldestFutureΔ=…                        cycles to the next queued write
+      drift=…ppm driftAvg=…ppm/…s            CLOCK health: the two clocks' rate difference
+      lateMax=… late=…                       SCHEDULING health: applied after their stamp
+      overrun=… pendDrop=…                   TRANSPORT health: events lost outright
+      backlogFF=…                            backlog fast-forwards, cumulative for the session
+```
+
+`drift` is positive when the main thread produces emulated time faster than the
+audio device plays it, and it is the only field that answers "are the two clocks
+running at the same rate". Read it, not `oldestFutureΔ`: a player writes its
+registers in one burst per frame, and against a once-a-second report that grid
+alone walks `oldestFutureΔ` down by 2448 cycles per report and wraps it every
+8 seconds on perfectly locked clocks. That sawtooth is not drift. A single
+2448-cycle step is worth about 2500 ppm, so an eyeballed slide reads as a fault
+an order of magnitude larger than most real ones.
+
+- `drift` covers the last 8 report periods, `driftAvg` the span it names.
+  Anything inside roughly +/-100 ppm is two clocks in step.
+- Both read `n/a` until their first measurement window fills, and after a
+  clock re-anchor (init, reset, `resync`, desync snap, backlog fast-forward)
+  voids the history. A re-anchor is never reported as a rate.
+- A period with no writes clears `drift` until a fresh window fills.
+  `driftAvg` retains its last reading and span; its anchor survives the gap.
+- A main-thread stall is a position step, not a rate difference. It shows up as
+  a temporary change in `drift` while the step is inside its window, whereas a
+  real rate difference persists. Longer `driftAvg` spans dilute the step.
+- `backlogFF` climbing over a long session is the signature of accumulating
+  lateness (each correction skips the audio it collapsed). It is cumulative, so
+  a steady `backlogFF=1` is one correction at startup and nothing since.
+
 ### A/V sync marker
 
 Measures how far recorded audio trails the picture. Every 10 s it drops the SID

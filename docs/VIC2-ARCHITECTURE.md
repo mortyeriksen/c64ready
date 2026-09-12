@@ -303,6 +303,12 @@ re-trigger garbage, `spriteBoundaryGarbage`, default on for VICE-6569 parity),
 The renderer never renders "from registers now"; it renders from **per-cycle
 register snapshots** taken at phi1 with staggered sampling offsets.
 
+`graphicsPriorityBuffer` and `graphicsCollisionBuffer` alias the same line-sized
+foreground buffer. Graphics rendering and fixups write through
+`graphicsPriorityBuffer` once per foreground update; sprite priority and
+collision detection read that shared result. The mode-split fixup saves and
+restores a single foreground copy alongside its pixel and border snapshots.
+
 ### Per-cycle capture
 `_captureCycleState(cycle)` snapshots, per cycle of the line, the register file
 (`lineCycleRegs[cycle]`), display/border flags, counters, the c-access write

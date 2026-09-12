@@ -109,6 +109,7 @@ function runDemo(d) {
   // baseline) so a diff isolates exactly what that feature changed.
   if (process.env.CS_NOGARBAGE === '1') m.vic2.spriteBoundaryGarbage = false;
   if (d.type === 'd64') {
+    m.setTrueDrive(false);
     m.setD64(new D64(new Uint8Array(fs.readFileSync(d.file))));
     for (let i = 0; i < BOOT_FRAMES; i++) m.runFrame();
     m.injectLoadAndRun();   // LOAD"*",8,1 → $FFD5 trap → auto-RUN

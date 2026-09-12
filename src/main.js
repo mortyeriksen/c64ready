@@ -1116,6 +1116,13 @@ function resetSidWorklet() {
   if (sidNode) sidNode.port.postMessage({ type: 'reset', is8580 });
 }
 
+// Signed ppm for the diag line's clock-drift figures; a missing measurement
+// reads `n/a` until its window fills or after a clock re-anchor.
+function fmtDriftPPM(ppm) {
+  if (ppm === null || ppm === undefined) return 'n/a';
+  return `${ppm > 0 ? '+' : ''}${ppm}ppm`;
+}
+
 async function initAudio() {
   if (audioCtx) return;
   // 48000: match common device rate (avoids browser resample padding that can
@@ -1148,9 +1155,15 @@ async function initAudio() {
       const d = e.data;
       // applied/future/drained = event flow; pending/maxDepth = mirror occupancy;
       // lateMax/late = SCHEDULING health (events applied long after their stamp);
-      // overrun/pendDrop = TRANSPORT health (producer outran consumer → data lost).
+      // overrun/pendDrop = TRANSPORT health (producer outran consumer → data lost);
+      // drift/driftAvg = CLOCK health (how far the two clocks' rates differ).
+      // oldestFutureΔ itself is not that reading: the producer writes on the
+      // raster grid, so it carries a 2448-cycle-per-report sawtooth that is
+      // pure aliasing against this once-a-second report. drift has it removed.
       console.log(`[sid] cy=${d.currentCycle} applied=${d.applied} future=${d.future} drained=${d.drained}`
         + ` pending=${d.pendingDepth}/${d.maxDepth} oldestFutureΔ=${d.oldestFutureΔ}`
+        + ` drift=${fmtDriftPPM(d.driftPPM)} driftAvg=${fmtDriftPPM(d.driftAvgPPM)}`
+        + (d.driftAvgSeconds ? `/${d.driftAvgSeconds}s` : '')
         + ` lateMax=${d.lateMax} late=${d.late} overrun=${d.overrun} pendDrop=${d.pendDrop}`
         + ` backlogFF=${d.backlogFF}`);
     }

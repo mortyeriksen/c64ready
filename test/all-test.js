@@ -219,6 +219,7 @@ const TESTS = [
   'test/sid-engine-switch-spec-test.js',
   'test/sid-wasm-engine-spec-test.js',
   'test/sid-worklet-backlog-spec-test.js',
+  'test/sid-drift-ppm-spec-test.js',
   'test/mp4-remux-spec-test.js',
   'test/sid-event-gate-spec-test.js',
   'test/sid-paddle-spec-test.js',
