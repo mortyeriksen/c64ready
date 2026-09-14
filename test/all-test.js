@@ -68,6 +68,7 @@ const TESTS = [
   'test/cpu-test.js',
   'test/cpu-indexed-store-rmw-false-read-spec-test.js',
   'test/cpu-nmi-branch-nocross-delay-spec-test.js',
+  'test/cpu-irq-nmi-hijack-window-spec-test.js',
   'test/cpu-nmi-preempt-clears-deferred-irq-spec-test.js',
   'test/cpu-page-cross-spec-test.js',
   'test/illegal-arr-spec-test.js',

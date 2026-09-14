@@ -8,6 +8,19 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
+## Next release
+
+*Not out yet: what is finished and waiting for the next version.*
+
+- **Demos that time their music and effects with CIA interrupts keep running.**
+  When a timer interrupt arrived in the last moments of another interrupt's
+  start-up, the CPU could take it a few cycles early and land in the wrong
+  code. Performers' *C=BIT '18* no longer stops at its first part switch, and
+  any production that leans on this corner of the 6510 now sees the real
+  chip's timing.
+
+---
+
 ## 2026.9.1 — September 14, 2026
 
 Explore demos, intros, music and other C64 scene productions directly in

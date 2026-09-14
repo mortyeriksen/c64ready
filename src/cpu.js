@@ -34,8 +34,14 @@ export class CPU {
     // persists across an instruction boundary, so not serialized). See
     // _seqSampleNmi / _seqResolveVector.
     this._intSeqHijackable = false;  // this sequence is IRQ/BRK ($FFFE), redirectable to $FFFA
-    this._intSeqNmiLatched = false;  // a /NMI became pending during cycles 1-5
+    this._intSeqNmiLatched = false;  // a /NMI edge was presented during cycles 2-5
     this._intSeqVector = 0;          // the vector actually committed at cy6
+    // The interrupt sequences do not poll for interrupts themselves, so the
+    // boundary right after one dispatches the handler's first instruction even
+    // with a /NMI edge pending (NESdev "CPU interrupts"; VICE maincpu.c
+    // interrupt_check_nmi_delay returns 0 while the last opcode is the $00 a
+    // sequence records). Set by the sequence's cy7, consumed at that boundary.
+    this._intSeqJustDone = false;
     this.halted = false;
     this.pageCrossed = 0;   // +1 cycle penalty for page-boundary crossing
     this.instructionCyclesRemaining = 0;
@@ -170,8 +176,8 @@ export class CPU {
       // NOTE: do NOT clear this.halted here — a JAMmed CPU never reaches this code
       // (interrupt vectoring is gated off while halted) and only RESET recovers a jam.
     };
-    this._intSeqOp6 = () => { this._seqSampleNmi(); this.tmpLo = this.r(this._seqResolveVector(this._intSeqBaseVector)); };
-    this._intSeqOp7 = () => { this.pc = this.tmpLo | (this.r(this._intSeqVector + 1) << 8); };
+    this._intSeqOp6 = () => { this.tmpLo = this.r(this._seqResolveVector(this._intSeqBaseVector)); };
+    this._intSeqOp7 = () => { this.pc = this.tmpLo | (this.r(this._intSeqVector + 1) << 8); this._intSeqJustDone = true; };
 
     // Pre-build the per-opcode micro-op program table (once). Runs each opcode's
     // builder here so the closures are created a single time; dispatch then
@@ -221,6 +227,7 @@ export class CPU {
     this.irqLineLate = false;
     this._branchIrqNoCrossDelay = false;
     this._branchNmiNoCrossDelay = false;
+    this._intSeqJustDone = false;
     // Queue 7 dummy internal cycles so the first instruction fetch happens
     // on the 8th cycle after reset, matching the real 6510 boot sequence.
     // (We already read the vector synchronously above; the dummy cycles
@@ -265,6 +272,7 @@ export class CPU {
       irqLineLate: this.irqLineLate,
       _branchIrqNoCrossDelay: this._branchIrqNoCrossDelay,
       _branchNmiNoCrossDelay: this._branchNmiNoCrossDelay,
+      _intSeqJustDone: this._intSeqJustDone,
     };
   }
 
@@ -291,6 +299,7 @@ export class CPU {
     this.irqLineLate = !!s.irqLineLate;
     this._branchIrqNoCrossDelay = !!s._branchIrqNoCrossDelay;
     this._branchNmiNoCrossDelay = !!s._branchNmiNoCrossDelay;
+    this._intSeqJustDone = !!s._intSeqJustDone;
     // Resume on a clean instruction boundary (queue empty, fresh fetch at PC).
     this.microOpHead = 0; this.microOpLen = 0; this.instructionCyclesRemaining = 0;
   }
@@ -625,6 +634,12 @@ export class CPU {
     const branchNmiDelay = this._branchNmiNoCrossDelay;
     this._branchIrqNoCrossDelay = false;
     this._branchNmiNoCrossDelay = false;
+    // An IRQ/NMI/BRK sequence performs no interrupt poll of its own, so the
+    // boundary that follows it always dispatches the handler's first
+    // instruction; a /NMI edge that arrived too late to hijack the sequence
+    // waits for that instruction's own final-cycle poll.
+    const afterIntSeq = this._intSeqJustDone;
+    this._intSeqJustDone = false;
 
     // NMOS I-flag pipeline (Bruce Clark §I-flag-delay; irqdma test6/test7
     // real-C64 dumps): the boundary poll runs BEFORE the final-cycle I
@@ -649,7 +664,7 @@ export class CPU {
     this._shArmDrop = false;
     this._shDropAnd = false;
 
-    if (this.sampledNmiEdge && !branchNmiDelay) {
+    if (this.sampledNmiEdge && !branchNmiDelay && !afterIntSeq) {
       this._queueInterruptMicroOps(0xFFFA, true);
       return true;
     }
@@ -657,7 +672,7 @@ export class CPU {
     // IRQ is sampled only during CPU cycles and acted on at the next
     // opcode boundary. When RDY/AEC holds the CPU, no CPU cycle occurs,
     // so sampledIrq must remain unchanged until cpu.clock() resumes.
-    if (lineOk && pollI === 0 && !branchIrqDelay) {
+    if (lineOk && pollI === 0 && !branchIrqDelay && !afterIntSeq) {
       this._queueInterruptMicroOps(0xFFFE, false);
       return true;
     }
@@ -1485,19 +1500,22 @@ export class CPU {
     ]);
   }
 
-  // NMOS interrupt-sequence NMI hijack. The 7-cycle BRK/IRQ sequence does not
-  // commit its vector until the cy6/7 fetch — the chip re-reads the interrupt
-  // state there. A /NMI that becomes pending during cycles 1-5 therefore
-  // HIJACKS an IRQ/BRK sequence: PC and P were already pushed (BRK with B=1,
-  // IRQ/NMI with B=0), but the vector fetched is $FFFA, so the NMI handler runs
-  // and RTIs past the absorbed BRK/IRQ. A pure NMI sequence is already $FFFA and
-  // cannot be hijacked. Verified cycle-band-exact against VICE hijack traces
-  // (VICE hijacks L=$01..$05). _seqSampleNmi latches
-  // the pending /NMI in cy1-5.
+  // NMOS interrupt-sequence NMI hijack. The 7-cycle BRK/IRQ sequence commits
+  // its vector at the end of cy5, just before the cy6/7 fetch, from the /NMI
+  // state visible then. A /NMI asserted during the first four cycles of the
+  // sequence (its edge presented in cy2-5) therefore HIJACKS an IRQ/BRK
+  // sequence: PC and P were already pushed (BRK with B=1, IRQ/NMI with B=0),
+  // but the vector fetched is $FFFA, so the NMI handler runs and RTIs past the
+  // absorbed BRK/IRQ. An edge presented in cy6 or later is too late: the IRQ
+  // vector stands and the NMI is taken after the handler's first instruction
+  // (NESdev "CPU interrupts", interrupt hijacking: "during the first four
+  // ticks"; VICE 6510core.c tests nmi_clk + INTERRUPT_DELAY against CLK after
+  // five sequence cycles). A pure NMI sequence is already $FFFA and cannot be
+  // hijacked. _seqSampleNmi latches the pending /NMI in cy2-5.
   _seqSampleNmi() { if (this.nmiEdge) this._intSeqNmiLatched = true; }
 
   // Resolve the vector at the cy6 fetch: redirect a hijackable ($FFFE) sequence
-  // to $FFFA when a /NMI latched during cy1-5, consuming the NMI edge so it is
+  // to $FFFA when a /NMI latched during cy2-5, consuming the NMI edge so it is
   // not re-serviced at the next boundary.
   _seqResolveVector(baseVector) {
     const v = (this._intSeqHijackable && this._intSeqNmiLatched) ? 0xFFFA : baseVector;
@@ -1525,11 +1543,14 @@ export class CPU {
     this._intSeqBaseVector = vector;
     // Replay the pre-created 7-cycle sequence (built once in the constructor) —
     // no per-interrupt closure or array-literal allocation. Cycles:
-    //   cy1 read PC — NOT sampled for hijack (a /NMI this early is the boundary
-    //       recognizer's job; sampling cy2-6 matches VICE's L=$01..$05 band),
-    //   cy2 dummy read, cy3 push PCH, cy4 push PCL, cy5 push P + set I,
-    //   cy6 LAST hijack-latch cycle (deadline just before the vector read, VICE
-    //       L=$05 edge) → resolve + read vector low, cy7 read vector high.
+    //   cy1 read PC — not sampled for hijack (a /NMI already visible here is the
+    //       boundary recognizer's job),
+    //   cy2 dummy read, cy3 push PCH, cy4 push PCL, cy5 push P + set I — the
+    //       four cycles whose presented /NMI edge hijacks the vector (a /NMI
+    //       asserted during the first four cycles of the sequence),
+    //   cy6 resolve + read vector low (an edge presented here is a separate
+    //       NMI, taken after the handler's first instruction), cy7 read vector
+    //       high.
     this._readOp(this._intSeqOp1);
     this._readOp(this._intSeqOp2);
     this._writeOp(this._intSeqOp3);
@@ -1553,8 +1574,8 @@ export class CPU {
   }
 
   _queueBrkMicroOps() {
-    // BRK shares the 7-cycle sequence and the NMI hijack: a /NMI pending during
-    // cy1-5 redirects the cy6/7 fetch to $FFFA. The B=1 push at cy5 happens
+    // BRK shares the 7-cycle sequence and the NMI hijack: a /NMI edge presented
+    // during cy2-5 redirects the cy6/7 fetch to $FFFA. The B=1 push at cy5 happens
     // BEFORE the vector decision, so a hijacked BRK still pushes B=1 (the NMI
     // handler sees a BRK-flagged status) — matching NMOS. Base vector $FFFE.
     this._intSeqHijackable = true;
@@ -1566,8 +1587,8 @@ export class CPU {
       this._writeOp(() => { this._push((this.pc >> 8) & 0xFF); this._seqSampleNmi(); }),
       this._writeOp(() => { this._push(this.pc & 0xFF); this._seqSampleNmi(); }),
       this._writeOp(() => { this._push(this.getP() | 0x30); this.I = 1; this._pollI = 1; this._seqSampleNmi(); }),
-      this._readOp(() => { this._seqSampleNmi(); this.tmpLo = this.r(this._seqResolveVector(0xFFFE)); }),
-      this._readOp(() => { this.pc = this.tmpLo | (this.r(this._intSeqVector + 1) << 8); }),
+      this._readOp(() => { this.tmpLo = this.r(this._seqResolveVector(0xFFFE)); }),
+      this._readOp(() => { this.pc = this.tmpLo | (this.r(this._intSeqVector + 1) << 8); this._intSeqJustDone = true; }),
     ]);
   }
 

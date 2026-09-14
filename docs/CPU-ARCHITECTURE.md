@@ -218,6 +218,24 @@ capture-free: cy6 resolves its vector from a stable `_intSeqBaseVector`
 published each call, because a mid-sequence NMI **hijack** (`_seqResolveVector`)
 rewrites the live `_intSeqVector`.
 
+- **Hijack window.** An IRQ or BRK sequence decides its vector after its fourth
+  cycle from the /NMI edge detector's internal signal. A /NMI asserted during
+  the first four cycles of the sequence (its edge presented to the CPU in cy2
+  to cy5, `_seqSampleNmi`) redirects the cy6/7 fetch to `$FFFA`; PC and P
+  are already pushed (B=1 for BRK), so the NMI handler RTIs past the absorbed
+  IRQ/BRK. An edge presented in cy6 or later is too late: `$FFFE` stands.
+  Sources: NESdev "CPU interrupts" (interrupt hijacking, Visual6502-derived
+  6502 core behaviour) and VICE `6510core.c`, which tests
+  `nmi_clk + INTERRUPT_DELAY` against `CLK` after five sequence cycles.
+- **No poll after a sequence.** The interrupt sequences do not poll for
+  interrupts themselves, so the boundary right after an IRQ, NMI or BRK
+  sequence always dispatches the handler's first instruction
+  (`_intSeqJustDone`). A /NMI that missed the hijack window is taken at that
+  instruction's own final-cycle poll, one instruction into the handler. VICE
+  encodes the same rule: a sequence records opcode `$00` as the last opcode
+  and `interrupt_check_nmi_delay` refuses to dispatch while it is.
+  Pinned by `cpu-irq-nmi-hijack-window-spec-test.js`.
+
 ### NMOS quirks modelled
 - **I-flag delay / "interrupt shadow"** (`setP`, CLI/SEI/PLP/RTI): CLI and PLP
   write `I` in their *final* cycle, after the penultimate-cycle interrupt poll,

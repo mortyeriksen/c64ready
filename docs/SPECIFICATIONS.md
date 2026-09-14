@@ -67,6 +67,10 @@ this project:
 - **Visual6502**: transistor-level 6502 simulation, cross-checked for the
   same illegal-opcode edge semantics.
   <http://www.visual6502.org>
+- **NESdev wiki, _CPU interrupts_**: the 6502 core's interrupt polling, the
+  /NMI edge detector, interrupt hijacking and the no-poll rule for the
+  interrupt sequences themselves (Visual6502-derived; the 6510 shares the core).
+  <https://www.nesdev.org/wiki/CPU_interrupts>
 - **Bruce Clark, _Decimal Mode_**: the definitive tutorial on 6502 BCD
   arithmetic; the ADC/SBC decimal-mode algorithm follows his analysis.
   <http://www.6502.org/tutorials/decimal_mode.html>
