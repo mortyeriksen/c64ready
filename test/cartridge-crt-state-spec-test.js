@@ -8,7 +8,7 @@
 //
 // Usage: node test/cartridge-crt-state-spec-test.js
 
-import { parseCRT } from '../src/crt.js';
+import { parseCRT } from '../src/media/crt.js';
 import { Memory } from '../src/memory.js';
 import { CartridgeDevice, IO_UNHANDLED } from '../src/cartridges/device.js';
 import { ActionReplayCartridge } from '../src/cartridges/action-replay.js';

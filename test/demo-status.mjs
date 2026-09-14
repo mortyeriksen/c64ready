@@ -52,7 +52,7 @@ const SHOTDIR = collectionDir('demo-status-shots');
 if (process.argv[2] === '--run') {
   const d64 = process.argv[3], frames = parseInt(process.argv[4], 10), shotName = process.argv[5];
   const { C64Machine } = await import('../src/machine.js');
-  const { D64 } = await import('../src/d64.js');
+  const { D64 } = await import('../src/media/d64.js');
   const { PNG } = await import('pngjs');
   const { CANVAS_W, CANVAS_H } = await import('../src/vic2.js');
   const send = (o) => { if (process.send) process.send(o); else console.log(JSON.stringify(o)); };

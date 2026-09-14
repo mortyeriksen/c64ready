@@ -1,4 +1,4 @@
-// Spec test for the Ocean / Imagine loader (src/tap-turbo-formats.js).
+// Spec test for the Ocean / Imagine loader (src/media/tap-turbo-formats.js).
 //
 // Read out of the reader its tapes copy into zero page, which measures a pulse
 // exactly as Novaload's does:
@@ -9,7 +9,7 @@
 // [flags, page, 256 bytes] over and over until a page byte of $00. No checksum
 // anywhere, which is why the pilot's width and the stream's length have to
 // carry the whole burden of proof.
-import { tapDirectory } from '../src/tap-directory.js';
+import { tapDirectory } from '../src/media/tap-directory.js';
 
 let failures = 0;
 function eq(got, want, msg) {

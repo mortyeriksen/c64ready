@@ -1,4 +1,4 @@
-// Spec test for mending a turbo file from a second reading (src/wav-tape.js).
+// Spec test for mending a turbo file from a second reading (src/media/wav-tape.js).
 //
 // A turbo loader writes its file to the tape once, so there is no repeat copy to
 // mend it from the way the KERNAL's files are mended. What there is, is a second
@@ -12,10 +12,10 @@
 // high end, which is exactly what rounds two symbols into one. It is a one-pole
 // filter rather than a moving average because an average has a null at the
 // symbol rate — that destroys the signal outright, and nothing can read it back.
-import { turboTape64Files } from '../src/tap-turbo-formats.js';
+import { turboTape64Files } from '../src/media/tap-turbo-formats.js';
 import { ZERO, ONE, body, turboFile, tapBytesOf, pulsesOf } from './_tape-fixtures.js';
-import { tapToPcm, pcmToWav, PAL_CPU_HZ } from '../src/tap-audio.js';
-import { wavToTap } from '../src/wav-tape.js';
+import { tapToPcm, pcmToWav, PAL_CPU_HZ } from '../src/media/tap-audio.js';
+import { wavToTap } from '../src/media/wav-tape.js';
 
 function expect(cond, msg) {
   if (!cond) throw new Error(msg);

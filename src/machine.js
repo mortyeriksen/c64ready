@@ -12,7 +12,7 @@ import { Memory } from './memory.js';
 import { Drive1541, IDLE_WAKE_NONE } from './drive1541.js';
 import { Datasette } from './datasette.js';
 import { REU, REU_DEFAULT_MODEL } from './reu.js';
-import { parseCRT } from './crt.js';
+import { parseCRT } from './media/crt.js';
 import { createCartridgeFromCRT } from './cartridges/registry.js';
 import { makeVoiceTrio, computeSyncPulses } from './sid-voice.js';
 import { switchOn } from './switches.js';

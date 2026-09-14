@@ -11,6 +11,8 @@
 // Core lifecycle/audio/pref helpers are dependency-injected via initMedia(deps)
 // so this module never imports main.js (keeps the module graph acyclic).
 
+import { createOpenMedia } from './media/open.js';
+import { createDiskCompatibilityPrompt } from './media/disk-compatibility.js';
 import {
   canvas, resetBtn, pauseBtn, prgBtn, pasteBtn, prgInput, saveStateBtn, loadStateBtn, crtBtn, crtInput, crtEjectBtn, crtResetBtn, crtFreezeBtn, crtLabel, crtDropzone, d64Btn, d64Input, d64NewBtn, d64EjectBtn, d64WpBtn, d64FormatBtn, d64ExportBtn, d64DirEl, driveDropzone, driveEmptyHint, driveLoaded, tapBtn, tapInput, tapPlayBtn, tapStopBtn, tapRewBtn, tapFfBtn, tapRecBtn, tapStartBtn, tapNewBtn, tapWpBtn, tapExportBtn, tapExportWavBtn, tapEjectBtn, tapLabel, tapeBar, tapeBarWrap, tapeMotorDot, tapeTime, tapeCounter, tapeDropzone, driveLed, DRIVE8_UI, DRIVE9_UI, libraryModal, libraryBtn, libraryClose, libraryClear, libraryExport, libraryImport, libraryImportInput, libraryImportStatusEl, libraryFilterEl, libraryListEl, libraryEmptyEl, stateModal, stateFilterEl, stateListEl, stateEmptyEl, stateCloseBtn, stateClearBtn, stateExportBtn, stateImportBtn, stateImportInput, stateImportStatusEl, _dropZone,
   dirzoomModal, dirzoomTitle, dirzoomDiskName, dirzoomDiskMeta, dirzoomListEl, dirzoomCloseBtn,
@@ -26,17 +28,17 @@ import {
   setRunning, setPristineBoot, setHasBeenReady,
 } from './state.js';
 import { confirmDialog, promptDialog } from './dialogs.js';
-import { D64, createBlankD64, createPRGDisk, d64Variant, prgAutostart, prgOverflow } from './d64.js';
-import { tapToPcm, pcmToWav } from './tap-audio.js';
-import { importWav, importProgress } from './wav-import.js';
-import { dmpToTap } from './dmp-tape.js';
-import { repairTape } from './tap-repair.js';
+import { D64, createBlankD64, createPRGDisk, d64Variant, prgAutostart, prgOverflow } from './media/d64.js';
+import { tapToPcm, pcmToWav } from './media/tap-audio.js';
+import { importWav, importProgress } from './media/wav-import.js';
+import { dmpToTap } from './media/dmp-tape.js';
+import { repairTape } from './media/tap-repair.js';
 import { blankTapBytes } from './datasette.js';
 import { LOCK_CLOSED_SVG, LOCK_OPEN_SVG } from './pixel-lock.js';
-import { parseCRT } from './crt.js';
+import { parseCRT } from './media/crt.js';
 import { CANVAS_W, CANVAS_H, C64_PALETTE } from './vic2.js';
-import { libList, libLoad, libSave, libDelete, libClear, libExport, libImport } from './filelibrary.js';
-import { tapDirectory, tapeFacts } from './tap-directory.js';
+import { libList, libLoad, libSave, libDelete, libClear, libExport, libImport } from './media/library.js';
+import { tapDirectory, tapeFacts } from './media/tap-directory.js';
 import { stateList, stateSave, stateLoad, stateDelete, stateRename, stateClear, stateExport, stateExportAll, stateImportFile } from './statelibrary.js';
 
 // ── Injected core dependencies (assigned by initMedia) ───────────────────────
@@ -132,7 +134,7 @@ function _syncTapEjectButton() {
 
 // ── File library ("LOAD" dialog) ───────────────────────────────────────────
 // Browse files previously loaded from disk (cached in IndexedDB by
-// filelibrary.js) and re-load any of them without re-picking from disk.
+// media/library.js) and re-load any of them without re-picking from disk.
 
 const _libEscapeHtml = s => String(s).replace(/[&<>"']/g,
   c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -213,40 +215,14 @@ async function _renderLibrary() {
 // Apply a library entry's bytes via the same paths a fresh disk-load uses.
 // Only PRG hard-resets first (button or library); d64/tap continue from the
 // current state and auto-load when AUTORUN is on; crt cold-boots itself.
-// Returns false if it could not be applied (e.g. PRG with the machine off).
+// Returns false when validation or power-on fails.
 async function _loadLibraryEntry(entry) {
-  const { type, name, data } = entry;
+  if (!['prg', 'd64', 'crt', 'tap', 'reu'].includes(entry.type)) return false;
   try {
-    // Loading from the library while powered off just powers on first, then
-    // loads — same as Load State. (Was: cache-only for media, refuse for PRG.)
-    if (!running) {
-      if (!(await _powerOn())) return false;   // ROMs not loaded → _powerOn alerted
-    }
-    if (type === 'd64') {
-      // Library disks always load into the primary drive (device 8) — never
-      // the secondary device-9 drive. Drive 9 is loaded only from its own card.
-      // Entries stored before the drop-time size check exist, so check here too.
-      const sizeError = _d64SizeError(data, name);
-      if (sizeError) { setStatus(sizeError, 'error'); return false; }
-      const disk = new D64(data);
-      disk._libName = name;
-      _loadDisk(disk);
-    } else if (type === 'crt') {
-      _applyCart(data);                 // loadCartridge() cold-boots the machine
-    } else if (type === 'tap') {
-      // 1s pause before auto-PLAY so the LOAD command is visible — the library
-      // dialog closes and would otherwise jump straight into a loading tape.
-      await _loadTape(data, name, { playDelayMs: 1000 });
-    } else if (type === 'prg') {
-      await _insertPRG(data, 'loaded', name);
-    } else if (type === 'reu') {
-      return _loadReuImage(data, name);
-    } else {
-      return false;
-    }
+    await openMedia({ name: entry.name, bytes: entry.data, mediaType: entry.type, saveToLibrary: false });
     return true;
-  } catch (err) {
-    setStatus(`${String(type).toUpperCase()} error: ${err.message}`, 'error');
+  } catch (error) {
+    setStatus(error.message, 'error');
     return false;
   }
 }
@@ -793,12 +769,12 @@ function _libRemember(type, name, data) {
   try { libSave(type, name, data)?.catch(() => {}); } catch {}
 }
 
-function _startLoadedPRG(addr) {
-  // Centralised post-load entry. Gated on the AUTORUN toggle. BASIC
+function _startLoadedPRG(addr, autorun = getAutorunEnabled()) {
+  // Centralised post-load entry. Uses the requested autorun setting. BASIC
   // programs (load addr $0801) need RUN so BASIC parses the SYS stub
   // at the right place; ML loads at other addresses are entered with
   // SYS <addr>.
-  if (!getAutorunEnabled()) return null;
+  if (!autorun) return null;
   _leavePristineBoot();
   if (addr === 0x0801) {
     machine.injectRun();
@@ -875,7 +851,7 @@ async function _offerTdeOffForPrg() {
 // Inserting a disk does not reboot a C64, so this doesn't either — swapping one
 // in goes through the same eject-then-attach the drive already does. Used by
 // every PRG entry point (file picker, drag-drop, library).
-async function _insertPRG(data, verb = 'loaded', fileName = '') {
+async function _insertPRG(data, verb = 'loaded', fileName = '', { autorun = getAutorunEnabled() } = {}) {
   const sizeError = _prgSizeError(data, fileName);
   if (sizeError) { setStatus(sizeError, 'error'); return; }
   // No drive to put a disk in (1541 ROM missing) — fall back to dropping the
@@ -888,7 +864,7 @@ async function _insertPRG(data, verb = 'loaded', fileName = '') {
       { ready: true },
       { run: () => {
           const addr = machine.loadPRG(data);
-          _reportPrgLoaded(addr, _startLoadedPRG(addr), verb);
+          _reportPrgLoaded(addr, autorun ? _startLoadedPRG(addr, autorun) : null, verb);
         } },
     ]);
     if (!alreadyClean) setStatus('Reset — booting, then loading PRG…', 'running');
@@ -899,7 +875,7 @@ async function _insertPRG(data, verb = 'loaded', fileName = '') {
   const startCmd = prgAutostart(data);
   // Before the disk goes in, so the answer is in force for the LOAD that follows.
   await _offerTdeOffForPrg();
-  _loadDisk(disk, { startCmd });
+  await _loadDisk(disk, { startCmd, autorun, respectPreference: false });
   // Powered off, the disk still goes in — but nothing will run until there is a
   // machine to run it, so say so rather than leaving a bare "disk loaded".
   if (!running) {
@@ -1212,20 +1188,21 @@ function _ejectD64() {
 // genuinely empty for that window — the same as ejecting then reinserting by
 // hand.
 const DISK_SWAP_EJECT_MS = 700;
-function _loadDisk(disk, { autorun = true, startCmd = 'RUN\r' } = {}) {
+async function _loadDisk(disk, { autorun = true, startCmd = 'RUN\r', respectPreference = true } = {}) {
   if (currentD64 && machine?.ready) {
     _ejectD64();                          // eject the installed disk now
-    setTimeout(() => _attachDisk(disk, autorun, startCmd), DISK_SWAP_EJECT_MS);
+    await new Promise(resolve => setTimeout(resolve, DISK_SWAP_EJECT_MS));
+    _attachDisk(disk, autorun, startCmd, respectPreference);
     return;
   }
-  _attachDisk(disk, autorun, startCmd);
+  _attachDisk(disk, autorun, startCmd, respectPreference);
 }
 
-function _attachDisk(disk, autorun = true, startCmd = 'RUN\r') {
+function _attachDisk(disk, autorun = true, startCmd = 'RUN\r', respectPreference = true) {
   _onD64Loaded(disk);                     // attach (sets currentD64) + show directory
   // NEW / FORMAT pass autorun:false — a freshly created blank disk has nothing
   // to LOAD"*",8,1 + RUN, so the auto-load would just error.
-  if (autorun && running && getAutorunEnabled()) _autoLoadDisk(startCmd);
+  if (autorun && running && (!respectPreference || getAutorunEnabled())) _autoLoadDisk(startCmd);
 }
 
 if (d64Btn && d64Input) {
@@ -1250,7 +1227,8 @@ if (d64Btn && d64Input) {
       _libRemember('d64', file.name, data);
       const disk = new D64(data);
       disk._libName = file.name;
-      _loadDisk(disk);
+      await _prepareD64({ targetDrive: 8 });
+      await _loadDisk(disk);
     } catch (err) {
       setStatus(`D64 error: ${err.message}`, 'error');
     }
@@ -1634,6 +1612,7 @@ if (DRIVE9_UI.loadBtn && DRIVE9_UI.fileInput) {
       if (!disk) { setStatus('Drive 9: program too large for a disk', 'error'); return; }
       _libRemember(isPrg ? 'prg' : 'd64', file.name, data);
       disk._libName = file.name;
+      if (!isPrg) await _prepareD64({ targetDrive: 9 });
       _onD64Drive9Loaded(disk, { autorun: true, startCmd: isPrg ? prgAutostart(data) : 'RUN\r' });
     } catch (err) {
       setStatus(`Drive 9 D64 error: ${err.message}`, 'error');
@@ -1968,7 +1947,7 @@ function _hideWavImport() {
   }, WAV_IMPORT_FINISH_MS));
 }
 
-async function _loadTape(data, name, { playDelayMs = 0 } = {}) {
+async function _loadTape(data, name, { playDelayMs = 0, autorun = getAutorunEnabled() } = {}) {
   const tape = await _tapeBytesFrom(data, name);
   // The caller cached the file it was handed, except a .wav, which _libRemember
   // refuses. Cache the tape recovered from it instead: same content, a twentieth
@@ -1984,7 +1963,7 @@ async function _loadTape(data, name, { playDelayMs = 0 } = {}) {
     setStatus(`${/\.dmp$/i.test(tape.from) ? 'DMP' : 'WAV'} "${tape.from}" → tape · ${tape.note}${_tapeHint()}`,
       tape.bad ? 'error' : machine?.ready ? 'running' : 'idle');
   }
-  if (running && getAutorunEnabled()) _autoLoadTape(playDelayMs);
+  if (running && autorun) _autoLoadTape(playDelayMs);
 }
 
 if (tapBtn && tapInput) {
@@ -2904,7 +2883,7 @@ _wireDirZoom(DRIVE8_UI);
 _wireDirZoom(DRIVE9_UI);
 
 // The datasette's own magnifier. A .tap carries no directory, so the tape is
-// decoded on demand (src/tap-directory.js) and listed the way the library and
+// decoded on demand (src/media/tap-directory.js) and listed the way the library and
 // the save states are: a row per file, click one to move the head to it.
 if (tapeDirZoomBtn) tapeDirZoomBtn.addEventListener('click', _showTapeDirectory);
 
@@ -3214,3 +3193,42 @@ export function initMedia(deps) {
   _setDrive9Power(drive9Enabled, { persist: false });
   _setReuPower(reuEnabled, { persist: false });
 }
+
+const _prepareD64 = createDiskCompatibilityPrompt({
+  enabled: drive => drive === 9 ? drive9TdeEnabled : getTdeEnabled?.(),
+  available: () => !!loader?.drive1541,
+  confirm: confirmDialog,
+  enable: drive => {
+    if (drive === 8) setTdeEnabled(true);
+    else {
+      drive9TdeEnabled = true;
+      try { localStorage.setItem('c64emu.drive9tde', 'on'); } catch {}
+      _applyDrive9Tde();
+    }
+  },
+});
+
+export const openMedia = createOpenMedia({
+  isRunning: () => running,
+  powerOn: () => _powerOn(),
+  getAutorunEnabled: () => getAutorunEnabled(),
+  prepareDisk: _prepareD64,
+  save: (...args) => libSave(...args),
+  prg: async (bytes, name, options) => { await _insertPRG(bytes, 'loaded', name, options); },
+  crt: bytes => _applyCart(bytes),
+  tap: (bytes, name, options) => _loadTape(bytes, name, { ...options, playDelayMs: 1000 }),
+  reu: (bytes, name) => { if (!_loadReuImage(bytes, name)) throw new Error('Could not load the RAM Expansion image.'); },
+  disk: async (disk, { targetDrive, autorun }) => {
+    cancelAutoLoad();
+    if (targetDrive === 8) await _loadDisk(disk, { autorun, respectPreference: false });
+    else {
+      _setDrive9Power(true);
+      if (currentD64Drive9 && machine?.ready) {
+        _ejectD64Drive9();
+        await new Promise(resolve => setTimeout(resolve, DISK_SWAP_EJECT_MS));
+      }
+      _onD64Drive9Loaded(disk);
+      if (autorun && running) _autoLoadDisk('RUN\r', 9);
+    }
+  },
+});

@@ -1,11 +1,11 @@
-// Spec test for turning a .tap back into audio (src/tap-audio.js).
+// Spec test for turning a .tap back into audio (src/media/tap-audio.js).
 //
 // The point of this conversion is that it is the real signal: a C64 tape stores
 // data in the WIDTH of its pulses, so a recording only loads again if those
 // widths survive. These assertions measure the widths back out of the waveform
 // and check they land within one audio sample of what went in — far inside the
 // margin a loader uses to tell a short pulse from a long one.
-import { tapToPcm, pcmToWav, PAL_CPU_HZ } from '../src/tap-audio.js';
+import { tapToPcm, pcmToWav, PAL_CPU_HZ } from '../src/media/tap-audio.js';
 
 function expect(cond, msg) {
   if (!cond) throw new Error(msg);

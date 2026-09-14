@@ -1,7 +1,7 @@
 // test/frame-rate-guard-spec-test.js
 //
 // Locks the decision the attract demo makes about the GPU it is running on
-// (src/frame-rate-guard.js). Judge too harshly and a perfectly good machine
+// (src/vibes/frame-rate-guard.js). Judge too harshly and a perfectly good machine
 // loses the demo; too leniently and the machines that prompted the guard keep
 // dropping frames.
 //
@@ -9,7 +9,7 @@
 // prompted it came from a desktop Core i7 — plenty of cores and memory, fine
 // pointer, a real GPU — whose integrated graphics simply couldn't keep up.
 
-import { frameRateVerdict, GUARD } from '../src/frame-rate-guard.js';
+import { frameRateVerdict, GUARD } from '../src/vibes/frame-rate-guard.js';
 
 function assert(cond, msg) {
   if (!cond) {

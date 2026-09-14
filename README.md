@@ -123,7 +123,8 @@ Hosted at **[c64ready.com/docs](https://www.c64ready.com/docs/)**; sources in [`
 │   ├── sid-voice.js  # SID audio DSP (+ sid-worklet.js)
 │   ├── cia.js        # CIA timers & I/O
 │   ├── memory.js     # RAM / ROM / PLA banking
-│   ├── drive1541.js  # true 1541 drive (+ d64.js, gcr.js)
+│   ├── drive1541.js  # true 1541 drive (+ media/d64.js, gcr.js)
+│   ├── media/        # disk, cartridge and tape formats, loading and library
 │   ├── reu.js        # RAM Expansion Unit, the 8726 REC as a second bus master
 │   ├── cartridges/   # .crt types: generic, Action Replay, Final Cartridge III, Magic Desk, EasyFlash
 │   └── …             # datasette, control ports, CRT, input, UI, Retro Vibes

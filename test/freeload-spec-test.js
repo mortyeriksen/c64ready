@@ -1,4 +1,4 @@
-// Spec test for the Freeload loader (src/tap-turbo-formats.js).
+// Spec test for the Freeload loader (src/media/tap-turbo-formats.js).
 //
 // Read out of the loader its tapes carry. It measures a pulse as Novaload does,
 // and keeps its state as Novaload does, by writing over a branch's operand:
@@ -13,7 +13,7 @@
 // checksum is the only one any of the four commercial loaders here carries, and
 // it is what a claim rests on: two bytes of sync is one in 65536, which a tape
 // supplies several times over.
-import { tapDirectory } from '../src/tap-directory.js';
+import { tapDirectory } from '../src/media/tap-directory.js';
 
 let failures = 0;
 function eq(got, want, msg) {

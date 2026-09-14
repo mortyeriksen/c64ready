@@ -1,5 +1,5 @@
 // Spec test for the turbo encoder (cli/turbo.mjs), which synthesizes Turbo Tape
-// 64. What the encoder writes, the format's own reader in src/tap-turbo-formats.js
+// 64. What the encoder writes, the format's own reader in src/media/tap-turbo-formats.js
 // reads back — name, addresses and every payload byte, with the checksum passing
 // — so a pass means the bytes frame as a genuine tape's do. It also pins the end
 // address as exclusive (start + length), and that a 40K file is ~80 s of tape
@@ -7,7 +7,7 @@
 import { encodeTurboTape, TURBO_WRITERS } from '../turbo.mjs';
 import { splitTap, tapSeconds } from '../core.mjs';
 import { sniff } from '../formats.mjs';
-import { TURBO_FORMATS } from '../../src/tap-turbo-formats.js';
+import { TURBO_FORMATS } from '../../src/media/tap-turbo-formats.js';
 
 let failures = 0;
 function assert(cond, msg) {

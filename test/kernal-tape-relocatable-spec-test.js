@@ -6,7 +6,7 @@
 // LOAD puts it at the BASIC start instead, and the header's addresses then
 // record only where it was saved from.
 //
-// src/tap-directory.js lists both as PRG, so it carries `relocatable` beside the
+// src/media/tap-directory.js lists both as PRG, so it carries `relocatable` beside the
 // addresses to say which. This is what that flag has to mean, proved by loading
 // such tapes through the ROM rather than by reading the parser back to itself:
 // the same file, saved from the same address, under both type bytes and both
@@ -16,7 +16,7 @@
 // tests build theirs — nothing outside the repository but the ROMs.
 import { readFileSync } from 'fs';
 import { C64Machine } from '../src/machine.js';
-import { tapDirectory } from '../src/tap-directory.js';
+import { tapDirectory } from '../src/media/tap-directory.js';
 
 let failures = 0;
 function eq(got, want, msg) {

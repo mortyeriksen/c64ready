@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
 
-# 1541 Disk Drive (`src/drive1541.js` + `gcr.js` + `d64.js` + `6522.js`): Architecture Overview
+# 1541 Disk Drive (`src/drive1541.js` + `src/gcr.js` + `src/media/d64.js` + `src/6522.js`): Architecture Overview
 
 A high-level map of the Commodore 1541 floppy-drive emulation: the drive as a
 self-contained computer (6502 + two 6522 VIAs + DOS ROM), the spindle/GCR
@@ -85,7 +85,7 @@ bit-bangs `$DD00` can talk to the drive CPU/VIA state.
 | `drive1541.js` | **`Drive1541`**, the orchestrator: a 6502 CPU + VIA1 + VIA2 + ROM + RAM + the spindle/GCR read+write engine + IEC wiring + stepper |
 | `6522.js` | **`VIA6522`** ×2: VIA1 (serial bus) and VIA2 (mechanics + read/write head); timers, ports, CA1/CA2, IRQ |
 | `gcr.js` | **`GCRDisk`**: wraps a D64 and synthesizes a raw GCR track bitstream on demand (4-to-5 encode, sync, gaps) |
-| `d64.js` | **`D64`**: parses the disk image: sectors, BAM, directory, file chains, `$`-directory PRG synthesis |
+| `media/d64.js` | **`D64`**: parses the disk image: sectors, BAM, directory, file chains, `$`-directory PRG synthesis |
 | `drive-sounds.js` | cosmetic head-step/motor sound effects (not part of the data path) |
 
 ---
@@ -323,7 +323,7 @@ into the image:
 
 ---
 
-## 9. The D64 image (`d64.js`)
+## 9. The D64 image (`media/d64.js`)
 
 `D64` parses a standard 35-track (683-sector) image or one of the extended
 variants:

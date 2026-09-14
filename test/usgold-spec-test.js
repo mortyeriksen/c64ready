@@ -1,4 +1,4 @@
-// Spec test for the US Gold / Datasoft loader (src/tap-turbo-formats.js).
+// Spec test for the US Gold / Datasoft loader (src/media/tap-turbo-formats.js).
 //
 // The format was read out of the loader the tape carries, which decrypts itself
 // before it runs, so this is what the decrypted reader in the tape buffer does:
@@ -9,7 +9,7 @@
 //   then $01, its sync byte $96, $00, the load address, the length negated, and
 //     one spare byte
 //   then the data, and no checksum anywhere in the format
-import { tapDirectory } from '../src/tap-directory.js';
+import { tapDirectory } from '../src/media/tap-directory.js';
 
 let failures = 0;
 function eq(got, want, msg) {

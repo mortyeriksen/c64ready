@@ -6,7 +6,7 @@
 Source: `src/datasette.js` (the deck itself), wired into the machine in
 `src/machine.js`; see the [master overview](ARCHITECTURE.md)
 and the [machine orchestrator](MACHINE-ARCHITECTURE.md). The tape toolchain
-around the deck (§10) lives in `src/tap-audio.js`, `wav-tape.js` /
+around the deck (§10) lives in `src/media/`: `tap-audio.js`, `wav-tape.js` /
 `wav-import.js`, `dmp-tape.js`, `tap-repair.js`, `tap-directory.js` and
 `tap-turbo-formats.js`, with `tape-sound.js` and `tape-scope.js` playing and
 drawing the signal.
@@ -239,7 +239,7 @@ exist, and neither is an approximation:
   sampler is chosen once per file format (a typed view for 16-bit PCM), bit
   classes are a byte each, and a pulse's start sample is arithmetic on the
   crossings rather than a second array the size of the first.
-- **`dmpToTap()`** (`src/dmp-tape.js`) reads a DC2N dump, the tape as the
+- **`dmpToTap()`** (`src/media/dmp-tape.js`) reads a DC2N dump, the tape as the
   cassette port saw it, one 2 MHz tick count per pulse, so there is no audio to
   decode. It honours the overflow rule (a sample at the maximum carries into the
   next) and scales ticks to cycles at the PAL clock whatever machine the dump

@@ -254,6 +254,9 @@ recording itself is not kept. It is converted to a tape as it loads, and that
 `.TAP` is what lands in the library. A `.DMP` dump is converted the same way,
 and lands as its `.TAP` too.
 
+Assembly64 can save PRG, D64, CRT, TAP and REU files here, including supported
+media selected from ZIP archives. Saved files can be loaded again offline.
+
 | Control | What it does |
 | --- | --- |
 | **Filter…** | Filters the list by name. |
@@ -282,7 +285,7 @@ Models the C64's two control ports.
 Choosing **Joystick (gamepad)** reveals a **Gamepad** row to bind a detected
 physical gamepad to that port.
 
-> **Default:** Port 2 is a **Key Joystick 1** (arrow keys to move, **K** / **L**
+> **Default:** Port 2 is a **Key Joystick 1** (arrow keys to move, **J** / **K**
 > to fire), so you can play straight away with no gamepad attached.
 
 ### Touch Joystick
@@ -314,10 +317,81 @@ It maps six roles (up, down, left, right, fire A, fire B) to physical keys.
 | **DONE** | Closes the dialog. |
 
 Click any single row to rebind just that one control. Defaults for Joy 1 are the
-arrow keys with **K** (fire A) and **L** (fire B); each key joystick has its own
+arrow keys with **J** (fire A) and **K** (fire B); each key joystick has its own
 independent set.
 
 ---
+
+## Assembly64
+
+Explore the C64 demoscene: demos, intros, music, graphics, diskmags and the
+people who make them. Find a production by title, browse a group's releases,
+or discover something new in the catalog.
+
+Assembly64 starts expanded at the top of the right column. Media load starts
+below Control Ports in the left column; saved panel arrangements take precedence.
+
+### Quick search
+
+![The Assembly64 control with Group / producer set to lft and matching demo results.](/guide/assembly64-control.webp)
+
+- Enter a production title, a **Group / producer**, or both. For example, enter
+  `lft` in Group / producer to explore that creator's demos.
+- Narrow the search with **Source** and **Type**. Demos is selected initially;
+  choose Intros, Music, Graphics or another available category to explore more.
+- Press Enter or the search icon to show up to ten results.
+- A single supported file offers **LOAD D64**, **LOAD CRT**, **LOAD TAP**,
+  **LOAD REU** or **LOAD PRG**. Click the title or producer to see all files.
+- **REFINE SEARCH** transfers the current search to the browser. **CLEAR**
+  clears the results and restores the quick-search defaults.
+
+### Explore and refine
+
+![The Assembly64 Browser showing demo search results for Group / producer lft.](/guide/assembly64-browser.webp)
+
+- **EXPLORE** opens the **Assembly64 Browser** with Demos sorted by Newest.
+  It starts independently of the quick search.
+- Search by title or group/producer, then adjust type, source and sorting.
+- **ADVANCED** provides additional supported filters. It shares the browser's
+  search state; **SHOW RESULTS** applies the filters and **Reset** clears them.
+- **LOAD MORE** adds ten results.
+- Tab moves through the control and dialogs. Escape closes the top dialog.
+  Typing in either quick text field stays there; clicking other quick controls
+  returns keyboard input to the emulator. When a field or dialog owns input,
+  the screen shows "Click screen to capture keyboard." alongside the drop-files hint.
+
+### Favorites and saved searches
+
+- Use a production's star to bookmark it. **FAVORITES** opens your bookmarks
+  independently of the quick search.
+- Name and save a search to return to a group's demos, intros or music later.
+- Favorites and named searches are stored in this browser, with no account
+  required. A favorite does not store the media offline.
+
+### Loading and saving
+
+Open a production's details to see its complete file list.
+
+- **DOWNLOAD** saves a file to your computer, including unsupported formats.
+- **LOAD** opens compatible PRG, D64, CRT, TAP and REU files in the emulator.
+  SID and unsupported disk formats are available for download.
+- **SAVE TO LIB** stores compatible files in Library. Files already there show
+  **SAVED IN LIB**.
+- D64 files default to drive 8, write protected, following the app's autorun
+  setting. Choose drive 9 or mount only when needed. Loading a disk can offer
+  to enable True Drive Emulation for compatibility.
+- ZIP archives offer supported contents to choose from. Only the selected
+  media file is saved to Library.
+
+A successful load closes the dialogs. Download progress fills the file or
+quick-result card background. A verified original-release link appears when
+its metadata is available.
+
+### Offline use
+
+- Searches and new downloads need a connection.
+- Favorites and named searches remain visible offline.
+- Previously saved media opens through **LOAD LIB**, without a connection.
 
 ## Disk drive 8
 
@@ -333,10 +407,17 @@ The primary 1541 floppy drive (IEC device 8).
 | **🔒 / 🔓** | Write-protect toggle. Loaded disks start **protected** (🔒); click to allow the drive to write (🔓). A freshly inserted blank disk starts writable. |
 | **🧹 FORMAT** | Erases the inserted disk to an empty format (asks for a name). Disabled while the disk is write-protected (🔒). |
 | **⤓ .D64** | Downloads the disk, with your changes, as a `.d64` file. **Enabled once the disk has changes** to save; disables again after you export. |
-| **TDE: OFF / ON** | Toggles **True Drive Emulation**, which runs a real 1541 CPU on the IEC bus, needed for custom fastloaders. With it off, `LOAD` is served directly from the disk image (faster, but some loaders won't work). Remembered between sessions, like the other toggles. |
+| **TDE: OFF / ON** | With **True Drive Emulation** on, the real 1541 handles `LOAD` over the IEC bus, needed for custom fastloaders. With it off, `LOAD` is served directly from the disk image (faster, but some loaders won't work). With a 1541 ROM loaded, drive 8 still handles other bus operations in either mode. Remembered between sessions. |
 | **Drive LED** | Lights while the drive is active. |
 | **▼ *n* files** | Expands the directory: disk name, blocks free, and the file list. It updates itself when the running program changes the disk. Click a **PRG** or **USR** row to load and run that file; SEQ and REL rows are data, so they stay dim. |
 | **🔍** | Opens the [Directory zoom](#directory-zoom) viewer: enlarged, filenames only, so PETSCII directory art reads clearly. |
+
+**Loading with TDE off.** When the 1541 ROM is available, loading a `.d64` asks
+whether to turn TDE on before inserting the disk. **Turn TDE on** enables it
+for that drive and remembers the setting; **Keep TDE off** continues loading
+with it off. This applies to the drive's LOAD picker, LOAD ANY, drag-and-drop,
+Library and Assembly64. No prompt appears when TDE is already on or the drive
+ROM is missing.
 
 **Writing to disk.** The drive writes back to the `.d64`: `SAVE` a program, scratch
 or rename a file, and the change lands on the disk. Writing needs the disk unlocked
@@ -352,10 +433,10 @@ Before a disk is inserted the card shows a hint and only **LOAD** and **BLANK** 
 
 ### Loading a .prg
 
-A `.prg` is written onto a disk of its own, and that disk goes into drive 8, so
-it loads like anything else, shows up in the directory, and can be exported as a
-`.d64`. Inserting a disk doesn't reboot a C64, so this doesn't either, and the
-**TDE** setting applies as usual.
+With a 1541 ROM loaded, a `.prg` is written onto a disk of its own in drive 8.
+It loads like anything else, shows up in the directory, and can be exported as
+a `.d64`. Inserting the disk keeps the machine running, and the **TDE** setting
+applies as usual.
 
 Nothing on that disk needs the real drive, so with **TDE** on, loading a `.prg`
 offers to switch it off and load at once. Declining is remembered until you
@@ -363,9 +444,14 @@ switch **TDE** on again yourself.
 
 The disk arrives write-protected. Flip the tabs to `SAVE` onto it.
 
-With **AUTORUN** on, BASIC programs are `RUN`. Machine code is left at `READY.`
-instead; only a BASIC `SYS` stub says where a program starts, so the status line
-gives you the address to `SYS` yourself.
+With **AUTORUN** on, BASIC programs and machine-code programs with a BASIC
+`SYS` stub start through `RUN`. Other machine-code PRGs are left at `READY.`;
+the status line suggests a `SYS` address, but the program's instructions are
+the authority for its entry point.
+
+Without a 1541 ROM, the program loads directly into RAM. This fallback resets
+the machine first unless it is still at a fresh boot. With **AUTORUN** on, it
+uses `RUN` for a program loaded at `$0801`, or `SYS` at the load address otherwise.
 
 ## Disk drive 9
 
@@ -380,6 +466,9 @@ until you switch it on. It reads, writes, and formats just like drive 8.
 | **💾 LOAD / 💾 BLANK / ⏏ EJECT** | Insert / insert-blank / remove a `.d64` as device 9. |
 | **🔒 / 🧹 FORMAT / ⤓ .D64** | Write-protect toggle, format, and export, the same as [drive 8](#disk-drive-8). |
 | **TDE: OFF / ON** | True Drive Emulation for device 9 (needs the 1541 ROM). |
+
+Loading a `.d64` with TDE off offers to enable it for drive 9, using the same
+[prompt as drive 8](#disk-drive-8). The choice affects only the selected drive.
 
 > ⚠️ **A second drive on the bus can crash fastloader demos and games.** When
 > you flip the power switch on, a confirmation dialog appears:
@@ -448,8 +537,8 @@ it stays lit for a moment after each one.
 
 You can also drop a `.reu` straight onto the screen, or pick one with **LOAD
 ANY** in the Load card; both work like the card's own LOAD button. Unlike the
-other file types, expansion images aren't kept in the Library: a 16 MB image
-would crowd out everything else in it. If no expansion
+other file types, local expansion loads do not automatically enter the Library.
+Assembly64 can save a selected REU image there, and **LOAD LIB** restores it offline. If no expansion
 is fitted, dropping an image fits one; if the image is bigger than the unit you
 have, you get the smallest unit that holds it rather than a truncated load.
 
@@ -635,7 +724,7 @@ system rate makes the browser resample the SID stream, which adds a fixed lag.
 
 | Button | What it does |
 | --- | --- |
-| **AUTORUN** | When on, `RUN` (BASIC) or `SYS <addr>` (machine code) is injected automatically after a PRG loads. When off, the machine stays at the `READY.` prompt so you can start it yourself. |
+| **AUTORUN** | Starts media automatically when enabled. PRGs loaded through a drive run BASIC or a BASIC `SYS` stub; other machine-code PRGs stay at `READY.`. Turning it off leaves loading and starting to you. See [Loading a .prg](#loading-a-prg) for the fallback without a drive ROM. |
 
 ### Other
 
@@ -739,7 +828,7 @@ on every platform.
 | **V** | Pastes the clipboard into the C64 as keystrokes, same as **PASTE**. |
 | **F** | Cycles the CRT look, same as the CRT button in [Options](#options). |
 | **Z** | Zooms the VIBES button to 10x, so the little pixel demo running inside it can be watched properly: magnified, and running at your display's refresh rate. It stays a working button: clicking it opens [Retro Vibes](#retro-vibes). Press it again (or **Esc**) to send it back. |
-| **P** | Opens [Retro Vibes](#retro-vibes) in Studio mode: the 3D scene and the C64 READY. logo, nothing else. Press it again to bring the controls back. The mode is remembered between visits. |
+| **X** | Opens [Retro Vibes](#retro-vibes) in Studio mode: the 3D scene and the C64 READY. logo, nothing else. Press it again to bring the controls back. The mode is remembered between visits. |
 
 Only those letters are borrowed. **Ctrl** on its own is a real C64 key and still
 reaches the machine, and a text box keeps its own keys.

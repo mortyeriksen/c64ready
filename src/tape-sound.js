@@ -14,7 +14,7 @@
 // timestamped edge at a time. So a SAVE is transcribed the other way round —
 // each frame takes the pulses laid down since the last one and queues them
 // back-to-back, a fraction of a second behind the head.
-import { tapToPcm } from './tap-audio.js';
+import { tapToPcm } from './media/tap-audio.js';
 
 // How far audio and tape may drift before the playback is re-seated. Tape is
 // forgiving; re-seating too eagerly would chirp on every frame.

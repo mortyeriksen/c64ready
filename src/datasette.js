@@ -16,7 +16,7 @@
 // the KERNAL's interrupt handler does as soon as it sees SENSE go low.
 
 import { switchOn } from './switches.js';
-import { V0_ZERO_GAP_CYCLES } from './tap-audio.js';
+import { V0_ZERO_GAP_CYCLES } from './media/tap-audio.js';
 
 const TAP_MAGIC = 'C64-TAPE-RAW';
 const HEADER_SIZE = 20;

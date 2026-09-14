@@ -38,14 +38,18 @@ installs as an app. For a step-by-step walkthrough see the
 
 ## Loading & file formats
 
-- **`.prg` programs**: single games and tools. A program is written onto a disk
-  of its own in drive 8 and started for you, so it shows in the directory, loads
-  again, and exports as a `.d64`. Loading one does not reset the machine.
+- **`.prg` programs**: single games and tools. With a 1541 ROM loaded, a program
+  is written onto a disk of its own in drive 8, so it shows in the directory,
+  loads again, and exports as a `.d64`, without resetting the machine. Without
+  the drive ROM it loads directly into RAM, resetting first if the machine has
+  already been used. See [Loading a .prg](USER-GUIDE.md#loading-a-prg) for how
+  programs start.
 - **`.d64` disk images**: 35-, 40- and 42-track floppies, with directory
   listing and wildcard loading, and **read/write**: programs can `SAVE` to them.
   An image's recorded error table is honoured, so a disk protected by a sector
   that must fail to read still behaves like the original. GEOS disks show
-  readable filenames.
+  readable filenames. Loading a disk with TDE off offers to turn it on for
+  compatibility when the 1541 ROM is available; either answer continues loading.
 - **`.crt` cartridges**: the supported families are listed under
   **Cartridges & expansions** below.
 - **`.tap` tapes**: datasette images (v0 / v1 / v2), played like real hardware.
@@ -61,10 +65,28 @@ installs as an app. For a step-by-step walkthrough see the
   out what to do with it; each media card also has its own load button.
 - **LOAD library**: everything you open is cached in the browser and
   re-loadable from a searchable list, with import/export of the whole library.
-- **Auto-run**: programs start themselves after loading (toggleable); disk
-  loads type the `LOAD`/`RUN` commands for you and wait until they finish.
+- **Auto-run**: disk loads type the `LOAD`/`RUN` commands for you and wait until
+  they finish (toggleable). PRGs loaded through a drive run when they contain
+  BASIC or a BASIC `SYS` stub; other machine-code PRGs wait for you to start them.
 - **Insert while powered off**: disks, tapes, and cartridges can be attached
   before power-on.
+
+## Assembly64 catalog
+
+Discover C64 demos, intros, music, graphics and diskmags, and explore the work
+of scene groups and creators.
+
+- **Quick search**: search production titles and groups/producers, with Type and
+  Source filters, and see ten results in the control. Demos is the default type.
+- **Explore**: start with the newest demos in the Assembly64 Browser, with advanced filters,
+  sorting and pagination. Refine Search carries a quick search into the browser.
+- **Load or download**: PRG, D64, CRT, TAP and REU files use the emulator's media
+  controls. ZIP archives offer a choice of supported files. D64 loads are write
+  protected and can use drive 8 or 9, with autorun or mount only.
+- **Local collections**: favorites and named searches survive a reload. Save
+  selected media to Library to reopen it offline, including REU images.
+- **Network use**: searches and new downloads need a connection. Favorites alone
+  do not download files.
 
 ## Control-port devices
 
@@ -75,7 +97,7 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   **A** is fire and **B** uses the standard second-button UP-line convention.
 - **Key Joystick 1 & 2**: two independent keyboard-driven sticks (no gamepad
   needed), either assignable to either port so two people can share the
-  keyboard. **Key Joystick 1** = arrow keys + **K** / **L** to fire; **Key
+  keyboard. **Key Joystick 1** = arrow keys + **J** / **K** to fire; **Key
   Joystick 2** = **WASD** + **C** / **V** to fire. Every key is remappable:
   click "redefine" under the port.
 - **Mouse (1351)**: proportional GEOS-style mouse (pointer-lock).

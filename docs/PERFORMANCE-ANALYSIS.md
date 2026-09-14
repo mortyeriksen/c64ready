@@ -122,6 +122,15 @@ lives there: the drive's mechanical timing models are compile-time constants at
 the top of `drive1541.js` ([1541 drive](DRIVE-ARCHITECTURE.md) §11), and the
 `c64Vic.*` console toggles belong to the debug surface in [TESTING](TESTING.md).
 
+### Assembly64 requests
+
+Catalog work stays outside the emulation loop. Each tab permits three concurrent
+requests, spaces request starts by 250 ms, shares identical in-flight JSON calls,
+and honors Retry-After without automatic retries. Search pages are cached for
+30 seconds; presets, categories, metadata and file lists for five minutes. The
+in-memory cache is bounded to 64 responses and 4 MiB. Binaries are streamed with
+size limits and are never cached by the API client or service worker.
+
 ## 3. Throughput & footprint
 
 The figures below are approximate and machine-dependent; treat them as orders

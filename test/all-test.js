@@ -26,6 +26,8 @@ import { fileURLToPath } from 'url';
 
 const TESTS = [
   // Quick unit tests (deterministic, fast)
+  'test/assembly64-test.js',
+  'test/media-browser-test.js',
   'test/docs-sitemap-spec-test.js',
   'test/docs-head-assets-spec-test.js',
   'test/audio-lifecycle-spec-test.js',

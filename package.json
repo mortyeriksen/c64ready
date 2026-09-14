@@ -1,7 +1,7 @@
 {
   "name": "c64ready-app",
   "private": true,
-  "version": "2026.9.0",
+  "version": "2026.9.1",
   "license": "GPL-3.0-or-later",
   "type": "module",
   "scripts": {
@@ -10,7 +10,10 @@
     "build:docs": "node tools/build-docs.mjs",
     "build:cli": "node tools/build-cli.mjs",
     "preview": "vite preview",
-    "test": "node test/all-test.js"
+    "test": "node test/all-test.js",
+    "test:assembly64": "node --test test/assembly64-test.js test/media-browser-test.js",
+    "test:assembly64:browser": "node test/assembly64/browser-check.mjs",
+    "test:assembly64:pwa": "node test/assembly64/browser-check.mjs --pwa"
   },
   "devDependencies": {
     "marked": "^18.0.5",

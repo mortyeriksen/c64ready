@@ -27,7 +27,7 @@
 // errorForSector, freeBlocks, entries, loadFile, buildDirectoryPRG,
 // readSector/writeSector) and the raw GCR track bytes the read head would see.
 
-import { D64, createBlankD64, createPRGDisk, d64Variant, SPT } from '../src/d64.js';
+import { D64, createBlankD64, createPRGDisk, d64Variant, SPT } from '../src/media/d64.js';
 import { GCRDisk, decodeTrackStream } from '../src/gcr.js';
 
 let failed = 0;

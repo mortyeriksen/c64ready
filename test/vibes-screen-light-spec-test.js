@@ -1,9 +1,9 @@
 // Spec tests for Retro Vibes framebuffer light sampling and chevron geometry.
 
 import assert from 'node:assert/strict';
-import { sampleScreenLight } from '../src/vibes-screen-light.js';
+import { sampleScreenLight } from '../src/vibes/vibes-screen-light.js';
 import * as THREE from 'three';
-import { makeChevronGeometry, scene as synthwave } from '../src/vibes-scene-synthwave.js';
+import { makeChevronGeometry, scene as synthwave } from '../src/vibes/vibes-scene-synthwave.js';
 
 const result = { r: 0, g: 0, b: 0, luminance: 0, active: false };
 const solid = (r, g, b) => new Uint8ClampedArray([r, g, b, 255, r, g, b, 255, r, g, b, 255, r, g, b, 255]);

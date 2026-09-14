@@ -26,7 +26,7 @@
 
 import { readFileSync, existsSync } from 'fs';
 import { C64Machine } from '../src/machine.js';
-import { D64, createBlankD64, SPT } from '../src/d64.js';
+import { D64, createBlankD64, SPT } from '../src/media/d64.js';
 
 const ROM_FILES = ['roms/kernal.bin', 'roms/basic.bin', 'roms/chargen.bin', 'roms/1541.bin'];
 if (!ROM_FILES.every(existsSync)) { console.log('# SKIP C64/1541 ROMs not available'); process.exit(0); }

@@ -13,5 +13,5 @@
 @import './styles-controls.css';
 @import './styles-decks.css';
 @import './styles-ports.css';
-@import './styles-vibes.css';
+@import './vibes/styles-vibes.css';
 @import './styles-splash.css';

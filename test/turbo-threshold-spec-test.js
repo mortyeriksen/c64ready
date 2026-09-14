@@ -11,7 +11,7 @@
 // that hands over more files that pass their checksum wins. These assertions pin
 // that: off-speed tapes read, tapes at speed are unaffected, and a tape of some
 // other format still yields nothing rather than inventing files.
-import { turboTape64Files, renderTurboTape64Block } from '../src/tap-turbo-formats.js';
+import { turboTape64Files, renderTurboTape64Block } from '../src/media/tap-turbo-formats.js';
 
 let failures = 0;
 function ok(cond, msg) {
@@ -99,7 +99,7 @@ for (const factor of [0.7, 0.85, 1.15, 1.45]) {
 // ── The clones' own timings ──────────────────────────────────────────────────
 // Not a deck running off speed — a tool that retimed the format. Both measured
 // by saving the same payload with the real program (see the note in
-// src/tap-turbo-formats.js). These read at the nominal threshold and must go on
+// src/media/tap-turbo-formats.js). These read at the nominal threshold and must go on
 // doing so: the measured one is a fallback, not the first answer.
 for (const [zero, one, who] of [[232, 344, 'GWC Turbo 2'], [224, 328, 'Turbo 2002']]) {
   const pulses = tapeAt(zero, one);

@@ -5,7 +5,7 @@
 // A tape whose format nothing here knows still carries the program that reads
 // it: the KERNAL block it boots from is that loader, or fetches it. So the way
 // to learn an unknown format is to take the loader out and read it, and the
-// three commercial formats in `../src/tap-turbo-formats.js` were all
+// three commercial formats in `../src/media/tap-turbo-formats.js` were all
 // got that way. Every one of them cost hours of the same handwork, which is
 // what this does instead:
 //

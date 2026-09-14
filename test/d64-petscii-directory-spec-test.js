@@ -6,7 +6,7 @@
 // screen output. Replacing low control bytes with '?' changes both the visible
 // directory and the loadable file name.
 
-import { D64 } from '../src/d64.js';
+import { D64 } from '../src/media/d64.js';
 
 const SPT = [
   0,

@@ -39,8 +39,8 @@
 //   node tools/datasette-anim.mjs                  the Datasette loading animation
 // Bring your own inputs: a raster-demo .d64 and a game .tap (both registry), plus
 // a dir of .d64s and a dir of .c64state files for the dialogs. Every tool
-// takes GUIDE_OUT to write elsewhere, which also suppresses the screens/ mirror,
-// so a trial run leaves public/ untouched. tools/pick-frames.mjs dumps a
+// takes GUIDE_OUT to write elsewhere, so a trial run leaves public/ untouched.
+// tools/pick-frames.mjs dumps a
 // per-second burst of a demo when a specific overview-running frame is wanted.
 import { chromium } from 'playwright';
 import fs from 'fs';

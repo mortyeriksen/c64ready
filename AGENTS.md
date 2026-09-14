@@ -124,8 +124,9 @@ is git-ignored and excluded from the PWA precache for that reason).
   asked — editing UI or `USER-GUIDE.md` doesn't authorize it.
 - Guide shots go through `tools/guide-image.mjs`: 1920-capped WebP, needs `cwebp`
   and `img2webp` (`brew install webp`). `public/guide/` is docs-only and runtime-
-  cached, NOT precached (`src/sw.js`), so a shot the app itself shows needs a
-  precached copy under `public/screens/` — the writer's `MIRRORS` map does that.
+  cached, NOT precached (`src/sw.js`). The writer only writes the requested output;
+  it does not create `public/screens/` copies. A shot the app itself needs offline
+  must have a separate asset included in the PWA precache.
 
 ## Performance
 

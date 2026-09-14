@@ -13,7 +13,7 @@ This is the index document; each subsystem has its own deep-dive:
 | VIC-II video | `src/vic2.js` + `vic2-{tables,line,sprites,render}.js` | [Deep-dive ▸](VIC2-ARCHITECTURE.md) |
 | Memory / banking | `src/memory.js` | [Deep-dive ▸](MEMORY-ARCHITECTURE.md) |
 | Machine orchestrator | `src/machine.js` | [Deep-dive ▸](MACHINE-ARCHITECTURE.md) |
-| 1541 disk drive | `src/drive1541.js` + `gcr.js` + `d64.js` + `6522.js` | [Deep-dive ▸](DRIVE-ARCHITECTURE.md) |
+| 1541 disk drive | `src/drive1541.js` + `src/gcr.js` + `src/media/d64.js` + `src/6522.js` | [Deep-dive ▸](DRIVE-ARCHITECTURE.md) |
 | SID 6581/8580 audio | `src/sid-voice.js` + `src/sid-worklet.js` | [Deep-dive ▸](SID-ARCHITECTURE.md) |
 | Datasette (1530 tape) | `src/datasette.js` | [Deep-dive ▸](DATASETTE-ARCHITECTURE.md) |
 
@@ -72,9 +72,12 @@ This is the index document; each subsystem has its own deep-dive:
  └────────────────────────┘
 ```
 
-Two threads only: the **main thread** runs the entire machine + UI; the **audio
-worklet thread** does SID synthesis. They communicate through one lock-free
+The **main thread** runs the machine and UI; the **audio worklet thread** does
+SID synthesis. They communicate through one lock-free
 `SharedArrayBuffer` ring (which is why the page needs COOP/COEP headers).
+WAV import also uses a temporary worker (`src/media/wav-import-worker.js`) for
+decoding and repair, with a main-thread fallback if the worker cannot start.
+The service worker (`src/sw.js`) handles offline caching and app updates.
 
 ---
 
@@ -96,7 +99,7 @@ worklet thread** does SID synthesis. They communicate through one lock-free
 |-----------|------|------|
 | **Drive1541** | `drive1541.js` | Full 1541: a 6502 + two 6522 VIAs + 16 KB DOS ROM + the spindle/GCR read+write engine + stepper + IEC wiring. Writes (SAVE/scratch/format) decode back into the `.d64`. |
 | **VIA6522** | `6522.js` | The two VIAs inside the drive (serial bus + mechanics). |
-| **GCRDisk / D64** | `gcr.js` / `d64.js` | D64 image parser + on-demand GCR bitstream encoder (VICE-matched layout). |
+| **GCRDisk / D64** | `gcr.js` / `media/d64.js` | D64 image parser + on-demand GCR bitstream encoder (VICE-matched layout). |
 | **Datasette** | `datasette.js` | C2N tape: plays `.tap` pulses as CIA1 FLAG edges. |
 | **SID worklet** | `sid-worklet.js` | 3 voices + filter + mixing in the audio thread; consumes the SAB ring. Two selectable engines (Options ▸ Sound): the reSID model compiled to WASM from `rust/sid/` (default) and the same reSID port in JS (bit-identical, ~6× more CPU). |
 | **SID voice** | `sid-voice.js` | One oscillator+envelope; shared by the worklet and the main-thread "shadow" voices that serve cycle-exact `$D41B/$D41C` reads. |
@@ -116,7 +119,7 @@ The load-bearing modules: **`main.js`** owns the machine lifecycle, the rAF
 frame loop + framebuffer blit, and the auto-load sequencer; **`input.js`** owns
 every input path (physical keyboard → CIA1 matrix, control ports, the
 app-shortcut registry); **`media.js`** owns file/state loading, drag-and-drop,
-and the "what media is inserted" caches; **`roms.js`**, **`crt.js`** and
+and the "what media is inserted" caches; **`roms.js`**, **`media/crt.js`** and
 **`cartridges/`** handle ROM loading and the cartridge device registry;
 **`debug.js`** installs the DevTools console helpers. The lazy-loaded three.js
 pieces (the attract-mode animation and the Retro Vibes viewer) have their own

@@ -1,4 +1,4 @@
-// Spec test for reading a tape's contents (src/tap-directory.js).
+// Spec test for reading a tape's contents (src/media/tap-directory.js).
 //
 // A .tap is a bare pulse stream with no index, so the only way to say what is on
 // it is to decode it the way the KERNAL does and pick out the header blocks.
@@ -10,7 +10,7 @@
 //   a block is a pilot, the $89…$81 countdown ($09…$01 for the repeat),
 //   the payload and its XOR checksum
 //   a header block is 192 bytes: type, start lo/hi, end lo/hi, 16-byte name
-import { tapDirectory, tapeFacts } from '../src/tap-directory.js';
+import { tapDirectory, tapeFacts } from '../src/media/tap-directory.js';
 
 let failures = 0;
 function assert(cond, msg) {

@@ -4,8 +4,8 @@
 // of the next: every width lands between two real ones and no pulse comes out
 // long enough for the KERNAL's byte marker. The tape still starts loading, and
 // the header decodes to garbage.
-import { wavToTap } from '../src/wav-tape.js';
-import { PAL_CPU_HZ } from '../src/tap-audio.js';
+import { wavToTap } from '../src/media/wav-tape.js';
+import { PAL_CPU_HZ } from '../src/media/tap-audio.js';
 
 function expect(cond, msg) {
   if (!cond) throw new Error(msg);

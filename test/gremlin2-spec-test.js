@@ -1,4 +1,4 @@
-// Spec test for the Gremlin Type 2 loader (src/tap-turbo-formats.js).
+// Spec test for the Gremlin Type 2 loader (src/media/tap-turbo-formats.js).
 //
 // Read out of the 512-byte loader its tapes carry at $0400, which is not
 // encrypted. What that loader does:
@@ -12,7 +12,7 @@
 //   then two id characters ("01", "02", …), the load address, and the length,
 //     counted down to zero
 //   then the bytes, and no checksum anywhere
-import { tapDirectory } from '../src/tap-directory.js';
+import { tapDirectory } from '../src/media/tap-directory.js';
 
 let failures = 0;
 function eq(got, want, msg) {

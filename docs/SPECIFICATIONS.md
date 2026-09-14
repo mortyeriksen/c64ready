@@ -151,7 +151,7 @@ revisions:
 ### Cartridges
 
 - **CRT cartridge image format**: from the CCS64 emulator (Per Håkan Sundell); the
-  64-byte header + CHIP packets that `src/crt.js` parses.
+  64-byte header + CHIP packets that `src/media/crt.js` parses.
   <https://ist.uwaterloo.ca/~schepers/formats/CRT.TXT>
 - **Final Cartridge III hardware**: ReplayResources register description plus
   Thomas Giesel's hardware-derived errata define the four 16 KB banks, permanent
@@ -190,7 +190,7 @@ revisions:
 ### 1541 disk drive
 
 - **D64 disk-image format**: Peter Schepers, _D64 (Electronic form of a physical
-  1541 disk)_. `src/d64.js` follows it for image sizes, BAM layout and directory
+  1541 disk)_. `src/media/d64.js` follows it for image sizes, BAM layout and directory
   entries, reading and writing alike (`writeSector`, `createBlankD64`, `writePRG`),
   for the per-sector error table `src/gcr.js` turns back into read failures, and
   for the 40-track BAM extension locations.
@@ -239,19 +239,19 @@ revisions:
   of the cassette write line. Also the polled-`$DC0D` idiom of turbo loaders.
   <https://github.com/binaryfields/zinc64/blob/master/doc/Analyzing%20C64%20tape%20loaders.txt>
 - **Peter Schepers**: _TAP (Raw tape image)_: the container's header, the v0/v1
-  `$00` escapes, and the reference clocks. Also the encoding `src/tap-audio.js`
-  renders to audio and `src/wav-tape.js` writes back out.
+  `$00` escapes, and the reference clocks. Also the encoding `src/media/tap-audio.js`
+  renders to audio and `src/media/wav-tape.js` writes back out.
   <https://ist.uwaterloo.ca/~schepers/formats/TAP.TXT>
 - **Markus Brenner**: the TAP v2 half-wave extension, "starting with a `0`→`1`
   transition", which fixes the edge a recorded pulse is measured from, and which
-  `src/tap-audio.js` reproduces as a level toggle per pulse.
+  `src/media/tap-audio.js` reproduces as a level toggle per pulse.
   <https://vice-emu.sourceforge.io/vice_17.html>
 - **Luigi Di Fraia**: the DC2N _DMP_ dump format: header, tick samples, the
-  overflow rule and the v1 half-wave flag, which `src/dmp-tape.js` reads.
+  overflow rule and the v1 half-wave flag, which `src/media/dmp-tape.js` reads.
   <https://www.luigidifraia.com/technical-info/>
 - **RIFF / WAVE** (Microsoft & IBM, _Multimedia Programming Interface and Data
-  Specifications 1.0_): the container `src/wav-tape.js` reads and
-  `src/tap-audio.js` writes, including `WAVE_FORMAT_EXTENSIBLE`.
+  Specifications 1.0_): the container `src/media/wav-tape.js` reads and
+  `src/media/tap-audio.js` writes, including `WAVE_FORMAT_EXTENSIBLE`.
   <https://www.mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/Docs/riffmci.pdf>
 - **Peter Schepers**: _T64 (Tape image / archive)_: the 64-byte header and
   32-byte directory entries `cli/t64.mjs` reads and writes; the used-entries
@@ -262,7 +262,7 @@ revisions:
   countdown, which `test/kernal-tape-save-test.js` decodes a recording against.
   <https://www.pagetable.com/?p=964>
 - **Turbo Tape 64** (Stephan Senz, 64'er / Markt & Technik, 1983): the format
-  `src/tap-turbo-formats.js` reads: the 211/324 µs pulse pair, `$02` lead-in and
+  `src/media/tap-turbo-formats.js` reads: the 211/324 µs pulse pair, `$02` lead-in and
   `$09…$01` countdown as laid out in the Lemon64 thread _The turbo speed tape
   format explained?_; the block checksum and the clones' timings are this
   project's own measurements of tapes written by nineteen Turbo Tape 64 savers.
@@ -277,6 +277,16 @@ Datasoft, Gremlin Type 2, Ocean / Imagine, Freeload, Wildload and PROCASS (US
 Gold's own mastering system) were each read out of the loader its own tapes
 carry, by disassembling it. What they turned out to be is in the
 [Datasette architecture](DATASETTE-ARCHITECTURE.md) notes.
+
+### Assembly64 catalog
+
+- [Assembly64](https://assembly64.hackerswithstyle.se/assembly/index.html)
+  supplies catalog search and downloadable files for demos, intros, music,
+  graphics, diskmags and other C64 productions.
+- [Assembly64 OpenAPI contract](https://hackerswithstyle.se/leet/v3/api-docs)
+  defines the search, preset, category, detail, file-list and download endpoints.
+- [Ultimate's Assembly64 client](https://github.com/GideonZ/1541ultimate/blob/master/software/network/assembly.cc)
+  is a protocol and AQL syntax reference.
 
 ### Capture formats
 
@@ -319,7 +329,8 @@ A special thanks goes to the following:
 
 - **CSDb**: the C64 Scene Database.
   <https://csdb.dk>
-- **Assembly 64**: C64 demo / music / game archive.
+- **Assembly64**: a catalog for exploring C64 demos, intros, music, graphics
+  and other scene productions.
   <https://assembly64.hackerswithstyle.se/assembly/index.html>
 - **OneLoad64**: one-file C64 games collection.
   <https://oneload64.github.io/>

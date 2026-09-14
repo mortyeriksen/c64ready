@@ -8,12 +8,33 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
-## Next release
+## 2026.9.1 — September 14, 2026
 
-*Not out yet: what is finished and waiting for the next version.*
+Explore demos, intros, music and other C64 scene productions directly in
+Assembly64, then load compatible files or save them to Library for later.
+This release also improves keyboard focus and refreshes the User Guide.
+
+- **Keyboard focus is clearer.** Tab navigates the Assembly64 control without
+  reaching the C64. A hint below the screen shows when keyboard input belongs
+  to a field or dialog.
+
+- **Key Joystick 1 uses J and K for fire by default.** L stays available for
+  typing LOAD. Custom key mappings are preserved.
+
+- **Explore the C64 demoscene with Assembly64.** Discover demos, intros,
+  music, graphics and diskmags, search by production title or group, and
+  follow your favorite creators. Demos is the starting category. Open Explore
+  for advanced search, favorites and named searches, then load compatible
+  productions or save their files to Library for offline use. Media load now
+  starts below Control Ports, with Assembly64 at the top of the right column,
+  expanded by default.
 
 - **A small graphics performance improvement in Safari.** The renderer does
   less repeated work while keeping the same picture and sprite behavior.
+- **Disk loading offers to turn True Drive Emulation on.** When loading a
+  `.d64` with TDE off and the drive ROM available, choose **Turn TDE on** for
+  compatibility or **Keep TDE off** to continue with the current setting. This
+  also works from the LOAD buttons on drives 8 and 9.
 - **Loading a program offers to load it faster.** Nothing on the disk a `.prg`
   arrives on needs the emulated 1541, but True Drive Emulation still loads it at
   the speed of the real thing. Loading one now offers to switch that off.
@@ -24,7 +45,7 @@ The version you are running is shown at the bottom of the About dialog.
 - **A seventh commercial tape loader can be read: PROCASS**, US Gold's own
   mastering system, the one on Out Run and Forgotten Worlds. Its tapes used to
   show a few small files and minutes nothing could read; the deck now lists
-  every file, by name — the only commercial format here that has them.
+  every file by name, the only commercial format here that has them.
 
 ---
 

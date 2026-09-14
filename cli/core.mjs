@@ -7,24 +7,24 @@
 // rather than a static export: it drags in the whole machine graph, and a
 // listing has no business paying for that at startup.
 
-export { wavToTap, wavReader } from '../src/wav-tape.js';
-export { importProgress } from '../src/wav-import.js';
-export { encodeTap } from '../src/tap-encode.js';
-export { tapToPcm, pcmToWav, PAL_CPU_HZ } from '../src/tap-audio.js';
-export { tapDirectory, tapeFacts } from '../src/tap-directory.js';
-export { repairTape } from '../src/tap-repair.js';
-export { dmpToTap } from '../src/dmp-tape.js';
+export { wavToTap, wavReader } from '../src/media/wav-tape.js';
+export { importProgress } from '../src/media/wav-import.js';
+export { encodeTap } from '../src/media/tap-encode.js';
+export { tapToPcm, pcmToWav, PAL_CPU_HZ } from '../src/media/tap-audio.js';
+export { tapDirectory, tapeFacts } from '../src/media/tap-directory.js';
+export { repairTape } from '../src/media/tap-repair.js';
+export { dmpToTap } from '../src/media/dmp-tape.js';
 export {
   D64, createBlankD64, createPRGDisk, d64Variant, diskNameFromFilename,
   prgOverflow,
-} from '../src/d64.js';
-export { parseCRT } from '../src/crt.js';
-export { TURBO_FORMATS } from '../src/tap-turbo-formats.js';
+} from '../src/media/d64.js';
+export { parseCRT } from '../src/media/crt.js';
+export { TURBO_FORMATS } from '../src/media/tap-turbo-formats.js';
 export { pickViceRoms } from '../src/roms.js';
 
-import { wavToTap } from '../src/wav-tape.js';
-import { repairTape } from '../src/tap-repair.js';
-import { tapDirectory } from '../src/tap-directory.js';
+import { wavToTap } from '../src/media/wav-tape.js';
+import { repairTape } from '../src/media/tap-repair.js';
+import { tapDirectory } from '../src/media/tap-directory.js';
 
 /** The machine, loaded only when a command actually boots one. */
 export async function loadMachine() {
@@ -52,7 +52,7 @@ export function splitTap(tap) {
   return { data: tap.subarray(TAP_HEADER_SIZE), version: tap[12] };
 }
 
-import { PAL_CPU_HZ, V0_ZERO_GAP_CYCLES } from '../src/tap-audio.js';
+import { PAL_CPU_HZ, V0_ZERO_GAP_CYCLES } from '../src/media/tap-audio.js';
 
 /** How long the tape plays, off its own pulse stream. */
 export function tapSeconds(data, version) {
@@ -114,7 +114,7 @@ export function concatTaps(taps) {
 
 /**
  * A recording turned into a repaired, listed tape — the same steps the app's
- * import takes (src/wav-import.js importInline), done here so the sibling
+ * import takes (src/media/wav-import.js importInline), done here so the sibling
  * needs no export it does not already have.
  */
 export function importWavSync(bytes, { onProgress = () => {}, ...opts } = {}) {

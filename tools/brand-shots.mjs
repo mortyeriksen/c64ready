@@ -52,7 +52,7 @@ const HERO = (() => {
 // no branding. Same asset the site header uses, so it can never drift from it.
 const LOGO = { src: '/logos/c64ready-logo-tagline.png', width: '53%', top: '2.4%', right: '0.9%' };
 
-// Retro Vibes scene index (src/retrovibes.js SCENES): 0 Synthwave, 1 Starry
+// Retro Vibes scene index (src/vibes/retrovibes.js SCENES): 0 Synthwave, 1 Starry
 // Plain, 2 Spotlight, 3 IK+ Sunset, 4 80s Bedroom. Per-shot `scene` overrides it.
 const SCENE = Number(process.env.SCENE ?? 4);
 

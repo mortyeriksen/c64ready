@@ -12,7 +12,7 @@
 // checksums) and the VIA2 PB4 write-protect sense line (active low), per the
 // 1541 schematic / DOS behavior (error 26 "WRITE PROTECT ON" on PB4 low).
 
-import { createBlankD64, D64, SPT } from '../src/d64.js';
+import { createBlankD64, D64, SPT } from '../src/media/d64.js';
 import { GCRDisk, decodeTrackStream } from '../src/gcr.js';
 import { Drive1541 } from '../src/drive1541.js';
 

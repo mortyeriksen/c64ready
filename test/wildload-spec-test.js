@@ -1,4 +1,4 @@
-// Spec test for the Wildload loader (src/tap-turbo-formats.js).
+// Spec test for the Wildload loader (src/media/tap-turbo-formats.js).
 //
 // Read out of the reader its tapes copy into the stack page:
 //   LDA $DC05 / LDY #$11 / STY $DC0E / EOR #$02 / LSR / LSR / ROR $AE
@@ -10,7 +10,7 @@
 // the bytes, and one holding their XOR. Two things are its own: the destination
 // descends, so a block fills memory downwards from the address in its header,
 // and each byte is EOR'd with the low byte of wherever it goes before storing.
-import { tapDirectory } from '../src/tap-directory.js';
+import { tapDirectory } from '../src/media/tap-directory.js';
 
 let failures = 0;
 function eq(got, want, msg) {

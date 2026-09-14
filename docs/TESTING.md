@@ -46,6 +46,29 @@ A skipping test exits 0, which on its own is indistinguishable from a pass, so i
 
 Both lists print the reason (from `missingNote(key)`, which names the manifest entry and its environment variable), so a green run still shows exactly which fixtures went missing. A test that skips without a directive is reported as a plain `PASS`: that is the bug the directive exists to prevent.
 
+## Assembly64 integration checks
+
+The default suite includes `assembly64-test.js` and `media-browser-test.js`.
+They use generated media and mocked API responses, covering query validation,
+normalization, cancellation, pagination, request limits, local persistence,
+media validation and dispatch, source metadata, progress and safe ZIP extraction.
+Run just these tests with `npm run test:assembly64`.
+
+With `npm run dev -- --host 127.0.0.1 --port 5173` running, use
+`npm run test:assembly64:browser` for the headless browser checks. Add
+`-- --api-load` to audit request counts or `-- --details` for release links and
+file actions. Add `-- --tde` for focused checks of the D64 compatibility prompt,
+including both drive file pickers, acceptance, decline and loading with TDE
+already enabled. The harness needs Chrome and local ROMs in
+`roms/`; it mocks Assembly64 and makes no live catalog requests.
+Use `-- --url=http://127.0.0.1:5174` to select another local port.
+
+After `npm run build`, run `npm run preview -- --host 127.0.0.1 --port 4173`
+and `npm run test:assembly64:pwa` to check offline reload, favorites, named
+searches, cached ROMs, saved D64/REU loading, and exclusion of media/API responses
+from the service worker cache. Browser capture output goes in
+`investigation/assembly64/`.
+
 ## Test categories
 
 | Category | Representative files | What's locked in |
@@ -74,7 +97,7 @@ Both lists print the reason (from `missingNote(key)`, which names the manifest e
 
 Run these on demand to dump telemetry. Output is usually written to `/tmp/` or printed to stdout.
 
-The **reference-demo screenshot pass** (`test/commit-screenshots.mjs`) runs the fixed `DEMOS` table headlessly and writes timestamped framebuffer PNGs to a git-ignored output directory, created on demand. It is a human visual check, not a spec test: the filename is plain `.mjs`, `all-test.js` does not gather it, and it makes no assertions. It never deletes old screenshots; successive runs accumulate, so a before/after pair can coexist. After each run it diffs every new shot against the previous run's matching shot and prints which demo seconds changed. Changed shots also get `diff-<demo>-sNN.png` overlays, with unchanged pixels dimmed and changed pixels tinted magenta. Run it only when explicitly requested, or as the before/after pair for a render or timing change.
+The **reference-demo screenshot pass** (`test/commit-screenshots.mjs`) runs the fixed `DEMOS` table headlessly and writes timestamped framebuffer PNGs to a git-ignored output directory, created on demand. It is a human visual check, not a spec test: the filename is plain `.mjs`, `all-test.js` does not gather it, and it makes no assertions. It never deletes old screenshots; successive runs accumulate, so a before/after pair can coexist. After each run it diffs every new shot against the previous run's matching shot and prints which demo seconds changed. Changed shots also get `diff-<demo>-sNN.png` overlays, with unchanged pixels dimmed and changed pixels tinted magenta. Run it only when explicitly requested, including before/after comparisons for render or timing changes.
 
 ```bash
 node test/commit-screenshots.mjs

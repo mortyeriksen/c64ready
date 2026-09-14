@@ -27,7 +27,7 @@
 //   - Screen RAM contents to check "FILE NOT FOUND" doesn't appear
 //   - Standard CBM-serial / KERNAL ROM behavior
 //
-// Disk: built here, in the test. `createPRGDisk()` (src/d64.js) lays down a
+// Disk: built here, in the test. `createPRGDisk()` (src/media/d64.js) lays down a
 // real 35-track image — BAM, directory entry, block chain — and the drive ROM
 // then reads it through the ordinary GCR path, because GCR encoding lives in
 // the drive model, not in the image. Nothing about the read path is stubbed.
@@ -45,7 +45,7 @@
 
 import fs from 'fs';
 import { C64Machine } from '../src/machine.js';
-import { D64, createPRGDisk } from '../src/d64.js';
+import { D64, createPRGDisk } from '../src/media/d64.js';
 import { assetPath } from './external-assets.js';
 
 const ROOT = new URL('../roms/', import.meta.url).pathname;

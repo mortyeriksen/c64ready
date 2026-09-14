@@ -8,7 +8,7 @@
 // resident loader and its data is chunked under a block count, so prg2turbo
 // writes GRL by driving the tool's own SYS310 save. The five self-driving
 // commercial formats are each a game's own boot block and cannot be written at
-// all. Layout and widths follow src/tap-turbo-formats.js.
+// all. Layout and widths follow src/media/tap-turbo-formats.js.
 
 import fs from 'node:fs';
 import os from 'node:os';
@@ -30,7 +30,7 @@ const TAP_MAGIC = 'C64-TAPE-RAW';
 
 /**
  * Each turbo format this writes, described as its reader in
- * src/tap-turbo-formats.js reads it. Widths are cycles; the encoder converts to
+ * src/media/tap-turbo-formats.js reads it. Widths are cycles; the encoder converts to
  * .tap units of eight.
  *  - zero/one       the two pulse widths
  *  - countdown      the byte a block's sync counts down from, to 1

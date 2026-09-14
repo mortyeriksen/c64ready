@@ -30,6 +30,20 @@ import {
   dropSoftKeyboardFocus, isTouchCapable, resolveTouchStickInto,
 } from './touch-joystick.js';
 
+const keyboardFocusHint = document.getElementById('keyboard-focus-hint');
+function updateKeyboardFocusHint() {
+  if (!keyboardFocusHint) return;
+  const target = document.activeElement;
+  const field = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+  const dialog = target?.closest('[role="dialog"], dialog[open]');
+  keyboardFocusHint.hidden = document.hasFocus() && (target === mobileKbd || !(field || dialog));
+}
+document.addEventListener('focusin', updateKeyboardFocusHint);
+document.addEventListener('focusout', () => queueMicrotask(updateKeyboardFocusHint));
+window.addEventListener('focus', updateKeyboardFocusHint);
+window.addEventListener('blur', updateKeyboardFocusHint);
+updateKeyboardFocusHint();
+
 // Windows-only: the OS emulates AltGr as Ctrl+Alt, injecting a phantom
 // `ControlLeft` keydown alongside `AltRight`. See the AltGr guard in the
 // keydown handler. macOS has no AltGr; Linux uses ISO_Level3_Shift with no
@@ -145,12 +159,12 @@ const portDevice = (() => {
 // Each key joystick maps six roles (up/down/left/right/fireA/fireB) to
 // physical keys, identified by KeyboardEvent.code so the binding is layout-
 // independent. Defaults:
-//   Joy 1 — arrow keys + K (fire A) / L (fire B)
+//   Joy 1 — arrow keys + J (fire A) / K (fire B)
 //   Joy 2 — WASD (W up, A left, S down, D right) + C (fire A) / V (fire B)
 // User overrides persist to localStorage under c64emu.kbdJoyKeys.
 const JOY_KEY_DIRS = ['up', 'down', 'left', 'right', 'fireA', 'fireB'];
 const JOY_KEY_DEFAULTS = {
-  1: { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', fireA: 'KeyK', fireB: 'KeyL' },
+  1: { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', fireA: 'KeyJ', fireB: 'KeyK' },
   2: { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', fireA: 'KeyC', fireB: 'KeyV' },
 };
 const joyKeys = (() => {

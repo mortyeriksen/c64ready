@@ -1,4 +1,4 @@
-// Spec test for the PROCASS loader (src/tap-turbo-formats.js).
+// Spec test for the PROCASS loader (src/media/tap-turbo-formats.js).
 //
 // US Gold's own mastering system, read out of the boot stub Out Run and
 // Forgotten Worlds carry. It measures a pulse exactly as Freeload does — CIA1
@@ -13,7 +13,7 @@
 // The loader never reads that byte, and masters sometimes carried a
 // deliberately wrong one to trip crackers' tools — so it can prove a block but
 // cannot fail one.
-import { tapDirectory } from '../src/tap-directory.js';
+import { tapDirectory } from '../src/media/tap-directory.js';
 
 let failures = 0;
 function eq(got, want, msg) {

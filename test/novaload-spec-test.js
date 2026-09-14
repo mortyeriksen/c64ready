@@ -1,4 +1,4 @@
-// Spec test for reading Novaload tapes (src/tap-turbo-formats.js).
+// Spec test for reading Novaload tapes (src/media/tap-turbo-formats.js).
 //
 // The format is taken from the loader itself. A Novaload tape boots from an
 // ordinary KERNAL block whose 192-byte header is the turbo reader, and the
@@ -15,7 +15,7 @@
 //     checksum; then the blocks, each 256 bytes and a checksum
 //   the resident sum runs across everything after the $AA, checksum bytes
 //     included, and each checksum is that total taken before itself
-import { tapDirectory, tapeFacts } from '../src/tap-directory.js';
+import { tapDirectory, tapeFacts } from '../src/media/tap-directory.js';
 
 let failures = 0;
 function eq(got, want, msg) {

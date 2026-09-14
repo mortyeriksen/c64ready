@@ -7,7 +7,7 @@
 // range $80-$9F made a sound 44 KB program visible or invisible by coin toss.
 // Too loose: GRL-Supertape pads nothing, so a byte of somebody else's data that
 // happens to print passes as a name and lists a file that does not exist.
-import { tapDirectory } from '../src/tap-directory.js';
+import { tapDirectory } from '../src/media/tap-directory.js';
 
 let failures = 0;
 function eq(got, want, msg) {

@@ -5,7 +5,7 @@
 // frame — and those slices are played back-to-back. Two things have to hold or
 // the result is not the signal any more: a slice boundary must not disturb the
 // waveform, and the datasette must only ever hand out whole pulses.
-import { tapToPcm, PAL_CPU_HZ } from '../src/tap-audio.js';
+import { tapToPcm, PAL_CPU_HZ } from '../src/media/tap-audio.js';
 import { Datasette } from '../src/datasette.js';
 import { TapeSound } from '../src/tape-sound.js';
 

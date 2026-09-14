@@ -66,14 +66,20 @@ Drag any supported file onto the screen and it goes to the right place, or use
 
 | Format | What happens |
 |--------|--------------|
-| `.prg` | Written onto a disk of its own and [started in drive 8](USER-GUIDE.md#loading-a-prg). |
+| `.prg` | Normally written onto a disk of its own in drive 8. See [Loading a .prg](USER-GUIDE.md#loading-a-prg) for autorun and the fallback without a 1541 ROM. |
 | `.d64` | The emulator types `LOAD"*",8,1` and `RUN`. See [Disk drive 8](USER-GUIDE.md#disk-drive-8). |
 | `.crt` | The [cartridge](USER-GUIDE.md#cartridge) takes over at once, or on the next power-on if inserted while off. |
 | `.tap` `.wav` `.dmp` | Becomes a tape in the [Datasette](USER-GUIDE.md#datasette): type `LOAD`, then press **▶ PLAY**. |
 | `.reu` | Fills the [RAM Expansion](USER-GUIDE.md#ram-expansion). |
 
-**AUTORUN**, on by default, types `RUN` or the right `SYS` for you. Turn it off in
-**⚙ OPTIONS ▸ Media** to stay at `READY.` and start the program yourself.
+**AUTORUN**, on by default, starts disk loads and runs BASIC programs, including
+machine-code programs with a BASIC `SYS` stub. A PRG loaded through drive 8
+without such a stub stays at `READY.` for you to start. Turn AUTORUN off in
+**⚙ OPTIONS ▸ Media** to control loading and starting yourself.
+
+Loading a `.d64` with **TDE off** offers to turn True Drive Emulation on when
+the 1541 ROM is available. Choose **Turn TDE on** for disk-loader compatibility,
+or **Keep TDE off** to continue with the current setting.
 
 The drive card lists the disk's directory: click any program to load just that
 one, or press **🔍** to see the filename artwork many demos hide there.
@@ -82,6 +88,19 @@ Everything you open is remembered. **📂 LOAD LIB** relaunches it with one clic
 and moves the whole [library](USER-GUIDE.md#library-dialog) between browsers.
 
 ---
+
+### Discover demos, intros and music with Assembly64
+
+Use **Assembly64**, expanded by default at the top of the right column, to
+explore demos, intros, music, graphics and diskmags. Demos is selected initially.
+Enter a demo title or a favorite scene group in Group / producer, choose a
+Type and Source if needed, and press Enter or the search icon. Click **LOAD D64**
+(or the matching format) for a single compatible file, or click the title to
+choose from the production's files. **EXPLORE** opens the full browser;
+**REFINE SEARCH** below quick results continues your search there.
+
+Search needs a connection. Leave **Save selected file to Library** enabled to
+make the loaded file available later with **LOAD LIB**, including offline.
 
 ## 4. Type and use the keyboard
 
@@ -114,7 +133,7 @@ The C64 has two control ports. Assign each on the
 - **[Touch Joystick](USER-GUIDE.md#touch-joystick)** (phones and tablets): a
   stick lower left, two buttons lower right.
 - **[Key Joystick 1 / 2](USER-GUIDE.md#key-joystick)**: two keyboard sticks, so
-  two people can share a keyboard. **1** is the arrow keys with **K** / **L** to
+  two people can share a keyboard. **1** is the arrow keys with **J** / **K** to
   fire, on Port 2 where most games expect it; **2** is WASD with **C** / **V**.
 - **Mouse (1351)**: the proportional GEOS-style mouse. Click the screen to
   capture the pointer; left button fires, right is up.

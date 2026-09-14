@@ -11,9 +11,9 @@
 // parity catches it, and it costs bytes in the KERNAL's own. So what is asserted
 // here is the strict thing: one pulse out for every symbol in, with the level
 // and the centre moving underneath.
-import { wavToTap } from '../src/wav-tape.js';
-import { repairTape } from '../src/tap-repair.js';
-import { PAL_CPU_HZ } from '../src/tap-audio.js';
+import { wavToTap } from '../src/media/wav-tape.js';
+import { repairTape } from '../src/media/tap-repair.js';
+import { PAL_CPU_HZ } from '../src/media/tap-audio.js';
 
 let failures = 0;
 function assert(cond, msg) {

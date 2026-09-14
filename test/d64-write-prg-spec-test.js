@@ -1,11 +1,11 @@
-// Spec test for writing a PRG into a D64 image (src/d64.js).
+// Spec test for writing a PRG into a D64 image (src/media/d64.js).
 //
 // The contract: a program written in must come back out byte-identical through
 // the ordinary read path, and the image must stay a valid disk — BAM free count
 // consistent with the blocks taken, a real directory entry, the file findable by
 // name and by wildcard. That is what lets a wrapped .prg behave exactly like any
 // other disk for LOAD, the directory listing and export.
-import { D64, createBlankD64, createPRGDisk, diskNameFromFilename, prgAutostart, SPT } from '../src/d64.js';
+import { D64, createBlankD64, createPRGDisk, diskNameFromFilename, prgAutostart, SPT } from '../src/media/d64.js';
 
 function expect(cond, msg) {
   if (!cond) throw new Error(msg);

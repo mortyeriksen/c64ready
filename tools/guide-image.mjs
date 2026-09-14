@@ -65,9 +65,7 @@ export function saveShot(pngBuffer, outBase, maxWidth = MAX_WIDTH) {
   };
 }
 
-// Write a shot into a guide output dir by name, plus its screens/ mirror if it
-// has one. Mirroring is skipped unless the tool is writing the tracked
-// public/guide — a GUIDE_OUT scratch run must not touch public/.
+// Write a named shot only into the requested guide output directory.
 export function saveGuideShot(pngBuffer, outDir, name) {
   const info = saveShot(pngBuffer, path.join(outDir, name));
   return info;

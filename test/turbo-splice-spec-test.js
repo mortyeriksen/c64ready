@@ -1,4 +1,4 @@
-// Spec test for mending a turbo file by splicing readings (src/wav-tape.js).
+// Spec test for mending a turbo file by splicing readings (src/media/wav-tape.js).
 //
 // A stereo transfer is two readings of the same tape, and damage need not fall
 // in the same place on both: a burst of noise on one channel here, another on
@@ -8,10 +8,10 @@
 // reading's sound stretch, cut together at a margin from the damage, and the
 // block's checksum says whether the result is the file. Nothing else has seen
 // those bytes, so the mend is reported as unconfirmed.
-import { turboTape64Files } from '../src/tap-turbo-formats.js';
+import { turboTape64Files } from '../src/media/tap-turbo-formats.js';
 import { ZERO, ONE, body, turboFile, tapBytesOf, pulsesOf } from './_tape-fixtures.js';
-import { tapToPcm, PAL_CPU_HZ } from '../src/tap-audio.js';
-import { wavToTap } from '../src/wav-tape.js';
+import { tapToPcm, PAL_CPU_HZ } from '../src/media/tap-audio.js';
+import { wavToTap } from '../src/media/wav-tape.js';
 
 function expect(cond, msg) {
   if (!cond) throw new Error(msg);

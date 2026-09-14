@@ -89,12 +89,15 @@ The parser-level specifics are in [Component status](COMPONENT-STATUS.md).
 
 ## With True Drive Emulation off
 
-TDE is on by default, and the real 1541 ROM then answers everything, which is
-what fastloaders and copy-protected disks need; with the fast built-in loader
-they may hang or refuse to load. With TDE off the built-in loader is **LOAD
-only**. No drive sits on the serial bus, so SAVE, `OPEN`/`PRINT#`/`GET#` and
-the command channel (`N:`, `S:`, `R:`, block and memory commands) report DEVICE
-NOT PRESENT. The directory and LOAD by name, wildcards included, work as usual.
+TDE is on by default. Turning it off lets the built-in loader serve standard
+`LOAD` requests directly from the disk image. Some fastloaders and protected
+disks need the full loading sequence and may hang or refuse to load with TDE off.
+
+With a 1541 ROM loaded, drive 8 remains on the serial bus in either mode.
+`SAVE`, `OPEN`/`PRINT#`/`GET#` and the command channel still use the real drive;
+the built-in loader only replaces `LOAD`. Without that ROM, these bus operations
+have no drive to answer them. Drive 9 connects its real drive only when its
+power and TDE switches are both on.
 
 ## Keyboard shortcuts
 
@@ -102,12 +105,12 @@ NOT PRESENT. The directory and LOAD by name, wildcards included, work as usual.
   RESET, FULL, SIZE, RECORD, LOAD and the save-state library are mouse or touch
   only. The ones that do exist are listed under **App shortcuts** in the **KEY
   MAP** dialog.
-- **While the machine is running it claims the keyboard, Tab included** (Tab is
-  the C64's INST/DEL), so focus can't be moved to the side panel by keyboard and
-  the controls can't be reached without a pointer. Powering off releases the keys,
-  and the panel cards can then be rearranged from their grip handles with the
-  arrow keys. A focused text field keeps its own keys, so the ROM URL boxes still
-  work.
+- **While the running machine owns keyboard input, it claims Tab** as the C64's
+  INST/DEL, so Tab cannot move focus from the emulator to the side panel.
+  Powering off releases the keys, and the panel cards can then be rearranged
+  from their grip handles with the arrow keys. Focused text fields keep their
+  own keys, and the Assembly64 control and dialogs allow Tab navigation while
+  the machine runs.
 - **F9–F11 are C64 keys** (RUN/STOP, C=, CLR/HOME), so the browser's own F11
   fullscreen doesn't reach it while running; use the FULL button. F12 is
   RESTORE.

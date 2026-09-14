@@ -10,10 +10,10 @@
 //     transfer that loses the tail of the repeat copy leaves the data in memory
 //     and then hangs or errors. The first copy carries a checksum, and a checksum
 //     that adds up is proof — so the repeat is written again from it.
-import { wavToTap } from '../src/wav-tape.js';
-import { repairTape } from '../src/tap-repair.js';
-import { tapDirectory } from '../src/tap-directory.js';
-import { PAL_CPU_HZ } from '../src/tap-audio.js';
+import { wavToTap } from '../src/media/wav-tape.js';
+import { repairTape } from '../src/media/tap-repair.js';
+import { tapDirectory } from '../src/media/tap-directory.js';
+import { PAL_CPU_HZ } from '../src/media/tap-audio.js';
 
 let failures = 0;
 function assert(cond, msg) {

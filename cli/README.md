@@ -82,9 +82,10 @@ c64rdy --version
 
 ## The ROMs
 
-Most commands need nothing. The ones that boot a real machine, `run`,
-`loadtest`, `tap2d64`, `prg2tap` and `loader`, want the C64's KERNAL, BASIC and
-character ROMs, which are copyrighted and so are not bundled. Tell it once
+Commands that boot a machine need the C64's KERNAL, BASIC and character ROMs:
+`run`, `loadtest`, `tap2d64`, `tap2prg --via-machine`, `prg2tap`, `t642tap` and
+`loader`. `prg2turbo` also needs them when using `--loader`, including the
+`--drive` mode. The ROMs are copyrighted and are not bundled. Tell it once
 where they are and it remembers:
 
 ```
@@ -93,8 +94,8 @@ c64rdy roms ~/c64/roms
 
 Or put `kernal.bin`, `basic.bin` and `chargen.bin` in a `roms/` folder where
 you run, or point `--roms <dir>` or `$C64_ROMS` at them. If VICE is installed,
-its ROMs are found without any of that. Conversion and inspection never need
-them.
+its ROMs are found without any of that. Conversions that work directly on the
+file formats, and inspections such as `dir` and `info`, need no ROMs.
 
 ## The full C64 in your browser
 

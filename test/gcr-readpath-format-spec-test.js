@@ -18,7 +18,7 @@
 //   7.2.2  GCR 4→5 group coding (round-trip: decode(encode(x)) == x)
 
 import { GCRDisk } from '../src/gcr.js';
-import { SPT } from '../src/d64.js';
+import { SPT } from '../src/media/d64.js';
 
 function assert(cond, msg) {
   if (!cond) { console.error(`FAIL: ${msg}`); process.exit(1); }

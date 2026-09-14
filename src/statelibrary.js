@@ -4,7 +4,7 @@
 //
 // Stores full machine save-states (see machine.serializeState) as named slots,
 // each with a timestamp + a small PNG thumbnail for the picker. This is a
-// SEPARATE IndexedDB database from the media library (filelibrary.js) so save-
+// SEPARATE IndexedDB database from the media library (media/library.js) so save-
 // states never show up in the media picker and the two evolve independently.
 //
 // Layout — two object stores keyed by `id`:
@@ -95,7 +95,7 @@ function _approxBytes(v, seen = 0) {
   return seen;
 }
 
-// ── IndexedDB plumbing (mirrors filelibrary.js) ──────────────────────────────
+// ── IndexedDB plumbing (mirrors media/library.js) ──────────────────────────────
 let _dbPromise = null;
 
 function _rawOpen() {

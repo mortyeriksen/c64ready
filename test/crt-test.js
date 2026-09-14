@@ -4,7 +4,7 @@
 //
 // Usage:  node test/crt-test.js
 
-import { parseCRT } from '../src/crt.js';
+import { parseCRT } from '../src/media/crt.js';
 
 function assert(cond, msg) {
   if (!cond) { console.error(`FAIL: ${msg}`); process.exit(1); }

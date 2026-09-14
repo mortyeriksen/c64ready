@@ -9,7 +9,7 @@
 // misses them and LOAD"$" omits them, exactly like a real 1541. A truly empty
 // slot (type byte $00, no filename, no start track) is still skipped.
 
-import { D64 } from '../src/d64.js';
+import { D64 } from '../src/media/d64.js';
 
 const SPT = [0,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,19,19,19,19,19,19,19,18,18,18,18,18,18,17,17,17,17,17];
 function sectorOffset(track, sec) { let o = 0; for (let t = 1; t < track; t++) o += SPT[t]; return (o + sec) * 256; }

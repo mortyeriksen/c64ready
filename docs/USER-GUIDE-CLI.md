@@ -47,23 +47,31 @@ mixtape, made from the terminal.
 
 Node 20.19 or newer, and nothing else: the tool has no npm dependencies at all.
 
-Until the first release it lives in this repo, so run it in place or link it:
+Run it without installing:
 
 ```
-node cli/c64rdy.mjs dir tape.tap     # in place, from the repo root
-cd cli && npm link                   # or make `c64rdy` a real command
+npx c64rdy dir tape.tap
+```
+
+Or install it as a command:
+
+```
+npm install -g c64rdy
 c64rdy --version
-npm rm -g c64rdy                     # …and take it off again
+npm rm -g c64rdy                     # uninstall
 ```
 
-Once released, `npx c64rdy dir tape.tap` needs no install at all, and
-`npm i -g c64rdy` keeps it.
+From a source checkout, `node cli/c64rdy.mjs dir tape.tap` runs it in place.
 
-**The ROMs.** Only the commands that boot a machine want them — `run`,
-`loadtest`, `tap2d64`, `tap2prg --via-machine`, `prg2tap`, `loader` — and they are
-copyrighted, so nothing is
-bundled. Put `kernal.bin`, `basic.bin` and `chargen.bin` in a `roms/` folder
-where you run, or point `--roms <dir>` or `$C64_ROMS` at them, or run
+**The ROMs.** Commands that boot a machine need the C64 ROMs: `run`,
+`loadtest`, `tap2d64`, `tap2prg --via-machine`, `prg2tap`, `t642tap` and
+`loader`. `prg2turbo` also needs them when using `--loader`, including the
+`--drive` mode. Conversions that decode or encode files without booting a
+machine, and inspections such as `dir` and `info`, need no ROMs.
+
+The ROMs are copyrighted and are not bundled. Put `kernal.bin`, `basic.bin`
+and `chargen.bin` in a `roms/` folder where you run, or point `--roms <dir>`
+or `$C64_ROMS` at them, or run
 `c64rdy roms <dir>` once and it remembers the folder. If VICE is installed, its
 own ROMs are found without any of that.
 

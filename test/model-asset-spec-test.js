@@ -23,8 +23,8 @@ const read = (p) => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8')
 const MODELS = ['commodore_64.glb', 'commodore_64_4k.glb'];
 
 // ── The viewer asks for both by name, and copes when one is absent ───────────
-const viewer = read('src/retrovibes.js');
-for (const m of MODELS) expect(viewer.includes(m), `src/retrovibes.js loads ${m}`);
+const viewer = read('src/vibes/retrovibes.js');
+for (const m of MODELS) expect(viewer.includes(m), `src/vibes/retrovibes.js loads ${m}`);
 expect(viewer.includes('COULD NOT LOAD MODEL'),
   'and says so when a model is absent, rather than leaving the viewer hanging');
 

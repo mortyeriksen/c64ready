@@ -25,7 +25,7 @@
 
 import fs from 'fs';
 import { C64Machine } from '../src/machine.js';
-import { D64 } from '../src/d64.js';
+import { D64 } from '../src/media/d64.js';
 
 const ROOT = new URL('../roms/', import.meta.url).pathname;
 function tryRead(p) { try { return new Uint8Array(fs.readFileSync(p)); } catch { return null; } }

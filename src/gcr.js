@@ -10,7 +10,7 @@
 // at least 10 consecutive 1-bits and are represented as contiguous 0xFF bytes
 // in the stream.
 
-import { SPT } from './d64.js';
+import { SPT } from './media/d64.js';
 
 // 4→5 GCR encoding table
 const GCR_ENCODE = [

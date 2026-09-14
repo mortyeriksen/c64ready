@@ -1,6 +1,6 @@
 // Shared Turbo Tape 64 fixtures for the tape spec tests: a file as the format
 // writes it, and the TAP <-> pulse conversions the tests read results through.
-import { renderTurboTape64Block } from '../src/tap-turbo-formats.js';
+import { renderTurboTape64Block } from '../src/media/tap-turbo-formats.js';
 
 export const ZERO = 216, ONE = 328;            // what Turbo Tape 64 writes
 

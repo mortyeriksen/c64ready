@@ -10,7 +10,7 @@
 
 import { readFileSync, existsSync } from 'fs';
 import { C64Machine } from '../src/machine.js';
-import { createBlankD64, D64 } from '../src/d64.js';
+import { createBlankD64, D64 } from '../src/media/d64.js';
 
 function assert(cond, msg) {
   if (!cond) { console.error(`FAIL: ${msg}`); process.exit(1); }

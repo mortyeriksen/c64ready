@@ -258,6 +258,18 @@ Several entry points get code into the machine:
 | `setD64` / `loadTap` / `attachDrive` | attach disk / tape image / 1541 drive |
 | `injectSys` / `injectRun` / `injectLoadAndRun` / `bufferKeyboardText` | stuff the KERNAL keyboard buffer ($0277, count at $C6, max 10 bytes) to auto-type SYS/RUN/LOAD |
 
+The browser's public `openMedia(request)` entry point in `src/media.js` validates
+PRG/D64/CRT/TAP/REU through `src/media/open.js` and delegates to existing media
+loaders. Assembly64 and Library use this entry point; Assembly64 has no machine
+reference. Requests select autorun, drive 8/9, write protection and optional
+Library saving. Power-on uses the existing ROM checks; disk swaps await eject,
+cartridges use the existing cold boot, and REU loads use the expansion control.
+D64 loading offers TDE when it is off and the drive ROM is available. Library
+metadata can include source, release title and versioned provenance; its blob
+stores and export format remain compatible with older entries. Library storage
+lives in `src/media/library.js`; tape conversion, inspection, repair and the
+WAV import worker live in `src/media/`.
+
 **KERNAL load trap** (`_trapLoad`): with TDE *off*, when the CPU reaches the
 KERNAL LOAD entry `$FFD5` with device 8, the machine intercepts it. It reads the
 file straight from the D64 (`buildDirectoryPRG` for `$`, `loadFile` for a name

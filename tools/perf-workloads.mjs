@@ -30,7 +30,7 @@ import fs from 'fs';
 import path from 'path';
 import { Session } from 'inspector';
 import { C64Machine } from '../src/machine.js';
-import { D64, createBlankD64 } from '../src/d64.js';
+import { D64, createBlankD64 } from '../src/media/d64.js';
 
 // Demo disks live in your local C64 collection, NOT the repo: every path
 // comes from test/external-assets.json (edit it, or set the per-entry env var).

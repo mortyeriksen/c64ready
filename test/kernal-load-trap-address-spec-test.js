@@ -33,7 +33,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { C64Machine } from '../src/machine.js';
-import { createPRGDisk } from '../src/d64.js';
+import { createPRGDisk } from '../src/media/d64.js';
 
 const ROMS = ['roms/kernal.bin', 'roms/basic.bin', 'roms/chargen.bin'];
 if (!ROMS.every(existsSync)) {

@@ -8,7 +8,7 @@ import { C64Machine } from './machine.js';
 import { ROMLoader, pickViceRoms } from './roms.js';
 import * as ControlPort from './control-port.js';
 import { CANVAS_W, CANVAS_H, CYCLES_PER_FRAME, VIC_VARIANT, VIC_VARIANTS, PALETTE_NAMES, setVicPalette } from './vic2.js';
-import { D64 }        from './d64.js';
+import { D64 }        from './media/d64.js';
 import { DriveSounds } from './drive-sounds.js';
 import { TapeSound } from './tape-sound.js';
 import { SPEAKER_ON_SVG, SPEAKER_MUTE_SVG } from './pixel-speaker.js';
@@ -20,7 +20,7 @@ import { VERSION }     from './version.js';
 // first need — both pull in three.js (~700 kB), kept out of the main bundle so it
 // loads on demand. See _ensurePauseDemo / _ensureModelViewer below.
 import { switchOn }   from './switches.js';
-import { attachVibesButtonFx, createVibesZoom } from './vibes-btn-fx.js';
+import { attachVibesButtonFx, createVibesZoom } from './vibes/vibes-btn-fx.js';
 import { WebGLPresenter } from './webgl-presenter.js';
 import sidWorkletUrl   from './sid-worklet.js?worker&url';
 import { registerSW }  from 'virtual:pwa-register';
@@ -37,6 +37,7 @@ import {
   _cachedCartData, _cachedTapData, _cachedTapName, _cachedTapProtected, _cacheTapeFromDeck,
   _cachedTapDeck, _restoreDeck,
 } from './media.js';
+import { initializeAssembly64 } from './assembly64/start.js';
 import { initInput, updateJoyPorts, installNeosHook, _releaseAllLatched, softKeyboardInput } from './input.js';
 import { pushEscapeLayer, popEscapeLayer } from './escape-stack.js';
 import { createAvMarker, avMarkerEnabled } from './av-marker.js';
@@ -114,7 +115,7 @@ let _pauseDemoPromise = null;
 async function _ensurePauseDemo() {
   if (pauseDemo) return pauseDemo;
   if (!_pauseDemoPromise) _pauseDemoPromise = (async () => {
-    const { PauseDemo } = await import('./pausedemo.js');
+    const { PauseDemo } = await import('./vibes/pausedemo.js');
     pauseDemo = new PauseDemo(document.querySelector('.crt-bezel'));
     // The demo measures itself: if this GPU can't hold a frame rate, it stops and
     // says so, and the powered-off screen goes back to the static banner.
@@ -2162,7 +2163,7 @@ let _modelViewerPromise = null;
 async function _ensureModelViewer() {
   if (modelViewer) return modelViewer;
   if (!_modelViewerPromise) _modelViewerPromise = (async () => {
-    const { ModelViewer } = await import('./retrovibes.js');
+    const { ModelViewer } = await import('./vibes/retrovibes.js');
     const mv = new ModelViewer(document.getElementById('model-viewer-overlay'));
     if (typeof window !== 'undefined') window.modelViewer = mv;
     // Feed the live emulator framebuffer to the model's CRT. `machine` is
@@ -2917,6 +2918,8 @@ initMedia({
   setTdeEnabled: _applyTde,
   isPaused: () => paused,
 });
+
+void initializeAssembly64();
 
 // ── Wire recorder.js ─────────────────────────────────────────────────────────
 // Screen + audio recorder (RECORD button). Audio is tapped live at record time

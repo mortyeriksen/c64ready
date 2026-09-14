@@ -24,7 +24,7 @@ import { fork } from 'child_process';
 import { fileURLToPath } from 'url';
 import { PNG } from 'pngjs';
 import { C64Machine } from '../src/machine.js';
-import { D64 } from '../src/d64.js';
+import { D64 } from '../src/media/d64.js';
 import { CANVAS_W, CANVAS_H } from '../src/vic2.js';
 import { assetPath, collectionDir } from './external-assets.js';
 

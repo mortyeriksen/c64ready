@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
 
-# Retro Vibes 3D viewer (`src/retrovibes.js`): Architecture Overview
+# Retro Vibes 3D viewer (`src/vibes/retrovibes.js`): Architecture Overview
 
 Retro Vibes is a browser-window-filling [three.js](https://threejs.org/) scene that
 shows the Commodore 64 as a 3D model (the breadbin, a 1541 disk drive and a 1702
@@ -19,7 +19,7 @@ The whole viewer is the `ModelViewer` class, constructed once around the
 only ever calls `open()` / `close()` and wires a handful of callbacks (§9); the
 WebGL context, the glTF model, the scenes, the post-processing and WebXR all live
 inside `ModelViewer`. It shares one trait with the powered-off attract animation in
-`src/pausedemo.js`: both **lazy-import three.js** on first use
+`src/vibes/pausedemo.js`: both **lazy-import three.js** on first use
 so the library never bloats the main bundle (§10).
 
 The glTF model is *"Commodore 64 || Computer (Full Pack)"* by **dark_igorek**,
@@ -240,7 +240,8 @@ post-processing is skipped** and the headset view is flatter than the 2D view.
 
 ## 8. Screen-adaptive model resolution
 
-The model ships in two GLB builds, chosen once at module load by `resolveModelUrl()`:
+The model ships in two GLB builds. `_loadModel()` calls `resolveModelUrl()`
+when loading the model, so reopening the viewer uses the current preference:
 
 - **`commodore_64_4k.glb`**: a heavy 4K-texture build (~95 MB) for large screens.
 - **`commodore_64.glb`**: a lighter build (~18 MB) for phones and tablets.
@@ -260,7 +261,7 @@ non-root deploy. `GLTFLoader` reports load progress into the overlay's
 
 ## 9. Integration with `main.js`
 
-`main.js` builds the viewer lazily (`_ensureModelViewer()` → `import('./retrovibes.js')`)
+`main.js` builds the viewer lazily (`_ensureModelViewer()` → `import('./vibes/retrovibes.js')`)
 and injects everything it needs through setters, reading the machine fresh each call
 because it is re-created on power / reset:
 

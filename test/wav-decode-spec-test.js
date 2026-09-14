@@ -1,9 +1,9 @@
-// Spec test for the edges of reading a recording (src/wav-tape.js,
-// src/wav-import.js): every sample format a transfer might arrive in, a tape
+// Spec test for the edges of reading a recording (src/media/wav-tape.js,
+// src/media/wav-import.js): every sample format a transfer might arrive in, a tape
 // recorded on one channel of a stereo file, a silence longer than a .tap pulse
 // can hold, and the import path when no worker can be had.
-import { decodeWav, wavToTap } from '../src/wav-tape.js';
-import { importWav, importProgress } from '../src/wav-import.js';
+import { decodeWav, wavToTap } from '../src/media/wav-tape.js';
+import { importWav, importProgress } from '../src/media/wav-import.js';
 
 function expect(cond, msg) {
   if (!cond) throw new Error(msg);

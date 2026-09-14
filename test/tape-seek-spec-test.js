@@ -14,7 +14,7 @@
 // real KERNAL LOAD prove which file it landed on.
 import { readFileSync } from 'fs';
 import { C64Machine } from '../src/machine.js';
-import { tapDirectory } from '../src/tap-directory.js';
+import { tapDirectory } from '../src/media/tap-directory.js';
 
 let failures = 0;
 function assert(cond, msg) {

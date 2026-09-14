@@ -1,4 +1,4 @@
-// Spec test for the VIBES button dot field (the Field part of src/vibes-btn-fx.js).
+// Spec test for the VIBES button dot field (the Field part of src/vibes/vibes-btn-fx.js).
 //
 // The contract the painter relies on: every pattern is a pure function of
 // (index, count, seconds) that writes a finite point inside the unit cube into a
@@ -9,7 +9,7 @@ import {
   PATTERNS, PATTERN_NAMES, PIXEL_COUNT,
   PATTERN_SECS, MORPH_SECS, SLOT_SECS, CYCLE_SECS,
   sampleField, attachVibesButtonFx, createVibesZoom,
-} from '../src/vibes-btn-fx.js';
+} from '../src/vibes/vibes-btn-fx.js';
 import { escapeLayerCount, _resetEscapeLayers } from '../src/escape-stack.js';
 import { installMiniDom, fire } from './_mini-dom.js';
 

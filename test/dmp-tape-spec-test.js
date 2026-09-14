@@ -1,13 +1,13 @@
-// A DC2N dump becomes the tape it recorded (src/dmp-tape.js).
+// A DC2N dump becomes the tape it recorded (src/media/dmp-tape.js).
 //
 // The DC2N counts a 2 MHz clock between the cassette port's edges and writes one
 // count per pulse, so the conversion is a change of clock — asserted here to
 // within TAP's own rounding — plus the format's two rules: a sample at the
 // maximum is an overflow that carries into the next, and a version-1 dump may
 // hold half-waves, which is a v2 tape.
-import { dmpToTap } from '../src/dmp-tape.js';
-import { tapDirectory } from '../src/tap-directory.js';
-import { PAL_CPU_HZ } from '../src/tap-audio.js';
+import { dmpToTap } from '../src/media/dmp-tape.js';
+import { tapDirectory } from '../src/media/tap-directory.js';
+import { PAL_CPU_HZ } from '../src/media/tap-audio.js';
 import { body, turboFile, pulsesOf } from './_tape-fixtures.js';
 
 function expect(cond, msg) {

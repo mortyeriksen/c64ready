@@ -4,9 +4,9 @@
 // difference over a step; both are set in time, not samples, so a tape at 96 kHz
 // is looked at over the same few milliseconds as one at 44.1. Asserted here the
 // plain way: the same tape rendered at four rates lists the same files, sound.
-import { tapToPcm, pcmToWav } from '../src/tap-audio.js';
-import { wavToTap } from '../src/wav-tape.js';
-import { tapDirectory } from '../src/tap-directory.js';
+import { tapToPcm, pcmToWav } from '../src/media/tap-audio.js';
+import { wavToTap } from '../src/media/wav-tape.js';
+import { tapDirectory } from '../src/media/tap-directory.js';
 import { body, turboFile, tapBytesOf } from './_tape-fixtures.js';
 
 function expect(cond, msg) {

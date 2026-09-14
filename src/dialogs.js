@@ -45,7 +45,7 @@ function _closeConfirm(result) {
 // cancelLabel names the other way out, for a dialog offering a choice rather
 // than asking to go ahead with something: "CANCEL" reads as "abandon this",
 // which is wrong when both answers carry on. It is reset on every call too.
-export function confirmDialog(message, { title = 'Confirm', okLabel = 'OK', cancelLabel = 'CANCEL', okOnly = false } = {}) {
+export function confirmDialog(message, { title = 'Confirm', okLabel = 'OK', cancelLabel = 'CANCEL', okOnly = false, signal } = {}) {
   // Fall back to native confirm/alert if the modal markup isn't present.
   if (!confirmModal) {
     if (okOnly) { window.alert(message); return Promise.resolve(true); }
@@ -63,7 +63,13 @@ export function confirmDialog(message, { title = 'Confirm', okLabel = 'OK', canc
   confirmModal.hidden = false;
   pushEscapeLayer(_confirmEscape);
   if (confirmModalOk) confirmModalOk.focus();
-  return new Promise(resolve => { _confirmResolve = resolve; });
+  return new Promise(resolve => {
+    const abort = () => { if (_confirmResolve === complete) _closeConfirm(false); };
+    const complete = result => { signal?.removeEventListener('abort', abort); resolve(result); };
+    _confirmResolve = complete;
+    signal?.addEventListener('abort', abort, { once: true });
+    if (signal?.aborted) abort();
+  });
 }
 
 if (confirmModalOk)      confirmModalOk.addEventListener('click', () => _closeConfirm(true));
