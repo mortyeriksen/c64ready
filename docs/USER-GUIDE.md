@@ -55,7 +55,7 @@ centres the picture on the whole screen with bars around it.
 
 - **Click the screen** to give it keyboard focus, needed before typing or
   before a game that polls the keyboard will see your keys.
-- **Drag & drop** a `.PRG`, `.D64`, `.CRT`, `.TAP`, `.WAV`, `.DMP` or `.REU` file onto the
+- **Drag & drop** a `.PRG`, `.D64`, `.CRT`, `.TAP` or `.REU` file onto the
   screen to load it (pointer devices). The hint below the monitor reminds you.
 - **On touch devices**, tap the screen to raise the on-screen keyboard; the hint
   changes to say so.
@@ -577,7 +577,7 @@ In the order they sit on the deck:
 
 | Button | What it does |
 | --- | --- |
-| **📼 LOAD** | Inserts a `.tap`, a `.wav` recording or a `.dmp` dump of a cassette (or drop one on the screen). |
+| **📼 LOAD** | Inserts a `.tap`, a `.wav` recording or a `.dmp` dump of a cassette (a `.tap` can also be dropped on the screen). |
 | **⏏** | Removes the tape. |
 | **🔒 / 🔓** | The write-protect tabs. Protected blocks the **REC** key, exactly like a cassette with its tabs broken out. A tape you load arrives protected; a blank one does not. |
 | **⤓ .TAP** | Downloads the tape as a `.tap` file, recording and all. |
