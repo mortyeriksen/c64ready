@@ -126,6 +126,11 @@ rest) are credited in
 
 *Not out yet: what is finished and waiting for the next `npm` release.*
 
+- **`dir` stops warning about tapes that are fine.** A file that hands straight
+  over to the game's own fast loader used to leave minutes of "carries a signal
+  nothing here could read" under the listing, which reads as damage on a tape
+  that has none. That line is now kept for signal no file on the tape accounts
+  for.
 - **PROCASS tapes list their files.** US Gold's own loader, the one under Out
   Run and Forgotten Worlds: `dir` now names every file on such a tape, and the
   converters explain its blocks as stages the game's own loader streams in.

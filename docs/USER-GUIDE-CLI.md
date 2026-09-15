@@ -299,7 +299,6 @@ $ c64rdy tapcat BMX_Simulator.tap Bomb_Jack.tap
 
 BMX_Simulator-joined.tap
 10:34  ·  KERNAL + Novaload  ·  4 files, 4 readable
-5:33 carries a signal nothing here could read
 
   #  WIND TO  STARTS  NAME           FORMAT    LOAD          SIZE  STATUS
   1     0:02    0:10  BMX SIMULATOR  KERNAL    $029F-$03C0   289B  ok

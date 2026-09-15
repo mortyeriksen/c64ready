@@ -19,6 +19,13 @@ The version you are running is shown at the bottom of the About dialog.
   any production that leans on this corner of the 6510 now sees the real
   chip's timing.
 
+- **A tape of loader stubs no longer reads as damaged.** Plenty of tapes hold a
+  tiny file that hands straight over to the game's own fast loader. The tape
+  magnifier used to count all of that as signal belonging to no file, and offered
+  a lost header as the reason, which made a perfectly sound tape look broken. It
+  now says nothing where the listing already names the file that starts it, and
+  keeps the warning for signal that really does belong to nothing.
+
 ---
 
 ## 2026.9.1 — September 14, 2026

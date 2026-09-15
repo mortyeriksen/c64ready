@@ -395,6 +395,14 @@ alone, one tape lists a nineteenth file (a GRL-Supertape claim named from four
 bytes of a Turbo Tape 64 payload, 2,608 pulses into a real file), and with it a
 format the tape does not carry.
 
+**Signal no file accounts for is reported only where it is orphaned.** A stretch
+beginning on the pulse after a listed file ended is that file's own program: the
+file is a stub, and naming it accounts for what follows. The handover runs on to
+the next listed file, since a loader rests between its blocks, BMX Simulator's in
+twelve stretches four tenths of a second apart. Only a stretch with nothing in
+front of it is reported: one tape of the 19 here, where counting every unread
+second flagged nine.
+
 | Format | `0` / `1` | Threshold | Bit order | A block | Also checked | Its own |
 | --- | --- | --- | --- | --- | --- | --- |
 | **CBM (KERNAL)** | Short/medium and medium/short pairs | The three pulse classes | LSB first, parity bit | `$89…$81`, repeated as `$09…$01`; a 192-byte header of type, addresses and a 16-byte name | XOR checksum after the block | Every block written twice, so one copy may fail |

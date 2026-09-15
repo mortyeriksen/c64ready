@@ -269,6 +269,51 @@ function ttFile(out, { name, start, body }) {
   eq(facts.files, 1, 'the unknown stretch adds no files');
   assert(facts.unread > 50, `and is reported as unread, got ${facts.unread.toFixed(1)} s`);
 }
+// ── Unread signal: what the stretch runs on from ─────────────────────────────
+{
+  // A stub that hands straight over to a loader nobody here knows, which is how
+  // a mixtape is written: a CBM file of a couple of bytes pointing the machine
+  // at a reader, then the program that reader loads, in its own pulses with no
+  // silence between the two. The stretch is unread either way, but it is not
+  // orphaned, and the listing has to be able to tell the difference: calling it
+  // "no file listed" reads as damage on a tape that has none.
+  const handover = [];
+  encodeFile(handover, { name: 'STUB', start: 0x029F, body: Uint8Array.from([0x51, 0x03]) });
+  for (let i = 0; i < 200000; i++) handover.push(i % 2 ? 0x1D : 0x31);
+  const ran = tapeFacts(tapOf(handover));
+  eq(ran.files, 1, 'the stub is the only file the tape names');
+  assert(ran.unread > 50, `the loader's stretch is unread, got ${ran.unread.toFixed(1)} s`);
+  assert(ran.unreadAfterFile > ran.unread - 1,
+    `and all of it runs on from that file, got ${ran.unreadAfterFile.toFixed(1)} of ${ran.unread.toFixed(1)} s`);
+
+  // The same handover with the loader resting between its blocks, as a real one
+  // does: BMX Simulator's program is twelve stretches four tenths of a second
+  // apart. Only the first touches the stub, and calling the other eleven
+  // orphans would warn about a lost header on a tape that has lost nothing.
+  const rests = [];
+  encodeFile(rests, { name: 'STUB', start: 0x029F, body: Uint8Array.from([0x51, 0x03]) });
+  for (let block = 0; block < 6; block++) {
+    for (let i = 0; i < 40000; i++) rests.push(i % 2 ? 0x1D : 0x31);
+    for (let i = 0; i < 200; i++) rests.push(0xFF);           // the loader rests
+  }
+  const rested = tapeFacts(tapOf(rests));
+  assert(rested.unread > 50, `the whole program is unread, got ${rested.unread.toFixed(1)} s`);
+  assert(rested.unreadAfterFile > rested.unread - 1,
+    `and stays the stub's across the rests, got ${rested.unreadAfterFile.toFixed(1)} of ${rested.unread.toFixed(1)} s`);
+
+  // The same loader with nothing in front of it, which is what the other thing
+  // unread signal can be looks like: a loader of its own, or a file whose header
+  // the tape has lost, leaving its data with nothing it could belong to.
+  const orphan = [];
+  for (let i = 0; i < 200000; i++) orphan.push(i % 2 ? 0x1D : 0x31);
+  for (let i = 0; i < 600; i++) orphan.push(0xFF);            // silence, ~1.2 s
+  encodeFile(orphan, { name: 'STUB', start: 0x029F, body: Uint8Array.from([0x51, 0x03]) });
+  const alone = tapeFacts(tapOf(orphan));
+  assert(alone.unread > 50, `the orphaned stretch is unread too, got ${alone.unread.toFixed(1)} s`);
+  assert(alone.unreadAfterFile < 1,
+    `and none of it runs on from a file, got ${alone.unreadAfterFile.toFixed(1)} s`);
+}
+
 {
   // A stub that claims a range far past what it wrote — Head Over Heels claims
   // 713 bytes and carries 636. A file stops where its bytes stop being

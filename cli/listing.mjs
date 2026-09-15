@@ -57,8 +57,11 @@ export function tapeListing({ name, files, facts, seconds, flags = {}, loads = n
     const off = Math.abs(facts.speed.percent);
     say(`The deck that wrote this ran ${off}% ${facts.speed.percent > 0 ? 'fast' : 'slow'}`);
   }
-  if (facts?.unread > 15) {
-    say(`${mss(facts.unread)} carries a signal nothing here could read`);
+  // Only signal that belongs to no file here is worth a line. What runs on from
+  // a file above is that file's own program, which the listing already accounts
+  // for by naming the stub that starts it. See unreadSpans.
+  if (facts && facts.unread - (facts.unreadAfterFile ?? 0) > 15) {
+    say(`${mss(facts.unread - facts.unreadAfterFile)} carries a signal nothing here could read`);
   }
 
   const rows = flags.damaged ? files.filter(f => f.damaged) : files;

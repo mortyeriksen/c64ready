@@ -3036,13 +3036,22 @@ const _andList = (items) => (items.length < 3 ? items.join(' and ')
 
 function _tapeHealthNote(files = [], facts = {}) {
   const said = [];
-  // Tape with a signal on it that no file here accounts for. Saying so is the
-  // difference between a listing that looks finished and one that admits what it
-  // missed — and it is the honest answer to a tape that appears to stop having
-  // files halfway through. Two things put it there: a loader nobody has taught
-  // this, and a file whose header the tape has lost, leaving its data orphaned.
-  if (facts.unread >= UNREAD_MIN_SECONDS) {
-    said.push(`${_fmtSpan(facts.unread)} of signal belongs to no file listed: `
+  // Tape carrying signal that belongs to no file here. Saying so is the honest
+  // answer to a listing that appears to stop having files halfway through: a
+  // loader nobody has taught this, or a file whose header the tape has lost,
+  // leaving its data orphaned.
+  //
+  // Only the orphaned part is worth a word. Signal that runs on from a file in
+  // the list is that file's own program — the file is a stub, the listing does
+  // account for it, and nothing is missing. Reporting it said the opposite: a
+  // mixtape whose 44 files each hand over to a turbo loader read as 30 minutes
+  // adrift with a lost header suspected, on a tape that has lost nothing. There
+  // is no figure to quote for it either, since unread seconds are a sum of
+  // signal and not a stretch anyone could wind to: those 30 minutes lie in 44
+  // pieces spread over the whole 36 of the tape.
+  const orphaned = facts.unread - (facts.unreadAfterFile ?? 0);
+  if (orphaned >= UNREAD_MIN_SECONDS) {
+    said.push(`${_fmtSpan(orphaned)} of signal belongs to no file listed: `
       + 'a loader of its own, or a file whose header is lost.');
   }
   // Mended files are named: nothing in the list marks them, and there are rarely

@@ -5,15 +5,15 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://c64ready.com/</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-15</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-15</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/whats-new.html</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-15</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/about.html</loc>
@@ -29,11 +29,11 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/user-guide-cli.html</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-15</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/specifications.html</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-15</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/features.html</loc>
@@ -57,7 +57,7 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/cpu-architecture.html</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-15</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/vic2-architecture.html</loc>
@@ -77,7 +77,7 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/datasette-architecture.html</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-15</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/retrovibes-architecture.html</loc>

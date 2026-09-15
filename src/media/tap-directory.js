@@ -208,20 +208,44 @@ export function tapeFacts(tapData, { version = 1, zeroGapCycles = V0_ZERO_GAP_CY
     files: files.length,
     sound: files.filter(f => !f.damaged).length,
     speed,
-    unread: unreadSeconds(pulses, files),
+    ...unreadSpans(pulses, files),
   };
 }
 
 /**
- * How much of the tape carries a signal that nothing here could read. Programs
- * on a tape are separated by silence, so a stretch of unbroken signal holding no
- * listed file is a program written by a loader this does not know — and saying
- * so is the difference between a listing that looks finished and one that admits
- * what it missed. A tape whose middle is a loader nobody has taught this reads
- * as three files and twelve unaccounted minutes, and the second half of that is
+ * How much of the tape carries a signal that nothing here could read, and how
+ * much of that runs straight on from a file that IS listed. Programs on a tape
+ * are separated by silence, so a stretch of unbroken signal holding no listed
+ * file is a program written by a loader this does not know — and saying so is
+ * the difference between a listing that looks finished and one that admits what
+ * it missed. A tape whose middle is a loader nobody has taught this reads as
+ * three files and twelve unaccounted minutes, and the second half of that is
  * the answer to "why does it stop finding them".
+ *
+ * Where a stretch begins says which of two things it is, and they call for
+ * opposite words. One that starts on the very next pulse after a listed file
+ * ended was handed over by that file: the file is a stub, the program it starts
+ * is what follows, and nothing is missing from the listing. One that stands on
+ * its own, with the silence in front of it that separates one program from the
+ * next, has no such explanation — a loader nobody has taught this, or a file
+ * whose header the tape has lost, leaving its data orphaned.
+ *
+ * A handover needs no threshold to recognise: the loader's first pulse is the
+ * pulse after the stub's last, with no silence at all. Measured on the mixtapes
+ * here, all 44 of their files hand over that way, and ordinary spacing between
+ * programs on the same tape is three seconds.
+ *
+ * What a handover covers runs on to the next listed file. A loader writes its
+ * program in blocks and rests between them — BMX Simulator's is twelve stretches
+ * with four tenths of a second of silence between each — and only the first of
+ * those touches the stub. Stopping at the first would call the other eleven
+ * orphans and warn about a lost header on a tape that has lost nothing, so the
+ * handover holds until a file is listed again and the KERNAL is back in charge.
+ *
+ * @returns {{unread: number, unreadAfterFile: number}} seconds, and the seconds
+ *   of that which run on from a listed file
  */
-function unreadSeconds(pulses, files) {
+function unreadSpans(pulses, files) {
   // Each file claims from the head of its lead-in to the end of its last block,
   // the gaps inside it included — a turbo file's header and data are two blocks
   // with silence between them, and counting that silence as unread would put
@@ -229,16 +253,29 @@ function unreadSeconds(pulses, files) {
   const spans = files
     .map(f => [f.leadPulse ?? f.atPulse, Math.max(f.endPulse ?? f.atPulse, f.atPulse)])
     .sort((a, b) => a[0] - b[0]);
-  let total = 0, next = 0, covered = -1;
+  let total = 0, afterFile = 0, next = 0, covered = -1;
+  // One stretch at a time: silence, or a file's claim, ends it.
+  let run = 0, runFollowsFile = false;
+  // Whether a listed file has handed over and not yet handed back. Set where a
+  // stretch begins on the pulse after a file ended, cleared at the next file.
+  let handingOver = false;
+  const endRun = () => { total += run; if (runFollowsFile) afterFile += run; run = 0; };
   for (let p = 0; p < pulses.length; p++) {
     while (next < spans.length && spans[next][0] <= p) {
       if (spans[next][1] > covered) covered = spans[next][1];
       next++;
     }
-    if (p <= covered) continue;
-    if (pulses[p] < GAP_CYCLES) total += pulses[p];
+    if (p <= covered) { endRun(); handingOver = false; continue; }
+    if (pulses[p] < GAP_CYCLES) {
+      if (run === 0) {
+        if (p > 0 && p - 1 <= covered) handingOver = true;
+        runFollowsFile = handingOver;
+      }
+      run += pulses[p];
+    } else endRun();
   }
-  return total / PAL_CPU_HZ;
+  endRun();
+  return { unread: total / PAL_CPU_HZ, unreadAfterFile: afterFile / PAL_CPU_HZ };
 }
 
 export function tapDirectory(tapData, { version = 1, zeroGapCycles = V0_ZERO_GAP_CYCLES,
