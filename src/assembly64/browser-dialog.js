@@ -54,7 +54,7 @@ export function openBrowserDialog(controller, store, perform, { view = 'results'
   filterHeading.append(el('h3', 'Refine search'), reset);
   const advanced = button('ADVANCED', () => { clearTimeout(timer); openAdvancedDialog(controller, () => { mode = 'results'; sync(); }); }, { class: 'btn mb-advanced' });
   const sidebarNote = el('div', null, { class: 'mb-sidebar-note' });
-  sidebarNote.append(el('span', 'READY TO LOAD', { class: 'mb-eyebrow' }), el('p', 'PRG · D64 · CRT · TAP · REU'), el('p', 'Open media in your emulator, or save a copy to Library for later.'));
+  sidebarNote.append(el('span', 'READY TO LOAD', { class: 'mb-eyebrow' }), el('p', 'PRG · D64 · CRT · TAP · T64 · REU'), el('p', 'Open media in your emulator, or save a copy to Library for later.'));
   sidebar.append(filterHeading, fields, advanced, sidebarNote);
   const main = el('section', null, { class: 'mb-browser-main', 'aria-label': 'Catalog' });
   const resultHeader = el('div', null, { class: 'mb-result-header' });

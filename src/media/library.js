@@ -2,7 +2,7 @@
 // Copyright © 2026 Morten Øien Eriksen
 // src/media/library.js – Browser-local "media library".
 //
-// Whenever the user loads a .prg / .d64 / .crt / .tap from disk (file picker
+// Whenever the user loads a .prg / .d64 / .crt / .tap / .t64 from disk (file picker
 // or drag-drop), the raw bytes are cached so they can be re-loaded later from
 // the Controls ▸ 📂 LOAD dialog without re-picking the file.
 //
@@ -30,7 +30,7 @@ const DB_VERSION = 1;
 const META_STORE = 'lib-meta';
 const BLOB_STORE = 'lib-blobs';
 
-const VALID_TYPES = new Set(['prg', 'd64', 'crt', 'tap', 'reu']);
+const VALID_TYPES = new Set(['prg', 'd64', 'crt', 'tap', 't64', 'reu']);
 
 // Tag stamped into export files so libImport can reject unrelated JSON.
 const EXPORT_FORMAT  = 'c64emu-library';

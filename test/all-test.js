@@ -42,6 +42,7 @@ const TESTS = [
   'test/tap-audio-spec-test.js',
   'test/tape-record-audio-spec-test.js',
   'test/tap-directory-spec-test.js',
+  'test/t64-spec-test.js',
   'test/wav-tape-polarity-spec-test.js',
   'test/wav-tape-repair-spec-test.js',
   'test/wav-tape-level-spec-test.js',

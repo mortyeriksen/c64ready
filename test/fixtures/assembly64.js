@@ -9,6 +9,22 @@ export function sampleMedia(type) {
   if (type === 'prg') return prg;
   if (type === 'reu') { const bytes = new Uint8Array(1024 * 1024); bytes.set([0x52, 0x45, 0x55]); return bytes; }
   if (type === 'd64') return createPRGDisk('BROWSER', prg).img;
+  // An archive holding that one program: 64-byte header, one 32-byte directory
+  // entry, then the program's bytes at the offset the entry names.
+  if (type === 't64') {
+    const bytes = new Uint8Array(96 + body.length);
+    bytes.set(new TextEncoder().encode('C64 tape image file'));
+    bytes[34] = 1;                                     // room for one entry
+    bytes.set(new TextEncoder().encode('BROWSER SAMPLE'), 40);
+    bytes[64] = 1;                                     // the entry is a file
+    bytes[66] = 1; bytes[67] = 8;                      // loads at $0801
+    const end = 0x0801 + body.length;
+    bytes[68] = end & 0xFF; bytes[69] = end >> 8;
+    bytes[72] = 96;                                    // its bytes start here
+    bytes.set(new TextEncoder().encode('BROWSER PRG'), 80);
+    bytes.set(Uint8Array.from(body), 96);
+    return bytes;
+  }
   if (type === 'tap') {
     const bytes = new Uint8Array(24);
     bytes.set(new TextEncoder().encode('C64-TAPE-RAW'));

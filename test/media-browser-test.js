@@ -196,6 +196,35 @@ for (const type of ['prg', 'd64', 'crt', 'tap', 'reu']) {
     assert.equal(port.calls[0][0], type === 'd64' ? 'disk' : type);
   });
 }
+test('A .t64 runs the program inside it and keeps the archive in the Library', async () => {
+  // The two go different ways on purpose: the loader is handed the program, the
+  // Library is handed the archive it came out of, under the archive's own name.
+  const archive = sampleMedia('t64');
+  const asked = [];
+  const port = mediaPort({ archive: async (bytes, name) => { asked.push(name); return { data: sampleMedia('prg'), name: 'BROWSER PRG.prg' }; } });
+  const result = await createOpenMedia(port)({ name: 'sample.t64', bytes: archive, mediaType: 't64' });
+  assert.deepEqual(asked, ['sample.t64'], 'the archive is opened once, by its own name');
+  assert.deepEqual([port.calls[0][0], port.calls[0][2]], ['prg', 'BROWSER PRG.prg'], 'the loader gets the program');
+  const save = port.calls.find(call => call[0] === 'save');
+  assert.deepEqual([save[1], save[2]], ['t64', 'sample.t64'], 'the Library gets the archive');
+  assert.equal(result.mediaType, 't64');
+});
+test('Saving a .t64 to the Library never asks which program', async () => {
+  let asked = 0;
+  const port = mediaPort({ archive: async () => { asked++; return null; } });
+  await createOpenMedia(port)({ name: 'sample.t64', bytes: sampleMedia('t64'), mediaType: 't64', action: 'save' });
+  assert.equal(asked, 0, 'nothing is about to run, so there is nothing to choose');
+  assert.equal(port.calls[0][0], 'save');
+});
+test('A dismissed .t64 chooser loads nothing and saves nothing', async () => {
+  const port = mediaPort({ archive: async () => null });
+  const result = await createOpenMedia(port)({ name: 'sample.t64', bytes: sampleMedia('t64'), mediaType: 't64' });
+  assert.equal(port.calls.length, 0);
+  assert.match(result.message, /cancelled/);
+});
+test('A file that is not an archive is refused before it reaches the Library', () => {
+  assert.throws(() => validateMedia(sampleMedia('prg'), 't64'), /not a \.t64 archive/);
+});
 for (const targetDrive of [8, 9]) {
   test(`D64 honors drive ${targetDrive} and writable selection`, async () => {
     const port = mediaPort();

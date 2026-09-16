@@ -3,18 +3,15 @@
 import { MAX_DOWNLOAD_BYTES, safeFilename } from '../media/formats.js';
 import { inspectZip } from '../media/archive.js';
 import { copyData } from '../serializable.js';
-import { el, button, createDialog } from './dom.js';
+import { el } from './dom.js';
+import { chooseFile } from '../media/choose-file.js';
 
 function chooseArchive(entries, signal) {
-  if (!entries.length) throw new Error('The ZIP contains no supported PRG, D64, CRT, TAP or REU files.');
-  if (entries.length === 1) return Promise.resolve(entries[0]);
-  return new Promise(resolve => {
-    let choice = null;
-    const dialog = createDialog('Choose a file from ZIP', () => { signal?.removeEventListener('abort', abort); resolve(choice); });
-    const abort = () => dialog.close();
-    signal?.addEventListener('abort', abort, { once: true });
-    dialog.body.append(el('p', 'Only the selected media file will be opened and saved. Nested archives are not expanded.'));
-    for (const entry of entries) dialog.body.append(button(`${entry.path} · ${entry.size.toLocaleString()} B`, () => { choice = entry; dialog.close(); }));
+  if (!entries.length) throw new Error('The ZIP contains no supported PRG, D64, CRT, TAP, T64 or REU files.');
+  return chooseFile('Choose a file from ZIP', entries, {
+    label: entry => `${entry.path} · ${entry.size.toLocaleString()} B`,
+    note: 'Only the selected media file will be opened and saved. Nested archives are not expanded.',
+    signal,
   });
 }
 export function createAssembly64Actions(controller, openMedia) {

@@ -2,7 +2,10 @@
 // Copyright © 2026 Morten Øien Eriksen
 
 export const MAX_DOWNLOAD_BYTES = 32 * 1024 * 1024;
-export const SUPPORTED_MEDIA = Object.freeze(['prg', 'd64', 'crt', 'tap', 'reu']);
+// The types the app can open. A .t64 is an archive rather than one of the
+// loader's own formats, but it opens to a .prg (see openT64), so it belongs
+// here: it is offered, run and saved like the rest.
+export const SUPPORTED_MEDIA = Object.freeze(['prg', 'd64', 'crt', 'tap', 't64', 'reu']);
 export const mediaTypeOf = name => {
   const type = String(name).split('.').pop().toLowerCase();
   return /^[a-z0-9]{1,16}$/.test(type) ? type : 'unknown';

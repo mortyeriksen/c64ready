@@ -384,6 +384,7 @@
 .lib-type-d64 { background: #75cec8; }  /* VIC cyan   (3)  */
 .lib-type-crt { background: #cf8a4f; }  /* VIC orange (8)  */
 .lib-type-tap { background: #e6dd6b; }  /* VIC yellow (7)  */
+.lib-type-t64 { background: #c46c71; }  /* VIC light red (10) — an archive, not a tape */
 
 .lib-name {
   flex: 1 1 auto;

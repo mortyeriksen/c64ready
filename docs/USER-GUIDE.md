@@ -55,8 +55,8 @@ centres the picture on the whole screen with bars around it.
 
 - **Click the screen** to give it keyboard focus, needed before typing or
   before a game that polls the keyboard will see your keys.
-- **Drag & drop** a `.PRG`, `.D64`, `.CRT`, `.TAP` or `.REU` file onto the
-  screen to load it (pointer devices). The hint below the monitor reminds you.
+- **Drag & drop** a `.PRG`, `.D64`, `.CRT`, `.TAP`, `.T64` or `.REU` file onto
+  the screen to load it (pointer devices). The hint below the monitor reminds you.
 - **On touch devices**, tap the screen to raise the on-screen keyboard; the hint
   changes to say so.
 
@@ -207,7 +207,7 @@ as `c64ready-<date-and-time>.mp4`.
 | **📂 LOAD STATE** | Opens the [Save states dialog](#save-states-dialog) to restore a frozen machine; also imports / exports state files. |
 | **💾 SAVE STATE** | Freezes the *whole* machine (RAM, every chip register, and whatever disk / tape / cartridge is inserted) into a named slot stored in this browser (browse them later with LOAD STATE). |
 | **📂 LOAD LIB** | Opens the [Library dialog](#library-dialog) of files you've loaded before, cached in this browser. |
-| **▶ LOAD ANY** | Picks any C64 file (`.prg`, `.d64`, `.crt`, `.tap`, `.wav`, `.dmp` or `.reu`) and does the right thing with it. |
+| **▶ LOAD ANY** | Picks any C64 file (`.prg`, `.d64`, `.crt`, `.tap`, `.t64`, `.wav`, `.dmp` or `.reu`) and does the right thing with it. |
 
 ### Save states dialog
 
@@ -244,7 +244,7 @@ dialog is empty, with just an **IMPORT** button:
 
 ![The Library dialog listing three cached disk images, each with a D64 type badge, its filename, size and load time and a ✕ remove button, with a filter box and the IMPORT / EXPORT / CLEAR ALL buttons.](/guide/library-loaded.webp)
 
-Opened with **📂 LOAD LIB**. Every `.PRG` / `.D64` / `.CRT` / `.TAP` / `.WAV` / `.DMP` you open is
+Opened with **📂 LOAD LIB**. Every `.PRG` / `.D64` / `.CRT` / `.TAP` / `.T64` / `.WAV` / `.DMP` you open is
 cached here so you can reload it without picking it from disk again. Each row is
 tagged with its file type and shows the name, size and when you loaded it.
 

@@ -39,6 +39,7 @@ import { parseCRT } from './media/crt.js';
 import { CANVAS_W, CANVAS_H, C64_PALETTE } from './vic2.js';
 import { libList, libLoad, libSave, libDelete, libClear, libExport, libImport } from './media/library.js';
 import { tapDirectory, tapeFacts } from './media/tap-directory.js';
+import { openT64 } from './media/choose-file.js';
 import { stateList, stateSave, stateLoad, stateDelete, stateRename, stateClear, stateExport, stateExportAll, stateImportFile } from './statelibrary.js';
 
 // ── Injected core dependencies (assigned by initMedia) ───────────────────────
@@ -217,7 +218,7 @@ async function _renderLibrary() {
 // current state and auto-load when AUTORUN is on; crt cold-boots itself.
 // Returns false when validation or power-on fails.
 async function _loadLibraryEntry(entry) {
-  if (!['prg', 'd64', 'crt', 'tap', 'reu'].includes(entry.type)) return false;
+  if (!['prg', 'd64', 'crt', 'tap', 't64', 'reu'].includes(entry.type)) return false;
   try {
     await openMedia({ name: entry.name, bytes: entry.data, mediaType: entry.type, saveToLibrary: false });
     return true;
@@ -949,6 +950,10 @@ export function mediaTypeOf(filename) {
     // A recording of a tape is a tape, and so is a DC2N dump of one: _loadTape
     // converts either on the way in.
     : (n.endsWith('.tap') || n.endsWith('.wav') || n.endsWith('.dmp')) ? 'tap'
+    // A .t64 is an archive of programs rather than a tape, whatever its name
+    // says. It never reaches the loader as itself: the program is taken out of
+    // it first, and goes on as the .prg it already is.
+    : n.endsWith('.t64') ? 't64'
     : n.endsWith('.prg') ? 'prg'
     : n.endsWith('.crt') ? 'crt'
     // Expansion-RAM images. Unlike the other types these are never cached in
@@ -960,7 +965,7 @@ prgBtn.addEventListener('click', () => prgInput.click());
 prgInput.addEventListener('change', async e => {
   const file = e.target.files[0];
   if (!file) return;
-  if (_rejectWrongExt(file, ['.prg', '.d64', '.crt', '.tap', '.wav', '.dmp', '.reu'], prgInput)) return;
+  if (_rejectWrongExt(file, ['.prg', '.d64', '.crt', '.tap', '.t64', '.wav', '.dmp', '.reu'], prgInput)) return;
   const buf  = await file.arrayBuffer();
   const data = new Uint8Array(buf);
   const type = mediaTypeOf(file.name);
@@ -3179,9 +3184,8 @@ _dropZone.addEventListener('drop', async e => {
 
   const buf = await file.arrayBuffer();
   const data = new Uint8Array(buf);
-  const lname = file.name.toLowerCase();
 
-  const type = mediaTypeOf(lname);
+  const type = mediaTypeOf(file.name);
   if (!type) return;   // unsupported file — ignore the drop
 
   // Cache it so it's re-loadable from the 📂 LOAD library, then hand off to the
@@ -3224,6 +3228,8 @@ export const openMedia = createOpenMedia({
   prepareDisk: _prepareD64,
   save: (...args) => libSave(...args),
   prg: async (bytes, name, options) => { await _insertPRG(bytes, 'loaded', name, options); },
+  // The one program out of a .t64, asked for only when one is about to run.
+  archive: (bytes, name, options) => openT64(bytes, name, options),
   crt: bytes => _applyCart(bytes),
   tap: (bytes, name, options) => _loadTape(bytes, name, { ...options, playDelayMs: 1000 }),
   reu: (bytes, name) => { if (!_loadReuImage(bytes, name)) throw new Error('Could not load the RAM Expansion image.'); },

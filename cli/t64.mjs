@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
-// cli/t64.mjs — the .t64 archive, read and written: t642d64 (its files onto
+// cli/t64.mjs — the .t64 archive, written and converted: t642d64 (its files onto
 // disks), t642tap (its files onto a real tape, saved by the machine), d642t64
 // (a disk's programs into an archive), tap2t64 (a tape's programs, decoded,
 // into one). `dir` lists an archive through the same reader.
@@ -30,6 +30,7 @@ import { sniff, sysTarget } from './formats.mjs';
 import { packPRGs, diskSeriesPath, hostName } from './disk.mjs';
 import {
   D64, diskNameFromFilename, prgOverflow, splitTap, tapDirectory, tapSeconds, tapeFacts,
+  t64Files,
 } from './core.mjs';
 import { outFileFor, oneOutputOnly, writeOut } from './tape.mjs';
 import { diskListing, tapeListing, archiveListing, printable } from './listing.mjs';
@@ -38,66 +39,12 @@ import { pickWanted, whyNoBytes } from './run.mjs';
 import { prgsToTap, saveName, unsaveable } from './tapewrite.mjs';
 import { resolveRoms } from './roms.mjs';
 
+export { t64Files } from './core.mjs';
+
+// The archive's own geometry, for the writer below. The reader states these for
+// itself in src/media/t64.js; they are the format's, not either side's.
 const HEADER = 64, ENTRY = 32;
-const word = (b, at) => b[at] | (b[at + 1] << 8);
-const long = (b, at) => word(b, at) | (word(b, at + 2) << 16);
-const text = (b, at, n) => {
-  let s = '';
-  for (let i = 0; i < n; i++) s += String.fromCharCode(b[at + i]);
-  return s.replace(/[\s\x00\xA0]+$/, '');
-};
 
-/**
- * The files in a .t64, each as { name, start, end, bytes, note } — bytes are a
- * ready .prg, load address first. Entries that are not files (a freed slot, a
- * memory snapshot) are returned under `skipped` with the reason.
- * @param {Uint8Array} b  the whole archive
- */
-export function t64Files(b) {
-  if (sniff(b) !== 't64') throw new Error('this command takes a .t64 archive');
-  const max = word(b, 34);
-  const files = [], skipped = [];
-  // Data ends where the next entry's data begins, whatever the directory
-  // claims: offsets are collected first so an out-of-order directory still
-  // measures each file against the container.
-  const offsets = [];
-  for (let i = 0; i < max; i++) {
-    const at = HEADER + i * ENTRY;
-    if (b[at] === 1) offsets.push(long(b, at + 8));
-  }
-  offsets.sort((x, y) => x - y);
-
-  for (let i = 0; i < max; i++) {
-    const at = HEADER + i * ENTRY;
-    const type = b[at];
-    if (type === 0) continue;                       // a freed slot is nothing
-    const name = text(b, at + 16, 16) || `(entry ${i + 1})`;
-    if (type !== 1) {
-      skipped.push({ name, why: type === 3 ? 'a memory snapshot, not a file' : `unknown entry type ${type}` });
-      continue;
-    }
-    const start = word(b, at + 2);
-    const offset = long(b, at + 8);
-    if (offset >= b.length) { skipped.push({ name, why: 'its data lies past the end of the archive' }); continue; }
-    const held = (offsets.find(o => o > offset) ?? b.length) - offset;
-    // An end address at or below the start is the broken-in-the-wild case, not
-    // a wrapped claim of nearly 64K: it claims nothing, and the container
-    // decides alone.
-    const claimed = Math.max(0, word(b, at + 4) - start);
-    // The claim is taken where the container can honour it; the container
-    // decides otherwise. A zero claim is the common broken case.
-    const size = Math.min(claimed > 0 ? Math.min(claimed, held) : held, 0x10000 - start);
-    const bytes = new Uint8Array(2 + size);
-    bytes[0] = start & 0xFF;
-    bytes[1] = (start >> 8) & 0xFF;
-    bytes.set(b.subarray(offset, offset + size), 2);
-    files.push({
-      name, start, end: start + size, bytes,
-      note: claimed > 0 && claimed !== size ? `directory claims ${claimed} bytes, the archive holds ${size}` : null,
-    });
-  }
-  return { name: text(b, 40, 24), files, skipped };
-}
 
 export function t642d64(argv) {
   const { args, flags } = parseArgs(argv, { out: { value: true, alias: 'o' }, 'out-dir': { value: true } });

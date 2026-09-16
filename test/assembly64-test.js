@@ -150,6 +150,28 @@ test('Assembly64 files keep their source references when saved through openMedia
   assert.deepEqual([metadata.source, metadata.provenance.itemRef, metadata.provenance.fileId], ['assembly64', { id: 'lab-0', categoryId: 1 }, 'prg']);
 });
 
+test('A .t64 from Assembly64 reaches openMedia as the archive itself', async () => {
+  // Taking the program out here would hand the Library a .prg, and the release's
+  // own .t64 entry would then match nothing that was saved — its SAVE button
+  // would never settle. Unwrapping belongs to openMedia, which keeps the
+  // archive and loads the program out of it.
+  const archive = sampleMedia('t64');
+  const controller = { online: () => true, download: async () => archive };
+  const opened = [];
+  const open = async request => { opened.push(request); return { message: 'PRG loaded' }; };
+  const perform = createAssembly64Actions(controller, open);
+  await perform({ id: 'lab-t64', title: 'Archive', ref: {} },
+    { id: 't64', name: 'browser-sample.t64', mediaType: 't64', size: archive.length, ref: {} },
+    { action: 'run' }, undefined, () => {});
+  assert.equal(opened.length, 1, 'the archive opens once');
+  assert.equal(opened[0].mediaType, 't64', 'as the archive, not the program inside it');
+  assert.equal(opened[0].name, 'browser-sample.t64', 'under the name the release lists');
+  assert.equal(opened[0].bytes, archive, 'with the archive bytes unchanged');
+});
+test('An Assembly64 .t64 offers the same actions as any other program', () => {
+  assert.deepEqual(allowedActions('t64'), ['run', 'save', 'download']);
+});
+
 test('Producer credits normalize a group name or a list without HTML interpretation', () => {
   assert.equal(normalizeItem({ ...rawItem('credit'), group: ['Fairlight', '<img src=x>'] }).producer, 'Fairlight, <img src=x>');
 });
@@ -248,6 +270,16 @@ for (const [reason, entry] of [
     assert.equal(savedLibraryFiles(libraryItem, [entry]).size, 0);
   });
 }
+test('Library status matches a .t64 kept as the archive it came from', async () => {
+  // The reason the Library keeps archives whole: a .prg saved out of one would
+  // leave the release's .t64 unmatched, and SAVE would stay live on a file that
+  // is already there.
+  const { savedLibraryFiles } = await import('../src/assembly64/library.js');
+  const item = normalizeItem({ id: '77', category: 0, files: [{ id: '0', path: 'release.t64' }] });
+  const entry = { type: 't64', name: 'release.t64', source: 'assembly64',
+    provenance: { version: 1, provider: 'assembly64', itemId: item.id, itemRef: item.ref, fileId: '0', fileRef: { itemId: '77', categoryId: 0, id: '0' } } };
+  assert.deepEqual([...savedLibraryFiles(item, [entry])], ['0']);
+});
 test('Library status clears when an entry is removed', async () => {
   const { savedLibraryFiles } = await import('../src/assembly64/library.js');
   assert.equal(savedLibraryFiles(libraryItem, []).size, 0);

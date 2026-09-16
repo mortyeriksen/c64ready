@@ -19,6 +19,14 @@ The version you are running is shown at the bottom of the About dialog.
   any production that leans on this corner of the 6510 now sees the real
   chip's timing.
 
+- **`.T64` archives open.** Drop one on the screen, or pick it with LOAD ANY,
+  and the program inside runs. A `.t64` is not really a tape: it is an archive
+  holding one or more ready programs, so the program comes straight out of it
+  and loads as a program would, with no disk or tape in between. Almost every
+  archive holds exactly one; where there are several, you are asked which. The
+  Library keeps the archive rather than the program taken out of it, so opening
+  it again asks again, and a different program can come out of it next time.
+
 - **A tape of loader stubs no longer reads as damaged.** Plenty of tapes hold a
   tiny file that hands straight over to the game's own fast loader. The tape
   magnifier used to count all of that as signal belonging to no file, and offered
