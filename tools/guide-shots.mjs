@@ -22,8 +22,8 @@
 // named shots and skips the slow retro-vibes / overview-running passes — a
 // targeted refresh that won't rewrite every tracked shot.
 //
-// The script captures 20 UI shots: overview, overview-running, the main feature
-// cards, the modals, directory zoom, and Retro Vibes. It pre-seeds localStorage
+// The script captures 21 UI shots: overview, overview-running, the main feature
+// cards, the modals, directory zoom, Retro Vibes, and the SID player. It pre-seeds localStorage
 // for reproducibility, including hiding the PWA card and forcing the lighter
 // VIBES model for software WebGL.
 //
@@ -65,6 +65,9 @@ const hasDisk = DISK !== '' && fs.existsSync(DISK);
 // argument, else resolved from test/external-assets.json ('raster-time-demo',
 // or the C64_RASTER_TIME_D64 env var); omit both to skip that shot.
 const RASTER = process.argv[4] || assetPath('raster-time-demo') || '';
+// A tune for the SID player shot. The player draws its own screen out of the
+// file's header, so any .sid with a title, author and year in it will do.
+const TUNE = assetPath('guide-sid') || '';
 // Set GUIDE_ONLY=drive8-empty,drive9 (comma-separated) to regenerate only some
 // shots; empty = all. A targeted re-run refreshes a few cards without rewriting
 // every tracked shot or paying for the slow retro-vibes / overview-running passes.
@@ -242,7 +245,7 @@ try {
 
 // If only the shots up to here were requested, stop now — skip the modals,
 // the slow Retro Vibes / overview-running passes, and the disk load entirely.
-const restShots = ['options', 'keymap', 'library', 'save-states', 'key-joystick', 'retro-vibes', 'drive8-loaded', 'directory-zoom', 'overview-running'];
+const restShots = ['options', 'keymap', 'library', 'save-states', 'key-joystick', 'retro-vibes', 'drive8-loaded', 'directory-zoom', 'overview-running', 'sid-player'];
 if (ONLY.length && !restShots.some(want)) {
   await browser.close();
   console.log(`\nDone. ${done.length} shots → ${OUT}`);
@@ -385,6 +388,34 @@ if (want('overview-running') && fs.existsSync(RASTER)) {
   // Two different reasons land here; saying which saves a false "missing asset".
   console.log('  skipped —', !want('overview-running') ? 'not in GUIDE_ONLY'
     : RASTER ? `no raster demo d64 at ${RASTER}` : 'no raster demo d64 (pass argv[4])');
+}
+
+// ── The SID player ──────────────────────────────────────────────────────
+// A .sid is wrapped in a .prg that carries a 6502 player, so what this shows is
+// a program running on the C64 rather than any part of the app's own interface:
+// the shot is the display alone. Runs last, and resets first, because the tune
+// before it owns the interrupts and the screen.
+console.log('\n[sid player]');
+if (want('sid-player') && TUNE && fs.existsSync(TUNE)) {
+  try {
+    await click('#btn-reset');
+    await sleep(2800);                                 // cold boot back to READY.
+    // A tune is wrapped in a .prg, so it draws the same "Load faster?" offer any
+    // .prg does — and that dialog would be the shot. Turn TDE off first, as the
+    // running-demo shot above does, so nothing is in front of the screen.
+    const sidTde = page.locator('#btn-tde-toggle');
+    if (/ON/.test(await sidTde.textContent().catch(() => '')))
+      { await sidTde.click().catch(() => {}); await sleep(300); }
+    await page.setInputFiles('#prg-input', TUNE);
+    await sleep(7000);                                 // load, run, and a few seconds on the clock
+    await shot('#screen', 'sid-player');
+  } catch (e) {
+    skipped.push('sid-player');
+    console.error('  ✗ sid-player —', e.message.split('\n')[0]);
+  }
+} else {
+  console.log('  skipped —', !want('sid-player') ? 'not in GUIDE_ONLY'
+    : TUNE ? `no tune at ${TUNE}` : 'no tune (asset registry: guide-sid)');
 }
 
 await browser.close();

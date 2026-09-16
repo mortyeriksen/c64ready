@@ -5,43 +5,43 @@
   "Resolution (test/external-assets.js): the entry's env var, when set, wins;",
   "otherwise the first existing path in `paths` is used (top to bottom).",
   "Paths may start with ~ (home directory) or be repo-relative.",
-  "Tests SKIP with a note when an asset is missing — except the ROMs, which",
+  "Tests SKIP with a note when an asset is missing \u2014 except the ROMs, which",
   "most of the suite cannot run without (all-test.js checks them up front).",
   "`link` says where an asset can be obtained; each remains under its own",
   "copyright/license and is not distributed with this repository."
  ],
  "roms": {
   "kernal": {
-   "description": "C64 KERNAL ROM, 8 KB — developed/tested against revision 901227-03",
+   "description": "C64 KERNAL ROM, 8 KB \u2014 developed/tested against revision 901227-03",
    "paths": [
     "roms/kernal.bin"
    ],
-   "link": "docs/GETTING-STARTED.md — Set up ROMs",
-   "note": "Copyrighted Commodore ROM — supply your own dump"
+   "link": "docs/GETTING-STARTED.md \u2014 Set up ROMs",
+   "note": "Copyrighted Commodore ROM \u2014 supply your own dump"
   },
   "basic": {
-   "description": "C64 BASIC ROM, 8 KB — revision 901226-01",
+   "description": "C64 BASIC ROM, 8 KB \u2014 revision 901226-01",
    "paths": [
     "roms/basic.bin"
    ],
-   "link": "docs/GETTING-STARTED.md — Set up ROMs",
-   "note": "Copyrighted Commodore ROM — supply your own dump"
+   "link": "docs/GETTING-STARTED.md \u2014 Set up ROMs",
+   "note": "Copyrighted Commodore ROM \u2014 supply your own dump"
   },
   "chargen": {
-   "description": "C64 character ROM, 4 KB — revision 901225-01",
+   "description": "C64 character ROM, 4 KB \u2014 revision 901225-01",
    "paths": [
     "roms/chargen.bin"
    ],
-   "link": "docs/GETTING-STARTED.md — Set up ROMs",
-   "note": "Copyrighted Commodore ROM — supply your own dump"
+   "link": "docs/GETTING-STARTED.md \u2014 Set up ROMs",
+   "note": "Copyrighted Commodore ROM \u2014 supply your own dump"
   },
   "drive1541": {
-   "description": "1541 DOS ROM, 16 KB — 1541-II 251968-03; required by the true-drive tests",
+   "description": "1541 DOS ROM, 16 KB \u2014 1541-II 251968-03; required by the true-drive tests",
    "paths": [
     "roms/1541.bin"
    ],
-   "link": "docs/GETTING-STARTED.md — Set up ROMs",
-   "note": "Copyrighted Commodore ROM — supply your own dump"
+   "link": "docs/GETTING-STARTED.md \u2014 Set up ROMs",
+   "note": "Copyrighted Commodore ROM \u2014 supply your own dump"
   }
  },
  "collections": {
@@ -100,7 +100,7 @@
  },
  "assets": {
   "cia-int-irq-prg": {
-   "description": "TLR cia-int IRQ testprog — VICE-testprogs interrupts/cia-int/cia-int-irq.prg (GPL-2)",
+   "description": "TLR cia-int IRQ testprog \u2014 VICE-testprogs interrupts/cia-int/cia-int-irq.prg (GPL-2)",
    "env": "C64_CIA_INT_PRG",
    "paths": [
     "~/projects/c64ready-workspace/c64media/vice-emu-code-r46094-testprogs/interrupts/cia-int/cia-int-irq.prg"
@@ -116,7 +116,7 @@
    ]
   },
   "klaus-6502-functional-bin": {
-   "description": "Klaus Dormann's 6502 functional test, 64 KB binary (GPL-3) — exhaustive opcode/flag verification",
+   "description": "Klaus Dormann's 6502 functional test, 64 KB binary (GPL-3) \u2014 exhaustive opcode/flag verification",
    "env": "C64_KLAUS_6502_BIN",
    "paths": [
     "investigation/6502_functional_test.bin",
@@ -125,31 +125,41 @@
    "link": "https://github.com/Klaus2m5/6502_65C02_functional_tests"
   },
   "raster-time-demo": {
-   "description": "Raster demo .d64 (Raster Time by Genesis Project, BCC Party #20) for the User Guide screenshots — the 'in action' overview-running shot, and the PETSCII directory art in drive8-loaded / directory-zoom — tools/guide-shots.mjs",
+   "description": "Raster demo .d64 (Raster Time by Genesis Project, BCC Party #20) for the User Guide screenshots \u2014 the 'in action' overview-running shot, and the PETSCII directory art in drive8-loaded / directory-zoom \u2014 tools/guide-shots.mjs",
    "env": "C64_RASTER_TIME_D64",
    "paths": [
     "~/projects/c64ready-workspace/c64media/d64/raster_time_gp.d64"
    ],
-   "note": "Demoscene production — bring your own; not distributed with this repo"
+   "note": "Demoscene production \u2014 bring your own; not distributed with this repo"
   },
   "commando": {
-   "description": "Commando (Elite/Capcom, 1985) as a ready-to-run PRG for the User Guide touch-joystick screenshot — a game title screen behind the on-screen controls. tools/guide-extra-shots.mjs",
+   "description": "Commando (Elite/Capcom, 1985) as a ready-to-run PRG for the User Guide touch-joystick screenshot \u2014 a game title screen behind the on-screen controls. tools/guide-extra-shots.mjs",
    "env": "C64_COMMANDO_PRG",
    "paths": [
     "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Uncrunched/Commando.prg"
    ],
-   "note": "Commercial game — bring your own; not distributed with this repo"
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "guide-sid": {
+   "description": "A SID tune for the User Guide's SID player screenshot \u2014 any .sid with a title, author and year in its header, so the player's screen has something to show. tools/guide-shots.mjs",
+   "env": "C64_GUIDE_SID",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/sid/guide.sid",
+    "~/Downloads/Ghostbusters_Theme.sid"
+   ],
+   "link": "https://www.hvsc.c64.org/",
+   "note": "High Voltage SID Collection tune \u2014 bring your own; not distributed with this repo"
   },
   "demo-tape": {
-   "description": "Any real tape image for the User Guide's Datasette animation — a few minutes long, so the bar and counter visibly climb across the capture. tools/datasette-anim.mjs",
+   "description": "Any real tape image for the User Guide's Datasette animation \u2014 a few minutes long, so the bar and counter visibly climb across the capture. tools/datasette-anim.mjs",
    "env": "C64_DEMO_TAP",
    "paths": [
     "~/projects/c64ready-workspace/c64media/tap/Commando.tap"
    ],
-   "note": "Commercial game — bring your own; not distributed with this repo"
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
   "reu-testprogs-dir": {
-   "description": "VICE-testprogs REU directory — the REU oracle suite (GPL-2)",
+   "description": "VICE-testprogs REU directory \u2014 the REU oracle suite (GPL-2)",
    "env": "C64_REU_TESTPROGS_DIR",
    "paths": [
     "~/projects/c64ready-workspace/c64media/vice-emu-code-r46094-testprogs/REU"
@@ -157,7 +167,7 @@
    "link": "https://github.com/libsidplayfp/VICE-testprogs"
   },
   "blureu-image": {
-   "description": "blu.reu — the 16 MB expansion image BluREU/Crest ships; reudetect needs it to pass",
+   "description": "blu.reu \u2014 the 16 MB expansion image BluREU/Crest ships; reudetect needs it to pass",
    "env": "C64_BLUREU_IMAGE",
    "paths": [
     "~/projects/c64ready-workspace/c64media/BluREU_Crest/blu.reu"
@@ -165,20 +175,20 @@
    "link": "https://csdb.dk/release/?id=92651"
   },
   "fppscroller-prg": {
-   "description": "FppScroller.prg (VIC-II c-access scroller) — commit-screenshots.mjs",
+   "description": "FppScroller.prg (VIC-II c-access scroller) \u2014 commit-screenshots.mjs",
    "env": "C64_FPPSCROLLER_PRG",
    "paths": [
     "~/projects/c64ready-workspace/c64media/prg/FppScroller.prg"
    ],
-   "note": "Demoscene production — bring your own; not distributed with this repo"
+   "note": "Demoscene production \u2014 bring your own; not distributed with this repo"
   },
   "orbit-untold-prg": {
-   "description": "Orbit Untold .prg (mid-line raster-IRQ demo) — commit-screenshots.mjs and tools/perf-workloads.mjs",
+   "description": "Orbit Untold .prg (mid-line raster-IRQ demo) \u2014 commit-screenshots.mjs and tools/perf-workloads.mjs",
    "env": "C64_ORBIT_UNTOLD_PRG",
    "paths": [
     "~/projects/c64ready-workspace/c64media/prg/OrbitUntold.prg"
    ],
-   "note": "Demoscene production — bring your own; not distributed with this repo"
+   "note": "Demoscene production \u2014 bring your own; not distributed with this repo"
   }
  }
 }

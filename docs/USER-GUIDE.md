@@ -55,8 +55,8 @@ centres the picture on the whole screen with bars around it.
 
 - **Click the screen** to give it keyboard focus, needed before typing or
   before a game that polls the keyboard will see your keys.
-- **Drag & drop** a `.PRG`, `.D64`, `.CRT`, `.TAP`, `.T64` or `.REU` file onto
-  the screen to load it (pointer devices). The hint below the monitor reminds you.
+- **Drag & drop** a `.PRG`, `.D64`, `.CRT`, `.TAP`, `.T64`, `.SID` or `.REU` file
+  onto the screen to load it (pointer devices). The hint below the monitor reminds you.
 - **On touch devices**, tap the screen to raise the on-screen keyboard; the hint
   changes to say so.
 
@@ -207,7 +207,7 @@ as `c64ready-<date-and-time>.mp4`.
 | **📂 LOAD STATE** | Opens the [Save states dialog](#save-states-dialog) to restore a frozen machine; also imports / exports state files. |
 | **💾 SAVE STATE** | Freezes the *whole* machine (RAM, every chip register, and whatever disk / tape / cartridge is inserted) into a named slot stored in this browser (browse them later with LOAD STATE). |
 | **📂 LOAD LIB** | Opens the [Library dialog](#library-dialog) of files you've loaded before, cached in this browser. |
-| **▶ LOAD ANY** | Picks any C64 file (`.prg`, `.d64`, `.crt`, `.tap`, `.t64`, `.wav`, `.dmp` or `.reu`) and does the right thing with it. |
+| **▶ LOAD ANY** | Picks any C64 file (`.prg`, `.d64`, `.crt`, `.tap`, `.t64`, `.sid`, `.wav`, `.dmp` or `.reu`) and does the right thing with it. |
 
 ### Save states dialog
 
@@ -244,7 +244,7 @@ dialog is empty, with just an **IMPORT** button:
 
 ![The Library dialog listing three cached disk images, each with a D64 type badge, its filename, size and load time and a ✕ remove button, with a filter box and the IMPORT / EXPORT / CLEAR ALL buttons.](/guide/library-loaded.webp)
 
-Opened with **📂 LOAD LIB**. Every `.PRG` / `.D64` / `.CRT` / `.TAP` / `.T64` / `.WAV` / `.DMP` you open is
+Opened with **📂 LOAD LIB**. Every `.PRG` / `.D64` / `.CRT` / `.TAP` / `.T64` / `.SID` / `.WAV` / `.DMP` you open is
 cached here so you can reload it without picking it from disk again. Each row is
 tagged with its file type and shows the name, size and when you loaded it.
 
@@ -392,6 +392,39 @@ its metadata is available.
 - Searches and new downloads need a connection.
 - Favorites and named searches remain visible offline.
 - Previously saved media opens through **LOAD LIB**, without a connection.
+
+## Playing a .sid tune
+
+![The C64 display running the SID player: a cyan title bar reading C64 READY. SID PLAYER, the tune's title, author and year beneath it, a line showing SONG 01/01, the elapsed time, the chip and the clock, then the three voices with their pitch bars, waveform, frequency and ADSR, a filter line, and an oscilloscope trace along the bottom above the key reminders.](/guide/sid-player.webp)
+
+A `.sid` is a tune, not a program — so it is wrapped in one. The file arrives
+with a player written in 6502 in front of it, and the C64 runs the tune's own
+driver on the real chip, which is why tunes timed by CIA interrupts, by the
+raster, or playing digi samples all work the same way they do on hardware.
+
+The player draws its own screen. The title, author and year come out of the
+file's header, along with the chip the tune was written for and its clock; an
+NTSC tune is flagged in red, because this machine is PAL and it will run about
+17% slow. The oscilloscope is voice 3, the one voice a program on a real C64 can
+read back.
+
+| Key | |
+| --- | --- |
+| **`1`–`9`, `0`** | Pick a song. |
+| **`+` / `-`** | Step through the songs, wrapping at either end. |
+| **`SPACE`** | Pause and resume. |
+| **`F7`** | Start the song again. |
+| **`F1`** | Switch between the two views. |
+
+**`F1`** shows all three voices — waveform, frequency and ADSR each, plus the
+filter and volume. None of that is readable on real hardware, so the player gets
+it by catching the driver's writes before they reach the chip, and a tune that
+plays digi samples will not survive the trick. If a tune sounds wrong in this
+view, press **`F1`** to go back. Tunes marked `RSID` — files that say they need a
+real C64 — start in the safe view for that reason.
+
+Switching into the three-voice view starts the song again, because what the
+driver set up before the switch was never seen.
 
 ## Disk drive 8
 
