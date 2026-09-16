@@ -2,7 +2,7 @@
 // Copyright © 2026 Morten Øien Eriksen
 import { copyData } from '../serializable.js';
 
-export const defaultSort = (filters = {}) => ({ id: String(filters.name || '').trim() ? 'relevance' : 'newest', direction: null });
+export const defaultSort = (filters = {}) => ({ id: `${filters.name || ''}${filters.file || ''}`.trim() ? 'relevance' : 'newest', direction: null });
 export const defaultQuery = () => ({ filters: {}, sort: defaultSort() });
 export function validateSearchState(query) {
   const value = copyData(query);

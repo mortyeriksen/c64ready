@@ -3,6 +3,11 @@
 
 const textFilters = [
   { key: 'name', label: 'Search title', type: 'text' },
+  // A release is named for the disk; the program on it is named for itself, and
+  // that is the name people remember. The catalog indexes both, so both are
+  // offered. One release comes back once per file that matches, which the
+  // controller already folds together by id.
+  { key: 'file', label: 'File name', type: 'text' },
   { key: 'group', label: 'Group / producer', type: 'text' },
   { key: 'handle', label: 'Handle / artist', type: 'text' },
   { key: 'event', label: 'Party / event', type: 'text' },

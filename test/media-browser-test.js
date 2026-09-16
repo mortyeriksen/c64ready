@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { deflateRawSync } from 'node:zlib';
-import { buildQuery, quoteText } from '../src/assembly64/query.js';
+import { buildQuery, quoteText, defaultSort } from '../src/assembly64/query.js';
 import { filterDefinitions, normalizePresets, normalizeCategories, quickFilters, sortOptions } from '../src/assembly64/filters.js';
 import { fixturePresets, fixtureCategories, sampleMedia, createFixtureTransport } from './fixtures/assembly64.js';
 import { normalizeItem, normalizeFiles, normalizePage } from '../src/assembly64/normalize.js';
@@ -26,6 +26,16 @@ const memoryStorage = () => {
 };
 test('AQL uses the public client clause and conjunction syntax', () => {
   assert.equal(buildQuery({ name: 'jumpman', type: 'prg', rating: '7' }, { id: 'relevance', direction: null }, definitions), '(name:"jumpman") & (type:prg) & (rating:>=7)');
+});
+test('AQL searches the file names on a release as its own clause', () => {
+  // A release is named for the disk; the program on it is named for itself, and
+  // that is the name people come looking for. The catalog indexes both, and this
+  // is the clause that reaches the second one.
+  assert.equal(buildQuery({ file: 'cybernoid' }, { id: 'relevance', direction: null }, definitions), '(file:"cybernoid")');
+});
+test('A file-name search sorts by relevance, the way a title search does', () => {
+  assert.deepEqual(defaultSort({ file: 'cybernoid' }), { id: 'relevance', direction: null });
+  assert.deepEqual(defaultSort({}), { id: 'newest', direction: null });
 });
 test('AQL sorting uses allowed server sort fields and direction', () => {
   assert.equal(buildQuery({}, { id: 'rating', direction: null }, definitions), '(sort:rating) & (order:desc)');
