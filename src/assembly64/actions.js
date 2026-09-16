@@ -7,7 +7,7 @@ import { el } from './dom.js';
 import { chooseFile } from '../media/choose-file.js';
 
 function chooseArchive(entries, signal) {
-  if (!entries.length) throw new Error('The ZIP contains no supported PRG, D64, CRT, TAP, T64 or REU files.');
+  if (!entries.length) throw new Error('The ZIP contains no supported PRG, D64, CRT, TAP, T64, SID or REU files.');
   return chooseFile('Choose a file from ZIP', entries, {
     label: entry => `${entry.path} · ${entry.size.toLocaleString()} B`,
     note: 'Only the selected media file will be opened and saved. Nested archives are not expanded.',
@@ -43,7 +43,9 @@ export function createAssembly64Actions(controller, openMedia) {
         return { message: 'File downloaded.' };
       }
       onProgress?.({ stage: options.action === 'save' ? 'save' : 'open', name, loaded: 0, total: null });
-      return await openMedia({ ...options, name, bytes, mediaType, signal,
+      // Catalog media lands on a machine that is rarely at a BASIC prompt, so
+      // it asks for one first.
+      return await openMedia({ ...options, name, bytes, mediaType, signal, reset: true,
         metadata: { source: 'assembly64', releaseTitle: item.title, provenance: {
           version: 1, provider: 'assembly64', itemId: item.id, itemRef: copyData(item.ref), fileId: file.id, fileRef: copyData(file.ref),
         } },

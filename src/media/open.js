@@ -8,6 +8,7 @@ import { REU_MODELS } from '../reu.js';
 import { MAX_DOWNLOAD_BYTES, allowedActions, safeFilename } from './formats.js';
 import { sourceMetadata } from './source-metadata.js';
 import { isT64 } from './t64.js';
+import { parseSid, openSid } from './sid.js';
 
 export function validateMedia(bytes, type) {
   if (!(bytes instanceof Uint8Array) || !bytes.length) throw new Error('The media file is empty.');
@@ -44,6 +45,10 @@ export function validateMedia(bytes, type) {
     new Datasette().loadTap(bytes);
   } else if (type === 'reu') {
     if (bytes.length > Math.max(...REU_MODELS.map(model => model.kb)) * 1024) throw new Error('REU image exceeds the supported RAM Expansion capacity.');
+  } else if (type === 'sid') {
+    // The header alone; whether the tune will fit around the player is settled
+    // when it is wrapped, because that is when its length matters.
+    parseSid(bytes);
   } else if (type === 't64') {
     // The directory is read when a program is taken out of the archive; what is
     // checked here is that this is an archive at all, so a mislabelled file is
@@ -59,7 +64,7 @@ export function createOpenMedia(port) {
     if (busy) throw new Error('Another media operation is in progress.');
     busy = true;
     try {
-      const { bytes, mediaType, action = 'run', targetDrive = 8, writeProtected = true, saveToLibrary = true, signal } = request;
+      const { bytes, mediaType, action = 'run', targetDrive = 8, writeProtected = true, saveToLibrary = true, reset = false, signal } = request;
       signal?.throwIfAborted();
       if (!allowedActions(mediaType).includes(action) || !['run', 'mount', 'save'].includes(action)) throw new Error('Unsupported media action.');
       if (![8, 9].includes(targetDrive)) throw new Error('Choose drive 8 or 9.');
@@ -77,6 +82,12 @@ export function createOpenMedia(port) {
         if (!program) return { message: 'Archive selection cancelled.', saved: false, name, mediaType };
         load = { data: program.data, type: 'prg', name: safeFilename(program.name) };
       }
+      // A .sid asks nothing: the player that ships inside the .prg carries the
+      // song selector, so which subtune plays is decided on the C64.
+      if (mediaType === 'sid' && action !== 'save') {
+        const tune = openSid(data, name);
+        load = { data: tune.data, type: 'prg', name: safeFilename(tune.name) };
+      }
       signal?.throwIfAborted();
       const disk = validateMedia(load.data, load.type);
       const autorun = mediaType !== 'reu' && action !== 'mount' && (request.autorun ?? port.getAutorunEnabled());
@@ -84,6 +95,16 @@ export function createOpenMedia(port) {
       if (action !== 'save') {
         if (!port.isRunning() && !(await port.powerOn())) throw new Error('Load the required ROMs in Setup before opening media.');
         signal?.throwIfAborted();
+        // Something else is very likely still running when media arrives out of
+        // a catalog — the last release, or a tune whose player owns the
+        // interrupts and the screen — and a load typed at a machine with no
+        // BASIC prompt never happens at all. This asks for a prompt to type at,
+        // and does nothing when the machine is already at one. A cartridge
+        // cold-boots itself and expansion RAM needs no prompt, so neither is
+        // interrupted.
+        if (reset && !['crt', 'reu'].includes(load.type) && port.reset && !port.reset()) {
+          throw new Error('Could not reset the machine to load this.');
+        }
         if (load.type === 'd64') {
           await port.prepareDisk?.({ targetDrive, signal });
           signal?.throwIfAborted();

@@ -168,6 +168,17 @@ test('A .t64 from Assembly64 reaches openMedia as the archive itself', async () 
   assert.equal(opened[0].name, 'browser-sample.t64', 'under the name the release lists');
   assert.equal(opened[0].bytes, archive, 'with the archive bytes unchanged');
 });
+test('Opening a release from the catalog asks for a prompt to load at', async () => {
+  // The machine is rarely at a BASIC prompt by the time a second release is
+  // chosen — the first one is still running.
+  const controller = { online: () => true, download: async () => sampleMedia('prg') };
+  let request = null;
+  const perform = createAssembly64Actions(controller, async value => { request = value; return { message: 'PRG loaded' }; });
+  await perform({ id: 'lab-reset', title: 'Release', ref: {} },
+    { id: 'p', name: 'release.prg', mediaType: 'prg', size: 16, ref: {} },
+    { action: 'run' }, undefined, () => {});
+  assert.equal(request.reset, true);
+});
 test('An Assembly64 .t64 offers the same actions as any other program', () => {
   assert.deepEqual(allowedActions('t64'), ['run', 'save', 'download']);
 });
@@ -190,14 +201,20 @@ test('Favorite credits survive saving and reloading', () => {
 for (const type of ['prg', 'd64', 'crt', 'tap', 'reu']) {
   test(`Quick Load chooses the sole ${type.toUpperCase()} even with unsupported companions`, () => {
     const file = { mediaType: type };
-    assert.equal(singleLoadableFile({ files: [{ mediaType: 'sid' }, file, { mediaType: 'txt' }] }), file);
+    assert.equal(singleLoadableFile({ files: [{ mediaType: 'nfo' }, file, { mediaType: 'txt' }] }), file);
   });
 }
 test('Quick Load requires selection when two emulator-compatible files exist', () => {
   assert.equal(singleLoadableFile({ files: [{ mediaType: 'prg' }, { mediaType: 'reu' }] }), null);
 });
 test('Quick Load cannot dispatch an unsupported-only release', () => {
-  assert.equal(singleLoadableFile({ files: [{ mediaType: 'sid' }] }), null);
+  assert.equal(singleLoadableFile({ files: [{ mediaType: 'nfo' }] }), null);
+});
+test('Quick Load dispatches a release that is nothing but a tune', () => {
+  // Which is most of the High Voltage SID Collection, and the whole point of a
+  // .sid being a type the loader takes.
+  const file = { mediaType: 'sid' };
+  assert.equal(singleLoadableFile({ files: [file, { mediaType: 'txt' }] }), file);
 });
 
 for (const type of ['prg', 'd64', 'crt', 'tap', 'reu', 'zip', 'sid', 'txt']) {

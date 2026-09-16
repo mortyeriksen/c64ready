@@ -218,7 +218,7 @@ async function _renderLibrary() {
 // current state and auto-load when AUTORUN is on; crt cold-boots itself.
 // Returns false when validation or power-on fails.
 async function _loadLibraryEntry(entry) {
-  if (!['prg', 'd64', 'crt', 'tap', 't64', 'reu'].includes(entry.type)) return false;
+  if (!['prg', 'd64', 'crt', 'tap', 't64', 'sid', 'reu'].includes(entry.type)) return false;
   try {
     await openMedia({ name: entry.name, bytes: entry.data, mediaType: entry.type, saveToLibrary: false });
     return true;
@@ -954,6 +954,9 @@ export function mediaTypeOf(filename) {
     // says. It never reaches the loader as itself: the program is taken out of
     // it first, and goes on as the .prg it already is.
     : n.endsWith('.t64') ? 't64'
+    // A tune is run by the C64, not by a player written in JavaScript: it is
+    // wrapped in a .prg that carries a 6502 player, and that is what loads.
+    : n.endsWith('.sid') ? 'sid'
     : n.endsWith('.prg') ? 'prg'
     : n.endsWith('.crt') ? 'crt'
     // Expansion-RAM images. Unlike the other types these are never cached in
@@ -965,7 +968,7 @@ prgBtn.addEventListener('click', () => prgInput.click());
 prgInput.addEventListener('change', async e => {
   const file = e.target.files[0];
   if (!file) return;
-  if (_rejectWrongExt(file, ['.prg', '.d64', '.crt', '.tap', '.t64', '.wav', '.dmp', '.reu'], prgInput)) return;
+  if (_rejectWrongExt(file, ['.prg', '.d64', '.crt', '.tap', '.t64', '.sid', '.wav', '.dmp', '.reu'], prgInput)) return;
   const buf  = await file.arrayBuffer();
   const data = new Uint8Array(buf);
   const type = mediaTypeOf(file.name);
@@ -3227,6 +3230,9 @@ export const openMedia = createOpenMedia({
   getAutorunEnabled: () => getAutorunEnabled(),
   prepareDisk: _prepareD64,
   save: (...args) => libSave(...args),
+  // A prompt to type a load at, resetting only when there is not one already —
+  // the same rule click-to-load follows from a directory listing.
+  reset: () => (_pristineBoot || _basicReady()) ? true : _hardReset(),
   prg: async (bytes, name, options) => { await _insertPRG(bytes, 'loaded', name, options); },
   // The one program out of a .t64, asked for only when one is about to run.
   archive: (bytes, name, options) => openT64(bytes, name, options),

@@ -25,6 +25,22 @@ export function sampleMedia(type) {
     bytes.set(Uint8Array.from(body), 96);
     return bytes;
   }
+  // A PSID whose driver is four bytes of rts, enough to be a real file.
+  if (type === 'sid') {
+    const bytes = new Uint8Array(0x7C + 2 + 4);
+    bytes.set(new TextEncoder().encode('PSID'));
+    bytes[5] = 2;                                      // version 2
+    bytes[7] = 0x7C;                                   // where the data starts
+    bytes[10] = 0x10;                                  // init $1000
+    bytes[12] = 0x10; bytes[13] = 0x04;                // play $1004
+    bytes[15] = 1;                                     // one song
+    bytes[17] = 1;
+    bytes.set(new TextEncoder().encode('BROWSER TUNE'), 0x16);
+    bytes[0x77] = (1 << 2) | (2 << 4);                 // PAL, 8580
+    bytes[0x7C] = 0x00; bytes[0x7D] = 0x10;            // the tune loads at $1000
+    bytes.set([0x60, 0x60, 0x60, 0x60], 0x7E);
+    return bytes;
+  }
   if (type === 'tap') {
     const bytes = new Uint8Array(24);
     bytes.set(new TextEncoder().encode('C64-TAPE-RAW'));

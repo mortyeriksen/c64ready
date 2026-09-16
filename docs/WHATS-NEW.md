@@ -19,6 +19,25 @@ The version you are running is shown at the bottom of the About dialog.
   any production that leans on this corner of the 6510 now sees the real
   chip's timing.
 
+- **`.SID` tunes play, on a player that runs on the C64.** Drop one on the
+  screen, pick it with LOAD ANY, or open one straight from Assembly64 — the
+  whole High Voltage SID Collection is in there. The tune is not played by
+  emulating a player: it is wrapped in a program that runs on the 6510 and
+  drives the real SID, which is why CIA-timed tunes, raster-timed tunes and digi
+  tricks all work by construction rather than by special cases.
+
+  The player has a screen of its own. It shows the title, author and year out of
+  the file, the song and how long it has been playing, the chip and clock the
+  tune asks for, and an oscilloscope drawn from voice 3 — the one voice a
+  program on real hardware can actually read back. Keys `1`-`9` and `0` pick a
+  song, `+` and `-` step through them, `SPACE` pauses and `F7` starts the song
+  again.
+
+  `F1` switches to a view of all three voices — waveform, frequency and ADSR,
+  plus the filter and volume. Getting there means intercepting the driver's
+  writes, which a tune that plays digi samples will not survive, so it is a key
+  rather than the default, and `F1` goes back.
+
 - **`.T64` archives open.** Drop one on the screen, or pick it with LOAD ANY,
   and the program inside runs. A `.t64` is not really a tape: it is an archive
   holding one or more ready programs, so the program comes straight out of it

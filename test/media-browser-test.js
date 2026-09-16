@@ -71,7 +71,7 @@ test('Malformed file collections are errors', () => assert.throws(() => normaliz
 test('A full page advances by the number received', () => assert.equal(normalizePage([{ id: 'x', category: 0 }], { offset: 20, limit: 1 }).nextOffset, 21));
 test('A short page ends pagination', () => assert.equal(normalizePage([], { offset: 20, limit: 10 }).hasMore, false));
 test('D64 actions include mount and run', () => assert.deepEqual(allowedActions('d64'), ['mount', 'run', 'save', 'download']));
-for (const type of ['sid', 'g64', 'd71', 'd81']) {
+for (const type of ['g64', 'd71', 'd81', 'p00']) {
   test(`${type} cannot be sent to the emulator`, () => assert.deepEqual(allowedActions(type), ['download']));
 }
 test('Direct run requires exactly one file', () => assert.equal(directRunFile({ files: [{ mediaType: 'prg' }, { mediaType: 'sid' }] }), null));
@@ -231,6 +231,72 @@ test('A dismissed .t64 chooser loads nothing and saves nothing', async () => {
   const result = await createOpenMedia(port)({ name: 'sample.t64', bytes: sampleMedia('t64'), mediaType: 't64' });
   assert.equal(port.calls.length, 0);
   assert.match(result.message, /cancelled/);
+});
+// A machine running a demo, or a tune whose player owns the interrupts, has no
+// BASIC prompt — and a load typed at a machine with no prompt never happens.
+const resettingPort = () => {
+  const port = mediaPort();
+  port.reset = () => { port.calls.push(['reset']); return true; };
+  return port;
+};
+test('Media out of a catalog gets a prompt to load at first', async () => {
+  const port = resettingPort();
+  await createOpenMedia(port)({ name: 'sample.prg', bytes: sampleMedia('prg'), mediaType: 'prg', reset: true, saveToLibrary: false });
+  assert.deepEqual(port.calls.map(call => call[0]), ['reset', 'prg'], 'and the reset comes first');
+});
+test('A tune out of a catalog gets that prompt too', async () => {
+  const port = resettingPort();
+  await createOpenMedia(port)({ name: 'sample.sid', bytes: sampleMedia('sid'), mediaType: 'sid', reset: true, saveToLibrary: false });
+  assert.deepEqual(port.calls.map(call => call[0]), ['reset', 'prg']);
+});
+test('A load that did not come from a catalog leaves the machine where it is', async () => {
+  const port = resettingPort();
+  await createOpenMedia(port)({ name: 'sample.prg', bytes: sampleMedia('prg'), mediaType: 'prg', saveToLibrary: false });
+  assert.deepEqual(port.calls.map(call => call[0]), ['prg']);
+});
+for (const type of ['crt', 'reu']) {
+  test(`A ${type.toUpperCase()} is not reset out from under itself`, async () => {
+    const port = resettingPort();
+    await createOpenMedia(port)({ name: `sample.${type}`, bytes: sampleMedia(type), mediaType: type, reset: true, saveToLibrary: false });
+    assert.deepEqual(port.calls.map(call => call[0]), [type], 'a cartridge cold-boots itself; expansion RAM needs no prompt');
+  });
+}
+test('A machine that will not come back to a prompt says so', async () => {
+  const port = mediaPort();
+  port.reset = () => false;
+  await assert.rejects(
+    createOpenMedia(port)({ name: 'sample.prg', bytes: sampleMedia('prg'), mediaType: 'prg', reset: true, saveToLibrary: false }),
+    /Could not reset/);
+});
+
+test('A .sid is wrapped for the loader and kept in the Library as a tune', async () => {
+  // Same division as a .t64: the loader is handed something it can run, the
+  // Library keeps the file the person actually has. No dialog either way — the
+  // subtunes are picked on the C64, by the player inside the .prg.
+  const tune = sampleMedia('sid');
+  const port = mediaPort();
+  const result = await createOpenMedia(port)({ name: 'sample.sid', bytes: tune, mediaType: 'sid' });
+  assert.equal(port.calls[0][0], 'prg', 'the loader gets a program');
+  assert.equal(port.calls[0][2], 'sample.prg', 'named after the tune');
+  assert.deepEqual([...port.calls[0][1].slice(0, 2)], [0x01, 0x08], 'a BASIC program, so RUN starts it');
+  const save = port.calls.find(call => call[0] === 'save');
+  assert.deepEqual([save[1], save[2]], ['sid', 'sample.sid'], 'the Library gets the tune');
+  assert.equal(result.mediaType, 'sid');
+});
+test('Saving a .sid to the Library does not wrap it', async () => {
+  const port = mediaPort();
+  await createOpenMedia(port)({ name: 'sample.sid', bytes: sampleMedia('sid'), mediaType: 'sid', action: 'save' });
+  assert.equal(port.calls[0][0], 'save');
+  assert.equal(port.calls.length, 1, 'nothing is loaded');
+});
+test('A file that is not a tune is refused before it reaches the Library', () => {
+  // Long enough to be a header, so it is the magic that turns it away rather
+  // than the length.
+  assert.throws(() => validateMedia(new Uint8Array(200).fill(0x41), 'sid'), /PSID or RSID/);
+  assert.throws(() => validateMedia(sampleMedia('prg'), 'sid'), /\.sid/);
+});
+test('An Assembly64 .sid offers the same actions as any other program', () => {
+  assert.deepEqual(allowedActions('sid'), ['run', 'save', 'download']);
 });
 test('A file that is not an archive is refused before it reaches the Library', () => {
   assert.throws(() => validateMedia(sampleMedia('prg'), 't64'), /not a \.t64 archive/);

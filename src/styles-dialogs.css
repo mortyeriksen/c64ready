@@ -385,6 +385,7 @@
 .lib-type-crt { background: #cf8a4f; }  /* VIC orange (8)  */
 .lib-type-tap { background: #e6dd6b; }  /* VIC yellow (7)  */
 .lib-type-t64 { background: #c46c71; }  /* VIC light red (10) — an archive, not a tape */
+.lib-type-sid { background: #f298c4; }  /* the browser's own music pink (icons.js) */
 
 .lib-name {
   flex: 1 1 auto;
