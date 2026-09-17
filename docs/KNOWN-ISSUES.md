@@ -62,14 +62,13 @@ software. [Component status](COMPONENT-STATUS.md) records the specifics:
 
 ## Unsupported file formats
 
-The supported set is `.prg`, `.d64`, `.crt`, `.tap`, `.wav`, `.dmp` and `.reu` (see the
-[Features](FEATURES.md) overview). Two adjacent formats are out of scope:
+The supported set is `.prg`, `.d64`, `.crt`, `.tap`, `.t64`, `.sid`, `.wav`, `.dmp`
+and `.reu` (see the [Features](FEATURES.md) overview). One adjacent format is out
+of scope:
 
 - **`.g64` / raw GCR disk images**: the true drive synthesizes its GCR stream
   from `.d64` images, so copy protections that depend on custom flux-level track
   layouts won't load.
-- **`.t64` tape archives**: only real `.tap` images play; convert `.t64`
-  programs to `.prg` first.
 
 ## D64 disk images
 
@@ -86,6 +85,56 @@ loading:
    layouts; an unrecognised one leaves those tracks alone rather than guessing.
 
 The parser-level specifics are in [Component status](COMPONENT-STATUS.md).
+
+## SID tunes
+
+A `.sid` is wrapped in a program that carries a 6502 player, and the C64 runs the
+tune's own driver (see [Playing a .sid tune](USER-GUIDE.md#playing-a-sid-tune)).
+That puts a few limits on which tunes can run at all, and on what the player can
+show while they do.
+
+**Tunes that cannot be loaded.** The player needs somewhere to live and a screen
+to draw on, so a tune is refused when it would land on top of either. Across a
+264-file test collection about one in sixteen was refused, for one of these
+reasons:
+
+- **Over `$D000-$DFFF`**: the I/O registers, which is where the SID itself is.
+  A tune cannot have that range without taking the chip it is playing through.
+- **Over screen memory** (`$0400-$07FF`), which the player draws on.
+- **No room left**: the player needs about 3 KB clear of the tune. It moves out
+  of the tune's way wherever it can — including into the RAM under the BASIC
+  ROM — but a few very large tunes leave nowhere to go.
+
+A tune living at `$E000-$FFFF`, under the KERNAL ROM, does play: the driver — and
+only the driver — runs with the ROM banked out for the length of each call. That
+is a classic home for a game's music, so it covers a fair number of Rob Hubbard
+and Martin Galway titles.
+
+**BASIC tunes do not play.** A handful of `.sid` files are BASIC programs rather
+than machine code — an `RSID` with the BASIC flag set, loading at `$0801` and
+meant to be `RUN` rather than called. The player banks BASIC out for the whole
+run, because it or the tune may be sitting in the RAM underneath the ROM, and it
+drives a tune by calling `init` and `play` rather than handing the machine to
+BASIC. Those files load and stay silent.
+
+**The three-voice view (`F1`) is not free.** SID registers are write-only, so the
+player can only show all three voices by catching the driver's writes before they
+reach the chip. A driver that plays digi samples writes `$D418` many times per
+frame and gets all of it collapsed into one value, and a driver that reads
+`$D012` or the CIAs while playing loses its timing. Press `F1` again to go back;
+the default view is always exact. Switching *into* the three-voice view starts
+the song again, because what the driver set up before the switch was never seen.
+
+**The oscilloscope is voice 3 only**, in both views — it is the one voice a
+program on real hardware can read back. On a voice that arpeggiates, which is how
+a SID chord is usually played, the trace legitimately changes every frame.
+
+**Song lengths and STIL notes are not shown.** Both live in High Voltage SID
+Collection data files rather than in the tune, so the player counts elapsed time
+and has no total and no scrubber.
+
+**NTSC tunes run about 17% slow**, like any NTSC software here; the player says
+so on screen rather than leaving it a mystery.
 
 ## With True Drive Emulation off
 

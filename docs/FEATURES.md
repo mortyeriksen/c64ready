@@ -57,6 +57,14 @@ installs as an app. For a step-by-step walkthrough see the
   ordinary tape (and any tape downloads as one).
 - **`.dmp` tape dumps**: a DC2N's record of a cassette, taken at the port,
   loads as an ordinary tape.
+- **`.t64` archives**: a tape-named format that is not a tape — it holds ready
+  programs, and the one you pick loads as a program would, with no disk or tape
+  in between. Almost every archive holds exactly one.
+- **`.sid` tunes**: music plays on a player that runs on the C64 itself, with the
+  tune's own driver on the real chip. The player has its own screen — title,
+  author and year, the song and how long it has been playing, an oscilloscope,
+  and a view of all three voices. See
+  [Playing a .sid tune](USER-GUIDE.md#playing-a-sid-tune).
 - **`.reu` expansion-RAM images**: load a RAM Expansion Unit's contents, and
   save them back out.
 - **Drag-and-drop**: drop any supported file on the screen and it goes to the
