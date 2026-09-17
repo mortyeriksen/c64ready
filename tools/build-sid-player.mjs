@@ -48,12 +48,12 @@ const KEYS1 = '1-9 0 SONG   +/- STEP   SPC PAUSE';
 const KEYS_SAFE = 'F1 VOICES    F7 RESTART';
 const KEYS_VOICES = 'F1 SAFE      F7 RESTART';
 
-const source = `
+const sourceAt = origin => `
 ; ── C64 READY SID player ─────────────────────────────────────────────────────
 ; Assembled for $C000 and copied there before anything else moves, so the tune's
 ; own load address is free to be almost anywhere below it.
 
-        .org $${PLAYER_ORIGIN.toString(16)}
+        .org $${origin.toString(16)}
 
 SCREEN  = $0400
 COLOR   = $d800
@@ -63,12 +63,19 @@ GETIN   = $ffe4
 SCNKEY  = $ff9f             ; the KERNAL's keyboard scan, on its own
 KERNAL_RTI = $ea81          ; the tail that pulls Y, X, A and returns
 RAM_UNDER_IO = $34          ; LORAM=0, HIRAM=0 — RAM at $A000, $D000 and $E000
-NORMAL_BANK  = $37
+; BASIC stays banked out for good. $A000-$BFFF is RAM underneath it, and both
+; the player and plenty of tunes want to live there — a game rip loading at
+; $B550 cannot execute at all with the ROM in front of it. The KERNAL stays,
+; because the keyboard scan and GETIN come from it, and there is no BASIC to
+; return to anyway.
+NORMAL_BANK  = $36
 
-; Player variables live in their own page. Zero page belongs to the driver:
-; plenty of them use all of it, and the copy below is the only time this program
-; touches it — before any driver code has run.
-VARS    = $cf00
+; Player variables live at the end of the program rather than in a page of their
+; own, so that every address the player holds is inside its own image and moving
+; it is one delta applied to a relocation list. Zero page belongs to the driver:
+; plenty of them use all of it, and the payload copy below is the only time this
+; program touches it — before any driver code has run.
+VARS    = vars
 curSong = VARS+0
 frames  = VARS+1
 secs    = VARS+2
@@ -78,7 +85,6 @@ slow    = VARS+5
 slower  = VARS+23
 view    = VARS+6            ; 0 = safe, 1 = voices
 paused  = VARS+7
-pages   = VARS+8
 tmp     = VARS+9
 tmp2    = VARS+10
 tmp3    = VARS+11
@@ -105,6 +111,10 @@ P_SONGS = 8
 P_START = 9
 P_SPEED = 10
 P_FLAGS = 14
+; What $01 has to be while the driver runs. Normally the same bank the player
+; uses, but a tune living at $E000 is under the KERNAL ROM and can only execute
+; with it out — so the driver, and only the driver, runs under $35.
+P_BANK  = 15
 P_CIA   = 16
 P_TITLE = 18
 P_AUTHOR = 50
@@ -199,20 +209,24 @@ advanceClock:
 acDone: rts
 
 ; ── the tune's bytes, moved to where it expects them ─────────────────────────
-; Whole pages, and away from the overlap: descending when the destination is
-; above the staged copy, ascending when it is below. The host has already made
-; sure the rounded-up length still clears the player.
+; Exactly as many bytes as the tune has, not whole pages: a tune ending near
+; $FFFF would otherwise have its last page rounded past the top of memory and
+; wrap into zero page. Away from the overlap, too — descending when the
+; destination is above the staged copy, ascending when it is below.
 copyPayload:
-        lda params+P_LEN+1
-        sta pages
         lda params+P_LEN
-        beq cpRounded
-        inc pages
-cpRounded:
-        lda pages
+        ora params+P_LEN+1
         bne cpGo
         rts
 cpGo:
+        lda #<STAGE
+        sta $fb
+        lda #>STAGE
+        sta $fc
+        lda params+P_LOAD
+        sta $fd
+        lda params+P_LOAD+1
+        sta $fe
         lda params+P_LOAD+1
         cmp #>STAGE
         bcc cpAsc
@@ -221,48 +235,45 @@ cpGo:
         cmp #<STAGE
         bcc cpAsc
 cpDesc:
-        lda #<STAGE
-        sta $fb
-        lda #>STAGE
+        ; Point both blocks at their last page, then walk down.
+        lda $fc
         clc
-        adc pages
-        sec
-        sbc #1
+        adc params+P_LEN+1
         sta $fc
-        lda params+P_LOAD
-        sta $fd
-        lda params+P_LOAD+1
+        lda $fe
         clc
-        adc pages
-        sec
-        sbc #1
+        adc params+P_LEN+1
         sta $fe
-        ldx pages
-cpDPage:
-        ldy #$ff
-cpDByte:
+        ldx params+P_LEN+1
+        ldy params+P_LEN
+        beq cpDPages
+cpDTail:
+        dey
         lda ($fb),y
         sta ($fd),y
-        dey
-        cpy #$ff
-        bne cpDByte
+        cpy #0
+        bne cpDTail
+cpDPages:
+        cpx #0
+        beq cpDone
+cpDPage:
         dec $fc
         dec $fe
+        ldy #0
+cpDByte:
+        dey
+        lda ($fb),y
+        sta ($fd),y
+        cpy #0
+        bne cpDByte
         dex
         bne cpDPage
         rts
 cpAsc:
-        lda #<STAGE
-        sta $fb
-        lda #>STAGE
-        sta $fc
-        lda params+P_LOAD
-        sta $fd
-        lda params+P_LOAD+1
-        sta $fe
-        ldx pages
-cpAPage:
+        ldx params+P_LEN+1
+        beq cpATail
         ldy #0
+cpAPage:
 cpAByte:
         lda ($fb),y
         sta ($fd),y
@@ -272,7 +283,16 @@ cpAByte:
         inc $fe
         dex
         bne cpAPage
-        rts
+cpATail:
+        ldy #0
+cpATByte:
+        cpy params+P_LEN
+        beq cpDone
+        lda ($fb),y
+        sta ($fd),y
+        iny
+        jmp cpATByte
+cpDone: rts
 
 patchTrampolines:
         lda params+P_INIT
@@ -319,7 +339,11 @@ irq:
         jsr pushShadow
         jmp irqTick
 irqPlain:
+        lda params+P_BANK
+        sta $01
         jsr playJmp
+        lda #NORMAL_BANK
+        sta $01
 irqTick:
         jsr advanceClock
         lda #1
@@ -463,10 +487,14 @@ startSong:
         jsr pushShadow
         jmp ssAfter
 ssPlain:
+        lda params+P_BANK
+        sta $01
         lda curSong
         sec
         sbc #1
         jsr initJmp
+        lda #NORMAL_BANK
+        sta $01
 ssAfter:
         ; A driver's init may restore the KERNAL vector from its own stop path,
         ; which would silence every song change after the first.
@@ -1369,6 +1397,7 @@ voiceColours:
         .byte 0
 
 params: .fill ${PARAM_SIZE}
+vars:   .fill 160
 playerEnd:
 `;
 
@@ -1380,7 +1409,7 @@ function build() {
   let stage = 0;
   let player = null, copier = null;
   for (let round = 0; round < 4; round++) {
-    player = assemble(source, { STAGE: stage });
+    player = assemble(sourceAt(PLAYER_ORIGIN), { STAGE: stage });
     const blobAt = PRG_BASE + BASIC_STUB.length;
     copier = assemble(`
         .org $${(PRG_BASE + BASIC_STUB.length).toString(16)}
@@ -1393,6 +1422,7 @@ function build() {
         sta $fc
         lda #0
         sta $fd
+copierPage:
         lda #$c0
         sta $fe
         ldx #${Math.ceil(player.bytes.length / 256)}
@@ -1407,6 +1437,9 @@ copyByte:
         inc $fe
         dex
         bne copyPage
+        lda #$36                ; BASIC out before the jump: the player may be
+        sta $01                 ; sitting in the RAM underneath it
+copierJmp:
         jmp $c000
 blob:
 `, {});
@@ -1419,14 +1452,33 @@ blob:
 }
 
 const { player, copier, stage } = build();
+
+// A moved player has to be byte for byte what assembling it at that address
+// would have produced. Every address the relocation list forgets shows up here
+// rather than as a program that quietly returns to BASIC.
+function checkRelocatable(at) {
+  const moved = assemble(sourceAt(at), { STAGE: stage });
+  const page = (at - PLAYER_ORIGIN) >> 8;
+  const relocated = Uint8Array.from(player.bytes);
+  for (const { at: offset, kind } of player.relocations) {
+    const index = offset + (kind === 'word' ? 1 : 0);
+    relocated[index] = (relocated[index] + page) & 0xFF;
+  }
+  for (let i = 0; i < relocated.length; i++) {
+    if (relocated[i] !== moved.bytes[i]) {
+      throw new Error(`relocating to $${at.toString(16)} misses offset ${i}: relocated $${relocated[i].toString(16)}, assembled $${moved.bytes[i].toString(16)}`);
+    }
+  }
+}
+for (const at of [0x0900, 0x4000, 0xA900, 0xBF00]) checkRelocatable(at);
 const front = Uint8Array.from([
   PRG_BASE & 0xFF, PRG_BASE >> 8,
   ...BASIC_STUB, ...copier.bytes, ...player.bytes,
 ]);
-const paramAt = front.length - PARAM_SIZE;
+const paramAt = 2 + BASIC_STUB.length + copier.bytes.length + (player.symbols.params - PLAYER_ORIGIN);
 const playerEnd = player.symbols.playerEnd;
 
-if (playerEnd > 0xCF00) throw new Error(`the player runs into its own variables at $${playerEnd.toString(16)}`);
+if (player.bytes.length > 0x1000) throw new Error(`the player is ${player.bytes.length} bytes; it no longer fits a 4K window`);
 if (stage !== PRG_BASE + BASIC_STUB.length + copier.bytes.length + player.bytes.length) throw new Error('the staged address never settled');
 
 const js = `// SPDX-License-Identifier: GPL-3.0-or-later
@@ -1441,16 +1493,30 @@ const js = `// SPDX-License-Identifier: GPL-3.0-or-later
 // itself ending in its parameter block. A .sid becomes a .prg by filling in that
 // block and appending the tune's own bytes.
 
+/** Where the player's own bytes start inside PLAYER. */
+export const BLOB_AT = ${2 + BASIC_STUB.length + copier.bytes.length};
+/** How many bytes the player is, variables included. */
+export const BLOB_SIZE = ${player.bytes.length};
+/** Bytes inside the player holding an address that moves with it. \`kind\` is
+ *  'word' for the low byte of a two-byte operand and 'high' for a lone page
+ *  byte; a page-aligned move adds the delta's high byte to the byte after a
+ *  'word' entry, and to a 'high' entry itself. Offsets are from BLOB_AT. */
+export const RELOCATIONS = ${JSON.stringify(player.relocations)};
+/** The copier's own two references to wherever the player is going. */
+export const COPIER_PAGE_AT = ${2 + BASIC_STUB.length + (copier.symbols.copierPage - copier.origin) + 1};
+export const COPIER_JMP_AT = ${2 + BASIC_STUB.length + (copier.symbols.copierJmp - copier.origin) + 2};
 /** Where the parameter block starts inside PLAYER. */
 export const PARAM_AT = ${paramAt};
 /** How long the parameter block is. */
 export const PARAM_SIZE = ${PARAM_SIZE};
 /** The address the tune's bytes sit at before the player moves them. */
 export const PAYLOAD_STAGE = 0x${stage.toString(16).toUpperCase()};
-/** The player's own address; a tune may not load over it. */
+/** Where the player is assembled to sit, and where it goes when the tune leaves
+ *  that free: 4K that no PSID wants. A tune that reaches into it moves the
+ *  player somewhere else instead (see src/media/sid.js). */
 export const PLAYER_ORIGIN = 0x${PLAYER_ORIGIN.toString(16).toUpperCase()};
-/** The top of the player's variables — the real ceiling for a tune. */
-export const PLAYER_TOP = 0xD000;
+/** The player may not be placed at or above this: I/O lives there. */
+export const PLAYER_CEILING = 0xD000;
 /** Where the .prg loads. */
 export const PRG_BASE = 0x${PRG_BASE.toString(16).toUpperCase()};
 
@@ -1463,7 +1529,7 @@ ${Array.from(front).map((b, i) => (i % 16 === 0 ? '  ' : '') + b).reduce((rows, 
 ]);
 `;
 fs.writeFileSync(OUT, js);
-console.log(`player   ${player.bytes.length} bytes ($C000–$${(playerEnd - 1).toString(16).toUpperCase()}, params at $${(playerEnd - PARAM_SIZE).toString(16).toUpperCase()})`);
+console.log(`player   ${player.bytes.length} bytes ($C000–$${(playerEnd - 1).toString(16).toUpperCase()}, params at $${player.symbols.params.toString(16).toUpperCase()}, vars at $${player.symbols.vars.toString(16).toUpperCase()})`);
 console.log(`copier   ${copier.bytes.length} bytes`);
 console.log(`front    ${front.length} bytes, tune staged at $${stage.toString(16).toUpperCase()}`);
 console.log(`wrote    ${path.relative(ROOT, OUT)}`);

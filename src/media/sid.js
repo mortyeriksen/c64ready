@@ -15,11 +15,23 @@
 // The header is big-endian, which no other format here is: the format came from
 // a Java program on a big-endian day and never changed.
 
-import { PLAYER, PARAM_AT, PARAM_SIZE, PAYLOAD_STAGE, PLAYER_ORIGIN } from './sid-player-blob.js';
+import {
+  PLAYER, PARAM_AT, PARAM_SIZE, PAYLOAD_STAGE, PLAYER_ORIGIN, PLAYER_CEILING,
+  PRG_BASE, BLOB_AT, BLOB_SIZE, RELOCATIONS, COPIER_PAGE_AT, COPIER_JMP_AT,
+} from './sid-player-blob.js';
 
 const V1_HEADER = 0x76;          // where a version 1 file's data may start
 const V2_HEADER = 0x7C;          // version 2 and later add flags and SID addresses
 const SCREEN_RAM = { from: 0x0400, to: 0x0800 };
+// The SID, the VIC and the CIAs live here. A tune cannot have this range: the
+// player would have to give up the chip it is playing through. $E000-$FFFF is a
+// different matter — the KERNAL ROM is there, but the RAM underneath it is a
+// classic home for a game's music, and the driver can run with the ROM banked
+// out for the length of a call (see P_BANK in the player).
+const IO_REGISTERS = { from: 0xD000, to: 0xE000 };
+const UNDER_KERNAL = 0xE000;
+const BANK_NORMAL = 0x36;        // BASIC out, KERNAL in, I/O in
+const BANK_NO_KERNAL = 0x35;     // and the KERNAL out too, for the driver alone
 // A PAL frame is 312 lines of 63 cycles; an NTSC one 263 of 65. These are the
 // timer values a tune driven by the CIA expects to be called at.
 const CIA_PAL = 0x4CC7;
@@ -97,12 +109,32 @@ export function parseSid(bytes) {
 
 /** Where the tune's bytes land once the player has moved them. */
 function occupied(tune) {
-  // The copy moves whole pages, so the last one may run past the tune's end.
-  const pages = Math.ceil(tune.payload.length / 256);
-  return { from: tune.loadAddress, to: tune.loadAddress + pages * 256 };
+  return { from: tune.loadAddress, to: tune.loadAddress + tune.payload.length };
 }
 
 const overlaps = (a, b) => a.from < b.to && b.from < a.to;
+
+/**
+ * Where the player can sit for this tune, page-aligned, or null when nothing
+ * fits. Its usual home is $C000 — 4K that most tunes leave alone — but plenty of
+ * game rips load at $A000-$BFFF and run straight through it, so rather than
+ * refuse them the player moves. It can: every address it holds of its own is in
+ * a relocation list, and moving it is that list plus a page delta.
+ *
+ * It may not sit below the .prg image, because the copier would then be writing
+ * over bytes it has not read yet — either its own or the tune's.
+ */
+function playerAddress(tune, imageLength) {
+  const where = occupied(tune);
+  const lowest = Math.ceil((PRG_BASE + imageLength) / 256) * 256;
+  const free = at => at >= lowest && at + BLOB_SIZE <= PLAYER_CEILING
+    && (at + BLOB_SIZE <= where.from || at >= where.to);
+  if (free(PLAYER_ORIGIN)) return PLAYER_ORIGIN;
+  for (let at = (PLAYER_CEILING - BLOB_SIZE) & 0xFF00; at >= lowest; at -= 256) {
+    if (free(at)) return at;
+  }
+  return null;
+}
 
 /**
  * The tune as a runnable .prg: the player, its parameter block filled in, and
@@ -117,13 +149,29 @@ export function sidToPrg(bytes, { song } = {}) {
   const tune = parseSid(bytes);
   const where = occupied(tune);
   if (where.from < 0x0200) throw new Error('This tune loads over the zero page and the stack, which the machine needs.');
-  if (where.to > PLAYER_ORIGIN) throw new Error(`This tune loads over the player at $${PLAYER_ORIGIN.toString(16).toUpperCase()} and cannot be run here.`);
+  if (where.to > 0x10000) throw new Error('This tune runs past the top of the C64\u2019s memory.');
   if (overlaps(where, SCREEN_RAM)) throw new Error('This tune loads over screen memory, which the player draws on.');
+  if (overlaps(where, IO_REGISTERS)) throw new Error('This tune loads over the I/O registers, which is where the SID itself is.');
+  const imageLength = PLAYER.length - 2 + tune.payload.length;
+  const at = playerAddress(tune, imageLength);
+  if (at === null) throw new Error('This tune leaves no room anywhere for the player.');
 
   const start = Math.min(Math.max(song || tune.startSong, 1), tune.songs);
   const data = new Uint8Array(PLAYER.length + tune.payload.length);
   data.set(PLAYER, 0);
   data.set(tune.payload, PLAYER.length);
+
+  // Move the player to where it fits: one page added to every address it holds
+  // of its own, and to the copier's two references to where it is going.
+  const page = ((at - PLAYER_ORIGIN) >> 8) & 0xFF;
+  if (page) {
+    for (const { at: offset, kind } of RELOCATIONS) {
+      const index = BLOB_AT + offset + (kind === 'word' ? 1 : 0);
+      data[index] = (data[index] + page) & 0xFF;
+    }
+  }
+  data[COPIER_PAGE_AT] = (at >> 8) & 0xFF;
+  data[COPIER_JMP_AT] = (at >> 8) & 0xFF;
 
   const put = (at, value) => { data[PARAM_AT + at] = value & 0xFF; };
   const putWord = (at, value) => { put(at, value); put(at + 1, value >> 8); };
@@ -139,6 +187,7 @@ export function sidToPrg(bytes, { song } = {}) {
   // opens in: a PSID may snoop the driver's writes to show all three voices,
   // an RSID starts on the safe view and leaves that to a keypress.
   put(14, (tune.flags & 0x3C) | (tune.format === 'RSID' ? 2 : 0) | (tune.format === 'PSID' ? 1 : 0));
+  put(15, where.to > UNDER_KERNAL ? BANK_NO_KERNAL : BANK_NORMAL);
   putWord(16, tune.clock === 2 ? CIA_NTSC : CIA_PAL);
   const text = (at, value) => {
     for (let i = 0; i < 32; i++) put(at + i, i < value.length ? screenCode(value[i]) : 0x20);

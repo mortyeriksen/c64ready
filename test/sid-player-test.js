@@ -26,20 +26,22 @@ const DRIVER = [
   0x60,                         //             rts
 ];
 
-function makeSid({ format = 'PSID', songs = 3, startSong = 1, flags = (1 << 2) | (2 << 4) } = {}) {
+function makeSid({ format = 'PSID', songs = 3, startSong = 1, flags = (1 << 2) | (2 << 4), load = 0x1000 } = {}) {
   const bytes = new Uint8Array(0x7C + 2 + DRIVER.length);
   bytes.set([...format].map(c => c.charCodeAt(0)));
   bytes[5] = 2;                               // version 2
   bytes[7] = 0x7C;                            // data offset
-  bytes[11] = 0x00; bytes[10] = 0x10;         // init $1000
-  bytes[13] = 0x04; bytes[12] = 0x10;         // play $1004
+  // The header's addresses are big-endian; the load address inside the data is
+  // not. The driver only writes to fixed addresses, so it runs wherever it lands.
+  bytes[10] = load >> 8; bytes[11] = load & 0xFF;
+  bytes[12] = (load + 4) >> 8; bytes[13] = (load + 4) & 0xFF;
   bytes[15] = songs;
   bytes[17] = startSong;
   for (const [at, text] of [[0x16, 'TEST TUNE'], [0x36, 'A COMPOSER'], [0x56, '1988 SOMEONE']]) {
     bytes.set([...text].map(c => c.charCodeAt(0)), at);
   }
   bytes[0x76] = flags >> 8; bytes[0x77] = flags & 0xFF;
-  bytes[0x7C] = 0x00; bytes[0x7D] = 0x10;     // the tune's own load address, $1000
+  bytes[0x7C] = load & 0xFF; bytes[0x7D] = load >> 8;   // the tune's own load address
   bytes.set(DRIVER, 0x7E);
   return bytes;
 }
@@ -127,12 +129,31 @@ const screenText = (machine, row, col, length) => {
   eq(screenText(machine, 7, 7, 5), '04/09', 'the file names which song starts');
   eq(machine.mem.sid.regs[0], 3, 'and init is handed it zero-based');
 }
+// ── the player gets out of the way of the tune ───────────────────────────────
+// A good many game rips load at $A000-$BFFF and run straight through $C000,
+// where the player would rather sit. It moves instead of refusing them — and
+// that is RAM under the BASIC ROM, so the ROM has to go for the tune's sake as
+// much as the player's.
 {
-  const over = makeSid();
-  over[0x7C] = 0xF0; over[0x7D] = 0xBF;       // loads at $BFF0, running into the player
+  const underBasic = makeSid({ load: 0xB550 });
+  const machine = run(sidToPrg(underBasic).data, 150);
+  assert(machine.mem.sid.regs[1] > 0, 'a tune in the RAM under BASIC plays');
+  eq(machine.mem.sid.regs[0], 0, 'and its init was called where it landed');
+  eq(screenText(machine, 3, 2, 9), 'TEST TUNE', 'with the player drawing from wherever it went');
+}
+// A tune under the KERNAL ROM plays: the driver, and only the driver, runs with
+// the ROM banked out. $E000 is where a good many game tunes live.
+{
+  const underKernal = makeSid({ load: 0xE000 });
+  const machine = run(sidToPrg(underKernal).data, 150);
+  assert(machine.mem.sid.regs[1] > 0, 'a tune in the RAM under the KERNAL plays');
+  eq(screenText(machine, 3, 2, 9), 'TEST TUNE', 'and the player, which still needs the KERNAL, keeps drawing');
+}
+{
+  const onIo = makeSid({ load: 0xD000 });
   let threw = null;
-  try { sidToPrg(over); } catch (error) { threw = error.message; }
-  assert(/player/.test(threw || ''), `a tune over $C000 is refused, said: ${threw}`);
+  try { sidToPrg(onIo); } catch (error) { threw = error.message; }
+  assert(/I\/O registers/.test(threw || ''), `a tune over the I/O registers is refused, said: ${threw}`);
 
   const onScreen = makeSid();
   onScreen[0x7C] = 0x00; onScreen[0x7D] = 0x05;

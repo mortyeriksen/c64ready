@@ -13,6 +13,12 @@
 // Directives: `.byte` / `.word` / `.fill count[,value]` / `.scr "TEXT"` (ASCII
 // to C64 screen codes) / `.org address`. `NAME = expression` defines a constant,
 // `label:` a label, `;` starts a comment.
+//
+// The result also carries a relocation list: every emitted byte that holds an
+// address inside the program's own image, so a caller can move the whole thing
+// to another page by adding the same delta to each. Two kinds — a `word` entry
+// is the low byte of a two-byte operand, a `high` entry is a lone byte that came
+// from a `>` prefix — and a page-aligned move adjusts the high byte of both.
 
 const IMPLIED = 'imp', IMMEDIATE = 'imm', ZP = 'zp', ZPX = 'zpx', ZPY = 'zpy',
       ABS = 'abs', ABSX = 'absx', ABSY = 'absy', IND = 'ind', INDX = 'indx',
@@ -177,12 +183,13 @@ export function assemble(source, predefined = {}) {
   // would size an instruction differently in each pass and shift every label
   // after it. A forward reference is therefore always absolute.
   const symbols = { ...predefined };
-  let bytes = [], origin = null;
+  let bytes = [], origin = null, candidates = [];
 
   for (let pass = 0; pass < 2; pass++) {
     const strict = pass === 1;
     const backward = { ...predefined };
     bytes = [];
+    candidates = [];
     let pc = origin ?? 0;
     let started = origin !== null;
     for (const { text, index } of lines) {
@@ -209,6 +216,9 @@ export function assemble(source, predefined = {}) {
         if (directive === '.byte' || directive === '.word') {
           for (const part of operand.split(',')) {
             const value = immediateValue(part, symbols, strict) ?? 0;
+            const trimmed = part.trim();
+            if (directive === '.word') candidates.push({ at: bytes.length, kind: 'word', full: value });
+            else if (trimmed.startsWith('>')) candidates.push({ at: bytes.length, kind: 'high', full: evaluate(trimmed.slice(1), symbols, strict) ?? 0 });
             bytes.push(value & 0xFF);
             if (directive === '.word') bytes.push((value >> 8) & 0xFF);
             pc += directive === '.word' ? 2 : 1;
@@ -239,7 +249,14 @@ export function assemble(source, predefined = {}) {
         const opcode = table[mode];
         if (opcode === undefined) throw new Error(`"${word}" has no ${mode} addressing mode`);
         const size = SIZE[mode];
-        let value = expression === null ? 0 : (immediateValue(operandExpression(operand, mode), symbols, strict) ?? 0);
+        const resolved = expression === null ? null : operandExpression(operand, mode);
+        let value = resolved === null ? 0 : (immediateValue(resolved, symbols, strict) ?? 0);
+        // An address inside this program moves with it; a `>label` immediate
+        // carries the page it lives on, so it moves too.
+        if (size === 3) candidates.push({ at: bytes.length + 1, kind: 'word', full: value });
+        else if (mode === IMMEDIATE && resolved !== null && resolved.trim().startsWith('>')) {
+          candidates.push({ at: bytes.length + 1, kind: 'high', full: evaluate(resolved.trim().slice(1), symbols, strict) ?? 0 });
+        }
         bytes.push(opcode);
         if (mode === REL) {
           const offset = value - (pc + 2);
@@ -257,5 +274,9 @@ export function assemble(source, predefined = {}) {
       }
     }
   }
-  return { bytes: Uint8Array.from(bytes), origin: origin ?? 0, symbols };
+  const base = origin ?? 0;
+  const relocations = candidates
+    .filter(entry => entry.full >= base && entry.full < base + bytes.length)
+    .map(({ at, kind }) => ({ at, kind }));
+  return { bytes: Uint8Array.from(bytes), origin: base, symbols, relocations };
 }
