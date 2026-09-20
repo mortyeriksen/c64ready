@@ -8,6 +8,19 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
+## Next release
+
+*Not out yet: what is finished and waiting for the next version.*
+
+- **Dropping a program on a running machine runs it.** A `.prg`, `.t64` or
+  `.sid` dropped on the screen, picked with LOAD ANY or opened from the Library
+  used to wait for a BASIC prompt that a running tune or game never gives. It
+  now resets to one first, as a load from Assembly64 already did. A disk or
+  tape still goes in without a reset, since it may be the one a running game
+  asked for.
+
+---
+
 ## 2026.9.2 — September 20, 2026
 
 Play `.SID` tunes on a player that runs on the C64 itself. This release also

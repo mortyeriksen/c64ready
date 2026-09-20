@@ -219,8 +219,13 @@ async function _renderLibrary() {
 // Returns false when validation or power-on fails.
 async function _loadLibraryEntry(entry) {
   if (!['prg', 'd64', 'crt', 'tap', 't64', 'sid', 'reu'].includes(entry.type)) return false;
+  // A program is here to run, so it asks for a prompt to type its LOAD at, as a
+  // catalog load does: a tune's player owns the interrupts and the screen, and
+  // a LOAD typed at it would wait forever. A disk or tape goes in as it is,
+  // since it may be the next one a running program asked for.
+  const reset = ['prg', 't64', 'sid'].includes(entry.type);
   try {
-    await openMedia({ name: entry.name, bytes: entry.data, mediaType: entry.type, saveToLibrary: false });
+    await openMedia({ name: entry.name, bytes: entry.data, mediaType: entry.type, saveToLibrary: false, reset });
     return true;
   } catch (error) {
     setStatus(error.message, 'error');

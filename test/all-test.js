@@ -358,6 +358,7 @@ const TESTS = [
   'test/d64-petscii-directory-spec-test.js',
   'test/d64-del-directory-spec-test.js',
   'test/d64-dir-click-load-spec-test.js',
+  'test/library-load-reset-spec-test.js',
   'test/d64-format-spec-test.js',
   'test/d64-error-table-dos-spec-test.js',
   'test/kernal-load-wildcard-spec-test.js',
