@@ -8,50 +8,30 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
-## Next release
+## 2026.9.2 — September 20, 2026
 
-*Not out yet: what is finished and waiting for the next version.*
+Play `.SID` tunes on a player that runs on the C64 itself. This release also
+opens `.T64` archives and fixes a 6510 interrupt timing corner that stopped
+demos at a part switch.
 
 - **Demos that time their music and effects with CIA interrupts keep running.**
-  When a timer interrupt arrived in the last moments of another interrupt's
-  start-up, the CPU could take it a few cycles early and land in the wrong
-  code. Performers' *C=BIT '18* no longer stops at its first part switch, and
-  any production that leans on this corner of the 6510 now sees the real
-  chip's timing.
+  A timer interrupt arriving in the last moments of another interrupt's
+  start-up could be taken a few cycles early. Performers' *C=BIT '18* no longer
+  stops at its first part switch.
 
 - **`.SID` tunes play, on a player that runs on the C64.** Drop one on the
-  screen, pick it with LOAD ANY, or open one straight from Assembly64 — the
-  whole High Voltage SID Collection is in there. The tune is not played by
-  emulating a player: it is wrapped in a program that runs on the 6510 and
-  drives the real SID, which is why CIA-timed tunes, raster-timed tunes and digi
-  tricks all work by construction rather than by special cases.
+  screen, pick it with LOAD ANY, or open one from Assembly64, where the whole
+  High Voltage SID Collection lives. The tune is wrapped in a program that runs
+  on the 6510 and drives the SID, so CIA-timed tunes, raster-timed tunes and
+  digi tricks all work. See [Playing a .sid tune](USER-GUIDE.md#playing-a-sid-tune).
 
-  The player has a screen of its own. It shows the title, author and year out of
-  the file, the song and how long it has been playing, the chip and clock the
-  tune asks for, and an oscilloscope drawn from voice 3 — the one voice a
-  program on real hardware can actually read back. Keys `1`-`9` and `0` pick a
-  song, `+` and `-` step through them, `SPACE` pauses and `F7` starts the song
-  again.
+- **`.T64` archives open.** Drop one on the screen or pick it with LOAD ANY,
+  and the program inside runs. Where an archive holds several, you are asked
+  which.
 
-  `F1` switches to a view of all three voices — waveform, frequency and ADSR,
-  plus the filter and volume. Getting there means intercepting the driver's
-  writes, which a tune that plays digi samples will not survive, so it is a key
-  rather than the default, and `F1` goes back.
-
-- **`.T64` archives open.** Drop one on the screen, or pick it with LOAD ANY,
-  and the program inside runs. A `.t64` is not really a tape: it is an archive
-  holding one or more ready programs, so the program comes straight out of it
-  and loads as a program would, with no disk or tape in between. Almost every
-  archive holds exactly one; where there are several, you are asked which. The
-  Library keeps the archive rather than the program taken out of it, so opening
-  it again asks again, and a different program can come out of it next time.
-
-- **A tape of loader stubs no longer reads as damaged.** Plenty of tapes hold a
-  tiny file that hands straight over to the game's own fast loader. The tape
-  magnifier used to count all of that as signal belonging to no file, and offered
-  a lost header as the reason, which made a perfectly sound tape look broken. It
-  now says nothing where the listing already names the file that starts it, and
-  keeps the warning for signal that really does belong to nothing.
+- **A tape of loader stubs no longer reads as damaged.** The tiny file that
+  hands over to a game's own fast loader used to count as signal belonging to
+  nothing. The warning is now kept for signal that really does.
 
 ---
 
