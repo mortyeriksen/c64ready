@@ -47,7 +47,7 @@ it that way.
 - **Get started quickly**: it runs in the browser, and installs as an app on desktop or phone if you want (with offline support)
 - **Cycle-exact**: the 6510, VIC-II, both SIDs and a true 1541 with its own CPU, so the hard demos and custom fastloaders run
 - **Retro Vibes**: the C64, drive and monitor as a 3D model with your live screen on the glass, in five nostalgic scenes
-- **Load anything**: drop a `.d64`, `.prg`, `.tap`, `.wav`, `.dmp`, `.crt` or `.reu` on the screen and it works out the rest
+- **Load anything**: drop a `.d64`, `.prg`, `.tap`, `.wav`, `.dmp`, `.crt`, `.t64`, `.sid` or `.reu` on the screen and it works out the rest
 - **Play it the way you like**: a gamepad in either port, the keyboard, or a touch joystick on your phone
 - **Make it yours**: arrange the side-panel cards or hide the ones you never touch
 - **Your old cassettes may play again**: automatic recovery functionality for your old tapes, both originals and turbo compilations

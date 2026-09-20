@@ -70,6 +70,8 @@ Drag any supported file onto the screen and it goes to the right place, or use
 | `.d64` | The emulator types `LOAD"*",8,1` and `RUN`. See [Disk drive 8](USER-GUIDE.md#disk-drive-8). |
 | `.crt` | The [cartridge](USER-GUIDE.md#cartridge) takes over at once, or on the next power-on if inserted while off. |
 | `.tap` `.wav` `.dmp` | Becomes a tape in the [Datasette](USER-GUIDE.md#datasette): type `LOAD`, then press **▶ PLAY**. |
+| `.t64` | An archive of ready programs, not a tape: the program you pick loads as a `.prg` would. Almost every archive holds exactly one. |
+| `.sid` | A tune, wrapped in a player that runs on the C64. See [Playing a .sid tune](USER-GUIDE.md#playing-a-sid-tune). |
 | `.reu` | Fills the [RAM Expansion](USER-GUIDE.md#ram-expansion). |
 
 **AUTORUN**, on by default, starts disk loads and runs BASIC programs, including

@@ -190,7 +190,7 @@ async function _renderLibrary() {
   if (libraryFilterEl)  libraryFilterEl.style.display = all.length ? '' : 'none';
   if (libraryEmptyEl) {
     if (!all.length) {
-      libraryEmptyEl.textContent = "No cached files yet. Load a .PRG, .D64, .CRT, .TAP or .WAV and it'll show up here.";
+      libraryEmptyEl.textContent = "No cached files yet. Load a .PRG, .D64, .CRT, .TAP, .T64, .SID, .WAV or .DMP and it'll show up here.";
       libraryEmptyEl.hidden = false;
     } else if (!list.length) {
       libraryEmptyEl.textContent = `No files match “${q}”.`;
