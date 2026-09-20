@@ -84,6 +84,7 @@ const TESTS = [
   'test/vic2-aec-sample-spec-test.js',
   'test/clock-cycle-spec-test.js',
   'test/vic2-border-edge-spec-test.js',
+  'test/vic2-left-border-csel-sample-spec-test.js',
   'test/vic2-midline-register-spec-test.js',
   'test/vic2-sprite-render-spec-test.js',
   'test/vic2-sprite-render-basics-spec-test.js',

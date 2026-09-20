@@ -46,6 +46,10 @@ A skipping test exits 0, which on its own is indistinguishable from a pass, so i
 
 Both lists print the reason (from `missingNote(key)`, which names the manifest entry and its environment variable), so a green run still shows exactly which fixtures went missing. A test that skips without a directive is reported as a plain `PASS`: that is the bug the directive exists to prevent.
 
+`node test/vic2-left-border-csel-sample-spec-test.js` checks PAL left-border
+selection for CSEL writes around the comparator boundary, including sprite
+masking and foreground data beneath the border in live and deferred rendering.
+
 ## Assembly64 integration checks
 
 The default suite includes `assembly64-test.js` and `media-browser-test.js`.

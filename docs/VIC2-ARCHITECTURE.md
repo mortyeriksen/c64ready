@@ -405,6 +405,14 @@ state and re-renders the affected cycles (saving/restoring the sprite-line
 snapshot so a re-render doesn't double-count). Segments straddling a border
 edge are split by `_splitRasterSegmentAtBorderEdges`.
 
+The PAL wide left comparator samples CSEL at cycle 17 phi1. A CSEL 1→0
+write at cycle 15 or 16 phi2 therefore selects the narrow opening at canvas
+x39. The pending left transition updates the captured split; the live renderer
+repaints only x32..38 as border, preserving sprites from x39 and foreground
+collision data under the border. Deferred rendering uses the corrected capture
+on replay. Writes from cycle 17 onward cannot narrow an already open wide edge,
+and a left RESET cannot close a main border that was already open.
+
 The queue is allocation-free by design: entries are **pooled** (rented from a
 free-list, reset to safe defaults, recycled on drain) and the queue is a
 **stable-capacity array with a manual `_ffCount`** whose length never

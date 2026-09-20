@@ -12,6 +12,9 @@ The version you are running is shown at the bottom of the About dialog.
 
 *Not out yet: what is finished and waiting for the next version.*
 
+- **Clean left picture edge in VIVA LV.** Stray pixels no longer flicker into
+  the left border on the picture's first line.
+
 - **Dropping a program on a running machine runs it.** A `.prg`, `.t64` or
   `.sid` dropped on the screen, picked with LOAD ANY or opened from the Library
   used to wait for a BASIC prompt that a running tune or game never gives. It

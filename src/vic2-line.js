@@ -6,8 +6,8 @@
 // DRAM refresh, and the vertical/horizontal border flip-flops (Bauer §3.9).
 
 import {
-  ACCESS_C, ACCESS_G, ACCESS_IDLE, ACCESS_REFRESH, CANVAS_H, CYCLES_PER_LINE,
-  GRAPHICS_WINDOW_END, GRAPHICS_WINDOW_START,
+  ACCESS_C, ACCESS_G, ACCESS_IDLE, ACCESS_REFRESH, CANVAS_H, CANVAS_W, CYCLES_PER_LINE,
+  GRAPHICS_WINDOW_END, GRAPHICS_WINDOW_START, PALETTE_RGBA,
 } from './vic2-tables.js';
 
 // Method group installed onto VIC2.prototype by vic2.js — `this` is the
@@ -1410,8 +1410,8 @@ export const lineOps = {
   //   • vBottomSet  (rule 2): RSEL change invalidating Y=bottomCompare
   //   • vTopReset   (rule 3): RSEL/DEN change invalidating top RESET
   //   • vBottomSetX (rule 4) / vTopResetX (rule 5): same for left-compare path
-  // Reverse-direction CSEL writes are NOT spec-defined tricks; the FF
-  // commits as detected.
+  // A CSEL 1→0 write before the PAL wide left compare selects the narrow
+  // opening. The FF still resets, but its captured pixel edge moves to X=31.
   // Rent a transition entry from the free-list (or fresh), reset to safe
   // defaults so no field leaks across kinds when reused. Push sites overwrite
   // kind/detectCycle/raster/latchTotalCycles/cselAtFire; the three optional
@@ -1519,10 +1519,36 @@ export const lineOps = {
           if (!(newLeft >= segStart && newLeft < segEnd)) {
             this._vetoFFTransition(p, /*restoreTo=*/true, /*upToCycle=*/cycle - 1);
           }
+        } else if (p.cselAtFire === 1 && curCsel === 0 &&
+                   this._cselChangedInRange(p.raster, p.detectCycle, p.detectCycle + 1, 1, 0)) {
+          // PAL's wide left compare samples CSEL at cycle 17 phi1. Writes
+          // at cycles 15/16 phi2 therefore select the narrow X=31 opening;
+          // a cycle-17 write is too late to move an already open wide edge.
+          this._narrowLeftOpen(p);
         }
         return;
       }
     }
+  },
+
+  _narrowLeftOpen(p) {
+    const c = p.detectCycle;
+    // A RESET cannot close a border that was already open before the compare.
+    if (!this.lineCycleHBorderBefore[c]) return;
+    this.lineCycleCselComparator[c] = 0;
+    if (!this._cycleIncrementalRender || this._cycleRenderActiveCanvasY < 0 ||
+        this._lineDeferred) return;
+
+    // Only the newly covered seven pixels need repainting. Preserve sprites
+    // in the remainder of the segment and the sequencer's collision state.
+    const start = GRAPHICS_WINDOW_START;
+    const end = start + 7;
+    const rowOffset = this._cycleRenderActiveCanvasY * CANVAS_W;
+    const color = this.lineCycleRegs[c + this._regOffset][0x20] & 0x0F;
+    this.fb32.fill(PALETTE_RGBA[color], rowOffset + start, rowOffset + end);
+    this.borderBuffer.fill(1, start, end);
+    this.spriteVisibleBuffer.fill(0, start, end);
+    this.spriteOwnerBuffer.fill(0xFF, start, end);
   },
 
   // Narrow the right-border close to the CSEL=0 comparator (canvas x343) when a
