@@ -92,9 +92,12 @@ exposes no handle to free.) A lost context is recovered by a
   failure): `RenderPass` → `UnrealBloomPass` → `OutputPass` (tone-map + sRGB) →
   `ShaderPass(GradeShader)` → `SMAAPass`. `GradeShader` is a gentle cinematic grade
   (edge chromatic aberration, vignette and film grain) running on the final sRGB
-  image; its `uTime` (grain) is advanced each frame in `_loop`. Bloom parameters are
-  overridden per scene in `_applyScene`. When post-processing is actually applied, see
-  §5.
+  image; its `uTime` (grain) is advanced each frame in `_loop`. Each scene's `grade`
+  sets `aberration`, `vignette`, `grain` and optional split-tone colours. `_applyScene`
+  resets all grade uniforms on each switch, including explicit zero values.
+  Spotlight has no chromatic aberration and minimal grain; IK+ Sunset and Bedroom
+  use restrained, separate settings. Bloom parameters are also overridden per
+  scene. When post-processing is actually applied, see §5.
 
 ## 3. Framing, zoom-to-monitor & the persisted camera
 
@@ -141,15 +144,19 @@ modelled 1702's glass. It is set up by `_wireScreen()` and refreshed every frame
   the current frame. `null` (machine powered off) → `_setScreenLive(false)`, the
   untouched glass. Otherwise it goes live and, only when the framebuffer array
   reference changes (the machine is re-created on power / reset), re-points
-  `tex.image` at the new buffer; each frame it flags `tex.needsUpdate = true` so the
-  bytes re-upload. At 10 Hz it also samples a fixed 16 × 12 pixel grid, converts the
-  sRGB bytes to linear light and records average colour + luminance. Spotlight uses
-  that allocation-free result to tint and brighten a smoothed, outward-facing CRT
-  area light; a dark or powered-off picture therefore stops lighting the room.
+  `tex.image` at the new buffer; each display frame it flags `tex.needsUpdate = true`
+  so the bytes re-upload. At 10 Hz it also samples a fixed 16 × 12 pixel grid,
+  converts the sRGB bytes to linear light and records average colour + luminance. Spotlight and
+  Bedroom use that allocation-free result through `vibes-crt-light.js` to tint and
+  brighten a smoothed, outward-facing CRT area light. Smoothing uses elapsed time;
+  black, missing or powered-off pictures fade to zero light. Area dimensions track
+  the glass; intensity is luminance and does not need model-scale compensation.
+  Bedroom uses a gentler strength, independently of its decorative television's
+  existing flicker. Neither emitter adds a mesh, shadow map or post-processing pass.
 
-`main.js` supplies the provider via `setScreenProvider()`, returning
-`{ data: vic.frameBuffer, width: 384, height: 272 }` while the machine runs, or `null`
-otherwise.
+`main.js` supplies the provider via `setScreenProvider()`, reusing one
+`{ data: vic.frameBuffer, width: 384, height: 272 }` object while the machine runs,
+or returning `null` otherwise.
 
 ## 5. Scenes (moods)
 
@@ -167,11 +174,11 @@ the index.
 
 | # | `name` | Backdrop / mood | Post pipeline |
 |---|--------|-----------------|---------------|
-| 0 | **Synthwave** | dark neon highway toward a banded sun: scrolling grid, mountain silhouettes, palms, stars | basic; raw tone map (`NoToneMapping`), sun and horizon glow faked in-shader |
+| 0 | **Synthwave** | dark neon highway toward a banded sun: scrolling grid, mountain silhouettes, palms, stars | basic; raw tone map (`NoToneMapping`), derivative-filtered grid and road, sun and horizon glow faked in-shader; inverse-square neon lights with intensity scaled by model radius squared |
 | 1 | **Starry Plain** | dark Tron-grid plain: scanner ripple, star layers, a procedural Milky-Way band, shooting stars | basic; raw tone map |
 | 2 | **Spotlight** | near-black studio: overhead spotlight, beam dust, screen-coloured CRT spill | **full composer** (bloom dialled near-off + grade + SMAA) |
 | 3 | **IK+ Sunset** | stone courtyard at dusk: torii and low sun over reflective water, autumn maple, layered headlands | **full composer** (bloom + warm halation + dusk split-tone grade); cool-shadow sunset IBL via `envMap`; ACES exposure 0.66, purple haze fog |
-| 4 | **80s Bedroom** | messy teenager's bedroom at night: amber desk-lamp pool, moon shaft, posters, wood-grain CRT, drifting dust | **full composer** (bloom + amber halation + teal/amber grade) |
+| 4 | **80s Bedroom** | messy teenager's bedroom at night: amber desk-lamp pool, live monitor spill, moon shaft, posters, wood-grain CRT, drifting dust | **full composer** (bloom + amber halation + teal/amber grade) |
 
 Scenes flagged `basic` render with a plain `renderer.render` and bypass the composer;
 the **bloom + grade + SMAA** pipeline runs for the non-basic scenes
@@ -179,6 +186,20 @@ the **bloom + grade + SMAA** pipeline runs for the non-basic scenes
 bake their glow into their own shaders. Backdrop gradients are cached equirect
 `CanvasTexture`s; the procedural props (room textures, star sprites, sunset sky/sun,
 water normal map, checker floor) are built once and cached at module level.
+
+Bedroom and Spotlight set `staticShadows`. `vibes-shadow-cache.js` watches the
+casters, their ancestors, shadow lights and light targets. Transforms, visibility,
+vertex/index buffer versions (including animated keycaps), instanced matrices and
+shadow camera parameters invalidate the maps. Camera orbit, light intensity and
+non-casting dust do not. Scene switches rebuild dependencies and request fresh maps;
+reparenting tracked objects rebuilds the dependencies too. Code adding casters to
+an existing scene must call the cache's `rebuild()`.
+
+IK+ refreshes its offscreen water reflection at 30 Hz, reducing the extra scene
+render and associated shader-program cache work. The water's wave time still
+advances every display frame. Projection changes and XR eye renders bypass the
+rate limit. Starry keeps one hidden meteor, reusing its geometry, material and
+direction vector; its maximum lifetime is shorter than the minimum spawn interval.
 
 ## 6. Interactions on the model
 
@@ -267,7 +288,7 @@ because it is re-created on power / reset:
 
 | Setter | What `main.js` supplies | Used for |
 |--------|-------------------------|----------|
-| `setScreenProvider` | `{ data: vic.frameBuffer, width: 384, height: 272 }` while running, else `null` | live CRT texture (§4) |
+| `setScreenProvider` | reused `{ data: vic.frameBuffer, width: 384, height: 272 }` while running, else `null` | live CRT texture (§4) |
 | `setOnDoubleClick` | power the C64 on when off (`powerBtn.click()`) | double-click-to-boot (§6) |
 | `setPowerProvider` | `running` | C64 / 1541 / monitor power LEDs (§6) |
 | `setDriveActiveProvider` | `drive1541.ledOn || drive9LedActive()` | 1541 red activity LED (§6) |

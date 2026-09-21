@@ -2,10 +2,8 @@
 // Copyright © 2026 Morten Øien Eriksen
 
 import * as THREE from 'three';
-import { RectAreaLightUniformsLib } from 'three/examples/jsm/lights/RectAreaLightUniformsLib.js';
+import { addCrtLight, animateCrtLight } from './vibes-crt-light.js';
 import { overheadSpot, floorPlane, canvasTexture, markShared } from './vibes-scene-common.js';
-
-RectAreaLightUniformsLib.init();
 
 let _floorRoughness = null;
 function floorRoughness() {
@@ -73,8 +71,10 @@ function addBeamDust(g, spot, sphere) {
 
 export const scene = {
     name: 'Spotlight', css: 'scene-spotlight', envInt: 0.0,
+    staticShadows: true,
     bg: [[0, '#0b0b10'], [0.55, '#060608'], [1, '#000000']],
     bloom: { strength: 0.12, radius: 0.5, threshold: 0.9 },   // near-off: the screen must not glow
+    grade: { aberration: 0, vignette: 0.15, grain: 0.006 },
     build(g, { sphere, box, screen }) {
       // The faint fill represents bounce from the one overhead source, not a
       // second visible light; it keeps shadow faces from collapsing to black.
@@ -98,38 +98,11 @@ export const scene = {
 
       // The CRT is an area emitter facing out from the glass. Its colour and
       // luminance track a coarse linear-light sample of the actual VIC picture.
-      if (screen) {
-        const glow = new THREE.RectAreaLight(0xffffff, 0, screen.width * 1.02, screen.height * 0.94);
-        glow.position.copy(screen.center).addScaledVector(screen.normal, -screen.height * 0.035);
-        glow.lookAt(screen.center.clone().add(screen.normal));
-        g.add(glow);
-        g.userData.crtGlow = glow;
-        g.userData.crtColorTarget = new THREE.Color(1, 1, 1);
-        g.userData.crtLastTime = 0;
-      }
+      addCrtLight(g, screen, 2.8);
     },
     animate(g, t, powered, screenLight) {
       const dust = g.userData.spotDust;
       if (dust) dust.material.uniforms.uTime.value = t;
-      const l = g.userData.crtGlow;
-      if (!l) return;
-      const dt = Math.min(0.1, Math.max(0, t - (g.userData.crtLastTime || t)));
-      g.userData.crtLastTime = t;
-      const active = powered && screenLight && screenLight.active;
-      const peak = active ? Math.max(screenLight.r, screenLight.g, screenLight.b) : 0;
-      const targetIntensity = active ? 0.02 + Math.sqrt(screenLight.luminance) * 2.8 : 0;
-      if (peak > 1e-6) {
-        // A small neutral component models scattering in the glass and keeps a
-        // saturated VIC colour from producing unnaturally laser-like light.
-        const wash = 0.10, c = g.userData.crtColorTarget;
-        c.setRGB(
-          wash + (1 - wash) * screenLight.r / peak,
-          wash + (1 - wash) * screenLight.g / peak,
-          wash + (1 - wash) * screenLight.b / peak,
-        );
-      }
-      const a = 1 - Math.exp(-dt * 7);
-      l.color.lerp(g.userData.crtColorTarget, a);
-      l.intensity += (targetIntensity - l.intensity) * a;
+      animateCrtLight(g, t, powered, screenLight);
     },
 };

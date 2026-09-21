@@ -12,6 +12,11 @@ The version you are running is shown at the bottom of the About dialog.
 
 *Not out yet: what is finished and waiting for the next version.*
 
+- **More atmospheric Retro Vibes lighting.** Synthwave's neon lights bring colour
+  to the C64, with smoother grid and road lines. In 80s Bedroom, the main monitor
+  lights the desk with colours from the running picture. Spotlight, IK+ Sunset
+  and Bedroom each have their own gentler grain, vignette and colour-fringing settings.
+
 - **Clean left picture edge in VIVA LV.** Stray pixels no longer flicker into
   the left border on the picture's first line.
 

@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { Water } from 'three/examples/jsm/objects/Water.js';
 import { markShared } from './vibes-scene-common.js';
+import { cacheWaterReflection } from './vibes-reflection-cache.js';
 
 // IK+ sunset scene textures (cached): the C64-sunset sky gradient with chunky
 // dithered cloud banks, the low sun disc with its signature horizontal stripe
@@ -205,7 +206,7 @@ export const scene = {
     name: 'IK+ Sunset', css: 'scene-ikplus', envInt: 1.1, envMap: ikEnvMap, exposure: 0.66,
     bloom: { strength: 0.3, radius: 0.45, threshold: 0.95 },
     halation: [[1, 1, 1], [1, 0.94, 0.86], [1, 0.86, 0.7], [1, 0.75, 0.55], [1, 0.66, 0.46]],
-    grade: { split: 0.46, shadow: [0.8, 0.92, 1.16], highlight: [1.08, 0.98, 0.84] },
+    grade: { aberration: 0.0002, vignette: 0.18, grain: 0.008, split: 0.46, shadow: [0.8, 0.92, 1.16], highlight: [1.08, 0.98, 0.84] },
     fog: { color: 0x28172f, near: 5, far: 68 },
     bg: [[0, '#12081f'], [1, '#2a0e3f']],
     build(g, { sphere, box }) {
@@ -308,12 +309,7 @@ export const scene = {
       // into a clipped white wedge in Water's mirror camera at side-on orbit
       // angles. Exclude both sky billboards from that reflection pass; the
       // water shader's own warm specular remains the sunset trail.
-      const renderWaterReflection = water.onBeforeRender;
-      water.onBeforeRender = function onBeforeRender(renderer, scene2, camera) {
-        sunDisc.visible = false; halo.visible = false;
-        renderWaterReflection.call(this, renderer, scene2, camera);
-        sunDisc.visible = true; halo.visible = true;
-      };
+      g.userData.ikReflection = cacheWaterReflection(water, [sunDisc, halo]);
       // Keep the sea BEHIND the shoreline instead of sweeping forward under the
       // beach into the foreground (which read as "water under the ground"). The
       // beach's far edge sits at env-z -14 -> world (cz - 22*S); push the plane
@@ -737,6 +733,7 @@ export const scene = {
       g.userData.ikFish = fish;
     },
     animate(g, t) {
+      if (g.userData.ikReflection) g.userData.ikReflection.time = t;
       if (g.userData.ikWater) g.userData.ikWater.material.uniforms['time'].value = t * 0.36;
       if (g.userData.ikTree) g.userData.ikTree.rotation.z = Math.sin(t * 0.42) * 0.012;
       const birds = g.userData.ikBirds;

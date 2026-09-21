@@ -50,6 +50,14 @@ Both lists print the reason (from `missingNote(key)`, which names the manifest e
 selection for CSEL writes around the comparator boundary, including sprite
 masking and foreground data beneath the border in live and deferred rendering.
 
+`node test/vibes-render-cache-test.js` checks shadow invalidation for moving
+geometry and keycap vertices, reflection cadence and pooled meteor lifetimes.
+
+`node test/vibes-screen-light-spec-test.js` checks linear-light framebuffer
+sampling, CRT spill colour and power gating, refresh-rate-independent smoothing,
+and scale-independent Synthwave illumination. It builds the light rigs without a
+renderer; shader compilation and the final scene appearance need browser checks.
+
 ## Assembly64 integration checks
 
 The default suite includes `assembly64-test.js` and `media-browser-test.js`.

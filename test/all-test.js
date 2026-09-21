@@ -37,6 +37,7 @@ const TESTS = [
   'test/machine-api-spec-test.js',
   'test/vibes-btn-patterns-spec-test.js',
   'test/vibes-screen-light-spec-test.js',
+  'test/vibes-render-cache-test.js',
   'test/d64-write-prg-spec-test.js',
   'test/escape-stack-spec-test.js',
   'test/tap-audio-spec-test.js',

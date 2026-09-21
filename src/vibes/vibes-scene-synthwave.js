@@ -114,14 +114,18 @@ export const scene = {
             gl_Position=projectionMatrix*viewMatrix*w;
           }`,
         fragmentShader: `varying vec2 vXZ; uniform float uTime,uCell,uNear,uFar; uniform vec2 uCenter;
-          float lineAt(float v,float w){ float f=abs(fract(v)-0.5); return smoothstep(w,0.0,f); }
+          float lineAt(float v,float w){
+            float pixel=max(fwidth(v),0.00001);
+            float f=abs(fract(v)-0.5);
+            return (1.0-smoothstep(w,w+pixel,f))*min(1.0,w/pixel);
+          }
           void main(){
             vec2 rel=vXZ-uCenter;
             vec2 q=vec2(rel.x/uCell,(rel.y+uTime*uCell*0.58)/uCell);
             float minor=max(lineAt(q.x,0.045),lineAt(q.y,0.045));
             float major=max(lineAt(q.x/5.0,0.022),lineAt(q.y/5.0,0.022));
             float line=max(minor*0.36,major*0.82);
-            float fade=max(0.08,smoothstep(uFar,uNear,length(rel)));
+            float fade=max(0.08,1.0-smoothstep(uNear,uFar,length(rel)));
             vec3 base=vec3(0.018,0.0,0.052), cyan=vec3(0.02,0.55,0.7), pink=vec3(0.75,0.04,0.48);
             vec3 c=base+mix(pink,cyan,smoothstep(uNear*2.0,uFar,abs(rel.y)))*line*fade;
             gl_FragColor=vec4(c,1.0);
@@ -141,15 +145,20 @@ export const scene = {
             w.y+=sin((w.z-uCenter.y)/(uCell*6.5)+uTime*0.38)*uCell*0.12*reach;
             gl_Position=projectionMatrix*viewMatrix*w;
           }`,
-        fragmentShader: `varying vec2 vUv; void main(){
+        fragmentShader: `varying vec2 vUv;
+        float stripe(float distance,float width,float pixel){
+          return (1.0-smoothstep(max(0.0,width-pixel*0.5),width+pixel*0.5,distance))*min(1.0,2.0*width/pixel);
+        }
+        void main(){
+          vec2 pixel=max(fwidth(vUv),vec2(0.00001));
           float x=abs(vUv.x-0.5);
-          float edge=1.0-step(0.018,abs(x-0.465));
+          float edge=stripe(abs(x-0.465),0.018,pixel.x);
           vec3 rail=mix(vec3(1.0,0.05,0.62),vec3(0.05,0.75,0.9),step(0.5,vUv.x));
           float farMask=smoothstep(0.48,0.94,vUv.y);
           float centre=1.0-smoothstep(0.05,0.24,x);
-          float broken=1.0-smoothstep(0.06,0.14,abs(fract(vUv.y*22.0)-0.5));
+          float broken=stripe(abs(fract(vUv.y*22.0)-0.5),0.10,max(0.08,pixel.y*22.0));
           float trail=farMask*centre*broken*0.2;
-          float dash=(1.0-step(0.018,x))*(1.0-step(0.14,abs(fract(vUv.y*16.0)-0.5)))*0.18;
+          float dash=stripe(x,0.018,pixel.x)*stripe(abs(fract(vUv.y*16.0)-0.5),0.14,pixel.y*16.0)*0.18;
           vec3 c=vec3(0.012,0.0,0.035)+vec3(0.025,0.002,0.055)*(1.0-x*2.0)*0.35;
           c+=rail*edge*0.56+vec3(1.0,0.16,0.45)*trail+vec3(0.9,0.08,0.48)*dash;
           gl_FragColor=vec4(c,1.0);
@@ -248,9 +257,10 @@ export const scene = {
 
       // Localized opposing rims integrate the beige hardware without flooding
       // its broad surfaces with neon.
-      const pink = new THREE.PointLight(0xff2eaa, 1.65, R * 23, 1.3);
+      // Inverse-square falloff needs intensity proportional to the rig's area.
+      const pink = new THREE.PointLight(0xff2eaa, R * R * 38, R * 23, 2);
       pink.position.set(cx - R * 4.5, cy + R * 2.2, cz - R * 7); g.add(pink);
-      const cyan = new THREE.PointLight(0x28d9ff, 1.25, R * 19, 1.4);
+      const cyan = new THREE.PointLight(0x28d9ff, R * R * 12, R * 19, 2);
       cyan.position.set(cx + R * 4, cy + R * 1.4, cz + R * 1.5); g.add(cyan);
       g.add(new THREE.AmbientLight(0x120526, 0.72));
 

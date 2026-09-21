@@ -2169,10 +2169,12 @@ async function _ensureModelViewer() {
     // Feed the live emulator framebuffer to the model's CRT. `machine` is
     // re-created on power/reset, so read it fresh each call (the viewer re-points
     // its texture when the buffer reference changes). 384×272 = vic2 canvas.
+    const screenFrame = { data: null, width: 384, height: 272 };
     mv.setScreenProvider(() => {
       const vic = machine && machine.vic2;
       if (!running || !vic || !vic.frameBuffer) return null;
-      return { data: vic.frameBuffer, width: 384, height: 272 };
+      screenFrame.data = vic.frameBuffer;
+      return screenFrame;
     });
     // Double-click in the 3D scene powers on (the power button's full boot path).
     // No-op when running, and when the ROMs aren't in: POWER opens Setup then, and

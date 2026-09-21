@@ -235,39 +235,47 @@ export const scene = {
       g.add(new THREE.HemisphereLight(0x2a3a6a, 0x0a0a12, 0.5));
       g.add(new THREE.AmbientLight(0x101828, 0.3));
 
-      // ── Shooting stars (spawned over time in animate) ──
-      const meteors = [];
+      // One pooled meteor suffices: its life is <1.8 s and spawns are ≥3 s apart.
+      const N = 26, pos = new Float32Array(N * 3);
+      const alpha = new Float32Array(N), sz = new Float32Array(N);
+      for (let j = 0; j < N; j++) {
+        alpha[j] = Math.pow(1 - j / (N - 1), 1.6);
+        sz[j] = j === 0 ? 7 : 4.5 * (1 - j / N);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+      geo.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1));
+      geo.setAttribute('aSize', new THREE.BufferAttribute(sz, 1));
+      geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), SKY * 0.2);
+      const mat = new THREE.ShaderMaterial({
+        uniforms: { uTex: { value: tex.meteor }, uFade: { value: 1 } },
+        transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+        vertexShader: `
+          attribute float aAlpha; attribute float aSize; varying float vA;
+          void main(){ vA = aAlpha; gl_PointSize = aSize; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+        fragmentShader: `
+          uniform sampler2D uTex; uniform float uFade; varying float vA;
+          void main(){ vec4 t = texture2D(uTex, gl_PointCoord); gl_FragColor = vec4(vec3(0.85,0.92,1.0) * t.rgb, t.a * vA * uFade); }`,
+      });
+      const pts = new THREE.Points(geo, mat); env.add(pts); pts.visible = false;
+      const dir = new THREE.Vector3();
+      const meteor = { obj: pts, mat, dir, speed: 0, life: 0, maxLife: 1 };
       const spawnMeteor = () => {
         const az = Math.random() * Math.PI * 2, el = 0.5 + Math.random() * 0.9;
-        const start = new THREE.Vector3(Math.cos(az) * Math.cos(el), Math.sin(el), Math.sin(az) * Math.cos(el)).multiplyScalar(SKY * 0.9);
-        const dir = new THREE.Vector3(Math.random() - 0.5, -(0.4 + Math.random() * 0.6), Math.random() - 0.5).normalize();
-        const len = SKY * (0.07 + Math.random() * 0.13), N = 26;
-        const pos = new Float32Array(N * 3), alpha = new Float32Array(N), sz = new Float32Array(N);
+        pts.position.set(Math.cos(az) * Math.cos(el), Math.sin(el), Math.sin(az) * Math.cos(el)).multiplyScalar(SKY * 0.9);
+        dir.set(Math.random() - 0.5, -(0.4 + Math.random() * 0.6), Math.random() - 0.5).normalize();
+        const len = SKY * (0.07 + Math.random() * 0.13);
         for (let j = 0; j < N; j++) {
-          const p = start.clone().addScaledVector(dir, -len * (j / (N - 1)));
-          pos[j * 3] = p.x; pos[j * 3 + 1] = p.y; pos[j * 3 + 2] = p.z;
-          alpha[j] = Math.pow(1 - j / (N - 1), 1.6);
-          sz[j] = j === 0 ? 7 : 4.5 * (1 - j / N);
+          const offset = -len * j / (N - 1);
+          pos[j * 3] = dir.x * offset; pos[j * 3 + 1] = dir.y * offset; pos[j * 3 + 2] = dir.z * offset;
         }
-        const geo = new THREE.BufferGeometry();
-        geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-        geo.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1));
-        geo.setAttribute('aSize', new THREE.BufferAttribute(sz, 1));
-        const mat = new THREE.ShaderMaterial({
-          uniforms: { uTex: { value: tex.meteor }, uFade: { value: 1 } },
-          transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-          vertexShader: `
-            attribute float aAlpha; attribute float aSize; varying float vA;
-            void main(){ vA = aAlpha; gl_PointSize = aSize; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-          fragmentShader: `
-            uniform sampler2D uTex; uniform float uFade; varying float vA;
-            void main(){ vec4 t = texture2D(uTex, gl_PointCoord); gl_FragColor = vec4(vec3(0.85,0.92,1.0) * t.rgb, t.a * vA * uFade); }`,
-        });
-        const pts = new THREE.Points(geo, mat); env.add(pts);
-        meteors.push({ obj: pts, mat, dir, speed: SKY * (0.3 + Math.random() * 0.23), life: 0, maxLife: 1.1 + Math.random() * 0.7 });
+        geo.attributes.position.needsUpdate = true;
+        meteor.speed = SKY * (0.3 + Math.random() * 0.23);
+        meteor.life = 0; meteor.maxLife = 1.1 + Math.random() * 0.7;
+        mat.uniforms.uFade.value = 0;
+        pts.visible = true;
       };
-
-      g.userData.starry = { sky, starMats, gridMat, meteors, spawn: spawnMeteor, env, nextMeteor: 2, lastT: undefined };
+      g.userData.starry = { sky, starMats, gridMat, meteor, spawn: spawnMeteor, nextMeteor: 2, lastT: undefined };
     },
     animate(g, t) {
       const d = g.userData.starry; if (!d) return;
@@ -277,12 +285,13 @@ export const scene = {
       for (let i = 0; i < d.starMats.length; i++) d.starMats[i].uniforms.uTime.value = t;   // indexed: no per-frame iterator alloc
       d.nextMeteor -= dt;
       if (d.nextMeteor <= 0) { d.spawn(); d.nextMeteor = 3 + Math.random() * 6; }
-      for (let i = d.meteors.length - 1; i >= 0; i--) {
-        const m = d.meteors[i]; m.life += dt;
+      const m = d.meteor;
+      if (m.obj.visible) {
+        m.life += dt;
         m.obj.position.addScaledVector(m.dir, m.speed * dt);
         const k = m.life / m.maxLife;
         m.mat.uniforms.uFade.value = k < 0.15 ? k / 0.15 : Math.max(0, 1 - (k - 0.15) / 0.85);
-        if (k >= 1) { d.env.remove(m.obj); m.obj.geometry.dispose(); m.mat.dispose(); d.meteors.splice(i, 1); }
+        if (k >= 1) m.obj.visible = false;
       }
     },
 };

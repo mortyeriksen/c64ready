@@ -112,6 +112,11 @@ var for node harnesses.
 - **Lazy three.js chunk.** The 3D "Retro Vibes" scene and the model viewer
   import three.js only on first open, so the library stays out of the initial
   bundle. See [Retro Vibes](RETROVIBES-ARCHITECTURE.md).
+- **Retro Vibes render reuse.** Bedroom and Spotlight retain static shadow maps
+  until casting geometry or the shadow rig changes. IK+ updates water reflections
+  at 30 Hz while its wave shading keeps display cadence. The screen provider
+  reuses its descriptor, and Starry pools its meteor geometry
+  and material. See [Retro Vibes](RETROVIBES-ARCHITECTURE.md) §§4–5.
 
 `src/switches.js` also carries hardware-accuracy switches, flipped the same
 way, `DRIVE_TRUE_CLOCK_RATIO` and `IEC_EDGE_LATENCY` among them (both default

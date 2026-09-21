@@ -4,6 +4,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { roomTextures, markShared } from './vibes-scene-common.js';
+import { addCrtLight, animateCrtLight } from './vibes-crt-light.js';
 
 // One frame of what is on the television: a black Trans-Am-ish car head-on on a
 // night highway, red scanner sweeping across its nose. `phase` (radians) drives
@@ -361,18 +362,20 @@ export const scene = {
     // threshold is high so only the bulb, the CRT and the LEDs bleed — lit walls
     // must not. Bloom itself is skipped on phones (see _lowPowerDevice).
     name: '80s Bedroom', css: 'scene-bedroom', envInt: 0.07, exposure: 1.2,
+    staticShadows: true,
     bloom: { strength: 0.55, radius: 0.85, threshold: 0.88 },
     // The teal/amber split, carried into the shadows and highlights the two keys
     // can't reach. Gentle on purpose: it passes over the monitor picture too.
-    grade: { split: 0.55, shadow: [0.88, 0.98, 1.10], highlight: [1.09, 1.00, 0.88] },
+    grade: { aberration: 0.0004, vignette: 0.22, grain: 0.014, split: 0.55, shadow: [0.88, 0.98, 1.10], highlight: [1.09, 1.00, 0.88] },
     screenOff: true,        // the model's pale stock glass reads as "on" in a dark room
     halation: [[1, 1, 1], [1, 0.95, 0.90], [1, 0.86, 0.75], [1, 0.77, 0.60], [1, 0.70, 0.50]],
     bg: [[0, '#08060d'], [1, '#08060d']],
-    build(g, { sphere, box }) {
+    build(g, { sphere, box, screen }) {
+      addCrtLight(g, screen, 2.2);
       const R = sphere.radius, cx = sphere.center.x, cz = sphere.center.z, gy = box.min.y;
       const S = R * 1.04;                    // world units per metre (smaller → the fixed C64 reads larger in the room)
-      const DESKH = 0.72;                    // desk-top height (m); the C64 base sits here
-      const floorY = gy - DESKH * S;         // carpet level, one desk-height below the model
+      const floorY = gy - 0.72 * S;          // carpet level stays anchored below the model
+      const DESKH = 0.726;                   // tabletop sits slightly above the lowest cable/feet for firm contact
       const W = 5.0, D = 5.4, H = 2.7;       // room size (m)
       const wc = (lx, ly, lz) => new THREE.Vector3(cx + lx * S, floorY + ly * S, cz + lz * S);
 
@@ -678,7 +681,7 @@ export const scene = {
         }
         pos.needsUpdate = true; crtGeo.computeVertexNormals();
       }
-      const crtScreen = new THREE.Mesh(crtGeo, new THREE.MeshBasicMaterial({ map: btex.crt }));
+      const crtScreen = new THREE.Mesh(crtGeo, new THREE.MeshBasicMaterial({ map: btex.crt, color: 0x000000 }));
       add(crtScreen, 0, CH / 2, CD / 2 + 0.02, 0, tv);                            // screen clearly in front of the bezel
       // The scanner's bleed. The picture itself is a MeshBasicMaterial capped at
       // its texture value, so nothing in it can ever cross the bloom threshold —
@@ -686,14 +689,14 @@ export const scene = {
       // glow out of the tube. It rides in front of the glass and tracks the
       // sweep (see animate).
       const scanGlow = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: btex.glow, color: 0xff4526, transparent: true, opacity: 0.125,
+        map: btex.glow, color: 0xff4526, transparent: true, opacity: 0,
         blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
       }));
       const SCRW = CW - 0.16, SCRH = CH - 0.2;
       scanGlow.scale.set(SCRW * 0.17, SCRW * 0.17, 1);
       add(scanGlow, 0, CH / 2 - SCRH * 0.156, CD / 2 + 0.035, 0, tv);             // at the nose, just off the glass
       const scanSpill = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: btex.glow, color: 0xff3822, transparent: true, opacity: 0.028,
+        map: btex.glow, color: 0xff3822, transparent: true, opacity: 0,
         blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
       }));
       scanSpill.scale.set(SCRW * 0.5, SCRH * 0.42, 1);
@@ -701,9 +704,7 @@ export const scene = {
       // Phosphor bleed: a soft wash across the whole glass, so the tube glows as
       // a tube rather than only where the scanner is. Kept low — this is the
       // difference between "lit screen" and "lamp in the corner".
-      // Glass sheen: a soft diagonal reflection across the top-left of the tube.
-      // Real CRT glass is glossy and always catches something; without it the
-      // surface has no material at all.
+      // Glass sheen: a soft diagonal highlight on the powered tube.
       const sheen = new THREE.Mesh(
         new THREE.PlaneGeometry((CW - 0.16) * 0.40, (CH - 0.2) * 0.26),
         new THREE.MeshBasicMaterial({ map: btex.sheen, transparent: true, opacity: 0.085,
@@ -711,8 +712,9 @@ export const scene = {
       // Upper-left corner only. Spanning the tube, it stopped being a reflection
       // and became fog over the picture.
       add(sheen, -(CW - 0.16) * 0.26, CH / 2 + (CH - 0.2) * 0.27, CD / 2 + 0.042, 0, tv);
+      sheen.visible = false;
       const crtBleed = new THREE.Sprite(new THREE.SpriteMaterial({
-        map: btex.glow, color: 0xbfd8ea, transparent: true, opacity: 0.038,
+        map: btex.glow, color: 0xbfd8ea, transparent: true, opacity: 0,
         blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
       }));
       crtBleed.scale.set(SCRW * 1.04, SCRH * 1.08, 1);
@@ -807,7 +809,7 @@ export const scene = {
       const lampBounce = new THREE.PointLight(0xff8f45, 0.052 * IL, R * 2.5, 2);
       lampBounce.position.copy(wc(BX + 0.08, DESKH + 0.1, BZ + 0.11)); g.add(lampBounce);
       // Cool flickering CRT glow spilling into the room.
-      const crtLight = new THREE.PointLight(0x8fcfe5, 0.56 * IL, R * 8, 2);
+      const crtLight = new THREE.PointLight(0x8fcfe5, 0, R * 8, 2);
       crtLight.position.copy(wc(1.35, 0.66, -0.7)); g.add(crtLight);
       // Faint red alarm-clock glow — a bedside ember, reaches almost nothing.
       const clockLight = new THREE.PointLight(0xff3020, 0.075 * IL, R * 2.5, 2);
@@ -885,7 +887,7 @@ export const scene = {
       // ── Soft CRT + tuner glow halos — radial sprites that fade to
       //    transparent at the rim (no hard-edged additive sphere). ──
       const haze = (color, x, y, z, size, op) => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: btex.glow, color, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); s.scale.set(size, size, 1); add(s, x, y, z); return s; };
-      const crtHaze = haze(0x9fd0ea, 1.4, 0.62, -0.7, 1.45, 0.038);
+      const crtHaze = haze(0x9fd0ea, 1.4, 0.62, -0.7, 1.45, 0);
       haze(0x32d88a, -2.05, 0.91, 1.1, 0.32, 0.026);                              // tuner glow, no scene-wide point-light cost
 
       // ── Dust motes drifting in the light ──
@@ -980,7 +982,8 @@ export const scene = {
       g.userData.bedScanGlow = scanGlow; g.userData.bedScanSpan = (CW - 0.16) * 0.25;
       g.userData.bedScanSpill = scanSpill;
       g.userData.bedCrtBleed = crtBleed;
-      g.userData.bedCrtBase = crtLight.intensity;   // so animate scales the built value, not a stale literal
+      g.userData.bedCrtSheen = sheen;
+      g.userData.bedCrtBase = 0.56 * IL;          // powered intensity, scaled to the room
       g.userData.bedLampLight = lampLight; g.userData.bedLampBase = lampLight.intensity;
       g.userData.bedLampBounce = lampBounce; g.userData.bedLampBounceBase = lampBounce.intensity;
       g.userData.bedCrtTex = btex.crt;
@@ -989,7 +992,8 @@ export const scene = {
       g.userData.bedDust = dust; g.userData.bedDustPos = dp; g.userData.bedSeed = seed; g.userData.bedDustObj = dm; g.userData.bedDrift = S;
       g.userData.bedMoonDust = moonDust; g.userData.bedMoonDustPos = mdp; g.userData.bedMoonSeed = mseed;
     },
-    animate(g, t, powered) {
+    animate(g, t, powered, screenLight) {
+      animateCrtLight(g, t, powered, screenLight);
       // Barely perceptible tungsten drift. Scalar updates only: all lights and
       // sprites are built once, and the loop keeps the scene group's shape fixed.
       const lamp = g.userData.bedLampLight, lampBounce = g.userData.bedLampBounce;
@@ -1000,10 +1004,11 @@ export const scene = {
       // and still (no flicker, no cast light); on, it flickers (screen brightness
       // + the cool light it spills into the room).
       const cl = g.userData.bedCrtLight, cm = g.userData.bedCrtMat, hz = g.userData.bedCrtHaze;
+      const sheen = g.userData.bedCrtSheen;
+      if (sheen) sheen.visible = !!powered;
       if (powered) {
         const f = 0.91 + Math.sin(t * 7.3) * 0.035 + Math.sin(t * 17.1) * 0.018;
-        // Scale the intensity the scene was BUILT with. A literal here silently
-        // overrode the falloff-scaled value the moment decay changed.
+        // Flicker scales the room's calibrated powered intensity.
         if (cl) cl.intensity = (g.userData.bedCrtBase || 0) * f;
         // The tube is set dressing across a dark room, not the subject — kept
         // well under the desk lamp so the eye still goes to the C64.
@@ -1029,12 +1034,8 @@ export const scene = {
         }
       } else {
         if (cl) cl.intensity = 0;              // TV dark with the machine
-        // Not black: a switched-off CRT is dark grey glass that still catches
-        // the room, and MeshBasicMaterial takes no light, so a low floor here is
-        // the only thing standing between "off" and a hole cut in the cabinet.
-        if (cm) cm.color.setScalar(0.16);
-        // ...and so is its halo. A glow hanging in the room off a black tube was
-        // the giveaway that this sprite never checked `powered`.
+        // Black multiplication hides the picture without uploading a new texture.
+        if (cm) cm.color.setScalar(0);
         if (hz) hz.material.opacity = 0;
         const sg = g.userData.bedScanGlow;
         if (sg) sg.material.opacity = 0;   // dead tube, dead scanner

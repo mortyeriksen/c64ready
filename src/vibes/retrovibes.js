@@ -31,6 +31,7 @@ import { attachKeycapPresses } from './keycap-press.js';   // [removable prototy
 import { hostTouchControls, restoreTouchControls } from '../touch-joystick.js';
 import { bgTexture } from './vibes-scene-common.js';
 import { sampleScreenLight } from './vibes-screen-light.js';
+import { ShadowCache } from './vibes-shadow-cache.js';
 import { scene as sceneSynthwave } from './vibes-scene-synthwave.js';
 import { scene as sceneStarry } from './vibes-scene-starry.js';
 import { scene as sceneSpotlight } from './vibes-scene-spotlight.js';
@@ -201,6 +202,7 @@ export class ModelViewer {
     this._sceneGroup = null;      // THREE.Group holding the active scene's lights/props
     this._sceneAnimate = null;    // optional per-frame animator for the active scene
     this._sceneBasic = false;     // scenes flagged basic bypass the composer (plain render)
+    this._shadowCache = null;
     this._modelSphere = null;     // model bounds, for scene grids/floors/spotlight
     this._modelBox = null;
     // Post-processing (bloom + grade + SMAA). Null → fall back to plain render.
@@ -1147,6 +1149,9 @@ export class ModelViewer {
     if (!this._screenLive) this._screenLive = null;
     if (this._gradePass) {
       const u = this._gradePass.uniforms, gr = def.grade || {};
+      u.uAberration.value = gr.aberration ?? 0.0008;
+      u.uVignette.value = gr.vignette ?? 0.24;
+      u.uGrain.value = gr.grain ?? 0.025;
       u.uSplit.value = gr.split || 0;
       u.uSplitShadow.value.fromArray(gr.shadow || [1, 1, 1]);
       u.uSplitHigh.value.fromArray(gr.highlight || [1, 1, 1]);
@@ -1185,6 +1190,9 @@ export class ModelViewer {
     this._sceneGroup = g;
     this._sceneAnimate = def.animate || null;
     this._sceneBasic = !!def.basic;   // basic scenes render without the post pipeline
+    this._shadowCache = def.staticShadows ? new ShadowCache(this.scene) : null;
+    this.renderer.shadowMap.autoUpdate = !this._shadowCache;
+    this.renderer.shadowMap.needsUpdate = true;
 
     for (const s of SCENES) this.overlay.classList.remove(s.css);
     this.overlay.classList.add(def.css);
@@ -1401,6 +1409,7 @@ export class ModelViewer {
     if (this._keycap) this._keycap.update();   // [removable prototype] RETURN keycap
     const t = performance.now() * 0.001;
     if (this._sceneAnimate) this._sceneAnimate(this._sceneGroup, t, powered, this._screenLight);   // scenes may gate FX (e.g. the CRT) on power
+    if (this._shadowCache && this._shadowCache.update()) this.renderer.shadowMap.needsUpdate = true;
     const presenting = this.renderer.xr.isPresenting;
     // Desktop view: a fullscreen-framer glide (if running) drives the camera and
     // suppresses OrbitControls' own update for its duration; otherwise controls
@@ -1606,6 +1615,7 @@ export class ModelViewer {
     this.scene = this.camera = this.controls = null;
     this._composer = this._bloomPass = this._gradePass = null;
     this._model = this._sceneGroup = this._sceneAnimate = null;
+    this._shadowCache = null;
     this._modelSphere = this._modelBox = null;
     this._offMaterial = null;
     this._screenTex = this._screenDataRef = this._screenMesh = this._screenGeo = null;
