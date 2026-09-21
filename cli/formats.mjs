@@ -23,6 +23,7 @@ export function sniff(bytes, filename = '') {
   if (bytes.length >= 12 && ascii(bytes, 0, 'RIFF') && ascii(bytes, 8, 'WAVE')) return 'wav';
   if (bytes.length >= 12 && ascii(bytes, 0, 'DC2N-TAP-RAW')) return 'dmp';
   if (bytes.length >= 16 && ascii(bytes, 0, 'C64 CARTRIDGE   ')) return 'crt';
+  if (bytes.length >= 4 && (ascii(bytes, 0, 'PSID') || ascii(bytes, 0, 'RSID'))) return 'sid';
   // A .t64 signs itself in prose ("C64 tape image file", "C64S tape file", …)
   // and the wordings vary, so the prefix plus a directory that could hold at
   // least one entry is the test. The .tap and .crt magics above go first: both
@@ -46,6 +47,7 @@ export const KIND_NAMES = {
   d64: 'disk image',
   t64: 'tape archive',
   prg: 'program file',
+  sid: 'SID music',
   unknown: 'not a C64 file this tool knows',
 };
 

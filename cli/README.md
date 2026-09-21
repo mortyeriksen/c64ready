@@ -74,17 +74,33 @@ c64rdy --version
 | **Tapes into anything** | `tap2wav`, `tap2d64`, `tap2prg`, `tap2t64` |
 | **`.t64` archives** | `t642d64`, `t642prg`, `t642tap` out; `d642t64` in |
 | **Programs into containers** | `prg2d64`, `prg2crt`, `prg2tap`, `prg2turbo` |
+| **SID music into player or audio** | `sid2prg`, `sid2wav` |
 | **Questions about a file** | `dir`, `info`, `loadtest`, `loader` |
 | **Boot the machine** | `run` (a PNG of the screen, or an animated one) |
 | **A disk's interior** | `disk new`, `disk add`, `disk rm`, `disk extract` |
 
 `c64rdy --help` lists every command and flag.
 
+Turn a SID tune into a runnable PRG with the same music player as the browser UI,
+or render it as 16-bit mono WAV audio:
+
+```sh
+c64rdy sid2prg tune.sid --song 2 -o player.prg
+c64rdy sid2wav tune.sid --seconds 180 --roms roms
+```
+
+Both accept multiple inputs, quoted wildcards and `--out-dir`. `sid2wav` defaults
+to three minutes at 44,100 Hz, with the SID model from the tune header (8580 when
+unspecified). It supports `--sample-rate`, `--model 6581|8580` and `--song`.
+Rendering is PAL, through the player's Safe view and the emulator's reSID engine.
+The [CLI guide](https://github.com/mortyeriksen/c64ready/blob/main/docs/USER-GUIDE-CLI.md#sid-music-player-programs-and-audio)
+details the options and supported tunes.
+
 ## The ROMs
 
 Commands that boot a machine need the C64's KERNAL, BASIC and character ROMs:
 `run`, `loadtest`, `tap2d64`, `tap2prg --via-machine`, `prg2tap`, `t642tap` and
-`loader`. `prg2turbo` also needs them when using `--loader`, including the
+`loader`, plus `sid2wav`. `sid2prg` needs no ROMs. `prg2turbo` also needs them when using `--loader`, including the
 `--drive` mode. The ROMs are copyrighted and are not bundled. Tell it once
 where they are and it remembers:
 
@@ -122,9 +138,11 @@ rest) are credited in
 
 ## Release notes
 
-### Next version
+### 0.9.2
 
-*Not out yet: what is finished and waiting for the next `npm` release.*
+- **SID tunes as programs and audio.** `sid2prg` includes the browser UI's C64
+  music player in a runnable PRG. `sid2wav` records a selected song as 16-bit mono
+  WAV, with duration, sample-rate and SID-model options.
 
 - **`dir` stops warning about tapes that are fine.** A file that hands straight
   over to the game's own fast loader used to leave minutes of "carries a signal

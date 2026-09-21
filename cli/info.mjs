@@ -9,7 +9,7 @@ import { parseArgs, inputFiles, UsageError } from './args.mjs';
 import { sniff, KIND_NAMES } from './formats.mjs';
 import { t64Files } from './t64.mjs';
 import { say, fail, mss } from './report.mjs';
-import { splitTap, tapSeconds, wavReader, D64, d64Variant, parseCRT } from './core.mjs';
+import { splitTap, tapSeconds, wavReader, D64, d64Variant, parseCRT, parseSid } from './core.mjs';
 
 export function run(argv) {
   const { args } = parseArgs(argv);
@@ -30,6 +30,10 @@ function describe(bytes, filename) {
   const kind = sniff(bytes, filename);
   const name = KIND_NAMES[kind];
   switch (kind) {
+    case 'sid': {
+      const tune = parseSid(bytes);
+      return `${name} (${tune.format}), "${tune.title}", ${tune.author}, ${tune.songs} song(s), starts on ${tune.startSong}`;
+    }
     case 't64': {
       const { name: label, files } = t64Files(bytes);
       return `${name} (.t64)${label ? `, "${label}"` : ''}, ` +

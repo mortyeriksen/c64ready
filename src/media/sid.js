@@ -143,9 +143,10 @@ function playerAddress(tune, imageLength) {
  * @param {Uint8Array} bytes  the .sid file
  * @param {object} [options]
  * @param {number} [options.song]  start on this song instead of the file's own
+ * @param {boolean} [options.safe]  keep driver writes cycle-exact for audio export
  * @returns {{data: Uint8Array, tune: object}}
  */
-export function sidToPrg(bytes, { song } = {}) {
+export function sidToPrg(bytes, { song, safe = false } = {}) {
   const tune = parseSid(bytes);
   const where = occupied(tune);
   if (where.from < 0x0200) throw new Error('This tune loads over the zero page and the stack, which the machine needs.');
@@ -186,7 +187,7 @@ export function sidToPrg(bytes, { song } = {}) {
   // a file that says it needs a real C64 — and bit 0 is the view the player
   // opens in: a PSID may snoop the driver's writes to show all three voices,
   // an RSID starts on the safe view and leaves that to a keypress.
-  put(14, (tune.flags & 0x3C) | (tune.format === 'RSID' ? 2 : 0) | (tune.format === 'PSID' ? 1 : 0));
+  put(14, (tune.flags & 0x3C) | (tune.format === 'RSID' ? 2 : 0) | (tune.format === 'PSID' && !safe ? 1 : 0));
   put(15, where.to > UNDER_KERNAL ? BANK_NO_KERNAL : BANK_NORMAL);
   putWord(16, tune.clock === 2 ? CIA_NTSC : CIA_PAL);
   const text = (at, value) => {

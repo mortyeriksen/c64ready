@@ -449,6 +449,15 @@ the [User Guide](USER-GUIDE.md), Sound section.
 
 ## 10. The worklet transport (`SIDProcessor`)
 
+The CLI's `sid2wav` uses the same WASM engine offline. `cli/sid.mjs` boots the
+shared SID player in Safe mode, then drains the machine's cycle-stamped register
+ring into `sid_queue_write`. It advances the PAL machine ahead of each block's
+16.16 resampler deadline before calling `sid_render`, with no real-time drift
+correction. Both the shadow voices and audio engine use the selected chip model.
+PCM blocks are streamed as little-endian 16-bit mono WAV; boot audio is omitted.
+`sid2prg` calls the UI's `sidToPrg` builder with its usual starting view. The
+builder's optional `safe` setting selects direct SID writes for offline audio.
+
 The CPU thread and the audio thread share one lock-free **SPSC ring** in a
 `SharedArrayBuffer`:
 

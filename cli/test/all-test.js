@@ -1,6 +1,6 @@
 // CLI test runner — spawns each spec test and reports PASS/FAIL plus a summary,
 // the same shape as the app repo's runner so graduation is a move and a merge.
-// No emulator boots in this suite; run and loadtest are checked by hand.
+// SID export integration boots a synthetic tune when the external ROMs are available.
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,6 +23,7 @@ const TESTS = [
   'cli-tapcat-spec-test.js',
   'cli-turbo-spec-test.js',
   'cli-crt-spec-test.js',
+  'cli-sid-spec-test.js',
   'cli-jobs-spec-test.js',
 ];
 

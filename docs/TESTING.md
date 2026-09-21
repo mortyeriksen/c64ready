@@ -58,6 +58,11 @@ sampling, CRT spill colour and power gating, refresh-rate-independent smoothing,
 and scale-independent Synthwave illumination. It builds the light rigs without a
 renderer; shader compilation and the final scene appearance need browser checks.
 
+`node cli/test/cli-sid-spec-test.js` checks SID conversion, song selection, batch
+errors and overwrite protection. With the external C64 ROMs present, it boots a
+synthetic two-song driver, verifies Safe-mode register writes, and checks WAV
+headers, exact duration and audible output. It runs in both test suites.
+
 ## Assembly64 integration checks
 
 The default suite includes `assembly64-test.js` and `media-browser-test.js`.

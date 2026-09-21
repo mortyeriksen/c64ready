@@ -22,6 +22,14 @@ export { parseCRT } from '../src/media/crt.js';
 export { t64Files, isT64 } from '../src/media/t64.js';
 export { TURBO_FORMATS } from '../src/media/tap-turbo-formats.js';
 export { pickViceRoms } from '../src/roms.js';
+export { parseSid, sidToPrg } from '../src/media/sid.js';
+
+/** The same offline-capable SID engine used by the audio worklet. */
+export async function loadSidEngine() {
+  const { sidWasmBytes } = await import('../src/sid-wasm-blob.js');
+  const { instance } = await WebAssembly.instantiate(sidWasmBytes());
+  return instance.exports;
+}
 
 import { wavToTap } from '../src/media/wav-tape.js';
 import { repairTape } from '../src/media/tap-repair.js';

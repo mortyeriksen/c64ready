@@ -17,11 +17,12 @@ import * as loader from './loader.mjs';
 import { d642t64, t642d64, t642tap, t642prg, tap2t64 } from './t64.mjs';
 import { prg2turbo } from './turbo.mjs';
 import { roms as romsCmd } from './roms.mjs';
+import { sid2prg, sid2wav } from './sid.mjs';
 
 const VERSION = JSON.parse(fs.readFileSync(new URL('./package.json', import.meta.url))).version;
 
 const USAGE = `
-C64 READY. CLI v${VERSION} — Commodore 64 tapes, cartridges, and disks from the terminal
+C64 READY. CLI v${VERSION} — Commodore 64 tapes, cartridges, disks and music from the terminal
 
 Commands are flat except disk: a group exists only where a single file has an
 interior you edit, and a .d64 is the one file that has. Most take several
@@ -34,6 +35,8 @@ inputs, and a quoted wildcard works on any shell: c64rdy wav2tap "tapes/*.wav"
     c64rdy prg2crt  <in.prg…>  [-o out.crt]   Wrap a PRG in a cartridge
     c64rdy prg2d64  <in.prg…>  [-o out.d64]   Wrap a PRG in its own disk
     c64rdy prg2tap  <in.prg…>  [-o out.tap]   Save a PRG onto a tape, for real
+    c64rdy sid2prg  <in.sid…>  [-o out.prg]   SID tune with the C64 music player
+    c64rdy sid2wav  <in.sid…>  [-o out.wav]   Render SID music as PCM audio
     c64rdy t642d64  <in.t64…>  [-o out.d64]   Unpack a .t64 archive onto disks
     c64rdy t642prg  <in.t64…>  [-d <dir>]     Take a .t64's files off it as .prg
     c64rdy t642tap  <in.t64…>  [-o out.tap]   Save an archive's files onto a tape
@@ -70,6 +73,9 @@ inputs, and a quoted wildcard works on any shell: c64rdy wav2tap "tapes/*.wav"
     wav2tap:  --no-mend --no-repair --channel <n|mix|aligned>
               --pre-emphasis <n> --ntsc --cpu-hz <hz>
     tap2wav:  --max-seconds <n>
+    sid2prg: --song <n>   Starting song (1-based; default from the SID)
+    sid2wav: --song <n> --seconds <n> (180) --sample-rate <hz> (44100)
+              --model <6581|8580> --roms <dir>   PAL, 16-bit mono
     tap2d64:  --file <NAME> --roms <dir>   (boots each; -o names disk 1)
     tap2prg:  --file <NAME> -d <dir>   --via-machine  load them rather than
               decode: slower, misses the self-driving formats, and unreliable
@@ -135,6 +141,8 @@ const COMMANDS = {
   tap2t64,
   loader: loader.run,
   roms: romsCmd,
+  sid2prg,
+  sid2wav,
 };
 
 async function main() {

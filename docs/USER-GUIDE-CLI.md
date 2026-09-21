@@ -6,7 +6,7 @@
      node tools/cli-guide-shots.mjs  regenerates them all. -->
 
 You have Commodore 64 tapes recorded as WAV files, or real `.tap`, `.d64`,
-`.crt` and `.prg` files, and you want to convert, inspect and test them in
+`.crt`, `.prg` and `.sid` files, and you want to convert, inspect and test them in
 batches — without dragging each 285 MB recording through a browser dialog.
 `c64rdy` is the C64 Ready tape and disk engine with a terminal in front of it:
 the same decoder, the same repairs, the same listings.
@@ -17,6 +17,7 @@ the same decoder, the same repairs, the same listings.
 | **Tapes → anything** | `tap2wav`, `tap2d64`, `tap2prg`, `tap2t64` |
 | **.t64 archives** | `t642d64`, `t642prg` and `t642tap` out, `d642t64` in |
 | **Programs → containers** | `prg2d64`, `prg2crt`, `prg2tap`, `prg2turbo` |
+| **SID music → player or audio** | `sid2prg`, `sid2wav` |
 | **Questions** | `dir`, `info`, `loadtest`, `loader` |
 | **The machine** | `run` |
 | **A disk's interior** | `disk new`, `disk add`, `disk rm`, `disk extract` (= `d642prg`) |
@@ -65,7 +66,7 @@ From a source checkout, `node cli/c64rdy.mjs dir tape.tap` runs it in place.
 
 **The ROMs.** Commands that boot a machine need the C64 ROMs: `run`,
 `loadtest`, `tap2d64`, `tap2prg --via-machine`, `prg2tap`, `t642tap` and
-`loader`. `prg2turbo` also needs them when using `--loader`, including the
+`loader`, plus `sid2wav`. `sid2prg` needs no ROMs. `prg2turbo` also needs them when using `--loader`, including the
 `--drive` mode. Conversions that decode or encode files without booting a
 machine, and inspections such as `dir` and `info`, need no ROMs.
 
@@ -533,6 +534,53 @@ The format is Miha Peternel's, made for the C64S emulator; the layout on both
 directions is [Peter Schepers' T64 document](https://ist.uwaterloo.ca/~schepers/formats/T64.TXT),
 quirks included on the way in.
 
+## SID music: player programs and audio
+
+`sid2prg` makes the same runnable program as loading a `.sid` in the browser UI.
+The PRG includes the C64 music player, its title and author display, visualizers,
+keyboard controls and the tune data. Load it on a C64 or in an emulator and `RUN`.
+It needs no ROMs to convert, and it keeps every song in the SID.
+
+```sh
+c64rdy sid2prg tune.sid                    # tune.prg, with the music player
+c64rdy sid2prg tune.sid --song 2 -o player.prg
+c64rdy sid2prg "music/*.sid" --out-dir players
+```
+
+`--song` chooses the starting song, numbered from 1. Without it, the SID's own
+starting-song number is used. A song outside the file's range is an error.
+
+`sid2wav` boots the same player headlessly and records its SID output using the
+emulator's reSID WASM sound engine. It uses the player's Safe view, preserving
+individual register writes for digi samples. Output is uncompressed 16-bit mono
+PCM, at 44,100 Hz by default. The C64 boot is excluded; recording begins when
+the player is started, so its brief startup is included.
+
+```sh
+c64rdy sid2wav tune.sid --roms roms        # tune.wav, three minutes
+c64rdy sid2wav tune.sid --seconds 210 --song 2 -o song-two.wav
+c64rdy sid2wav tune.sid --sample-rate 48000 --model 6581
+c64rdy sid2wav "music/*.sid" --seconds 60 --out-dir previews
+```
+
+The default duration is 180 seconds. `.sid` files do not contain song lengths,
+so `--seconds` chooses how long to record; it accepts fractional seconds.
+`--sample-rate` accepts whole numbers from 8,000 to 96,000 Hz. The SID header
+selects the 6581 or 8580 model; unknown or either-model files use 8580. `--model`
+overrides that choice. The C64 ROMs are found in the same places as for `run`.
+
+Both commands accept several inputs and quoted wildcards. Outputs go into the
+current directory unless `--out-dir` or `-o` says otherwise. `-o` accepts one
+input only. Existing files are protected unless `--force` is supplied. WAV
+output is streamed to a temporary file and published only after rendering succeeds.
+
+The shared player's memory-placement limits apply to both commands. Audio
+rendering models one PAL C64 and one SID; NTSC-only tunes retain the same timing
+limitations as in the UI, and the command reports their NTSC requirement.
+`sid2wav` refuses BASIC RSID, MUS and multi-SID files instead of exporting an
+unsupported interpretation. See [SID playback limits](KNOWN-ISSUES.md) for
+the player's other limitations.
+
 ## Disk images
 
 The one command group, because a `.d64` is the one file you edit over its
@@ -886,7 +934,7 @@ c64rdy loadtest "tapes/*.tap" --quiet ; echo $?
 Global flags may stand before the command — `c64rdy --quiet info x.prg` — and
 `--` ends the flags: after it, a word like `--help` is a filename.
 
-**Nothing is written over.** A tape, a disk or a cartridge that already exists
+**Nothing is written over.** A converted program, audio file, tape, disk or cartridge that already exists
 stops the command with `side-a.tap is already there — --force writes over it`.
 These take minutes of machine to make and they are the things you keep. A
 screenshot is not: `run` writes its PNGs over whatever is there, because a
@@ -904,6 +952,8 @@ unpacker unpacks, and never into the input's own folder.
 | `info` | — |
 | `wav2tap` | `--channel <n\|mix\|aligned>` which reading of a stereo transfer to use · `--pre-emphasis <n>` treble lift · `--no-mend` skip mending from a second reading · `--no-repair` skip the KERNAL's duplicate-block repair · `--ntsc` / `--cpu-hz <hz>` the machine the tape was written for |
 | `tap2wav` | `--max-seconds <n>` cut it short (it says when it did) |
+| `sid2prg` | `--song <n>` starting song, numbered from 1 |
+| `sid2wav` | `--song <n>` · `--seconds <n>` duration (180) · `--sample-rate <hz>` (44100) · `--model <6581|8580>` · `--roms <dir>` |
 | `t642d64` | — |
 | `t642prg` | `-d <dir>` where the files land (`--out-dir` too) |
 | `t642tap` | `--roms <dir>` |
@@ -935,6 +985,5 @@ unpacker unpacks, and never into the input's own folder.
 - Read a `.crt` beyond `run`/`info` — `prg2crt` writes them, nothing here takes
   one apart. A cartridge is ROM plus the hardware that banks it, so there is no
   honest `crt2d64`.
-- Write anything back to a `.wav` besides `tap2wav`'s transcription.
 - `--json`. This tool talks to people; the exit codes carry enough for batch
   use.

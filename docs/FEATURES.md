@@ -291,6 +291,10 @@ formats converted in every honest direction, or every program on a tape side
 booted headless and tiled into one captioned sheet. Node 20.19 or newer,
 no dependencies; the [CLI guide](USER-GUIDE-CLI.md) walks every command.
 
+`sid2prg` wraps SID tunes with the same C64 music player as the browser UI.
+`sid2wav` renders a selected song as 16-bit mono WAV audio, with duration,
+sample-rate and SID-model options.
+
 ---
 
 New here? Start with the [Getting Started](GETTING-STARTED.md) guide, or dive
