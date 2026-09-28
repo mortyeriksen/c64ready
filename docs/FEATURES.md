@@ -223,10 +223,11 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 ## Sound
 
 - **SID model**: switch between **6581** (original) and **8580** (later C64C).
-- **One or two three-voice SIDs**, each with its own 6581/8580 model, filter
-  and volume/digi playback. Select the second address in Options; two-SID tune
-  headers configure both chips automatically. Stereo separates the chips left
-  and right; mono mixes them equally.
+- **SID2 (second SID chip)**: enable a second three-voice SID in Options, with
+  its own **6581/8580** model, filter and volume/digi playback. Choose its address
+  (default `$D420`) and **stereo** or **mono** output. Stereo sends SID 1 left
+  and SID 2 right; mono mixes them equally. Two-SID tune files select the chip
+  models and ask before enabling SID2 or changing its address.
 - **reSID engine**: Dag Lem's transistor-level reSID model (oscillators,
   envelopes, analog filter and DACs), verified against VICE. It runs compiled to
   WebAssembly by default, with a reSID JS alternative that sounds identical.
