@@ -552,8 +552,8 @@ starting-song number is used. A song outside the file's range is an error.
 
 `sid2wav` boots the same player headlessly and records its SID output using the
 emulator's reSID WASM sound engine. It uses the player's Safe view, preserving
-individual register writes for digi samples. Output is uncompressed 16-bit mono
-PCM, at 44,100 Hz by default. The C64 boot is excluded; recording begins when
+individual register writes for digi samples. Output is uncompressed 16-bit PCM,
+mono for one SID or stereo for two SIDs, at 44,100 Hz by default. The C64 boot is excluded; recording begins when
 the player is started, so its brief startup is included.
 
 ```sh
@@ -577,7 +577,12 @@ output is streamed to a temporary file and published only after rendering succee
 The shared player's memory-placement limits apply to both commands. Audio
 rendering models one PAL C64 and one SID; NTSC-only tunes retain the same timing
 limitations as in the UI, and the command reports their NTSC requirement.
-`sid2wav` refuses BASIC RSID, MUS and multi-SID files instead of exporting an
+Two-SID headers configure the second chip address and both chip models. Unknown
+second-chip model inherits the first. Stereo output puts SID 1 left and SID 2
+right; `--model` overrides both. The exported player uses Safe view for two-chip
+tunes, and `sid2prg` reports the hardware address needed to run the program.
+
+`sid2wav` refuses BASIC RSID, MUS and three-SID files instead of exporting an
 unsupported interpretation. See [SID playback limits](KNOWN-ISSUES.md) for
 the player's other limitations.
 

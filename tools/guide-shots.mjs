@@ -48,6 +48,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { assetPath } from '../test/external-assets.js';
 import { saveGuideShot, shotLabel } from './guide-image.mjs';
+import { parseSid } from '../src/media/sid.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Output dir — defaults to the tracked public/guide/; set GUIDE_OUT to redirect
@@ -99,6 +100,21 @@ await ctx.addInitScript(() => {
     localStorage.setItem('c64emu.modelViewerScene', '4');
   } catch {}
 });
+// Keep externally supplied ROMs in the browser cache, as the setup UI does.
+const romCache = {};
+for (const [slot, asset] of Object.entries({ kernal: 'kernal', basic: 'basic', charRom: 'chargen', drive1541: 'drive1541' })) {
+  const file = assetPath(asset);
+  if (file) romCache['c64emu.rom.' + slot] = fs.readFileSync(file).toString('base64');
+}
+await ctx.addInitScript(cache => {
+  for (const [key, value] of Object.entries(cache)) localStorage.setItem(key, value);
+}, romCache);
+if (TUNE && fs.existsSync(TUNE)) {
+  const tune = parseSid(new Uint8Array(fs.readFileSync(TUNE)));
+  if (tune.secondSidAddress) await ctx.addInitScript(config => {
+    localStorage.setItem('c64emu.secondSid', JSON.stringify(config));
+  }, { enabled: true, address: tune.secondSidAddress, is8580: tune.secondChip !== 1, mix: 'stereo' });
+}
 const page = await ctx.newPage();
 page.on('pageerror', (e) => console.error('  page error:', e.message));
 
@@ -259,7 +275,9 @@ console.log('\n[modals]');
 await click('#btn-settings');
 await page.waitForSelector('#settings-modal:not([hidden])', { timeout: 5000 });
 await sleep(300);
+if (want('options')) await page.setViewportSize({ width: 1460, height: 1600 });
 await shot('#settings-modal .modal-card', 'options');
+if (want('options')) await page.setViewportSize({ width: 1460, height: 1180 });
 await closeModal('#btn-settings-close');
 // The Setup C64 READY. dialog only auto-opens on first run (no ROMs), which the
 // running-app shots can't reproduce — capture setup-dialog.png separately with a
@@ -407,6 +425,7 @@ if (want('sid-player') && TUNE && fs.existsSync(TUNE)) {
     if (/ON/.test(await sidTde.textContent().catch(() => '')))
       { await sidTde.click().catch(() => {}); await sleep(300); }
     await page.setInputFiles('#prg-input', TUNE);
+    if (await page.locator('#confirm-modal:not([hidden])').isVisible()) await click('#btn-confirm-ok');
     await sleep(7000);                                 // load, run, and a few seconds on the clock
     await shot('#screen', 'sid-player');
   } catch (e) {

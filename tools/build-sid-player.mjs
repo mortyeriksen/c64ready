@@ -24,7 +24,7 @@ const OUT = path.join(ROOT, 'src/media/sid-player-blob.js');
 const PRG_BASE = 0x0801;       // where a BASIC program loads
 const SYS_TARGET = 2061;       // $080D — the classic address after a 12-byte stub
 const PLAYER_ORIGIN = 0xC000;  // 4K of free RAM no PSID tune wants
-const PARAM_SIZE = 114;
+const PARAM_SIZE = 116;
 
 // `10 SYS 2061`, twelve bytes, so the copier always lands on $080D.
 const BASIC_STUB = [
@@ -119,6 +119,7 @@ P_CIA   = 16
 P_TITLE = 18
 P_AUTHOR = 50
 P_RELEASED = 82
+P_SECOND = 114
 
 entry:
         sei
@@ -174,8 +175,7 @@ mainDraw:
         bcc main
         lda #0
         sta slow
-        jsr sampleScope
-        jsr drawScope
+        jsr drawScopes
         inc slower
         lda slower
         cmp #2
@@ -445,6 +445,18 @@ silence:
         sta SID+11
         sta SID+18
         sta SID+24
+        lda params+P_SECOND+1
+        beq slPrimary
+        sta slSecond+2
+        lda params+P_SECOND
+        sta slSecond+1
+        lda #0
+        ldx #24
+slSecond:
+        sta $ffff,x
+        dex
+        bpl slSecond
+slPrimary:
         lda #RAM_UNDER_IO       ; and the shadow the driver writes into
         sta $01
         lda #0
@@ -573,6 +585,10 @@ keyPause:
 kpDone: rts
 
 keyView:
+        lda params+P_SECOND+1
+        beq kvSingle
+        rts                     ; two-chip tunes always keep I/O visible
+kvSingle:
         lda view
         eor #1
         sta view
@@ -743,7 +759,9 @@ dvClear:
         cpx #240
         bne dvClear
         lda view
-        bne dvVoices
+        beq dvSafe
+        jmp dvVoices
+dvSafe:
         ; Safe view: the voice 3 oscilloscope is the subject, and every value on
         ; screen is one a program on real hardware can actually read back.
         ldx #9
@@ -772,6 +790,32 @@ dvHeight6:
         inx
         cpx #8
         bne dvHeight6
+        lda params+P_SECOND+1
+        beq dvSingleKeys
+        lda #3
+        sta rowsN
+        ldx #0
+dvHeight3:
+        lda heights3,x
+        sta heights,x
+        inx
+        cpx #8
+        bne dvHeight3
+        ldx #0
+dvEnvLabels:
+        lda envLabelOne,x
+        sta SCREEN+40*17+2,x
+        lda envLabelTwo,x
+        sta SCREEN+40*18+2,x
+        inx
+        cpx #10
+        bne dvEnvLabels
+        lda #<keysTwoSid
+        sta cnSrc+1
+        lda #>keysTwoSid
+        sta cnSrc+2
+        jmp dvKeys
+dvSingleKeys:
         lda #<keysSafe
         sta cnSrc+1
         lda #>keysSafe
@@ -842,6 +886,16 @@ dvKeys:
         sta tmp
         jsr copyN
         jsr colourView
+        lda params+P_SECOND+1
+        beq dvColoursDone
+        ldx #27
+        lda #6                  ; blue labels and envelope bars for both chips
+dvEnvBlue:
+        sta COLOR+40*17+2,x
+        sta COLOR+40*18+2,x
+        dex
+        bpl dvEnvBlue
+dvColoursDone:
         rts
 
 ; Colour follows the view: the scope cyan, bars green, values yellow.
@@ -879,6 +933,36 @@ cvFetchSafe:
 
 ; ── the oscilloscope ─────────────────────────────────────────────────────────
 ; Oscillator 3 is readable on real hardware, so this is honest in both views.
+drawScopes:
+        lda #<(SID+27)
+        ldx #>(SID+27)
+        jsr scopeInput
+        lda params+P_SECOND+1
+        beq scopesSingle
+        lda #10
+        sta scopeTop
+        jsr sampleScope
+        jsr drawScope
+        lda params+P_SECOND
+        clc
+        adc #27
+        ldx params+P_SECOND+1
+        jsr scopeInput
+        lda #13
+        sta scopeTop
+scopesSingle:
+        jsr sampleScope
+        jmp drawScope
+
+scopeInput:
+        sta ssLow+1
+        sta ssRise+1
+        sta ssSample+1
+        stx ssLow+2
+        stx ssRise+2
+        stx ssSample+2
+        rts
+
 sampleScope:
         ; Trigger first, the way a scope does: wait for the oscillator to fall
         ; below a floor and then rise past a ceiling, so every frame starts at
@@ -1106,7 +1190,30 @@ phLo:   sta $ffff,x
         rts
 
 drawEnvelope:
-        lda SID+28              ; envelope 3, the one a program may read
+        lda #<(SID+28)
+        sta deRead+1
+        lda #>(SID+28)
+        sta deRead+2
+        lda #<(SCREEN+40*17+9)
+        sta dePut+1
+        lda #>(SCREEN+40*17+9)
+        sta dePut+2
+        lda params+P_SECOND+1
+        beq deRead
+        lda #<(SCREEN+40*17+14)
+        sta dePut+1
+        jsr deRead
+        lda params+P_SECOND
+        clc
+        adc #28
+        sta deRead+1
+        lda params+P_SECOND+1
+        sta deRead+2
+        lda #<(SCREEN+40*18+14)
+        sta dePut+1
+        lda #>(SCREEN+40*18+14)
+        sta dePut+2
+deRead: lda SID+28              ; envelope 3, the one a program may read
         lsr
         lsr
         lsr
@@ -1332,9 +1439,12 @@ rowHi:  .byte ${rowTable('SCREEN', '>')}
 barText:    .byte ${screenCodes(BAR).map(code => code | 0x80).join(', ')}
 row7Text:   .scr "${ROW7}"
 keys1Text:  .scr "${KEYS1}"
+keysTwoSid: .scr "2SID SAFE    F7 RESTART"
 keysSafe:   .scr "${KEYS_SAFE}"
 keysVoices: .scr "${KEYS_VOICES}"
 envLabel:   .scr "ENV 3"
+envLabelOne: .scr "SID1 ENV 3"
+envLabelTwo: .scr "SID2 ENV 3"
 voiceLabels: .scr "123"
 filterLabel: .scr "FLT      CUT             RES    VOL "
 waveNames:  .scr "     TRI  SAW  PULSENOISE"
@@ -1346,6 +1456,7 @@ filterModes: .scr "--LPBPHP"
 
 ; Eight oscillator levels mapped onto the rows each view has room for, counted
 ; from the top: a quiet sample sits low, a loud one high.
+heights3:   .byte 2, 2, 2, 1, 1, 0, 0, 0
 heights6:   .byte 5, 4, 4, 3, 2, 1, 1, 0
 heights5:   .byte 4, 4, 3, 2, 2, 1, 0, 0
 cutTable:   .byte 0, 1, 2, 4, 5, 6, 8, 10
@@ -1482,6 +1593,7 @@ if (player.bytes.length > 0x1000) throw new Error(`the player is ${player.bytes.
 if (stage !== PRG_BASE + BASIC_STUB.length + copier.bytes.length + player.bytes.length) throw new Error('the staged address never settled');
 
 const js = `// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright © 2026 Morten Øien Eriksen
 // src/media/sid-player-blob.js — the C64-side SID player, assembled.
 //
 // GENERATED FILE — do not edit by hand. Rebuild: node tools/build-sid-player.mjs

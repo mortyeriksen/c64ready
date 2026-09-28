@@ -219,6 +219,7 @@ const TESTS = [
   'test/vic2-nine-crunch-d018-straddle-spec-test.js',
   'test/vic2-vertical-hyperscreen-spec-test.js',
   'test/sid-spec-test.js',
+  'test/sid-second-spec-test.js',
   'test/sid-combined-waveform-spec-test.js',
   'test/sid-wavetables-spec-test.js',
   'test/sid-digi-spec-test.js',

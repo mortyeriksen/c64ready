@@ -178,7 +178,10 @@ In [⚙ OPTIONS](USER-GUIDE.md#options):
 - **Video**: the **VIC-II**, **6569** (original PAL) or **8565** (later C64C),
   and the palette, **Colodore** (modern) or **Pepto** (2001 measurements).
 - **Sound**: the **SID**, **6581** (warmer filter) or **8580** (cleaner), volume
-  with mute, and **DRIVE SOUND** for 1541 motor hum and head clicks.
+  with mute, and **DRIVE SOUND** for 1541 motor hum and head clicks. The row
+  below enables **SID 2**, selects its model and address, and chooses stereo
+  or mono. Leave SID 2 off for a standard C64; two-SID files configure it
+  automatically while they play.
 
 All of these persist across reloads.
 

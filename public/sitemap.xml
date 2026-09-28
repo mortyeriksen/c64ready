@@ -5,15 +5,15 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://c64ready.com/</loc>
-    <lastmod>2026-09-21</lastmod>
+    <lastmod>2026-09-28</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/</loc>
-    <lastmod>2026-09-21</lastmod>
+    <lastmod>2026-09-28</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/whats-new.html</loc>
-    <lastmod>2026-09-21</lastmod>
+    <lastmod>2026-09-28</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/about.html</loc>
@@ -21,31 +21,31 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/getting-started.html</loc>
-    <lastmod>2026-09-20</lastmod>
+    <lastmod>2026-09-28</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/user-guide.html</loc>
-    <lastmod>2026-09-16</lastmod>
+    <lastmod>2026-09-28</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/user-guide-cli.html</loc>
-    <lastmod>2026-09-21</lastmod>
+    <lastmod>2026-09-28</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/specifications.html</loc>
-    <lastmod>2026-09-15</lastmod>
+    <lastmod>2026-09-28</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/features.html</loc>
-    <lastmod>2026-09-21</lastmod>
+    <lastmod>2026-09-28</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/known-issues.html</loc>
-    <lastmod>2026-09-17</lastmod>
+    <lastmod>2026-09-28</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/component-status.html</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-28</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/architecture.html</loc>
@@ -53,7 +53,7 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/machine-architecture.html</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-28</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/cpu-architecture.html</loc>
@@ -65,11 +65,11 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/sid-architecture.html</loc>
-    <lastmod>2026-09-21</lastmod>
+    <lastmod>2026-09-28</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/memory-architecture.html</loc>
-    <lastmod>2026-09-04</lastmod>
+    <lastmod>2026-09-28</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/drive-architecture.html</loc>
@@ -85,11 +85,11 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/performance-analysis.html</loc>
-    <lastmod>2026-09-21</lastmod>
+    <lastmod>2026-09-28</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/testing.html</loc>
-    <lastmod>2026-09-21</lastmod>
+    <lastmod>2026-09-28</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/license.html</loc>

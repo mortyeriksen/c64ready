@@ -148,6 +148,12 @@ When the page table maps a `$Dx` page to the slow path (`null`), `_readSlow` /
 | `$DF00-$DF0A` | attached RAM Expansion, mirrored every 32 bytes to `$DFEA`; consulted **before** the cartridge |
 | `$DE00-$DFFF` | attached cartridge device's `ioRead` / `ioWrite` / `ioPeek`, or open bus |
 
+An enabled second SID claims its configured 32-byte window before the table's
+normal routing, consistently for read, write and peek. The window must be
+`$20`-aligned in `$D420-$D7E0` or `$DE00-$DFE0`; outside it the primary SID's
+mirrors remain. CPU banking still gates all I/O. Expansion SID addresses require
+an empty cartridge slot, and REU mirrors conflict with every `$DFxx` window.
+
 A missing device returns `_openBusRead()`. `_peekIO` mirrors `_readIO` without
 side effects.
 

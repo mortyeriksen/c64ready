@@ -151,6 +151,8 @@ class SIDProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
     this.sid = new SIDChip();
+    this.second = null;
+    this.mix = 'stereo';
     this.cyclesPerSample = 985248.0 / sampleRate;
     this.sidCtrl = null;
     this.sidRing32 = null;
@@ -270,6 +272,9 @@ class SIDProcessor extends AudioWorkletProcessor {
         if (e.data.engine) {
           this.engineSel = e.data.engine === 'wasm' ? 'wasm' : 'resid';
         }
+        this.sidCtrl = null;
+        this.sidRing32 = null;
+        this._configureSecond(e.data.secondSid, true);
         this._fullReset(e.data.is8580 ?? false);
         // sidCtrl: [0]=writeIdx, [1]=readIdx, [2]=OSC3, [3]=ENV3.
         // Ring entries start at byte 16 (4 × Int32 header).
@@ -286,6 +291,8 @@ class SIDProcessor extends AudioWorkletProcessor {
           ri: Atomics.load(this.sidCtrl, 1),
           is8580: this.sid.is8580,
         });
+      } else if (e.data.type === 'second') {
+        this._configureSecond(e.data.secondSid);
       } else if (e.data.type === 'model') {
         this.sid.setModel(e.data.is8580);
         if (this.wasm) this.wasm.sid_set_model(e.data.is8580 ? 1 : 0);
@@ -299,11 +306,12 @@ class SIDProcessor extends AudioWorkletProcessor {
           this._ensureWasm();
           // The JS chip keeps rendering until (and in case) the module is
           // ready; once ready the wasm side gets the register file + clock.
-          if (this.wasm) this._wasmSyncFromShadow();
+          if (this.wasm) this._wasmSyncFromShadow(true);
         } else if (this.sid) {
           // Returning from wasm: replay the register file so the JS chip's
           // voices/filter match the program state.
           for (let r = 0; r <= 24; r++) this.sid.write(r, this.regShadow[r]);
+          if (this.second) for (let r = 0; r <= 24; r++) this.second.sid.write(r, this.second.regShadow[r]);
         }
         this._resetResampleState();
       } else if (e.data.type === 'reset') {
@@ -329,10 +337,48 @@ class SIDProcessor extends AudioWorkletProcessor {
     };
   }
 
+  _configureSecond(config = {}, power = false) {
+    this.mix = config.mix === 'mono' ? 'mono' : 'stereo';
+    if (!config.enabled) { this.second = null; return; }
+    if (power || !this.second || this.second.address !== config.address || this.second.generation !== (config.generation ?? 0)) {
+      const cachedWasm = this.second?.wasm ?? null;
+      this.second = { address: config.address, generation: config.generation ?? 0, sid: new SIDChip(config.is8580),
+        regShadow: new Uint8Array(25), sampleRing: new Int16Array(this.RINGSIZE * 2),
+        wasm: cachedWasm, ready: null, view: null, outPtr: 0 };
+      if (cachedWasm) {
+        cachedWasm.sid_init(sampleRate, config.is8580 ? 1 : 0);
+        this.second.outPtr = cachedWasm.sid_out_ptr();
+        this._wasmSyncFromShadow(true);
+      }
+      // Both JS resamplers use the same fractional position and FIR tables.
+      this._resetResampleState();
+      for (let r = 0; r <= 24; r++) this.sid.write(r, this.regShadow[r]);
+    } else {
+      this.second.sid.setModel(config.is8580);
+      this.second.wasm?.sid_set_model(config.is8580 ? 1 : 0);
+    }
+    if (this.engineSel === 'wasm') this._ensureSecondWasm();
+  }
+
+  _ensureSecondWasm() {
+    const second = this.second;
+    if (!second || second.wasm || second.ready || this.wasmFailed) return;
+    try {
+      second.ready = WebAssembly.instantiate(sidWasmBytes()).then(({ instance }) => {
+        if (this.second !== second) return;
+        second.wasm = instance.exports;
+        second.wasm.sid_init(sampleRate, second.sid.is8580 ? 1 : 0);
+        second.outPtr = second.wasm.sid_out_ptr();
+        this._wasmSyncFromShadow(true);
+      }).catch(err => { if (this.second === second) this._wasmFail(err); });
+    } catch (err) { this._wasmFail(err); }
+  }
+
   // Lazily instantiate the WASM engine. Async; the JS reSID engine renders
   // until the module is live. On failure the selection falls back to
   // 'resid' permanently for the session (diag message for visibility).
   _ensureWasm() {
+    this._ensureSecondWasm();
     if (this.wasm || this.wasmFailed) return this.wasmReady;
     if (!this.wasmReady) {
       // The byte decode and instantiate() can also throw SYNCHRONOUSLY
@@ -354,7 +400,7 @@ class SIDProcessor extends AudioWorkletProcessor {
           ex.sid_init(sampleRate, this.sid && this.sid.is8580 ? 1 : 0);
           this.wasm = ex;
           this.wasmOutPtr = ex.sid_out_ptr();
-          this._wasmSyncFromShadow();
+          this._wasmSyncFromShadow(true);
         })
         .catch((err) => this._wasmFail(err));
     }
@@ -367,15 +413,28 @@ class SIDProcessor extends AudioWorkletProcessor {
   _wasmFail(err) {
     this.wasmFailed = true;
     this.port.postMessage({ type: 'diag-wasm-failed', error: String(err) });
-    if (this.engineSel === 'wasm') this.engineSel = 'resid';
+    if (this.engineSel === 'wasm') {
+      this.engineSel = 'resid';
+      for (let r = 0; r <= 24; r++) this.sid.write(r, this.regShadow[r]);
+      if (this.second) for (let r = 0; r <= 24; r++) this.second.sid.write(r, this.second.regShadow[r]);
+      this._resetResampleState();
+    }
   }
 
   // Bring the wasm side up to date: model, full register file, clock.
-  _wasmSyncFromShadow() {
+  _wasmSyncFromShadow(resetSampling = false) {
     if (!this.wasm) return;
+    if (resetSampling && this.second) this.wasm.sid_reset();
     this.wasm.sid_set_model(this.sid && this.sid.is8580 ? 1 : 0);
     for (let r = 0; r <= 24; r++) this.wasm.sid_write(r, this.regShadow[r]);
     this.wasm.sid_set_cycle(this.currentCycle);
+    const second = this.second;
+    if (second?.wasm) {
+      if (resetSampling) second.wasm.sid_reset();
+      second.wasm.sid_set_model(second.sid.is8580 ? 1 : 0);
+      for (let r = 0; r <= 24; r++) second.wasm.sid_write(r, second.regShadow[r]);
+      second.wasm.sid_set_cycle(this.currentCycle);
+    }
   }
 
   // reSID sid.cc set_sampling_parameters() — SAMPLE_RESAMPLE branch, PAL
@@ -451,6 +510,7 @@ class SIDProcessor extends AudioWorkletProcessor {
     this.sampleOffset = 0;
     this.sampleIndex = 0;
     if (this.sampleRing) this.sampleRing.fill(0);
+    if (this.second) this.second.sampleRing.fill(0);
   }
 
   _fullReset(is8580) {
@@ -468,6 +528,11 @@ class SIDProcessor extends AudioWorkletProcessor {
       this.wasm.sid_init(sampleRate, is8580 ? 1 : 0);
       this.wasmOutPtr = this.wasm.sid_out_ptr();
       this._wasmView = null;
+    }
+    if (this.second?.wasm) {
+      this.second.wasm.sid_init(sampleRate, this.second.sid.is8580 ? 1 : 0);
+      this.second.outPtr = this.second.wasm.sid_out_ptr();
+      this.second.view = null;
     }
     this.currentCycle = 0;
   }
@@ -490,6 +555,11 @@ class SIDProcessor extends AudioWorkletProcessor {
       this.wasm.sid_set_model(is8580 ? 1 : 0);
     }
     this.regShadow.fill(0);
+    if (this.second) {
+      this.second.sid.reset();
+      this.second.regShadow.fill(0);
+      this.second.wasm?.sid_reset();
+    }
     this.pendHead = 0;
     this.pendCount = 0;
     this._driftVoidHistory();
@@ -555,8 +625,11 @@ class SIDProcessor extends AudioWorkletProcessor {
       const packed = this.pendPacked[this.pendHead];
       const reg = packed & 0x1F;
       const val = (packed >>> 8) & 0xFF;
-      this.sid.write(reg, val);
-      if (reg <= 24) this.regShadow[reg] = val;
+      const chip = (packed & 0x20) ? (this.second?.generation === (packed >>> 16) ? this.second : null) : this;
+      if (chip) {
+        chip.sid.write(reg, val);
+        if (reg <= 24) chip.regShadow[reg] = val;
+      }
       this.diagApplied++;
       if (delta > this.diagLateMax) this.diagLateMax = delta;
       if (delta > 2000) this.diagLate++; // applied > ~2 ms after its cycle stamp
@@ -648,7 +721,8 @@ class SIDProcessor extends AudioWorkletProcessor {
     for (let n = 0; n < this.pendCount; n++) {
       const packed = this.pendPacked[i];
       const reg = packed & 0x1F;
-      if (reg <= 24) this.regShadow[reg] = (packed >>> 8) & 0xFF;
+      const chip = (packed & 0x20) ? (this.second?.generation === (packed >>> 16) ? this.second : null) : this;
+      if (chip && reg <= 24) chip.regShadow[reg] = (packed >>> 8) & 0xFF;
       i = (i + 1) & (this.PEND_CAP - 1);
     }
     this.diagApplied += this.pendCount;
@@ -658,10 +732,11 @@ class SIDProcessor extends AudioWorkletProcessor {
     // Replay the collapsed register file into whichever engine is live. The wasm
     // helper re-stamps the module's clock too, so its queue can't strand
     // old-domain events across the jump.
-    if (this.engineSel === 'wasm' && this.wasm !== null) {
+    if (this.engineSel === 'wasm' && this.wasm !== null && (!this.second || this.second.wasm !== null)) {
       this._wasmSyncFromShadow();
     } else if (this.sid) {
       for (let r = 0; r <= 24; r++) this.sid.write(r, this.regShadow[r]);
+      if (this.second) for (let r = 0; r <= 24; r++) this.second.sid.write(r, this.second.regShadow[r]);
     }
     this.fadeInRemaining = this.fadeInLen;
     this.diagBacklogFF++;
@@ -669,7 +744,8 @@ class SIDProcessor extends AudioWorkletProcessor {
 
   // WASM block render: forward due-within-horizon events, render, copy out.
   _processWasm(left, right) {
-    const w = this.wasm;
+    const w = this.wasm, second = this.second;
+    if (second) second.wasm.sid_set_cycle(this.currentCycle);
     // Align the wasm clock — no-op in steady state (the module advanced to
     // exactly this cycle last block); carries snaps/resets/switches.
     w.sid_set_cycle(this.currentCycle);
@@ -685,14 +761,23 @@ class SIDProcessor extends AudioWorkletProcessor {
         const packed = this.pendPacked[this.pendHead];
         const reg = packed & 0x1F;
         const val = (packed >>> 8) & 0xFF;
-        w.sid_queue_write(cyc, reg, val);
-        if (reg <= 24) this.regShadow[reg] = val;
+        const chip = (packed & 0x20) ? (second?.generation === (packed >>> 16) ? second : null) : this;
+        if (chip) {
+          chip.wasm.sid_queue_write(cyc, reg, val);
+          if (reg <= 24) chip.regShadow[reg] = val;
+        }
         this.diagApplied++;
         this.pendHead = (this.pendHead + 1) & (this.PEND_CAP - 1);
         this.pendCount--;
       } else break;
     }
     w.sid_render(left.length);
+    if (second) {
+      second.wasm.sid_render(left.length);
+      if (!second.view || second.view.buffer !== second.wasm.memory.buffer) {
+        second.view = new Int16Array(second.wasm.memory.buffer, second.outPtr, 512);
+      }
+    }
     // Cached output view; a later sid_set_model() can grow wasm memory and
     // detach it, so rebuild whenever the backing buffer identity changes.
     let view = this._wasmView;
@@ -701,12 +786,15 @@ class SIDProcessor extends AudioWorkletProcessor {
     }
     for (let i = 0; i < left.length; i++) {
       let out = view[i] / 32768;
+      let out2 = second ? second.view[i] / 32768 : out;
       if (this.fadeInRemaining > 0) {
-        out *= 1 - (this.fadeInRemaining / this.fadeInLen);
+        const gain = 1 - (this.fadeInRemaining / this.fadeInLen);
+        out *= gain; out2 *= gain;
         this.fadeInRemaining--;
       }
+      if (second && (this.mix === 'mono' || !right)) out = out2 = (out + out2) * 0.5;
       left[i] = out;
-      if (right) right[i] = out;
+      if (right) right[i] = out2;
     }
     this.currentCycle = w.sid_current_cycle() >>> 0;
   }
@@ -789,7 +877,7 @@ class SIDProcessor extends AudioWorkletProcessor {
     // the lookahead/desync-snap semantics identical for all engines. The
     // JS chip stays instantiated as the instant fallback (and renders
     // while the module is still instantiating).
-    if (this.engineSel === 'wasm' && this.wasm !== null) {
+    if (this.engineSel === 'wasm' && this.wasm !== null && (!this.second || this.second.wasm !== null)) {
       this._processWasm(left, right);
       this._postBlock();
       return true;
@@ -822,59 +910,71 @@ class SIDProcessor extends AudioWorkletProcessor {
         due = headDelta <= count || headDelta > 0x7FFFFFFF;
       }
       const ring = this.sampleRing, RS = this.RINGSIZE;
+      const second = this.second;
       for (let c = 0; c < count; c++) {
         if (due) this._applyDueEvents();
         const s = this.sid.clockRaw();
         ring[this.sampleIndex] = ring[this.sampleIndex + RS] = s;
+        if (second) {
+          const s2 = second.sid.clockRaw();
+          second.sampleRing[this.sampleIndex] = second.sampleRing[this.sampleIndex + RS] = s2;
+        }
         this.sampleIndex = (this.sampleIndex + 1) & this.RINGMASK;
         this.currentCycle = (this.currentCycle + 1) >>> 0;
       }
       if (due) this._applyDueEvents();
       this.sampleOffset = nextOffset & this.FIXP_MASK;
 
-      const firOffset = (this.sampleOffset * this.firRES) >> this.FIXP_SHIFT;
-      const firOffsetRmd = (this.sampleOffset * this.firRES) & this.FIXP_MASK;
-      const fir = this.fir, firN = this.firN;
-      const firStart = firOffset * firN;
-      const smpStart = this.sampleIndex - firN - 1 + RS;
-      let v1 = 0;
-      let v2 = 0;
-      if (firOffset + 1 !== this.firRES) {
-        // Common case (15/16 samples): both phase tables convolve the SAME
-        // sample window — fuse the loops so each ring sample loads once.
-        const fB = firStart + firN;
-        for (let j = 0; j < firN; j++) {
-          const s = ring[smpStart + j];
-          v1 += fir[firStart + j] * s;
-          v2 += fir[fB + j] * s;
-        }
-      } else {
-        // Phase wrap: the second convolution uses table 0 shifted one
-        // sample later (reSID: ++fir_offset wraps, ++sample_start).
-        for (let j = 0; j < firN; j++) v1 += fir[firStart + j] * ring[smpStart + j];
-        const s2 = smpStart + 1;
-        for (let k = 0; k < firN; k++) v2 += fir[k] * ring[s2 + k];
-      }
-      v1 |= 0;
-      v2 |= 0;
-      // Linear interpolation between the two convolutions (the unsigned
-      // 32-bit wrap of the reference is reproduced with >>> 0).
-      let v = (v1 + ((((firOffsetRmd * (v2 - v1)) >>> 0) >>> this.FIXP_SHIFT) | 0)) | 0;
-      v >>= this.FIR_SHIFT;
-      // reSID wrapper amplify(): clip(scaleFactor·v/2) → ±1.0 float.
-      out = clip16(((this.sid.scaleFactor * v) / 2) | 0) / 32768;
+      out = this._resample(ring, this.sid.scaleFactor);
+      let out2 = second ? this._resample(second.sampleRing, second.sid.scaleFactor) : out;
       // Brief fade-in to mask the initial output-stage settling transient.
       if (this.fadeInRemaining > 0) {
         const gain = 1 - (this.fadeInRemaining / this.fadeInLen);
-        out *= gain;
+        out *= gain; out2 *= gain;
         this.fadeInRemaining--;
       }
+      if (second && (this.mix === 'mono' || !right)) out = out2 = (out + out2) * 0.5;
       left[i] = out;
-      if (right) right[i] = out;
+      if (right) right[i] = out2;
     }
 
     this._postBlock();
     return true;
+  }
+
+  _resample(ring, scaleFactor) {
+    const firOffset = (this.sampleOffset * this.firRES) >> this.FIXP_SHIFT;
+    const firOffsetRmd = (this.sampleOffset * this.firRES) & this.FIXP_MASK;
+    const fir = this.fir, firN = this.firN;
+    const RS = this.RINGSIZE;
+    const firStart = firOffset * firN;
+    const smpStart = this.sampleIndex - firN - 1 + RS;
+    let v1 = 0;
+    let v2 = 0;
+    if (firOffset + 1 !== this.firRES) {
+      // Common case (15/16 samples): both phase tables convolve the SAME
+      // sample window — fuse the loops so each ring sample loads once.
+      const fB = firStart + firN;
+      for (let j = 0; j < firN; j++) {
+        const s = ring[smpStart + j];
+        v1 += fir[firStart + j] * s;
+        v2 += fir[fB + j] * s;
+      }
+    } else {
+      // Phase wrap: the second convolution uses table 0 shifted one
+      // sample later (reSID: ++fir_offset wraps, ++sample_start).
+      for (let j = 0; j < firN; j++) v1 += fir[firStart + j] * ring[smpStart + j];
+      const s2 = smpStart + 1;
+      for (let k = 0; k < firN; k++) v2 += fir[k] * ring[s2 + k];
+    }
+    v1 |= 0;
+    v2 |= 0;
+    // Linear interpolation between the two convolutions (the unsigned
+    // 32-bit wrap of the reference is reproduced with >>> 0).
+    let v = (v1 + ((((firOffsetRmd * (v2 - v1)) >>> 0) >>> this.FIXP_SHIFT) | 0)) | 0;
+    v >>= this.FIR_SHIFT;
+    // reSID wrapper amplify(): clip(scaleFactor·v/2) → ±1.0 float.
+    return clip16(((scaleFactor * v) / 2) | 0) / 32768;
   }
 
   // Shared per-block tail (all engines): OSC3/ENV3 debug tap + diag report.

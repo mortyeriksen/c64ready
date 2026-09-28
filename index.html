@@ -729,6 +729,14 @@
           <button class="btn" id="btn-drivesound-toggle"
             title="Play synthesized 1541 disk-drive sounds (motor hum, head-stepper clicks, fast-load chatter) while the drive is active.">DRIVE SOUND: OFF</button>
         </div>
+        <div class="btn-group sid2-controls" role="group" aria-label="Second SID">
+          <button class="btn" id="btn-sid2-toggle" aria-pressed="false"
+            title="Second SID: OFF, 8580, 6581. Two-SID tunes select their hardware automatically.">SID2: OFF</button>
+          <button class="btn" id="btn-sid-mix" disabled aria-label="SID output mix"
+            title="Stereo sends SID 1 left and SID 2 right. Mono mixes both equally.">STEREO</button>
+          <button id="sid2-address" class="btn" disabled aria-label="Second SID address"
+            title="Cycle the second SID address: $D420, $D500, $DE00, $DF00. Conflicting expansion addresses are skipped while enabled.">ADRESS: $D420</button>
+        </div>
       </div>
 
       <div class="settings-section">

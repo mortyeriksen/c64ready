@@ -144,8 +144,7 @@
    "description": "A SID tune for the User Guide's SID player screenshot \u2014 any .sid with a title, author and year in its header, so the player's screen has something to show. tools/guide-shots.mjs",
    "env": "C64_GUIDE_SID",
    "paths": [
-    "~/projects/c64ready-workspace/c64media/sid/guide.sid",
-    "~/Downloads/Ghostbusters_Theme.sid"
+    "~/Downloads/Double_Dragon_2SID.sid"
    ],
    "link": "https://www.hvsc.c64.org/",
    "note": "High Voltage SID Collection tune \u2014 bring your own; not distributed with this repo"

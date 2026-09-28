@@ -13,6 +13,7 @@
 // resolve to a single typed-array load. I/O ($D000-$DFFF when CHAREN
 // gates it on) and CPU port $00/$01 still go through the slow path.
 
+import { validSecondSidAddress } from './sid-config.js';
 import { IO_UNHANDLED } from './cartridges/device.js';
 import { createCartridgeFromConfig } from './cartridges/registry.js';
 
@@ -28,6 +29,8 @@ export class Memory {
 
     // I/O chip references
     this.vic2  = null;
+    this.sid2 = null;
+    this.sid2Address = 0xD420;
     this.sid   = null;   // SID write forwarder (ring buffer writer)
     this.cia1  = null;
     this.cia2  = null;
@@ -126,11 +129,21 @@ export class Memory {
   get charRom() { return this._charRom; }
   set charRom(v){ this._charRom = v; this._rebuildMemoryMap(); }
 
+  validateSecondSidAddress(address) {
+    if (!validSecondSidAddress(address)) {
+      throw new Error('Second SID address must be $D420-$D7E0 or $DE00-$DFE0, in steps of $20.');
+    }
+    if (address >= 0xDF00 && this.reu) throw new Error('Second SID in $DF00-$DFFF conflicts with RAM Expansion.');
+    // Expansion cartridges may decode writes even when their ROM is disabled.
+    if (address >= 0xDE00 && this.cartridge) throw new Error('Second SID in $DE00-$DFFF requires an empty cartridge slot.');
+  }
+
   setCartridge(cfg) {
     this.installCartridge(createCartridgeFromConfig(cfg));
   }
 
   installCartridge(device) {
+    if (device && this.sid2 && this.sid2Address >= 0xDE00) throw new Error('Cartridge conflicts with the second SID expansion address.');
     this.cartridge?.detach();
     this.cartridge = device;
     if (device) device.attach(this);
@@ -152,6 +165,7 @@ export class Memory {
   }
 
   installReu(device) {
+    if (device && this.sid2 && this.sid2Address >= 0xDF00) throw new Error('RAM Expansion conflicts with the second SID in $DF00-$DFFF.');
     this.reu?.detach();
     this.reu = device;
     if (device) device.attach(this);
@@ -535,6 +549,7 @@ export class Memory {
   }
 
   _readIO(addr) {
+    if (this.sid2 && (addr & 0xFFE0) === this.sid2Address) return this.sid2.read(addr & 31);
     if (addr >= 0xD000 && addr <= 0xD3FF) return this.vic2  ? this.vic2.read(addr & 0x3F) : this._openBusRead();
     if (addr >= 0xD400 && addr <= 0xD7FF) return this.sid ? this.sid.read(addr & 0x1F) : this._openBusRead();
     if (addr >= 0xD800 && addr <= 0xDBFF) {
@@ -559,6 +574,7 @@ export class Memory {
   }
 
   _peekIO(addr) {
+    if (this.sid2 && (addr & 0xFFE0) === this.sid2Address) return this.sid2.peek(addr & 31);
     if (addr >= 0xD000 && addr <= 0xD3FF) return this.vic2?.peek?.(addr & 0x3F) ?? this.externalDataBus8;
     if (addr >= 0xD400 && addr <= 0xD7FF) return this.sid?.peek?.(addr & 0x1F) ?? this.externalDataBus8;
     if (addr >= 0xD800 && addr <= 0xDBFF) {
@@ -629,6 +645,7 @@ export class Memory {
   }
 
   _writeIO(addr, val) {
+    if (this.sid2 && (addr & 0xFFE0) === this.sid2Address) { this.sid2.write(addr & 31, val); return; }
     if (addr >= 0xD000 && addr <= 0xD3FF) { this.vic2?.write(addr & 0x3F, val); return; }
     if (addr >= 0xD400 && addr <= 0xD7FF) { this.sid?.write(addr & 0x1F, val); return; }
     if (addr >= 0xD800 && addr <= 0xDBFF) { this.colorRam[addr - 0xD800] = val & 0x0F; return; }

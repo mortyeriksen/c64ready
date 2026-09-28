@@ -30,6 +30,7 @@ export function sid2prg(argv) {
       const out = outFileFor(file, '.prg', flags, files.length);
       writeOut(out, data, flags);
       say(`${path.basename(file)} → ${out}  (player included, song ${selected}/${tune.songs})`);
+      if (tune.secondSidAddress) say(`Requires SID 2 at $${tune.secondSidAddress.toString(16).toUpperCase()} (${tune.secondChip === 1 ? '6581' : tune.secondChip === 2 ? '8580' : tune.secondChip === 0 ? 'same model as SID 1' : 'either model'}).`);
     } catch (e) { fail(`${file}: ${e.message}`); failed = true; }
   }
   return failed ? 1 : 0;
@@ -40,9 +41,7 @@ function audioTune(bytes, song) {
   songFor(tune, song);
   if (tune.format === 'RSID' && (tune.flags & 2)) throw new Error('BASIC RSID tunes are not supported by the music player');
   if (tune.flags & 1) throw new Error('MUS tunes are not supported by the music player');
-  if ((tune.version >= 3 && bytes[0x7A]) || (tune.version >= 4 && bytes[0x7B])) {
-    throw new Error('multi-SID tunes require more than the single SID this renderer models');
-  }
+  if (tune.thirdSidAddress) throw new Error('Three-SID tunes are not supported.');
   return tune;
 }
 
@@ -55,6 +54,8 @@ export async function renderSid(bytes, { song, seconds = 180, sampleRate = 44100
   const { C64Machine } = await loadMachine();
   const machine = new C64Machine();
   machine.setSidModel(chip === '8580');
+  const secondModel = model ?? (tune.secondChip === 1 ? '6581' : tune.secondChip === 2 ? '8580' : chip);
+  machine.configureSecondSid({ enabled: !!tune.secondSidAddress, address: tune.secondSidAddress, is8580: secondModel === '8580' });
   machine.loadROMs(roms);
   for (let i = 0; i < 200; i++) machine.runFrame();
 
@@ -62,6 +63,11 @@ export async function renderSid(bytes, { song, seconds = 180, sampleRate = 44100
   engine.sid_init(sampleRate, chip === '8580' ? 1 : 0);
   for (let r = 0; r < 25; r++) engine.sid_write(r, machine.mem.sid.regs[r]);
   const pcm = Buffer.from(engine.memory.buffer, engine.sid_out_ptr(), 512 * 2);
+  const second = tune.secondSidAddress ? await loadSidEngine() : null;
+  if (second) second.sid_init(sampleRate, secondModel === '8580' ? 1 : 0);
+  const pcm2 = second ? Buffer.from(second.memory.buffer, second.sid_out_ptr(), 512 * 2) : null;
+  const stereo = second ? Buffer.alloc(512 * 4) : null;
+  const channels = second ? 2 : 1;
   const origin = machine.sidCycleCounter;
   let read = Atomics.load(machine.sidCtrl, 0);
   Atomics.store(machine.sidCtrl, 1, read);
@@ -85,19 +91,27 @@ export async function renderSid(bytes, { song, seconds = 180, sampleRate = 44100
       if (((written - read) & 0x7FFFFFFF) > mask + 1) throw new Error('SID event buffer overflow');
       while (read !== written) {
         const offset = (read & mask) * 2, packed = machine.sidRing32[offset + 1];
-        engine.sid_queue_write((machine.sidRing32[offset] - origin) >>> 0, packed & 31, (packed >>> 8) & 255);
+        const target = (packed & 32) ? second : engine;
+        target?.sid_queue_write((machine.sidRing32[offset] - origin) >>> 0, packed & 31, (packed >>> 8) & 255);
         read = (read + 1) & 0x7FFFFFFF;
       }
       Atomics.store(machine.sidCtrl, 1, read);
     }
     if (engine.sid_render(n) !== n) throw new Error('SID engine returned an incomplete audio block');
-    onBlock(pcm, n * 2);
+    if (second) {
+      if (second.sid_render(n) !== n) throw new Error('Second SID returned an incomplete audio block');
+      for (let i = 0; i < n; i++) {
+        stereo.writeInt16LE(pcm.readInt16LE(i * 2), i * 4);
+        stereo.writeInt16LE(pcm2.readInt16LE(i * 2), i * 4 + 2);
+      }
+    }
+    onBlock(stereo ?? pcm, n * channels * 2);
     done += n;
     const elapsed = Math.floor(done / sampleRate);
     if (elapsed !== reported) { onProgress?.(done / samples); reported = elapsed; }
   }
   onProgress?.(1);
-  return { tune, song: selected, model: chip, samples, sampleRate };
+  return { tune, song: selected, model: chip, secondModel: second ? secondModel : null, channels, samples, sampleRate };
 }
 
 export async function sid2wav(argv) {
@@ -120,6 +134,9 @@ export async function sid2wav(argv) {
     let temporary, fd;
     try {
       const bytes = fs.readFileSync(file), tune = audioTune(bytes, song);
+      const channels = tune.secondSidAddress ? 2 : 1;
+      const dataBytes = samples * channels * 2;
+      if (dataBytes > 0xFFFFFFFF - 36) throw new Error('Audio exceeds the RIFF WAV size limit');
       // Validate that the shared player fits before booting or creating output.
       sidToPrg(bytes, { song, safe: true });
       const out = outFileFor(file, '.wav', flags, files.length);
@@ -129,7 +146,10 @@ export async function sid2wav(argv) {
       const tempFile = path.join(temporary, 'audio.wav');
       fd = fs.openSync(tempFile, 'wx');
       const header = Buffer.from(pcmToWav(new Float32Array(0), sampleRate));
-      header.writeUInt32LE(36 + samples * 2, 4); header.writeUInt32LE(samples * 2, 40);
+      header.writeUInt32LE(36 + dataBytes, 4); header.writeUInt32LE(dataBytes, 40);
+      header.writeUInt16LE(channels, 22);
+      header.writeUInt32LE(sampleRate * channels * 2, 28);
+      header.writeUInt16LE(channels * 2, 32);
       fs.writeSync(fd, header);
       say(`${path.basename(file)}: rendering ${seconds}s of PAL audio${tune.clock === 2 ? ' (this tune requests NTSC)' : ''}`);
       const result = await renderSid(bytes, {
@@ -144,7 +164,7 @@ export async function sid2wav(argv) {
       if (flags.force) fs.renameSync(tempFile, out);
       else fs.linkSync(tempFile, out);
       progressDone();
-      say(`${path.basename(file)} → ${out}  (${sampleRate} Hz, 16-bit mono, ${result.model}, song ${result.song}/${tune.songs})`);
+      say(`${path.basename(file)} → ${out}  (${sampleRate} Hz, 16-bit ${channels === 2 ? 'stereo' : 'mono'}, ${result.model}${result.secondModel ? '/' + result.secondModel : ''}, song ${result.song}/${tune.songs})`);
     } catch (e) { progressDone(); fail(`${file}: ${e.message}`); failed = true; }
     finally {
       if (fd !== undefined) fs.closeSync(fd);

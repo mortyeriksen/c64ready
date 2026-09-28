@@ -82,7 +82,7 @@ c64rdy --version
 `c64rdy --help` lists every command and flag.
 
 Turn a SID tune into a runnable PRG with the same music player as the browser UI,
-or render it as 16-bit mono WAV audio:
+or render it as 16-bit WAV audio (mono for one SID, stereo for two):
 
 ```sh
 c64rdy sid2prg tune.sid --song 2 -o player.prg
@@ -92,6 +92,9 @@ c64rdy sid2wav tune.sid --seconds 180 --roms roms
 Both accept multiple inputs, quoted wildcards and `--out-dir`. `sid2wav` defaults
 to three minutes at 44,100 Hz, with the SID model from the tune header (8580 when
 unspecified). It supports `--sample-rate`, `--model 6581|8580` and `--song`.
+Two-SID files use their header address and chip models, with SID 1 on the left
+and SID 2 on the right. `--model` overrides both models. `sid2prg` reports the
+second address required by the exported program.
 Rendering is PAL, through the player's Safe view and the emulator's reSID engine.
 The [CLI guide](https://github.com/mortyeriksen/c64ready/blob/main/docs/USER-GUIDE-CLI.md#sid-music-player-programs-and-audio)
 details the options and supported tunes.
@@ -137,6 +140,14 @@ rest) are credited in
 [NOTICE.txt](https://github.com/mortyeriksen/c64ready/blob/main/NOTICE.txt).
 
 ## Release notes
+
+### 0.9.3
+
+- Stereo PSID v2 files with separate chip flags are recognized as two-SID tunes.
+
+- **Two-SID audio.** `sid2wav` exports two-chip tunes as stereo WAV, using the
+  address and models in the tune header. `sid2prg` includes a player that keeps
+  both chips audible and reports the required second-chip configuration.
 
 ### 0.9.2
 

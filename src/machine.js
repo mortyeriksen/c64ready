@@ -55,12 +55,12 @@ const IEC_IDLE_ENGAGE_QUIET = 256;
 // SID write forwarder (the "sid" object seen by Memory).
 // Reads:
 //   $D419 / $D41A → paddle X/Y (from main thread's mouse-position tracker)
-//   $D41B / $D41C → OSC3 / ENV3 (from worklet, via shared buffer)
-//   other          → last value written (= SID register shadow on the
-//                    C64 data bus; close enough for most demo tricks)
+//   $D41B / $D41C → cycle-exact main-thread OSC3 / ENV3
+//   other          → the chip's decaying data-bus latch
 class SIDProxy {
-  constructor(machine) {
+  constructor(machine, chipIndex = 0) {
     this.machine = machine;
+    this.chipIndex = chipIndex;
     this.regs = new Uint8Array(0x20);
     // SID data-bus value. Reading a write-only register returns the last
     // byte that crossed the SID's data bus — the last write to ANY register,
@@ -84,10 +84,11 @@ class SIDProxy {
     val &= 0xFF;
     this.regs[reg] = val;
     this._setBus(val);
-    this.machine._sidWrite(reg, val);
+    this.machine._sidWrite(reg, val, this.chipIndex);
   }
   read(reg) {
     reg &= 0x1F;
+    const second = this.chipIndex ? this.machine.sid2 : null;
     switch (reg) {
       // POTX/POTY return the LATCHED sample, refreshed every 512 master
       // cycles. The live paddleX/paddleY (set by mouse input) feeds
@@ -98,26 +99,33 @@ class SIDProxy {
       // probe and VICE's paddle testprog both rely on it). Only report a
       // position when a pot-using device is actually selected on a port.
       case 0x19: { // POTX
+        if (second) return this._setBus(0xFF);
         const ov = this.machine.potXOverride;
         if (ov !== null) return this._setBus(ov & 0xFF);
         return this._setBus(this.machine.potConnected ? this.machine.potXSampled : 0xFF);
       }
-      case 0x1A: return this._setBus(this.machine.potConnected ? this.machine.potYSampled : 0xFF); // POTY
+      case 0x1A: return this._setBus(!second && this.machine.potConnected ? this.machine.potYSampled : 0xFF); // POTY
       // $D41B / $D41C — voice 3 oscillator + envelope readback. Served
       // from the main-thread "shadow" SID voices which are clocked in
       // lockstep with the CPU, so reads are cycle-exact (vs. the audio
       // worklet's ~3 ms latency that would smear cycle-precise raster
       // tricks like demo RNG loops that read $D41B every few cycles).
-      case 0x1B: return this._setBus(this.machine.shadowV3.readOsc3());
-      case 0x1C: return this._setBus(this.machine.shadowV3.env3);
+      case 0x1B: return this._setBus((second ? second.voices[2] : this.machine.shadowV3).readOsc3());
+      case 0x1C: return this._setBus((second ? second.voices[2] : this.machine.shadowV3).env3);
       default: {
         // Write-only register: the decaying shared bus value. Reads here
         // do NOT refresh the TTL (reSID sid.cc read()).
-        const age = this.machine.sidCycleCounter - this.busValueCycle;
-        const ttl = this.machine.sidIs8580 ? 0xA2000 : 0x1D00;
+        const age = (this.machine.sidCycleCounter - this.busValueCycle) >>> 0;
+        const ttl = (second ? second.is8580 : this.machine.sidIs8580) ? 0xA2000 : 0x1D00;
         return (age >= 0 && age < ttl) ? this.busValue : 0;
       }
     }
+  }
+  peek(reg) {
+    const value = this.busValue, cycle = this.busValueCycle;
+    const result = this.read(reg);
+    this.busValue = value; this.busValueCycle = cycle;
+    return result;
   }
   reset() {
     this.regs.fill(0);
@@ -127,9 +135,8 @@ class SIDProxy {
     // in the shadow voices too (they were playing on through resets before),
     // while their phase accumulators survive — reSID reset semantics, same
     // as the worklet chip's 'reset' message path (P9).
-    this.machine.shadowV1?.reset?.();
-    this.machine.shadowV2?.reset?.();
-    this.machine.shadowV3?.reset?.();
+    const voices = this.chipIndex ? this.machine.sid2?.voices : this.machine.shadowVoices;
+    if (voices) for (const voice of voices) voice.reset();
   }
 }
 
@@ -409,6 +416,9 @@ export class C64Machine {
     // Default 8580 (HMOS-II, the C64C SID) — matches the UI default (main.js)
     // and what most modern demos expect; a 6581 default tripped the "old SID
     // detected" prompt in 8580-targeted demos. Use setSidModel(false) for 6581.
+    this.sid2 = null;
+    this.sid2Generation = 0;
+    this.sidMix = 'stereo';
     this.sidIs8580 = true;
     for (const v of this.shadowVoices) v.is8580 = this.sidIs8580;   // shadow voices default 6581; match the model
 
@@ -667,6 +677,30 @@ export class C64Machine {
     this.ready = true;
   }
 
+  // The optional chip owns one 32-byte I/O window; all other mirrors survive.
+  configureSecondSid({ enabled = false, address = 0xD420, is8580 = true, mix = 'stereo' } = {}) {
+    if (enabled) this.mem.validateSecondSidAddress(address);
+    this.sidMix = mix === 'mono' ? 'mono' : 'stereo';
+    if (!enabled) {
+      this.sid2 = null;
+      this.mem.sid2 = null;
+      return;
+    }
+    if (!this.sid2 || this.sid2.address !== address) {
+      this.sid2Generation = (this.sid2Generation + 1) & 0xFFFF;
+      this.sid2 = { address, is8580: !!is8580, voices: makeVoiceTrio(), proxy: new SIDProxy(this, 1) };
+    }
+    this.sid2.is8580 = !!is8580;
+    for (const voice of this.sid2.voices) voice.is8580 = !!is8580;
+    this.mem.sid2 = this.sid2.proxy;
+    this.mem.sid2Address = address;
+  }
+
+  secondSidConfig() {
+    return { enabled: !!this.sid2, address: this.sid2?.address ?? 0xD420,
+      is8580: this.sid2?.is8580 ?? true, mix: this.sidMix, generation: this.sid2Generation };
+  }
+
   // Select the emulated SID model on the main-thread shadow voices.
   // false = 6581 (original NMOS), true = 8580 (HMOS-II). Must be kept in
   // sync with the audio worklet (main.js posts a `model` message there).
@@ -790,6 +824,7 @@ export class C64Machine {
     this.cia2.reset();
     this.vic2.reset();
     this.mem.sid?.reset?.();
+    this.mem.sid2?.reset();
     this.prevNmiLevel = false;
     this.driveCycleAccum = 0;
     this.sidCycleCounter = 0;
@@ -885,6 +920,7 @@ export class C64Machine {
     // which the accumulators survive — correct for softReset(), but a cold
     // boot loses them. The shadow voices are never recreated, so do it
     // here; the worklet chip gets the same via main.js's 'init' message.)
+    if (this.sid2) for (const v of this.sid2.voices) { v.phase = 0x555555; v.prevPhase = 0x555555; }
     for (const v of [this.shadowV1, this.shadowV2, this.shadowV3]) {
       if (v) { v.phase = 0x555555; v.prevPhase = 0x555555; }
     }
@@ -1018,20 +1054,25 @@ export class C64Machine {
   // Forward SID write to the audio worklet ring buffer AND apply to
   // the main-thread shadow voices so $D41B/$D41C reads see the same
   // state the worklet will reach at the corresponding cycle.
-  _sidWrite(reg, val) {
+  _sidWrite(reg, val, chipIndex = 0) {
     const wi = Atomics.load(this.sidCtrl, 0);
     const off = (wi & (RING_CAPACITY - 1)) * 2;
     this.sidRing32[off] = this.sidCycleCounter >>> 0;
-    this.sidRing32[off + 1] = ((val & 0xFF) << 8) | (reg & 0x1F);
+    this.sidRing32[off + 1] = ((val & 0xFF) << 8) | (reg & 0x1F) | (chipIndex << 5) | (chipIndex ? this.sid2Generation << 16 : 0);
     Atomics.store(this.sidCtrl, 0, (wi + 1) & 0x7FFFFFFF);
 
     // Mirror voice-register writes to the shadow voices. Filter / vol
     // registers ($D415-$D418) are audio-output-only; the shadow doesn't
     // need them.
     const r = reg & 0x1F;
-    if (r < 7)       this.shadowV1.write(r, val);
-    else if (r < 14) this.shadowV2.write(r - 7, val);
-    else if (r < 21) this.shadowV3.write(r - 14, val);
+    if (chipIndex) {
+      const voices = this.sid2?.voices;
+      if (voices && r < 21) voices[(r / 7) | 0].write(r % 7, val);
+    } else {
+      if (r < 7) this.shadowV1.write(r, val);
+      else if (r < 14) this.shadowV2.write(r - 7, val);
+      else if (r < 21) this.shadowV3.write(r - 14, val);
+    }
 
     // Debug: capture register writes when sidTraceLeft > 0. Call
     // `machine.sidTraceStart(n)` from the console to begin; then
@@ -1039,7 +1080,7 @@ export class C64Machine {
     // WOTEF-style digi by inspecting the actual $D418 sequence the
     // game emits.
     if (this.sidTraceLeft > 0) {
-      this.sidTraceBuf.push([this.sidCycleCounter >>> 0, reg & 0x1F, val & 0xFF]);
+      this.sidTraceBuf.push([this.sidCycleCounter >>> 0, reg & 0x1F, val & 0xFF, chipIndex]);
       this.sidTraceLeft--;
     }
   }
@@ -1493,7 +1534,12 @@ export class C64Machine {
       datasette: this.datasette.serialize(),
       drive1541: (this.drive1541 && this.truedriveEnabled) ? this.drive1541.serialize() : null,
       reu: this.reu ? this.reu.serialize() : null,
+      sid2: this.sid2 ? { ...this.secondSidConfig(), regs: this.sid2.proxy.regs.slice(),
+        busValue: this.sid2.proxy.busValue, busValueCycle: this.sid2.proxy.busValueCycle,
+        shadowVoices: this.sid2.voices.map(v => v.serialize()) } : null,
+      sidMix: this.sidMix,
       sid: {
+        busValue: this.mem.sid.busValue, busValueCycle: this.mem.sid.busValueCycle,
         is8580: this.sidIs8580,
         paddleX: this.paddleX, paddleY: this.paddleY,
         potXSampled: this.potXSampled, potYSampled: this.potYSampled,
@@ -1563,7 +1609,19 @@ export class C64Machine {
     // register file to the audio worklet so sound resumes (the fresh machine's
     // ring is empty). Oscillator phase is approximate across restore — a brief
     // audio blip is expected, no logical-state loss.
+    this.configureSecondSid(s.sid2 ? { ...s.sid2, mix: s.sidMix } : { mix: s.sidMix });
+    if (this.sid2) {
+      const saved = s.sid2, second = this.sid2;
+      second.proxy.regs.set(saved.regs);
+      for (let r = 0; r < 25; r++) this._sidWrite(r, second.proxy.regs[r], 1);
+      for (let i = 0; i < 3; i++) second.voices[i].deserialize(saved.shadowVoices[i]);
+      for (const voice of second.voices) voice.is8580 = second.is8580;
+      second.proxy.busValue = saved.busValue ?? 0;
+      second.proxy.busValueCycle = saved.busValueCycle ?? 0;
+    }
     const sid = s.sid || {};
+    this.mem.sid.busValue = sid.busValue ?? 0;
+    this.mem.sid.busValueCycle = sid.busValueCycle ?? 0;
     this.sidIs8580 = !!sid.is8580;
     this.paddleX = sid.paddleX ?? 0x80; this.paddleY = sid.paddleY ?? 0x80;
     this.potXSampled = sid.potXSampled ?? 0x80; this.potYSampled = sid.potYSampled ?? 0x80;
@@ -1625,6 +1683,12 @@ export class C64Machine {
     // audio DAC sample is discarded, so outputStageOsc3() skips it (dead work
     // on the CPU hot loop). Byte-identical OSC3/ENV3 (skip-equiv test).
     this.shadowV3.outputStageOsc3();
+    if (this.sid2) {
+      const v = this.sid2.voices;
+      computeSyncPulses(v[0], v[1], v[2]);
+      v[0].clockPhaseOnly(); v[1].clockPhaseOnly();
+      v[2].clockCore(); v[2].outputStageOsc3();
+    }
 
     // POTX/POTY sample-and-hold: latch the live paddle position into
     // the SID-readable register every 512 master cycles, modelling the

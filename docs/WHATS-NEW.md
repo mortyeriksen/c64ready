@@ -8,9 +8,17 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
-## Next release
+## 2026.9.3 — September 28, 2026
 
-*Not out yet: what is finished and waiting for the next version.*
+Play two-SID tunes in stereo with separate scopes and envelope bars. This
+release also refines Retro Vibes lighting and makes programs easier to load
+while something else is running.
+
+- **Two SID chips.** Play two-SID tunes in stereo, with each chip on its own
+  speaker, or mix both in mono. Tune files select their chip models and ask before enabling SID2 or changing
+  its address. Early stereo PSID v2 files are supported too. Options also lets you enable a second chip for games
+  and demos, and saved states remember both chips. Two stacked, half-height
+  scopes and separate blue ENV 3 labels and bars show the two chips separately.
 
 - **More atmospheric Retro Vibes lighting.** Synthwave's neon lights bring colour
   to the C64, with smoother grid and road lines. In 80s Bedroom, the main monitor

@@ -4,6 +4,7 @@
 // Wires up auto-ROM loading, D64 disk images, joystick emulation, and PRG injection.
 
 import './tooltips.js';   // must own `title` before any module writes one
+import { validSecondSidAddress } from './sid-config.js';
 import { C64Machine } from './machine.js';
 import { ROMLoader, pickViceRoms } from './roms.js';
 import * as ControlPort from './control-port.js';
@@ -31,7 +32,7 @@ import {
 import { registerAudioContext } from './debug.js';
 import {
   initMedia, _onCRTLoaded, _onTapLoaded, _syncCartridgeControls, _syncDrive9TdeBtn, _applyDrive9Tde,
-  _syncTapeButtons, _applyReu,
+  _syncTapeButtons, _applyReu, reuEnabled,
   _flashDrive9Led, drive9LedActive, updateMediaIndicators, downloadSnapshot, rearmPrgTdeOffer,
   currentD64, currentD64Drive9, drive9Enabled, drive9TdeEnabled,
   _cachedCartData, _cachedTapData, _cachedTapName, _cachedTapProtected, _cacheTapeFromDeck,
@@ -428,6 +429,88 @@ let sidVariantPref = (() => {
   } catch { return '8580'; }
 })();
 let is8580 = sidVariantPref === '8580';
+let secondSidPref = (() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem('c64emu.secondSid') || '{}');
+    const a = saved.address;
+    const valid = validSecondSidAddress(a);
+    return { enabled: saved.enabled === true, address: valid ? a : 0xD420,
+      is8580: saved.is8580 !== false, mix: saved.mix === 'mono' ? 'mono' : 'stereo' };
+  } catch { return { enabled: false, address: 0xD420, is8580: true, mix: 'stereo' }; }
+})();
+let sidSessionConfig = null;
+const sid2Toggle = document.getElementById('btn-sid2-toggle');
+const sidMixButton = document.getElementById('btn-sid-mix');
+const sid2Address = document.getElementById('sid2-address');
+
+function _syncSidControls() {
+  const config = sidSessionConfig?.second ?? secondSidPref;
+  if (sidToggleBtn) sidToggleBtn.textContent = `SID: ${(machine?.sidIs8580 ?? sidSessionConfig?.primary ?? is8580) ? '8580' : '6581'}`;
+  if (sid2Toggle) {
+    sid2Toggle.textContent = `SID2: ${config.enabled ? (config.is8580 ? '8580' : '6581') : 'OFF'}`;
+    sid2Toggle.setAttribute('aria-pressed', String(config.enabled));
+  }
+  if (sidMixButton) sidMixButton.textContent = (config.mix || 'stereo').toUpperCase();
+  if (sid2Address) sid2Address.textContent = 'ADRESS: $' + config.address.toString(16).toUpperCase();
+  for (const button of [sidMixButton, sid2Address]) {
+    if (button) button.disabled = !config.enabled;
+  }
+}
+
+function _validateSecondSid(config) {
+  if (!validSecondSidAddress(config.address)) throw new Error('Second SID address must be $D420-$D7E0 or $DE00-$DFE0, in steps of $20.');
+  if (!config.enabled) return;
+  if (config.address >= 0xDF00 && reuEnabled) throw new Error('Second SID in $DF00-$DFFF conflicts with RAM Expansion.');
+  if (config.address >= 0xDE00 && _cachedCartData) throw new Error('Second SID in $DE00-$DFFF requires an empty cartridge slot.');
+  machine?.mem.validateSecondSidAddress(config.address);
+}
+
+function _changeSecondSid(change) {
+  const config = { ...(sidSessionConfig?.second ?? secondSidPref), ...change };
+  try {
+    _validateSecondSid(config);
+    machine?.configureSecondSid(config);
+    secondSidPref = config;
+    if (sidSessionConfig) sidSessionConfig.second = config;
+    try { localStorage.setItem('c64emu.secondSid', JSON.stringify(config)); } catch {}
+    if (sidNode && machine) sidNode.port.postMessage({ type: 'second', secondSid: machine.secondSidConfig() });
+  } catch (error) { setStatus(error.message, 'error'); }
+  _syncSidControls();
+}
+sid2Toggle?.addEventListener('click', () => {
+  const config = sidSessionConfig?.second ?? secondSidPref;
+  _changeSecondSid(!config.enabled ? { enabled: true, is8580: true }
+    : config.is8580 ? { is8580: false } : { enabled: false });
+});
+sidMixButton?.addEventListener('click', () => _changeSecondSid({ mix: (sidSessionConfig?.second ?? secondSidPref).mix === 'mono' ? 'stereo' : 'mono' }));
+sid2Address?.addEventListener('click', () => {
+  const config = sidSessionConfig?.second ?? secondSidPref;
+  const addresses = [0xD420, 0xD500, 0xDE00, 0xDF00];
+  const current = addresses.indexOf(config.address);
+  for (let step = 1; step <= addresses.length; step++) {
+    const address = addresses[(current + step) % addresses.length];
+    try { _validateSecondSid({ ...config, address }); }
+    catch { continue; }
+    _changeSecondSid({ address });
+    return;
+  }
+});
+
+function configureSidTune(tune) {
+  const primary = tune?.chip === 1 ? false : tune?.chip === 2 ? true : is8580;
+  const second = tune ? { ...secondSidPref, enabled: !!tune.secondSidAddress,
+    address: tune.secondSidAddress || secondSidPref.address,
+    is8580: tune.secondChip === 1 ? false : tune.secondChip === 2 ? true : primary } : secondSidPref;
+  _validateSecondSid(second);
+  machine?.configureSecondSid(second);
+  sidSessionConfig = tune ? { primary, second } : null;
+  machine?.setSidModel(primary);
+  if (sidNode) {
+    sidNode.port.postMessage({ type: 'second', secondSid: machine.secondSidConfig() });
+    sidNode.port.postMessage({ type: 'model', is8580: primary });
+  }
+  _syncSidControls();
+}
 
 // VIC variant preference (6569 NMOS → 8565 HMOS). Persisted likewise.
 // The variant list/strings come from vic2.js (single source of truth).
@@ -532,7 +615,8 @@ if (sidToggleBtn) {
   // Sync the button label with the persisted preference at startup.
   sidToggleBtn.textContent = `SID: ${sidVariantPref}`;
   sidToggleBtn.addEventListener('click', () => {
-    is8580 = !is8580;
+    is8580 = !(machine?.sidIs8580 ?? is8580);
+    if (sidSessionConfig) sidSessionConfig.primary = is8580;
     sidVariantPref = is8580 ? '8580' : '6581';
     sidToggleBtn.textContent = `SID: ${sidVariantPref}`;
     // Worklet handles audio output; shadow voices handle $D41B/$D41C reads.
@@ -841,7 +925,9 @@ _applyVicVariantPref();
 // rejects the machine even when the user selected 8580. Called after every
 // `new C64Machine()` and on toggle, mirroring the worklet's `model` message.
 function _applySidVariantPref() {
-  machine?.setSidModel?.(is8580);
+  machine?.setSidModel?.(sidSessionConfig?.primary ?? is8580);
+  machine?.configureSecondSid(sidSessionConfig?.second ?? secondSidPref);
+  _syncSidControls();
 }
 _applySidVariantPref();
 
@@ -849,7 +935,7 @@ _applySidVariantPref();
 // Called after POWER ON so the UI never drifts away from the effective
 // machine state.
 function _syncToggleLabels() {
-  if (sidToggleBtn) sidToggleBtn.textContent = `SID: ${sidVariantPref}`;
+  _syncSidControls();
   if (vicToggleBtn) vicToggleBtn.textContent = `VIC: ${vicVariantPref}`;
   if (paletteToggleBtn) paletteToggleBtn.textContent = _paletteLabel(palettePref);
 }
@@ -1109,12 +1195,12 @@ if (romClearBtn) {
 // C64Machine with a fresh SharedArrayBuffer).
 function wireSidToMachine() {
   if (sidNode && machine?.sidShared) {
-    sidNode.port.postMessage({ type: 'init', shared: machine.sidShared, is8580, engine: sidEngine });
+    sidNode.port.postMessage({ type: 'init', shared: machine.sidShared, is8580: machine.sidIs8580, engine: sidEngine, secondSid: machine.secondSidConfig() });
   }
 }
 
 function resetSidWorklet() {
-  if (sidNode) sidNode.port.postMessage({ type: 'reset', is8580 });
+  if (sidNode) sidNode.port.postMessage({ type: 'reset', is8580: machine?.sidIs8580 ?? is8580 });
 }
 
 // Signed ppm for the diag line's clock-drift figures; a missing measurement
@@ -1136,7 +1222,7 @@ async function initAudio() {
   // resolve in a production build → "Unable to load a worklet's module" (no
   // sound). The bundled script's hash still busts the cache on edits.
   await audioCtx.audioWorklet.addModule(sidWorkletUrl);
-  setSidNode(new AudioWorkletNode(audioCtx, 'sid-processor'));
+  setSidNode(new AudioWorkletNode(audioCtx, 'sid-processor', { outputChannelCount: [2] }));
   // Master gain: SID + drive sounds both route through it so MUTE (and the
   // tab-hidden auto-mute) can silence everything with one gain. Initial value
   // honors the persisted MUTE choice.
@@ -1549,8 +1635,7 @@ function _createAndWireMachine({ keepKey = true } = {}) {
     basic:   loader.basic,
     charRom: loader.charRom,
   });
-  // Re-wire SID output to the audio worklet on the new machine.
-  if (sidNode) wireSidToMachine();
+
   // Re-attach the trap-mode load sound hook (set only in initAudio otherwise,
   // so a re-created machine would have onLoadTrap = null).
   // Closure guards on `driveSounds` at call time, so it works regardless of
@@ -1564,6 +1649,7 @@ function _createAndWireMachine({ keepKey = true } = {}) {
   // Re-apply persisted VIC/SID variants and resync the toggle labels.
   _applyVicVariantPref();
   _applySidVariantPref();
+  if (sidNode) wireSidToMachine();
   _syncToggleLabels();
   // Re-attach drive ROM + TDE if it was loaded (TDE boots the drive to its
   // DOS idle scheduler so the first LOAD finds it listening for ATN).
@@ -2885,6 +2971,13 @@ initInput({
 // core-private state (loop timers, chip-variant prefs, pause flag, auto-load
 // sequencer) that media only needs to read or reset.
 initMedia({
+  getSecondSidConfig: () => sidSessionConfig?.second ?? secondSidPref,
+  configureSidTune,
+  syncSidState: () => {
+    sidSessionConfig = { primary: machine.sidIs8580, second: machine.secondSidConfig() };
+    wireSidToMachine();
+    _syncSidControls();
+  },
   setStatus, _powerOn, _hardReset, _createAndWireMachine, _setPaused, startLoop,
   resumeAudio, suspendAudio, resetSidWorklet, _syncPowerStateClass, _punchLogo,
   _syncToggleLabels, _stopBootHint, _queueAutoLoad, _basicReady,
@@ -2902,7 +2995,8 @@ initMedia({
     frameComputeCount = 0;
     lastFpsTime = performance.now();
   },
-  applyLoadedVariants: ({ vicVariant, sidIs8580 }) => {
+  applyLoadedVariants: ({ vicVariant, sidIs8580, secondSid }) => {
+    sidSessionConfig = { primary: sidIs8580 ?? is8580, second: { address: 0xD420, is8580: true, mix: 'stereo', ...secondSid } };
     if (vicVariant) {
       vicVariantPref = vicVariant;
       try { localStorage.setItem('c64emu.vicVariant', vicVariantPref); } catch {}

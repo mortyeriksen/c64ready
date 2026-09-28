@@ -35,8 +35,9 @@ Bug reports help push the emulation closer to real hardware.
 
 - **NTSC machines**: C64 READY. targets the **PAL** C64 only. NTSC raster
   geometry and timing aren't modelled, so NTSC-only software is out of scope.
-- **A second SID (stereo)**: single-SID machine only; 2SID / stereo tunes
-  aren't supported.
+- **Three-SID tunes** are not supported. Two-SID tunes play in Safe view;
+  their Voices view is unavailable. Expansion addresses `$DE00-$DFFF` require
+  an empty cartridge slot, and `$DF00-$DFFF` cannot share an attached REU.
 - **Cartridge types other than the supported Generic, Action Replay, Final
   Cartridge III, Magic Desk, and EasyFlash families, user-port devices,
   printers, and modems** are not implemented.

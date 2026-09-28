@@ -108,6 +108,10 @@
   margin-bottom: 20px;
 }
 
+.sid2-controls {
+  margin-top: 8px;
+}
+
 .settings-section:last-child {
   margin-bottom: 0;
 }

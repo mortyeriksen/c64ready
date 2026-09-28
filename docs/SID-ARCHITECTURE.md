@@ -125,6 +125,30 @@ but **phase survives** on both sides; only a power cycle reseeds `$555555`.
 
 ---
 
+### Optional second chip
+
+`configureSecondSid()` allocates an independent proxy, model and voice trio
+only when enabled. Its `$20`-aligned window in `$D420-$D7E0` or `$DE00-$DFE0`
+overrides normal SID mirrors. Expansion addresses require an empty cartridge
+slot; REU excludes `$DF00-$DFFF`. Both chips share the master clock, with
+sync/ring confined to each trio; SID2 POT reads return `$FF`. Reset semantics
+match SID1. Snapshots preserve both chips and mix; older snapshots restore one.
+
+One event queue and audio clock serve both chips. Packed events use bits 0-4
+for register, 5 for chip, 8-15 for value and 16-31 for SID2 generation, rejecting
+stale writes after reconfiguration. JS shares FIR tables but keeps separate
+sample rings; WASM uses independent instances with aligned resamplers, falling
+back to JS until both are ready. Reset, replay and backlog recovery cover both.
+Stereo sends SID1 left and SID2 right; mono averages them. A single SID remains
+centered. Recording and CLI WAV export preserve stereo.
+
+Tune headers select session hardware, including supported early stereo v2
+headers; an unspecified SID2 model inherits SID1. Enabling or readdressing SID2
+requires confirmation before loading. The player stays in Safe view, with two
+half-height OSC3 scopes and independent ENV3 bars; pause/restart affect both.
+
+---
+
 ## 2. Register map (`$D400-$D41F`, mirrored every 32 bytes)
 
 Per-voice block (voice 1 `$D400`, voice 2 `$D407`, voice 3 `$D40E`):
@@ -454,7 +478,8 @@ shared SID player in Safe mode, then drains the machine's cycle-stamped register
 ring into `sid_queue_write`. It advances the PAL machine ahead of each block's
 16.16 resampler deadline before calling `sid_render`, with no real-time drift
 correction. Both the shadow voices and audio engine use the selected chip model.
-PCM blocks are streamed as little-endian 16-bit mono WAV; boot audio is omitted.
+PCM blocks are streamed as little-endian 16-bit WAV: mono for one chip, or
+interleaved stereo for two. Boot audio is omitted.
 `sid2prg` calls the UI's `sidToPrg` builder with its usual starting view. The
 builder's optional `safe` setting selects direct SID writes for offline audio.
 

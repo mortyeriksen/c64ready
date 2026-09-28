@@ -63,6 +63,12 @@ errors and overwrite protection. With the external C64 ROMs present, it boots a
 synthetic two-song driver, verifies Safe-mode register writes, and checks WAV
 headers, exact duration and audible output. It runs in both test suites.
 
+`node test/sid-second-spec-test.js` checks second-chip addressing, primary
+mirrors, banking, bus decay, independent oscillator readback, snapshots,
+reset semantics, SID header metadata, and stereo/mono channel isolation in
+both audio engines. `cli/test/cli-sid-spec-test.js` also boots a synthetic
+two-chip driver and checks both channels of its stereo WAV export.
+
 ## Assembly64 integration checks
 
 The default suite includes `assembly64-test.js` and `media-browser-test.js`.

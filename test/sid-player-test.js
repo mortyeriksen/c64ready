@@ -46,13 +46,14 @@ function makeSid({ format = 'PSID', songs = 3, startSong = 1, flags = (1 << 2) |
   return bytes;
 }
 
-function run(prg, frames) {
+function run(prg, frames, configure = () => {}) {
   const machine = new C64Machine();
   machine.loadROMs({
     kernal: new Uint8Array(readFileSync('roms/kernal.bin')),
     basic: new Uint8Array(readFileSync('roms/basic.bin')),
     charRom: new Uint8Array(readFileSync('roms/chargen.bin')),
   });
+  configure(machine);
   machine.reset();
   for (let i = 0; i < 200; i++) machine.runFrame();     // boot to READY
   machine.loadPRG(prg);
@@ -122,6 +123,49 @@ const screenText = (machine, row, col, length) => {
   eq(screenText(machine, 22, 2, 9), 'F1 VOICES', 'and F1 offers the other view');
 }
 
+// Two chips share the six-row Safe scope area equally. Idle OSC3 inputs
+// produce one centred trace in each three-row half.
+{
+  const bytes = makeSid();
+  bytes[5] = 3; bytes[0x7A] = 0x50;
+  let primaryReads = 0, secondReads = 0;
+  const machine = run(sidToPrg(bytes).data, 120, machine => {
+    machine.configureSecondSid({ enabled: true, address: 0xD500 });
+    for (const [proxy, count] of [[machine.mem.sid, () => primaryReads++],
+      [machine.sid2.proxy, () => secondReads++]]) {
+      const read = proxy.read.bind(proxy);
+      proxy.read = reg => { if ((reg & 31) === 27) count(); return read(reg); };
+    }
+  });
+  for (let frame = 0; frame < 60 && [11, 14].some(row => screenText(machine, row, 2, 36) !== '='.repeat(36)); frame++) machine.runFrame();
+  assert(primaryReads >= 36, 'top scope samples primary OSC3');
+  assert(secondReads >= 36, 'bottom scope samples OSC3 at the tune second address');
+  for (const row of [11, 14]) {
+    eq(screenText(machine, row, 2, 36), '='.repeat(36), 'idle chip has a centred half-height scope');
+  }
+  for (const row of [10, 12, 13, 15]) {
+    eq(screenText(machine, row, 2, 36), ' '.repeat(36), 'idle half-height scopes leave other rows clear');
+  }
+}
+// ENV3 readback belongs to each chip and has an independent sixteen-cell bar.
+for (const dual of [false, true]) {
+  const bytes = makeSid({ format: 'RSID' });
+  if (dual) { bytes[5] = 3; bytes[0x7A] = 0x50; }
+  const machine = run(sidToPrg(bytes).data, 180, machine => {
+    if (dual) machine.configureSecondSid({ enabled: true, address: 0xD500 });
+    for (const [proxy, level] of [[machine.mem.sid, 0xF0], [machine.sid2?.proxy, 0x80]]) {
+      if (!proxy) continue;
+      const read = proxy.read.bind(proxy);
+      proxy.read = reg => (reg & 31) === 28 ? level : read(reg);
+    }
+  });
+  eq(screenText(machine, 17, dual ? 14 : 9, 16), '#'.repeat(15) + ' ', 'primary ENV3 bar reflects primary readback');
+  if (dual) {
+    eq(screenText(machine, 18, 14, 16), '#'.repeat(8) + ' '.repeat(8), 'second ENV3 bar reflects second readback independently');
+    eq(screenText(machine, 17, 2, 10), 'SID1 ENV 3', 'primary envelope label identifies its chip');
+    eq(screenText(machine, 18, 2, 10), 'SID2 ENV 3', 'second envelope label identifies its chip');
+  }
+}
 // ── starting song, and what the wrapper refuses ──────────────────────────────
 {
   const { data } = sidToPrg(makeSid({ songs: 9, startSong: 4 }));

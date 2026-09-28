@@ -395,7 +395,7 @@ its metadata is available.
 
 ## Playing a .sid tune
 
-![The C64 display running the SID player: a cyan title bar reading C64 READY. SID PLAYER, the tune's title, author and year beneath it, a line showing SONG 01/01, the elapsed time, the chip and the clock, then the three voices with their pitch bars, waveform, frequency and ADSR, a filter line, and an oscilloscope trace along the bottom above the key reminders.](/guide/sid-player.webp)
+![The C64 SID player running Double Dragon with two stacked oscilloscope traces and blue SID1 ENV 3 and SID2 ENV 3 bars](/guide/sid-player.webp)
 
 A `.sid` is a tune, not a program — so it is wrapped in one. The file arrives
 with a player written in 6502 in front of it, and the C64 runs the tune's own
@@ -425,6 +425,11 @@ real C64 — start in the safe view for that reason.
 
 Switching into the three-voice view starts the song again, because what the
 driver set up before the switch was never seen.
+
+Two-SID tunes ask to enable or readdress SID2 when needed. Confirm to play;
+cancel leaves playback and settings unchanged. They use Safe view with two
+half-height scopes and separate ENV 3 bars, SID 1 above SID 2, with no F1 voice view. Hardware choices
+last for the session.
 
 ## Disk drive 8
 
@@ -740,8 +745,19 @@ The **master volume** control at the top of this section sets how loud everythin
 | Button | What it does |
 | --- | --- |
 | **SID** | Switches the SID sound chip model: **6581** (original) ↔ **8580** (later revision). |
+| **SID2** | Cycles **OFF** → **8580** → **6581**. Its separate row also has **STEREO/MONO** and an **ADRESS** toggle (default `$D420`). Stereo sends SID 1 left and SID 2 right. |
 | **ENGINE** | Selects the SID sound engine: **reSID WASM** (default) and **reSID JS** sound identical; the WASM build uses far less CPU, and switches to reSID JS automatically if WebAssembly can't start. |
 | **DRIVE SOUND** | Plays synthesized 1541 sounds (motor hum, head-stepper clicks, fast-load chatter) while the drive is active. |
+
+The mix and address buttons are disabled while SID2 is off.
+
+The **ADRESS** toggle cycles `$D420`, `$D500`, `$DE00` and `$DF00`, skipping
+conflicts while enabled. Tune headers can also select other `$20`-aligned
+addresses in `$D420-$D7E0` and `$DE00-$DFE0`. Expansion addresses
+`$DE00-$DFFF` require an empty cartridge slot; `$DF00-$DFFF` also conflicts with
+RAM Expansion. A single SID plays centered at the same volume in either mix mode.
+Browser recordings retain the stereo mix. Saved states restore both chips;
+older states restore a single SID.
 
 The two reSID engines are the same port of **VICE's reSID**, Dag Lem's
 transistor-level model of the real chip's oscillators, envelopes, analog filter

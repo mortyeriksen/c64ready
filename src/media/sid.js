@@ -97,7 +97,19 @@ export function parseSid(bytes) {
   const speed = long(bytes, 18);
   const flags = version === 1 ? 0 : word(bytes, 0x76);
 
+  const sidAddress = value => !(value & 1) && ((value >= 0x42 && value <= 0x7E) || (value >= 0xE0 && value <= 0xFE))
+    ? 0xD000 + value * 16 : 0;
+  // Some early stereo PSIDs retain version 2 and store a clock/model byte
+  // for each chip in flags. Require that layout as well as a valid address,
+  // so ordinary v2 reserved address bytes remain ignored.
+  const legacyStereo = !rsid && version === 2 && sidAddress(bytes[0x7A]) !== 0
+    && bytes[0x7B] === 0 && (flags & 0xC3C3) === 0
+    && (flags & 0x3000) !== 0;
+  const secondSidAddress = version >= 3 || legacyStereo ? sidAddress(bytes[0x7A]) : 0;
+  const thirdSidAddress = version >= 4 ? sidAddress(bytes[0x7B]) : 0;
   return {
+    secondSidAddress, thirdSidAddress,
+    secondChip: legacyStereo ? (flags >> 12) & 3 : version >= 3 ? (flags >> 6) & 3 : 0,
     format: rsid ? 'RSID' : 'PSID', version, loadAddress, initAddress, playAddress,
     songs, startSong, speed, flags,
     clock: (flags >> 2) & 3,        // 0 unknown, 1 PAL, 2 NTSC, 3 either
@@ -148,6 +160,7 @@ function playerAddress(tune, imageLength) {
  */
 export function sidToPrg(bytes, { song, safe = false } = {}) {
   const tune = parseSid(bytes);
+  if (tune.thirdSidAddress) throw new Error('Three-SID tunes are not supported.');
   const where = occupied(tune);
   if (where.from < 0x0200) throw new Error('This tune loads over the zero page and the stack, which the machine needs.');
   if (where.to > 0x10000) throw new Error('This tune runs past the top of the C64\u2019s memory.');
@@ -186,10 +199,12 @@ export function sidToPrg(bytes, { song, safe = false } = {}) {
   // Clock and chip keep the header's own bit positions. Bit 1 marks an RSID —
   // a file that says it needs a real C64 — and bit 0 is the view the player
   // opens in: a PSID may snoop the driver's writes to show all three voices,
-  // an RSID starts on the safe view and leaves that to a keypress.
-  put(14, (tune.flags & 0x3C) | (tune.format === 'RSID' ? 2 : 0) | (tune.format === 'PSID' && !safe ? 1 : 0));
+  // an RSID starts on the safe view and leaves that to a keypress. Two-chip
+  // tunes keep I/O visible in Safe view for both chips.
+  put(14, (tune.flags & 0x3C) | (tune.format === 'RSID' ? 2 : 0) | (tune.format === 'PSID' && !safe && !tune.secondSidAddress ? 1 : 0));
   put(15, where.to > UNDER_KERNAL ? BANK_NO_KERNAL : BANK_NORMAL);
   putWord(16, tune.clock === 2 ? CIA_NTSC : CIA_PAL);
+  putWord(114, tune.secondSidAddress);
   const text = (at, value) => {
     for (let i = 0; i < 32; i++) put(at + i, i < value.length ? screenCode(value[i]) : 0x20);
   };
@@ -202,8 +217,8 @@ export function sidToPrg(bytes, { song, safe = false } = {}) {
 
 /** The .prg this .sid becomes, named after the file it came from. */
 export function openSid(bytes, name, { song } = {}) {
-  const { data } = sidToPrg(bytes, { song });
-  return { data, name: `${String(name || 'tune').replace(/\.sid$/i, '')}.prg` };
+  const { data, tune } = sidToPrg(bytes, { song });
+  return { data, tune, name: `${String(name || 'tune').replace(/\.sid$/i, '')}.prg` };
 }
 
 export { PAYLOAD_STAGE, PARAM_SIZE };

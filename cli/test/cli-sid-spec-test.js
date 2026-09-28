@@ -12,19 +12,26 @@ import { assetPath, readAsset, missingNote } from '../../test/external-assets.js
 
 // A two-song sawtooth driver. Init records A (the zero-based song) and uses it
 // in the pitch; play records that it was called and makes two volume writes.
-function fixture() {
+function fixture(dual = false) {
   const init = [
     0x8D,0x41,0x03, 0x18,0x69,0x1C, 0x8D,0x01,0xD4,
     0xA9,0x45,0x8D,0x00,0xD4, 0xA9,0x00,0x8D,0x05,0xD4,
     0xA9,0xF0,0x8D,0x06,0xD4, 0xA9,0x21,0x8D,0x04,0xD4,
     0xA9,0x0F,0x8D,0x18,0xD4, 0x60,
   ];
+  if (dual) {
+    init.pop();
+    init.push(0xA9,0x38,0x8D,0x21,0xD4, 0xA9,0x45,0x8D,0x20,0xD4,
+      0xA9,0x00,0x8D,0x25,0xD4, 0xA9,0xF0,0x8D,0x26,0xD4,
+      0xA9,0x21,0x8D,0x24,0xD4, 0xA9,0x0F,0x8D,0x38,0xD4,0x60);
+  }
   const play = [0xEE,0x40,0x03, 0xA9,0,0x8D,0x18,0xD4, 0xEA,0xEA, 0xA9,15,0x8D,0x18,0xD4, 0x60];
   const bytes = Buffer.alloc(0x7E + init.length + play.length);
   bytes.write('PSID'); bytes.writeUInt16BE(2,4); bytes.writeUInt16BE(0x7C,6);
   bytes.writeUInt16BE(0x1000,10); bytes.writeUInt16BE(0x1000+init.length,12);
   bytes.writeUInt16BE(2,14); bytes.writeUInt16BE(2,16); bytes.write('CLI TEST',0x16);
   bytes.writeUInt16BE(0x24,0x76); bytes.writeUInt16LE(0x1000,0x7C);
+  if (dual) { bytes.writeUInt16BE(3,4); bytes[0x7A]=0x42; bytes[0x77]=0x64; }
   bytes.set(init,0x7E); bytes.set(play,0x7E+init.length);
   return bytes;
 }
@@ -59,8 +66,8 @@ try {
   const unsupported=path.join(tmp,'unsupported.sid');
   const basic=Buffer.from(bytes);basic.write('RSID');basic.writeUInt16BE(0x26,0x76);fs.writeFileSync(unsupported,basic);
   assert.match(invoke('sid2wav',unsupported).stderr,/BASIC RSID/,'BASIC RSID audio is explicitly refused');
-  const multi=Buffer.from(bytes);multi.writeUInt16BE(3,4);multi[0x7A]=0x42;fs.writeFileSync(unsupported,multi);
-  assert.match(invoke('sid2wav',unsupported).stderr,/multi-SID/,'multi-SID audio is explicitly refused');
+  const multi=Buffer.from(bytes);multi.writeUInt16BE(4,4);multi[0x7A]=0x42;multi[0x7B]=0x50;fs.writeFileSync(unsupported,multi);
+  assert.match(invoke('sid2wav',unsupported).stderr,/Three-SID/,'three-SID audio is explicitly refused');
 
   const missing=['kernal','basic','chargen'].find(key=>!assetPath(key));
   if(missing) console.log(`ok  - SID boot and WAV integration # SKIP ${missingNote(missing)}`);
@@ -85,6 +92,30 @@ try {
     assert.equal(rendered.model,'8580','audio model selection is preserved');
     let energy=0;for(let i=0;i<pcm.length;i+=2)energy+=pcm.readInt16LE(i)**2;
     assert.ok(energy/24000>10000,'the synthetic driver produces audible waveform energy');
+
+    const dual=fixture(true), dualInput=path.join(tmp,'dual.sid'), dualWav=path.join(tmp,'dual.wav');
+    fs.writeFileSync(dualInput,dual);
+    assert.equal(await sid2wav([dualInput,'-o',dualWav,'--seconds','0.5','--roms',path.dirname(assetPath('kernal'))]),0,'two-chip tune exports through the CLI');
+    const stereo=fs.readFileSync(dualWav);
+    assert.equal(stereo.readUInt16LE(22),2,'two-chip WAV declares two channels');
+    assert.equal(stereo.readUInt16LE(32),4,'stereo WAV block alignment is four bytes');
+    assert.equal(stereo.readUInt32LE(28),44100*4,'stereo WAV byte rate covers both channels');
+    assert.equal(stereo.length,44+22050*4,'stereo duration counts frames, not channel samples');
+    let leftEnergy=0,rightEnergy=0,different=false;
+    for(let i=44;i<stereo.length;i+=4) {
+      const l=stereo.readInt16LE(i),r=stereo.readInt16LE(i+2);
+      leftEnergy+=l*l;rightEnergy+=r*r;if(l!==r)different=true;
+    }
+    assert.ok(leftEnergy/22050>10000,'SID 1 is audible in left export channel');
+    assert.ok(rightEnergy/22050>10000,'SID 2 is audible in right export channel');
+    assert.ok(different,'export preserves independent chip output');
+    const dualMachine=new C64Machine();dualMachine.loadROMs(roms);
+    dualMachine.configureSecondSid({enabled:true,address:0xD420});
+    for(let i=0;i<200;i++)dualMachine.runFrame();
+    dualMachine.loadPRG(sidToPrg(dual).data);dualMachine.injectRun();
+    for(let i=0;i<50;i++)dualMachine.runFrame();
+    assert.equal(dualMachine.sid2.proxy.regs[1],0x38,'default two-SID player runs init with I/O visible');
+    assert.equal(dualMachine.sid2.proxy.regs[24],15,'default two-SID player drives SID 2 volume');
 
     const wav=path.join(tmp,'tune.wav');
     assert.equal(await sid2wav([input,'-o',wav,'--seconds','0.25','--sample-rate','44100','--roms',path.dirname(assetPath('kernal'))]),0,'SID renders to WAV through the command');

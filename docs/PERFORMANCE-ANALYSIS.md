@@ -40,6 +40,10 @@ Structurally, that breaks down as:
 - **SID synthesis runs off the main thread**, on the `AudioWorklet`; the main
   thread keeps only lightweight shadow oscillators for cycle-exact `$D41B` /
   `$D41C` readback. See the [machine orchestrator](MACHINE-ARCHITECTURE.md) §7.
+- **The optional second SID** allocates its voices and renderer only while
+  enabled. Its shadow shares the master cycle; its audio shares the worklet
+  event timeline. JS reuses FIR tables with a separate sample ring; WASM uses
+  an independent instance. Rendering two chips increases audio-thread work.
 - **The 1541 only adds cost while it is actively working**: a serial load, the
   spindle turning. Idle waits are skipped (see §2).
 

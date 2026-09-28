@@ -224,6 +224,14 @@ the [1541 drive](DRIVE-ARCHITECTURE.md) for the deeper drive mechanics.
 
 ## 7. SID audio
 
+An optional `sid2` owns its address, model, proxy and shadow voice trio.
+`configureSecondSid()` validates address conflicts before changing the machine.
+Both trios share the master cycle; bit 5 of packed ring writes identifies the
+chip and the upper 16 bits identify the second-chip configuration generation.
+SID 1 keeps its existing fields and default behavior. Disabled SID 2 allocates
+no shadow voices and runs no synthesis. See [SID](SID-ARCHITECTURE.md) for mixing,
+readback, engine synchronization and snapshot behavior.
+
 SID has a **split architecture** because audio runs in a separate AudioWorklet
 thread:
 

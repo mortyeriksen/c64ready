@@ -86,13 +86,17 @@ export function createOpenMedia(port) {
       // song selector, so which subtune plays is decided on the C64.
       if (mediaType === 'sid' && action !== 'save') {
         const tune = openSid(data, name);
-        load = { data: tune.data, type: 'prg', name: safeFilename(tune.name) };
+        load = { data: tune.data, type: 'prg', name: safeFilename(tune.name), tune: tune.tune };
       }
       signal?.throwIfAborted();
       const disk = validateMedia(load.data, load.type);
       const autorun = mediaType !== 'reu' && action !== 'mount' && (request.autorun ?? port.getAutorunEnabled());
       let message = 'Saved to Library';
       if (action !== 'save') {
+        if (load.tune && port.confirmSid && !(await port.confirmSid(load.tune))) {
+          return { message: 'SID playback cancelled.', saved: false, name, mediaType };
+        }
+        signal?.throwIfAborted();
         if (!port.isRunning() && !(await port.powerOn())) throw new Error('Load the required ROMs in Setup before opening media.');
         signal?.throwIfAborted();
         // Something else is very likely still running when media arrives out of
@@ -105,6 +109,7 @@ export function createOpenMedia(port) {
         if (reset && !['crt', 'reu'].includes(load.type) && port.reset && !port.reset()) {
           throw new Error('Could not reset the machine to load this.');
         }
+        if (['prg', 'd64', 'crt', 'tap'].includes(load.type)) port.configureSid?.(load.tune ?? null);
         if (load.type === 'd64') {
           await port.prepareDisk?.({ targetDrive, signal });
           signal?.throwIfAborted();

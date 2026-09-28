@@ -63,7 +63,8 @@ installs as an app. For a step-by-step walkthrough see the
 - **`.sid` tunes**: music plays on a player that runs on the C64 itself, with the
   tune's own driver on the real chip. The player has its own screen — title,
   author and year, the song and how long it has been playing, an oscilloscope,
-  and a view of all three voices. See
+  and a view of all three voices. Two-SID tunes have two stacked, half-height
+  scopes in Safe view. See
   [Playing a .sid tune](USER-GUIDE.md#playing-a-sid-tune).
 - **`.reu` expansion-RAM images**: load a RAM Expansion Unit's contents, and
   save them back out.
@@ -222,7 +223,10 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 ## Sound
 
 - **SID model**: switch between **6581** (original) and **8580** (later C64C).
-- **Three-voice SID** with filter and `$D418` digi playback (sampled sound).
+- **One or two three-voice SIDs**, each with its own 6581/8580 model, filter
+  and volume/digi playback. Select the second address in Options; two-SID tune
+  headers configure both chips automatically. Stereo separates the chips left
+  and right; mono mixes them equally.
 - **reSID engine**: Dag Lem's transistor-level reSID model (oscillators,
   envelopes, analog filter and DACs), verified against VICE. It runs compiled to
   WebAssembly by default, with a reSID JS alternative that sounds identical.
@@ -292,7 +296,7 @@ booted headless and tiled into one captioned sheet. Node 20.19 or newer,
 no dependencies; the [CLI guide](USER-GUIDE-CLI.md) walks every command.
 
 `sid2prg` wraps SID tunes with the same C64 music player as the browser UI.
-`sid2wav` renders a selected song as 16-bit mono WAV audio, with duration,
+`sid2wav` renders a selected song as 16-bit WAV audio (mono for one SID, stereo for two), with duration,
 sample-rate and SID-model options.
 
 ---

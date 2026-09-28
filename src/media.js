@@ -43,6 +43,7 @@ import { openT64 } from './media/choose-file.js';
 import { stateList, stateSave, stateLoad, stateDelete, stateRename, stateClear, stateExport, stateExportAll, stateImportFile } from './statelibrary.js';
 
 // ── Injected core dependencies (assigned by initMedia) ───────────────────────
+let configureSidTune, syncSidState, getSecondSidConfig;
 let setStatus, _powerOn, _hardReset, _createAndWireMachine, _setPaused, startLoop, resumeAudio, suspendAudio, resetSidWorklet, _syncPowerStateClass, _punchLogo, _syncToggleLabels, _stopBootHint, _queueAutoLoad, _basicReady, stopPauseDemo, cancelAutoLoad, resetFrameTiming, resyncSid, releaseAllLatched, applyLoadedVariants, getIs8580, getVicVariantPref, getAutorunEnabled, getTdeEnabled, setTdeEnabled, isPaused;
 
 // ── Media-domain state: media is the sole writer; main.js reads via import ────
@@ -518,7 +519,7 @@ async function _loadState(entry) {
 
   // 2) Apply saved chip variants before building the machine so it is wired
   //    with the right VIC/SID model.
-  applyLoadedVariants({ vicVariant: media.vicVariant, sidIs8580: media.sidIs8580 });
+  applyLoadedVariants({ vicVariant: media.vicVariant, sidIs8580: st.sid?.is8580 ?? media.sidIs8580, secondSid: st.sid2 ? { enabled: true, address: st.sid2.address, is8580: st.sid2.is8580, mix: st.sidMix ?? 'stereo' } : { enabled: false, mix: st.sidMix ?? 'stereo' } });
 
   // 3) Fresh machine (ROMs + media + variants), then overwrite with the state.
   resetSidWorklet();
@@ -526,6 +527,7 @@ async function _loadState(entry) {
   if (sidNode) sidNode.port.postMessage({ type: 'model', is8580: getIs8580() });
   try {
     machine.restoreState(st);
+    syncSidState();
   } catch (err) {
     console.error('restore failed:', err);
     setStatus(`Load state failed: ${err.message}`, 'error');
@@ -1084,6 +1086,8 @@ function _ejectCRT() {
 // machine if powered on; when powered off, only the UI label is updated
 // and the cart will be applied on the next power-on.
 function _applyCart(data) {
+  const second = getSecondSidConfig?.();
+  if (second?.enabled && second.address >= 0xDE00) throw new Error('Cartridge conflicts with the second SID expansion address.');
   _cacheCart(data);
   if (machine?.ready) {
     const info = machine.loadCartridge(data);
@@ -1697,6 +1701,12 @@ function _updateReuLed(now) {
 }
 
 function _setReuPower(on, { persist = true } = {}) {
+  const second = getSecondSidConfig?.();
+  if (on && second?.enabled && second.address >= 0xDF00) {
+    setStatus('RAM Expansion conflicts with the second SID in $DF00-$DFFF.', 'error');
+    _syncReuUI();
+    return;
+  }
   reuEnabled = !!on;
   if (reuEnabled) _expandPanelOf(REU_UI.deck);    // reveal the controls when fitting
   else            _collapsePanelOf(REU_UI.deck);  // deck is hidden when off
@@ -3207,7 +3217,7 @@ _dropZone.addEventListener('drop', async e => {
 // ── Dependency injection + deferred import-time restore ──────────────────────
 export function initMedia(deps) {
   ({
-    setStatus, _powerOn, _hardReset, _createAndWireMachine, _setPaused, startLoop, resumeAudio, suspendAudio, resetSidWorklet, _syncPowerStateClass, _punchLogo, _syncToggleLabels, _stopBootHint, _queueAutoLoad, _basicReady, stopPauseDemo, cancelAutoLoad, resetFrameTiming, resyncSid, releaseAllLatched, applyLoadedVariants, getIs8580, getVicVariantPref, getAutorunEnabled, getTdeEnabled, setTdeEnabled, isPaused,
+    configureSidTune, syncSidState, getSecondSidConfig, setStatus, _powerOn, _hardReset, _createAndWireMachine, _setPaused, startLoop, resumeAudio, suspendAudio, resetSidWorklet, _syncPowerStateClass, _punchLogo, _syncToggleLabels, _stopBootHint, _queueAutoLoad, _basicReady, stopPauseDemo, cancelAutoLoad, resetFrameTiming, resyncSid, releaseAllLatched, applyLoadedVariants, getIs8580, getVicVariantPref, getAutorunEnabled, getTdeEnabled, setTdeEnabled, isPaused,
   } = deps);
   // Deferred from import time: reads loader, which main.js creates AFTER this
   // module is first evaluated, so the restore must wait until deps are wired.
@@ -3230,6 +3240,16 @@ const _prepareD64 = createDiskCompatibilityPrompt({
 });
 
 export const openMedia = createOpenMedia({
+  confirmSid: tune => {
+    if (!tune.secondSidAddress) return true;
+    const current = getSecondSidConfig();
+    if (current.enabled && current.address === tune.secondSidAddress) return true;
+    const address = '$' + tune.secondSidAddress.toString(16).toUpperCase();
+    return confirmDialog(`This tune needs SID2 at ${address}. Turn it on and use this address?`, {
+      title: 'Two-SID tune', okLabel: 'ENABLE & PLAY',
+    });
+  },
+  configureSid: tune => configureSidTune(tune),
   isRunning: () => running,
   powerOn: () => _powerOn(),
   getAutorunEnabled: () => getAutorunEnabled(),

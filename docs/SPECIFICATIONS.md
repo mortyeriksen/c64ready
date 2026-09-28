@@ -90,6 +90,10 @@ this project:
 
 ### SID 6581 / 8580 audio
 
+- **HVSC SID file format**: version-gated second-chip addresses and model
+  flags, including the invalid-address rule and unknown-model inheritance.
+  <https://www.hvsc.c64.org/download/C64Music/DOCUMENTS/SID_file_format.txt>
+
 - **MOS Technology 6581 Sound Interface Device**: original SID data sheet
   covering the register map, oscillator, envelope, filter, and external
   interface.
