@@ -29,8 +29,7 @@ node test/all-test.js --jobs=4
 node test/all-test.js --jobs=1   # force sequential (isolated failure debugging)
 
 # A single test file (fastest iteration during development)
-node test/sid/sid-spec-test.js
-node test/vic2/vic2-sprite-render-spec-test.js
+node test/<folder>/<name>-spec-test.js
 ```
 
 `all-test.js` spawns each spec file as its own Node subprocess, so failures are isolated. It prints `PASS / SKIP / FAIL (ms)` per file plus an overall summary, and on failure it echoes the last 15 lines of the offending file. The exit code is non-zero if any file fails; skips never fail the run.
@@ -46,36 +45,10 @@ A skipping test exits 0, which on its own is indistinguishable from a pass, so i
 
 Both lists print the reason (from `missingNote(key)`, which names the manifest entry and its environment variable), so a green run still shows exactly which fixtures went missing. A test that skips without a directive is reported as a plain `PASS`: that is the bug the directive exists to prevent.
 
-`node test/vic2/vic2-left-border-csel-sample-spec-test.js` checks PAL left-border
-selection for CSEL writes around the comparator boundary, including sprite
-masking and foreground data beneath the border in live and deferred rendering.
-
-`node test/vibes-render-cache-test.js` checks shadow invalidation for moving
-geometry and keycap vertices, reflection cadence and pooled meteor lifetimes.
-
-`node test/vibes-screen-light-spec-test.js` checks linear-light framebuffer
-sampling, CRT spill colour and power gating, refresh-rate-independent smoothing,
-and scale-independent Synthwave illumination. It builds the light rigs without a
-renderer; shader compilation and the final scene appearance need browser checks.
-
-`node test/cli/cli-sid-spec-test.js` checks SID conversion, song selection, batch
-errors and overwrite protection. With the external C64 ROMs present, it boots a
-synthetic two-song driver, verifies Safe-mode register writes, and checks WAV
-headers, exact duration and audible output. It runs in both test suites.
-
-`node test/cli/cli-nbz-spec-test.js` checks `nbz2g64`: sniffing, `info`, the
-conversion report, `dir` on the result, and a real c64pp dump when present.
-
-`node test/sid/sid-second-spec-test.js` checks second-chip addressing, primary
-mirrors, banking, bus decay, independent oscillator readback, snapshots,
-reset semantics, SID header metadata, and stereo/mono channel isolation in
-both audio engines. `test/cli/cli-sid-spec-test.js` also boots a synthetic
-two-chip driver and checks both channels of its stereo WAV export.
-
 ## Assembly64 integration checks
 
-The default suite includes `assembly64-test.js` and `media-browser-test.js`.
-They use generated media and mocked API responses, covering query validation,
+The default suite includes the Assembly64 and media-browser tests. They use
+generated media and mocked API responses, covering query validation,
 normalization, cancellation, pagination, request limits, local persistence,
 media validation and dispatch, source metadata, progress and safe ZIP extraction.
 Run just these tests with `npm run test:assembly64`.
@@ -97,36 +70,34 @@ from the service worker cache. Browser capture output goes in
 
 ## Test categories
 
-VIC-II specs and their `_vic2-*` helpers live in `test/vic2/`, the SID ones
-(with `sid-test-loader.js` and the two `.prg` fixtures and their builders) in
-`test/sid/`, the CPU ones in `test/cpu/`, the CIA ones in `test/cia/` and the
-1541, IEC, D64, G64 and NBZ ones (with the `_g64-` and `_nbz-` fixtures) in
-`test/drive/`, the datasette, tape, turbo, WAV, DMP and T64 ones (with
-`_tape-fixtures.js`) in `test/tape/`, the interrupt ones in `test/irq/`, and the CLI's in `test/cli/` (its own runner,
-`test/cli/all-test.js`, is what `npm test` in `cli/` runs); every other file
-below sits in `test/` itself.
+The VIC-II tests live in `test/vic2/`, the SID ones in `test/sid/`, the CPU
+ones in `test/cpu/`, the CIA ones in `test/cia/`, the 1541, IEC, D64, G64 and
+NBZ ones in `test/drive/`, the datasette, tape, turbo, WAV, DMP and T64 ones in
+`test/tape/`, the interrupt ones in `test/irq/`, and the CLI's in `test/cli/`
+(its own runner, `test/cli/all-test.js`, is what `npm test` in `cli/` runs);
+everything else sits in `test/` itself.
 
-| Category | Representative files | What's locked in |
-| --- | --- | --- |
-| **CPU** | `cpu-test.js`, `cpu-page-cross-spec-test.js`, `klaus-test.js`, `illegal-opcode-cycle-audit-test.js`, `legal-opcode-cycle-audit-test.js`, `cycle-audit-test.js`, `branch-cycle-accounting-spec-test.js`, `rti-cycle-accounting-spec-test.js` | Every opcode and cycle count; legal and illegal cycle audits; Klaus Dormann's exhaustive 6502 functional test (binary resolves via `test/external-assets.json`, skips if absent; the suite's only external-asset test). |
-| **VIC-II core / cycle timing** | `clock-cycle-spec-test.js`, `master-cycle-spec-test.js`, `ba-aec-matrix-spec-test.js`, `vic2-sprite-ba-cycles-test.js`, `bus-kind-audit-test.js` | Master-cycle ordering, BA/AEC handshake, bad-line and sprite DMA steals, per-cycle bus-kind accounting. |
-| **VIC-II raster + IRQ** | `vic2-raster-irq-edge-trigger-spec-test.js`, `vic2-raster-irq-chain-spec-test.js`, `irq-pipeline-spec-test.js`, `irq-ba-stall-spec-test.js` | Bauer §3.12 mid-line $D011/$D012 fires, edge-triggered raster IRQ, IRQ pipeline and entry under BA/RDY. |
-| **VIC-II stable raster** | `irq-d016-cycle-alignment-spec-test.js`, `stable-irq-sprite-ba-drift-spec-test.js`, `stable-raster-jitter-absorb-spec-test.js`, `ba-contour-3ad-spec-test.js`, `vic2-raster-time-spinner-spec-test.js` | Double-IRQ jitter absorption, stable-raster realignment, BA-contour timing, raster-time spinner and dejitter. |
-| **VIC-II rendering** | `vic2-gaccess-shifter-spec-test.js`, `vic2-pixel-mode-rendering-spec-test.js`, `vic2-mode-flip-spec-test.js`, `vic2-midline-mode-flip-rendering-spec-test.js`, `vic2-csel-veto-window-spec-test.js`, `vic2-topborder-rendering-spec-test.js`, `vic2-color-bar-pixel-spec-test.js` | Pixel-accurate text and bitmap modes, g-access shifter, border-veto windows, mid-line mode flips, colour bars. |
-| **VIC-II sprites** | `vic2-sprite-*` (about 50 specs) | Sprite crunch (cycle-15 latch + cycle-58 disable), multiplexer, BA, X/Y wrap, multicolor priority, mid-line data row, sub-pixel phase, idle-bus leak. |
-| **VIC-II bad-line / FLI / FLD** | `vic2-badline-*` (12 specs), `vic2-fli-badline-every-line-spec-test.js`, `vic2-fli-full-band-spec-test.js`, `vic2-fld-fli-linecrunch-spec-test.js`, `vic2-badline-goodline-integration-test.js` | Full-line bad-line edge detection, good-line/bad-line transitions, FLI bad-line-every-line, FLD and linecrunch abort, RC-reset timing. |
-| **SID synthesis** | `sid-spec-test.js` | Waveforms, ADSR, ADSR-bug timing, sync, ring mod, test bit, filter mode and cutoff curve, resonance Q, combined waveforms (non-flat byte spread per period), 6581 vs 8580 dim, NOISE+combined LFSR clobbering. |
-| **SID digi / readback / shadow / paddle** | `sid-digi-spec-test.js`, `sid-shadow-spec-test.js`, `sid-paddle-spec-test.js`, `osc3-cycle-test.js` | `$D418` DC step, 1-bit PWM digi that survives voices playing underneath (correlation > 0.7), cycle-exact `$D41B`/`$D41C` against a synchronous reference, POTX/POTY 512-cycle sample-and-hold, cycle-sync-on-first-event hook. |
-| **Audio lifecycle / recording** | `audio-lifecycle-spec-test.js`, `recorder-audio-bridge-spec-test.js`, `recording-support-spec-test.js`, `sid-worklet-backlog-spec-test.js` | Foreground/background mute policy; recorder audio uses an independent media clock and tears its bridge down cleanly; browser support is capability-detected; the event backlog is bounded so audio lateness cannot accumulate. |
-| **CIA / 6526** | `cia-timer-spec-test.js`, `cia-timerb-modes-spec-test.js`, `cia-port-arbitration-spec-test.js`, `cia-force-load-edge-spec-test.js`, `cia-sdr-spec-test.js`, `cia2-vic-bank-spec-test.js` | Timer A/B modes, force-load edge, port arbitration, TOD, IRQ/NMI, SDR stub semantics, VIC bank switch via CIA2 PA. |
-| **Input & UI logic** | `control-port-paddle-spec-test.js`, `control-port-mouse1351-spec-test.js`, `control-port-neos-spec-test.js`, `lightpen-spec-test.js`, `rom-cache-spec-test.js` | Paddle byte builder, 1351 button mapping and POT step of 2 per mouse unit (the real driver arithmetic recovers the delta), NEOS strobe/nibble protocol with right button on POTX and idle reset of the sequencer, light-pen latch, ROM-cache localStorage round trip. |
-| **Shared bus / open-bus** | `open-bus-de00-spec-test.js`, `open-bus-color-ram-spec-test.js`, `open-bus-cpu-internal-spec-test.js`, `open-bus-port-zero-one-spec-test.js`, `open-bus-machine-integration-spec-test.js`, `vic2-sprite-idle-bus-leak-spec-test.js` | Open IO1/IO2 and Color-RAM upper-nybble latch reads, `$00/$01` quirk, CPU-internal-cycle bus drive, sprite idle-fetch leak. |
-| **1541 / IEC / D64 / GCR** | `drive-test.js`, `drive-rom-test.js`, `iec-handshake-test.js`, `iec-2bit-transfer-spec-test.js`, `iec-edge-latency-spec-test.js`, `drive-cycle-ratio-spec-test.js`, `fastloader-test.js`, `gcr-readpath-format-spec-test.js`, `gcr-writeback-spec-test.js`, `drive-save-spec-test.js`, `g64-format-spec-test.js`, `g64-drive-spec-test.js`, `g64-read-circuit-spec-test.js`, `nbz-format-spec-test.js`, `nosdos-bootstrap-test.js`, `kernal-load-wildcard-spec-test.js`, `kernal-load-trap-address-spec-test.js`, `drive-soe-gating-spec-test.js` | 1541 boot, IEC wired-AND and edge-latency model, true drive-clock ratio (including save/restore phase continuity), 2-bit transfer, fast loaders, GCR read path, GCR write-back round trip with write head and write-protect polarity, end-to-end `SAVE` through the real DOS (drives 8 and 9), G64 images (header and table checks, half-track streams, recorded bit rate, DOS LOAD and SAVE from raw tracks, the read circuit: density mismatch, weak-bit noise, per-byte speed maps), nibbler dumps to G64 (LZ stream, NIB table, track cycle and alignment, killer, unformatted and fat tracks, sync reduction, real c64pp dumps when present), SOE gating, no-DOS bootstrap, wildcard LOAD, and where a trap-served `$FFD5` LOAD stores the file (secondary address 0 vs. 1, and VERIFY storing nothing). |
-| **Cartridges** | `crt-test.js`, `cart-memory-test.js`, `generic-cart-test.js`, `action-replay-cart-test.js`, `final3-cart-test.js`, `magicdesk-cart-test.js`, `easyflash-test.js` | Device-registry loading; Generic / Action Replay / Final Cartridge III / Magic Desk / EasyFlash banking; Ultimax mapping; cartridge I/O, RAM, RESET/FREEZE, and NMI behaviour. |
-| **RAM Expansion Unit** | `reu-registers-spec-test.js`, `reu-transfer-spec-test.js`, `reu-dma-timing-spec-test.js` | 8726 REC register map and readback, stash/fetch/swap/verify transfers, DMA bus arbitration (CPU halted, VIC DMA takes precedence) and the documented transfer rates. |
-| **Datasette** | `datasette-test.js`, `tape-play-spec-test.js`, `tape-flag-cia-spec-test.js`, `tape-seek-spec-test.js`, `kernal-tape-load-test.js`, `kernal-tape-save-test.js`, `datasette-record-test.js`, `turbo-tape-record-test.js`, `tape-record-audio-spec-test.js`, `wav-decode-spec-test.js`, `wav-tape-*-spec-test.js`, `dmp-tape-spec-test.js` | `.tap` v0/v1/v2 playback, FLAG pulses into CIA1, seeking to a file's lead-in, KERNAL tape LOAD and SAVE, turbo-tape record and load round trip at cycle resolution, `.wav` cassette import (level tracking, edge polarity, sample rates, repair of damaged blocks) and export, DC2N `.dmp` import. |
-| **Memory / PLA / banking** | `pla-test.js`, `pla-memory-spec-test.js`, `pla-memory-config-spec-test.js`, `memory-reset-spec-test.js`, `vic2-color-ram-spec-test.js` | PLA routing through the 6510 port, all 32 banking configurations, colour RAM, reset state. |
-| **Integration / demo motifs** | `vic2-nine-*` (synthetic specs), `vic2-nine-demo-deps-spec-test.js`, `vic2-vertical-hyperscreen-spec-test.js`, `frame-trace-irq-state-spec-test.js`, `vic2-badline-late-caccess-line-local-spec-test.js`, `vic2-sprite-bg-collision-midline-d011-spec-test.js`, `vic2-openborder-idle-mcm-snapshot-spec-test.js` | Synthetic re-creations of demo tricks: Nine's multiplexer chain and startup collision probe, FPP's late-bad-line matrix rule, The Hat's open-border MCM rule, hyperscreen motifs. No demo binaries. |
+| Category | What's locked in |
+| --- | --- |
+| **CPU** | Every opcode and cycle count; legal and illegal cycle audits; Klaus Dormann's exhaustive 6502 functional test (binary resolves via `test/external-assets.json`, skips if absent; the suite's only external-asset test). |
+| **VIC-II core / cycle timing** | Master-cycle ordering, BA/AEC handshake, bad-line and sprite DMA steals, per-cycle bus-kind accounting. |
+| **VIC-II raster + IRQ** | Bauer §3.12 mid-line $D011/$D012 fires, edge-triggered raster IRQ, IRQ pipeline and entry under BA/RDY. |
+| **VIC-II stable raster** | Double-IRQ jitter absorption, stable-raster realignment, BA-contour timing, raster-time spinner and dejitter. |
+| **VIC-II rendering** | Pixel-accurate text and bitmap modes, g-access shifter, border-veto windows, mid-line mode flips, colour bars. |
+| **VIC-II sprites** | Sprite crunch (cycle-15 latch + cycle-58 disable), multiplexer, BA, X/Y wrap, multicolor priority, mid-line data row, sub-pixel phase, idle-bus leak. |
+| **VIC-II bad-line / FLI / FLD** | Full-line bad-line edge detection, good-line/bad-line transitions, FLI bad-line-every-line, FLD and linecrunch abort, RC-reset timing. |
+| **SID synthesis** | Waveforms, ADSR, ADSR-bug timing, sync, ring mod, test bit, filter mode and cutoff curve, resonance Q, combined waveforms (non-flat byte spread per period), 6581 vs 8580 dim, NOISE+combined LFSR clobbering. |
+| **SID digi / readback / shadow / paddle** | `$D418` DC step, 1-bit PWM digi that survives voices playing underneath (correlation > 0.7), cycle-exact `$D41B`/`$D41C` against a synchronous reference, POTX/POTY 512-cycle sample-and-hold, cycle-sync-on-first-event hook. |
+| **Audio lifecycle / recording** | Foreground/background mute policy; recorder audio uses an independent media clock and tears its bridge down cleanly; browser support is capability-detected; the event backlog is bounded so audio lateness cannot accumulate. |
+| **CIA / 6526** | Timer A/B modes, force-load edge, port arbitration, TOD, IRQ/NMI, SDR stub semantics, VIC bank switch via CIA2 PA. |
+| **Input & UI logic** | Paddle byte builder, 1351 button mapping and POT step of 2 per mouse unit (the real driver arithmetic recovers the delta), NEOS strobe/nibble protocol with right button on POTX and idle reset of the sequencer, light-pen latch, ROM-cache localStorage round trip. |
+| **Shared bus / open-bus** | Open IO1/IO2 and Color-RAM upper-nybble latch reads, `$00/$01` quirk, CPU-internal-cycle bus drive, sprite idle-fetch leak. |
+| **1541 / IEC / D64 / GCR** | 1541 boot, IEC wired-AND and edge-latency model, true drive-clock ratio (including save/restore phase continuity), 2-bit transfer, fast loaders, GCR read path, GCR write-back round trip with write head and write-protect polarity, end-to-end `SAVE` through the real DOS (drives 8 and 9), G64 images (header and table checks, half-track streams, recorded bit rate, DOS LOAD and SAVE from raw tracks, the read circuit: density mismatch, weak-bit noise, per-byte speed maps), nibbler dumps to G64 (LZ stream, NIB table, track cycle and alignment, killer, unformatted and fat tracks, sync reduction, real c64pp dumps when present), SOE gating, no-DOS bootstrap, wildcard LOAD, and where a trap-served `$FFD5` LOAD stores the file (secondary address 0 vs. 1, and VERIFY storing nothing). |
+| **Cartridges** | Device-registry loading; Generic / Action Replay / Final Cartridge III / Magic Desk / EasyFlash banking; Ultimax mapping; cartridge I/O, RAM, RESET/FREEZE, and NMI behaviour. |
+| **RAM Expansion Unit** | 8726 REC register map and readback, stash/fetch/swap/verify transfers, DMA bus arbitration (CPU halted, VIC DMA takes precedence) and the documented transfer rates. |
+| **Datasette** | `.tap` v0/v1/v2 playback, FLAG pulses into CIA1, seeking to a file's lead-in, KERNAL tape LOAD and SAVE, turbo-tape record and load round trip at cycle resolution, `.wav` cassette import (level tracking, edge polarity, sample rates, repair of damaged blocks) and export, DC2N `.dmp` import. |
+| **Memory / PLA / banking** | PLA routing through the 6510 port, all 32 banking configurations, colour RAM, reset state. |
+| **Integration / demo motifs** | Synthetic re-creations of demo tricks: Nine's multiplexer chain and startup collision probe, FPP's late-bad-line matrix rule, The Hat's open-border MCM rule, hyperscreen motifs. No demo binaries. |
 
 ## Diagnostic / trace tools (not gated)
 
@@ -152,8 +123,6 @@ node test/tape/f32-to-wav.js /path/to/audio.f32 /tmp/out.wav
 # Exercise the worklet's power-cycle / reset / cycle-sync paths
 node test/sid/sid-power-cycle-trace.js
 
-# Run the cycle-exact $D41B OSC3 demo PRG headlessly + verify output variety
-node test/sid/osc3-cycle-test.js
 ```
 
 ## Cross-checking against VICE (reference oracle)
@@ -283,26 +252,18 @@ Read the number in two parts:
   tooltips and splash run only in a browser, and the suite does not drive one;
   the screenshot and demo tools cover them by hand. Two entries in that list
   are artefacts: `sid-filter.js` and `sid-worklet.js` are exercised, but
-  through `sid-test-loader.js`, which evaluates them in a `vm` context, so V8
-  credits the evaluated script rather than the file.
+  through a loader that evaluates them in a `vm` context, so V8 credits the
+  evaluated script rather than the file.
 
 ## Shared fixtures
 
-Six underscore-prefixed files hold what several spec files build the same way,
-each in its subsystem's folder: `_vic2-helpers.js` (VIC construction,
-render-segment and master-cycle harnesses), `_vic2-equivalence.js` (a
-full-frame render with the standard mid-line write schedule and a
-byte-for-byte framebuffer compare, for the batch-render, capture-dedup and
-sprite-idle-skip equivalence tests), `_tape-fixtures.js` (a Turbo Tape 64 file
-as the format writes it, TAP byte and pulse conversions), `_g64-fixtures.js`
-(G64 images built from the format layout, with GCR revolutions synthesised
-from a D64), `_nbz-fixtures.js` (NIB dumps and their LZ77 stream, built from
-the layouts) and `_mini-dom.js` (a stand-in document for the side-panel, VIBES-button and
-Escape-key tests: elements, classes, a small selector engine, events with
-bubbling, innerHTML both ways, rects the test assigns, and the browser globals
-those modules reach for). The stub does no layout and does not pretend to be a
-browser; what it does not model, the tests do not assert on.
-They are not registered as tests.
+Underscore-prefixed files in each subsystem's folder hold what several tests
+build the same way: VIC-II construction and render harnesses and a full-frame
+equivalence compare, tape and turbo fixtures, G64 and NIB images built from the
+format layouts, and a small stand-in DOM for the UI tests (elements, classes, a
+selector engine, events, rects the test assigns). The DOM stub does no layout
+and does not pretend to be a browser; what it does not model, the tests do not
+assert on. None of them are registered as tests.
 
 ## PRG-building helpers
 
@@ -367,7 +328,7 @@ c64Vic.batchRender(true|false)  // _fixupColumns fast path: re-render ONLY the
                                 // ($D021-$D024) lookahead window changed, instead
                                 // of re-rendering the whole line twice. Proven
                                 // pixel-identical (orbit fb hash + spec suite +
-                                // vic2-fixup-batch-equivalence-spec-test); biggest
+                                // the fixup-batch equivalence spec); biggest
                                 // win on heavy mid-line-write demos like Orbit
                                 // Untold (~54→65 fps). Flip OFF to A/B if a render
                                 // regression is ever suspected.
