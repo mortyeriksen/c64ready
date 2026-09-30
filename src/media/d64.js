@@ -108,6 +108,7 @@ function petName(bytes, start, len) {
 // Type 5 is a 1581 partition: a span of blocks with a directory entry, not a
 // file. 6 and 7 are nothing on either DOS.
 const FILE_TYPES = ['DEL','SEQ','PRG','USR','REL','CBM','???','???'];
+export const TYPE_SEQ = 1, TYPE_PRG = 2, TYPE_USR = 3;
 const TYPE_CBM = 5;
 
 // ── CBM DOS name matching ────────────────────────────────────────────────────
@@ -408,7 +409,7 @@ export class D64 {
    * Point a directory slot at a file. Reuses the first free slot in the chain
    * and extends the chain with a fresh directory-track sector when all are taken.
    */
-  _addDirEntry(name, track, sector, blocks) {
+  _addDirEntry(name, track, sector, blocks, typeCode = TYPE_PRG) {
     const nm = String(name).slice(0, 16);
     const { dirTrack } = this.layout;
     let [dt, ds] = this.layout.dirStart;
@@ -418,7 +419,7 @@ export class D64 {
       for (let e = 0; e < 8; e++) {
         const b = e * 32;
         if (!(sec[b + 2] === 0 && sec[b + 3] === 0 && sec[b + 5] === 0)) continue;
-        sec[b + 2] = 0x82;                       // closed PRG
+        sec[b + 2] = 0x80 | typeCode;            // closed file of the given type
         sec[b + 3] = track; sec[b + 4] = sector;
         for (let i = 0; i < 16; i++) sec[b + 5 + i] = 0xA0;
         for (let i = 0; i < nm.length; i++) sec[b + 5 + i] = nm.charCodeAt(i) & 0xFF;
@@ -453,7 +454,18 @@ export class D64 {
   writePRG(name, bytes) {
     const data = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
     if (data.length < 2) return 0;
-    const chain = this._allocateBlocks(Math.ceil(data.length / 254));
+    return this.writeFile(name, data, TYPE_PRG);
+  }
+
+  /**
+   * Write any bytes as a closed file of the given type (TYPE_SEQ, TYPE_PRG,
+   * TYPE_USR), the way the DOS closes a write channel. Returns the block
+   * count, or 0 if the disk or its directory is full. An empty file still
+   * takes one block, as on the drive.
+   */
+  writeFile(name, bytes, typeCode = TYPE_PRG) {
+    const data = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    const chain = this._allocateBlocks(Math.max(1, Math.ceil(data.length / 254)));
     if (!chain) return 0;
 
     for (let i = 0; i < chain.length; i++) {
@@ -464,7 +476,7 @@ export class D64 {
       else { sec[0] = 0; sec[1] = chunk.length + 1; }   // last byte index, per _readChain
       this.writeSector(chain[i][0], chain[i][1], sec);
     }
-    if (!this._addDirEntry(name, chain[0][0], chain[0][1], chain.length)) {
+    if (!this._addDirEntry(name, chain[0][0], chain[0][1], chain.length, typeCode)) {
       // Directory full — the directory track has no sector left for another
       // eight entries. The chain is allocated and written but now unreachable,
       // so give the blocks back and leave the disk as it was. Their contents
@@ -520,11 +532,59 @@ export class D64 {
    * @returns {Uint8Array|null}
    */
   loadFile(name) {
+    const entry = this.findEntry(name);
+    return entry ? this.readEntry(entry) : null;
+  }
+
+  /** The directory entry a name resolves to, by the same rules as loadFile
+   *  (scratched entries never match), or null. */
+  findEntry(name) {
     const pattern = dosPattern(name);
-    // Scratched/DEL entries aren't matched by LOAD.
-    const entry = this.entries.find(e => !e.deleted && matchDirName(e.name, pattern));
+    return this.entries.find(e => !e.deleted && matchDirName(e.name, pattern)) || null;
+  }
+
+  /** An entry's bytes; null for a partition, whose blocks are not a chain. */
+  readEntry(entry) {
     if (!entry || entry.startTrack === 0 || entry.typeCode === TYPE_CBM) return null;
     return this._readChain(entry.startTrack, entry.startSector);
+  }
+
+  /**
+   * Give the first file matching `oldName` the name `newName`, as the DOS
+   * `R0:new=old` command does. Returns false when nothing matches.
+   */
+  renameFile(oldName, newName) {
+    const pattern = dosPattern(oldName);
+    const nm = String(newName).slice(0, 16);
+    let [dt, ds] = this.layout.dirStart;
+    let guard = 0;
+    while (dt !== 0 && guard++ < 100) {
+      const sec = this._sec(dt, ds);
+      for (let e = 0; e < 8; e++) {
+        const b = e * 32;
+        if ((sec[b + 2] & 0x07) === 0 || !matchDirName(petName(sec, b + 5, 16), pattern)) continue;
+        for (let i = 0; i < 16; i++) sec[b + 5 + i] = 0xA0;
+        for (let i = 0; i < nm.length; i++) sec[b + 5 + i] = nm.charCodeAt(i) & 0xFF;
+        this._parse();
+        this.dirty = true;
+        return true;
+      }
+      dt = sec[0]; ds = sec[1];
+    }
+    return false;
+  }
+
+  /**
+   * Format the disk in place, as the DOS `N0:name,id` command does: a blank
+   * image of this disk's own kind replaces the contents, the error table (if
+   * any) reads clean, and the image object stays the one callers hold.
+   */
+  format(name, id = this.diskId) {
+    const fresh = createBlankDisk(this.kind, name, id);
+    this.img.set(fresh.img, 0);
+    if (this._errorBase) this.img.fill(1, this._errorBase);
+    this._parse();
+    this.dirty = true;
   }
 
   /**

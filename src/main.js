@@ -36,7 +36,7 @@ import {
   initMedia, _onCRTLoaded, _onTapLoaded, _syncCartridgeControls, _syncDrive9TdeBtn, _applyDrive9Tde,
   _syncTapeButtons, _applyReu, reuEnabled,
   _flashDrive9Led, drive9LedActive, updateMediaIndicators, downloadSnapshot, rearmPrgTdeOffer,
-  currentD64, currentD64Drive9, drive9Enabled, drive9TdeEnabled,
+  currentD64, currentD64Drive9, noteTrapDiskWrite, drive9Enabled, drive9TdeEnabled,
   _cachedCartData, _cachedTapData, _cachedTapName, _cachedTapProtected, _cacheTapeFromDeck,
   _cachedTapDeck, _restoreDeck,
 } from './media.js';
@@ -1656,6 +1656,7 @@ function _createAndWireMachine({ keepKey = true } = {}) {
     driveSounds && driveSounds.simulateLoad();
     if (dev === 9) _flashDrive9Led();
   };
+  machine.onTrapDiskWrite = noteTrapDiskWrite;
   // Re-install the NEOS-mouse CIA1 hook on the freshly constructed machine.
   installNeosHook();
   // Re-apply persisted VIC/SID variants and resync the toggle labels.

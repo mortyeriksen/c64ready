@@ -279,6 +279,14 @@ stores and export format remain compatible with older entries. Library storage
 lives in `src/media/library.js`; tape conversion, inspection, repair and the
 WAV import worker live in `src/media/`.
 
+**Virtual drive** (`src/virtual-drive.js`): with TDE *off*, the KERNAL's serial
+primitives (TALK, LISTEN, SECOND, TKSA, CIOUT, ACPTR, UNTALK, UNLISTEN at
+`$ED09` to `$EE13`) are trapped for device 8, and for device 9 in trap mode,
+and answered by a DOS over the mounted image: files open, read, write and
+close, the directory reads as a channel, channel 15 takes commands and
+reports the status. `onTrapDiskWrite` tells the app when the image changed.
+A stock KERNAL is required; with TDE on, the real drive keeps the bus.
+
 **KERNAL load trap** (`_trapLoad`): with TDE *off*, when the CPU reaches the
 KERNAL LOAD entry `$FFD5` with device 8, or the routine behind the ILOAD
 vector at `$F4A5` (loaders that save the vector jump there directly), the
@@ -362,7 +370,7 @@ holds a `mem` back-reference.
   only place that computes it; the drive sees the reflected bus, not its own
   output.
 - **The load trap only runs with TDE off**, at `$FFD5` or `$F4A5` for device
-  8; with TDE on the real drive handles loading. A mounted D81 turns TDE off
+  8, and the serial traps likewise; with TDE on the real drive handles loading. A mounted D81 turns TDE off
   for its drive, since the 1541 holds no disk it can read.
 - **SID needs `SharedArrayBuffer`** (COOP/COEP): the constructor throws without
   it. Voice-3 readback comes from the main-thread shadow voices, not the worklet.

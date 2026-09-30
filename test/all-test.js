@@ -374,6 +374,8 @@ const TESTS = [
   'test/drive/d64-error-table-dos-spec-test.js',
   'test/drive/d81-format-spec-test.js',
   'test/drive/d81-trap-load-spec-test.js',
+  'test/drive/virtual-drive-spec-test.js',
+  'test/drive/dos-channel-spec-test.js',
   'test/drive/g64-format-spec-test.js',
   'test/drive/g64-drive-spec-test.js',
   'test/drive/g64-read-circuit-spec-test.js',

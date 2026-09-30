@@ -25,9 +25,10 @@ The version you are running is shown at the bottom of the About dialog.
   click a program to load it. A 1541 cannot read a 1581 disk, so the emulator
   serves it directly and turns True Drive Emulation off for that drive.
   FORMAT, export, the Library and Assembly64 handle it like a `.d64`.
-- **More disk loaders work with TDE off.** A program that calls the KERNAL's
-  LOAD routine through its vector, as some 1581 releases do, now loads from
-  the image instead of talking to an empty drive.
+- **Disk I/O with TDE off.** A built-in drive now answers the KERNAL for
+  drives 8 and 9: programs open and read files, list the directory, use the
+  command channel and `SAVE`, on a `.d64` or a `.d81`, without the 1541
+  ROM. Loaders that call the LOAD routine through its vector work too.
 - **Shorter tooltips** on the controls.
 - **CRT looks redrawn.** Scanlines sit on the C64's own raster lines and the
   phosphor mask on your screen's pixels, so no more ripple or banding at any

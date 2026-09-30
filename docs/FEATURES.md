@@ -61,7 +61,7 @@ installs as an app. For a step-by-step walkthrough see the
 - **`.d81` disk images**: 1581 disks, 80 tracks and 3160 blocks, with
   directory listing, wildcard loading and click-to-load. A 1541 cannot read
   them, so the emulator serves the disk itself: inserting one turns TDE off
-  for that drive, and programs cannot `SAVE` to it.
+  for that drive.
 - **`.crt` cartridges**: the supported families are listed under
   **Cartridges & expansions** below.
 - **`.tap` tapes**: datasette images (v0 / v1 / v2), played like real hardware.
@@ -153,6 +153,11 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   [Directory zoom](USER-GUIDE.md#directory-zoom)).
 - **True Drive Emulation (TDE)**, on by default: a real emulated 1541 (its own
   CPU + DOS) for fastloaders, cracked intros, demos, and copy-protected disks.
+- **Disk I/O with TDE off**: a built-in drive answers the KERNAL's file and
+  command calls, so programs open, read and write files, list the directory,
+  read the status and use block commands on the mounted image, `.d81`
+  included, without the 1541 ROM. Loaders that drive the hardware themselves
+  still need TDE on.
 - **Fast loading**: with TDE off, an instant built-in shortcut load for plain
   games. Loading a `.prg` with TDE on offers to switch it off, since nothing on
   that disk needs the real drive.

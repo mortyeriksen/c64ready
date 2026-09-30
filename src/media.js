@@ -1489,6 +1489,16 @@ function _tickDiskWriteState(live) {
   }
 }
 
+// A trap-served drive wrote to its image (a SAVE, scratch, format or block
+// write through the virtual DOS): the listing and the Library follow at once,
+// since no head write is pending to wait for.
+export function noteTrapDiskWrite(dev) {
+  const disk = dev === 9 ? currentD64Drive9 : currentD64;
+  _refreshDiskDirectory(disk, dev === 9 ? DRIVE9_UI : DRIVE8_UI);
+  _persistDirtyDisk(disk);
+  _syncWriteButtons();
+}
+
 // Collapse/expand the directory listing inside a drive's dropzone. Shared by
 // both drives — each remembers its own state via ui.dirExpanded.
 function _wireDirToggle(ui) {

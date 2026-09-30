@@ -448,6 +448,33 @@ output is an ordinary G64 for `G64` and the drive.
 
 ---
 
+### The virtual drive (`src/virtual-drive.js`)
+
+With true drive emulation off, the trap-served drive is a `VirtualDrive`: a
+DOS over the mounted sector image, answering the KERNAL's serial primitives
+instead of the IEC bus. The machine traps TALK and LISTEN (`$ED09`, `$ED0C`)
+when A names a trap-served device, then SECOND, TKSA, CIOUT, ACPTR, UNTALK and
+UNLISTEN until the drive is released, and returns from each as the ROM would
+(a stock KERNAL is required). What the primitives carry:
+
+- **Channels 0-14**: an open (`$Fx` then the name bytes, committed at
+  UNLISTEN) resolves `[@][0:]name[,type][,mode]`, `$` (the directory as
+  `buildDirectoryPRG` lists it) or `#` (a 256-byte buffer). Reads hand out the
+  file with EOI on the last byte and a timeout after; writes collect bytes and
+  `writeFile` them at close (`63 FILE EXISTS` without `@`, `26` when protected,
+  `72` when they do not fit). Secondary address 0 reads and 1 writes a PRG,
+  as LOAD and SAVE use them.
+- **Channel 15**: commands I, V, UI/UJ, S, R, N, U1/U2 and B-R/B-W (a sector
+  into or out of a buffer), B-P, M-R (zero bytes), M-W/M-E (accepted); the
+  status line `NN,MESSAGE,TT,SS` reads back and clears to `00, OK`; power-on
+  and UI announce the DOS (`73`), named for the 1541 or the 1581 by the
+  image's kind.
+- **Hooks**: `onOpen` drives the LED and drive sound, `onWrite` the app's
+  directory refresh and Library save. Channels are transient: a disk swap
+  or reset closes them, and a save state holds none.
+- **Not here**: bus timing, and loaders that bit-bang `$DD00` themselves;
+  those still find the real 1541 (or nothing) on the wires.
+
 ## 10. Idle-skip optimisation
 
 A drive spinning in its ROM idle loop (or a fastloader idle loop) with the
@@ -508,11 +535,10 @@ idle scheduler before the first LOAD, so the C64 doesn't time out racing the boo
   tail, per-zone gaps) or cycle-counted decoders reject it.
 - **Two opposite zone numberings exist** (`zoneForTrack` vs. the VIA2 density
   bits); don't conflate them.
-- **The load trap (TDE off) bypasses DOS only at the LOAD entry**, `$FFD5` or
-  the `$F4A5` routine behind the ILOAD vector: it reads the image directly for
-  standard KERNAL LOADs, but an attached drive 8 still remains live
-  on the IEC bus for lower-level protocol traffic and bit-banged loaders. LOAD is
-  all it serves; SAVE, sequential files and the command channel need TDE on.
+- **With TDE off, device 8 is the virtual drive's**: the load trap serves LOAD
+  at `$FFD5` and `$F4A5`, and the serial traps serve everything else the
+  KERNAL sends to the drive (OPEN, CHKIN, CHRIN, CLOSE, SAVE, channel 15). A
+  bit-banged loader still finds the real 1541, or nothing, on the wires.
 - **A 1541 never holds a `.d81`**: `setDisk()` treats media it cannot read as
   an empty drive, so with TDE on the DOS answers DRIVE NOT READY; the trap (TDE
   off) is the only path to a 1581 image.

@@ -10,6 +10,7 @@ import { CIA } from './cia.js';
 import { VIC2, CYCLES_PER_FRAME, CANVAS_W, CANVAS_H } from './vic2.js';
 import { Memory } from './memory.js';
 import { Drive1541, IDLE_WAKE_NONE } from './drive1541.js';
+import { VirtualDrive } from './virtual-drive.js';
 import { Datasette } from './datasette.js';
 import { REU, REU_DEFAULT_MODEL } from './reu.js';
 import { parseCRT } from './media/crt.js';
@@ -42,6 +43,11 @@ function c64IecLineLow(portA, ddr, bit) {
 // The KERNAL LOAD routine proper, the default target of the ILOAD vector at
 // $0330. $FFD5 reaches it through $F49E; the load trap serves both doors.
 const KERNAL_LOAD_ROUTINE = 0xF4A5;
+// The KERNAL's serial bus primitives, which every OPEN, CHKIN, CHRIN, GETIN,
+// CLOSE, LOAD and SAVE on the bus goes through. With true drive emulation
+// off, a trap answers them for the drive instead of the IEC bus.
+const SERIAL_TALK = 0xED09, SERIAL_LISTEN = 0xED0C, SERIAL_SECOND = 0xEDB9, SERIAL_TKSA = 0xEDC7;
+const SERIAL_CIOUT = 0xEDDD, SERIAL_ACPTR = 0xEE13, SERIAL_UNTALK = 0xEDEF, SERIAL_UNLISTEN = 0xEDFE;
 
 // 1541 drive-CPU cycles per C64 master cycle, 16.16 fixed point. True PAL
 // ratio = drive 1 MHz (16 MHz crystal / 16) against C64 phi2 985248 Hz;
@@ -158,6 +164,21 @@ export class C64Machine {
     this._loadTrapA = 0;       // $FFD5 call arguments, banked at phase 0 — see _trapLoad
     this._loadTrapX = 0;
     this._loadTrapY = 0;
+    // The DOS each trap-served drive answers with (see _serialTrap). Drive 8
+    // is trap-served while true drive emulation is off, drive 9 while it is
+    // switched on without a real drive; `_serialDrive` is the one a TALK or
+    // LISTEN addressed until the matching UNTALK or UNLISTEN.
+    this.vdrive8 = new VirtualDrive(() => this.currentD64);
+    this.vdrive9 = new VirtualDrive(() => this.currentD64Drive9);
+    this.vdrive8.onOpen = () => { if (this.onLoadTrap) { try { this.onLoadTrap(8); } catch { } } };
+    this.vdrive9.onOpen = () => { if (this.onLoadTrap) { try { this.onLoadTrap(9); } catch { } } };
+    this.vdrive8.onWrite = () => { if (this.onTrapDiskWrite) { try { this.onTrapDiskWrite(8); } catch { } } };
+    this.vdrive9.onWrite = () => { if (this.onTrapDiskWrite) { try { this.onTrapDiskWrite(9); } catch { } } };
+    this._serialDrive = null;
+    this._serialStockRom = null;
+    this._serialStock = false;
+    // External hook: fired when a trap-served drive wrote to its disk image.
+    this.onTrapDiskWrite = null;
     this.cpu = new CPU(this.mem);
     this.cia1 = new CIA(1);
     this.cia2 = new CIA(2);
@@ -919,6 +940,9 @@ export class C64Machine {
   reset() {
     this.mem.reset();
     this._resetChips();
+    this.vdrive8.reset();
+    this.vdrive9.reset();
+    this._serialDrive = null;
     // Power cycle re-seeds the SID phase accumulators with the $555555
     // power-up pattern. (_resetChips applies /RESET-pulse semantics, under
     // which the accumulators survive — correct for softReset(), but a cold
@@ -944,6 +968,72 @@ export class C64Machine {
     // answers the serial protocol instead — exactly like drive 8 under TDE.
     if (dev === 9 && this.drive9Enabled && !this.drive1541b) return this.currentD64Drive9;
     return null;
+  }
+
+  // The virtual drive a device number is served by, or null when a real
+  // drive (or nothing) answers on the bus.
+  _virtualDriveFor(dev) {
+    if (dev === 8 && !this.truedriveEnabled) return this.vdrive8;
+    if (dev === 9 && this.drive9Enabled && !this.drive1541b) return this.vdrive9;
+    return null;
+  }
+
+  // Are the serial primitives where the stock KERNAL keeps them? Checked once
+  // per ROM image: a replacement KERNAL gets the bus, not the trap.
+  _kernalSerialIsStock() {
+    const rom = this.mem._kernal;
+    if (rom !== this._serialStockRom) {
+      this._serialStockRom = rom;
+      const at = a => rom[a - 0xE000];
+      this._serialStock = !!rom && rom.length >= 0x2000
+        && at(0xED09) === 0x09 && at(0xED0A) === 0x40 && at(0xED0B) === 0x2C && at(0xED0C) === 0x09 && at(0xED0D) === 0x20
+        && at(0xEDB9) === 0x85 && at(0xEDBA) === 0x95 && at(0xEDC7) === 0x85 && at(0xEDC8) === 0x95
+        && at(0xEDDD) === 0x24 && at(0xEDDE) === 0x94 && at(0xEE13) === 0x78 && at(0xEE14) === 0xA9
+        && at(0xEDEF) === 0x78 && at(0xEDF0) === 0x20 && at(0xEDFE) === 0xA9 && at(0xEDFF) === 0x3F;
+    }
+    return this._serialStock;
+  }
+
+  // A call to one of the serial primitives, answered by a virtual drive when
+  // one is addressed: TALK and LISTEN pick the drive from A (the device
+  // number), the rest act on the drive so addressed, and UNTALK and UNLISTEN
+  // release it. Returns false to let the ROM run the call on the bus.
+  _serialTrap(pc) {
+    const cpu = this.cpu;
+    if (pc === SERIAL_TALK || pc === SERIAL_LISTEN) {
+      if (!this._kernalSerialIsStock()) return false;
+      const drive = this._virtualDriveFor(cpu.a & 0x1F);
+      if (!drive) return false;
+      this._serialDrive = drive;
+      return this._serialReturn();
+    }
+    const drive = this._serialDrive;
+    if (!drive) return false;
+    switch (pc) {
+      case SERIAL_SECOND: drive.listen(cpu.a); break;
+      case SERIAL_TKSA: drive.talk(cpu.a); break;
+      case SERIAL_CIOUT: drive.write(cpu.a); break;
+      case SERIAL_ACPTR: {
+        const r = drive.read();
+        cpu.a = r.byte;
+        if (r.eoi) this.mem.ram[0x90] |= 0x40;       // ST: end of file
+        if (r.timeout) this.mem.ram[0x90] |= 0x02;   // ST: read timeout
+        break;
+      }
+      case SERIAL_UNTALK: drive.untalk(); this._serialDrive = null; break;
+      case SERIAL_UNLISTEN: drive.unlisten(); this._serialDrive = null; break;
+      default: return false;
+    }
+    return this._serialReturn();
+  }
+
+  // The RTS of a trapped primitive: every one is entered by JSR.
+  _serialReturn() {
+    const lo = this.cpu._pop();
+    const hi = this.cpu._pop();
+    this.cpu.pc = ((hi << 8) | lo) + 1;
+    this.cpu.C = 0;
+    return true;
   }
 
   // Is the LOAD routine behind the ILOAD vector the stock one? $F49E banks X/Y
@@ -1267,6 +1357,7 @@ export class C64Machine {
     this._wakeDriveIdleSkip();
     this.currentD64 = d64;
     if (this.drive1541) this.drive1541.setDisk(d64);
+    this.vdrive8.diskChanged();
   }
 
   // Turn the secondary device-9 drive on/off. When off it is invisible to the
@@ -1280,6 +1371,7 @@ export class C64Machine {
     this._wakeDriveIdleSkip();
     this.currentD64Drive9 = d64;
     if (this.drive1541b) this.drive1541b.setDisk(d64);
+    this.vdrive9.diskChanged();
   }
 
   // Fold any pending 1541 head writes back into the mounted D64 images so the
@@ -1826,6 +1918,9 @@ export class C64Machine {
         : null;
     if (trapDisk) {
       this._trapLoad(trapDisk);
+    } else if (!cpuBlocked && this.cpu.pc >= SERIAL_TALK && this.cpu.pc <= SERIAL_ACPTR
+        && this.cpu.atInstructionBoundary() && this._serialTrap(this.cpu.pc)) {
+      // Answered by a virtual drive; the call has returned.
     } else if (!cpuBlocked) {
       this.cpu.clock();
     } else if (!this.cpu.atInstructionBoundary()) {

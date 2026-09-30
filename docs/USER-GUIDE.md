@@ -445,7 +445,7 @@ The primary 1541 floppy drive (IEC device 8).
 | **🔒 / 🔓** | Write-protect toggle. Loaded disks start **protected** (🔒); click to allow the drive to write (🔓). A freshly inserted blank disk starts writable. |
 | **🧹 FORMAT** | Erases the inserted disk to an empty format (asks for a name). Disabled while the disk is write-protected (🔒). Formatting a `.g64` replaces it with a standard blank `.d64`; a `.d81` stays a 1581 disk. |
 | **⤓ .D64** | Downloads the disk, with your changes, as a `.d64` file; for a `.d81` or `.g64` the button reads **.D81** or **.G64** and downloads one. **Enabled once the disk has changes** to save; disables again after you export. |
-| **TDE: OFF / ON** | With **True Drive Emulation** on, the real 1541 handles `LOAD` over the IEC bus, needed for custom fastloaders. With it off, `LOAD` is served directly from the disk image (faster, but some loaders won't work). With a 1541 ROM loaded, drive 8 still handles other bus operations in either mode. Remembered between sessions. |
+| **TDE: OFF / ON** | With **True Drive Emulation** on, the real 1541 handles `LOAD` over the IEC bus, needed for custom fastloaders. With it off, a built-in drive serves the disk image directly: `LOAD` is instant, and files, the directory, the command channel and `SAVE` work through the KERNAL, but loaders that drive the hardware themselves won't. Remembered between sessions. |
 | **Drive LED** | Lights while the drive is active. |
 | **▼ *n* files** | Expands the directory: disk name, blocks free, and the file list. It updates itself when the running program changes the disk. Click a **PRG** or **USR** row to load and run that file; SEQ and REL rows are data, so they stay dim. |
 | **🔍** | Opens the [Directory zoom](#directory-zoom) viewer: enlarged, filenames only, so PETSCII directory art reads clearly. |
@@ -469,8 +469,8 @@ nibbler dump becomes a `.g64` on the way in and is kept as one.
 when empty, the same `LOAD` commands. A 1541 cannot read one, so the emulator
 serves it directly: inserting a `.d81` turns TDE off for that drive, and it
 stays off after you eject. The directory, click-to-load, FORMAT and export
-work as for a `.d64`. Programs cannot `SAVE` to it; the CLI's `disk add`
-writes files onto one.
+work as for a `.d64`, and programs `SAVE` to it and use its command channel
+as on a 1581.
 
 **Writing to disk.** The drive writes back to the `.d64`: `SAVE` a program, scratch
 or rename a file, and the change lands on the disk. Writing needs the disk unlocked

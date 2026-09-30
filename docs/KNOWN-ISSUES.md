@@ -61,12 +61,9 @@ software:
 
 ## D81 disk images
 
-The emulator serves a `.d81` itself, and that path handles `LOAD` only:
-
-- **No writing from the C64**: `SAVE` and DOS commands reach the emulated
-  1541, which holds no disk, and fail as on an empty drive. The CLI's
-  `disk add` writes files onto one.
 - **Partitions** are listed as `CBM` but cannot be entered or loaded.
+- **Loaders that drive the hardware** need a real drive, and no 1581 is
+  emulated, so a `.d81` whose loader bypasses the KERNAL does not load.
 
 ## D64 disk images
 
