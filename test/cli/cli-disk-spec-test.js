@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { disk, packPRGs, diskSeriesPath } from '../../cli/disk.mjs';
+import { disk, packPRGs, diskSeriesPath, d642prg, d812prg } from '../../cli/disk.mjs';
 import { setQuiet } from '../../cli/report.mjs';
 import { D64, createBlankD64, d64Variant } from '../../cli/core.mjs';
 
@@ -39,6 +39,28 @@ function somePrg(size, seed) {
   eq(disk(['extract', at('d.d64'), '-d', at('out')]), 0, 'disk extract succeeds');
   const back = fs.readFileSync(at('out', 'GAME.prg'));
   assert(Buffer.compare(back, prg) === 0, 'the extracted PRG is byte-identical');
+}
+
+// The same round trip on a 1581 disk: the output name picks the format, the
+// group reads and writes it, and the two extraction doors know their own kind.
+{
+  const prg = somePrg(254 * 45, 21);       // 45 blocks: past one BAM entry's 40 sectors
+  fs.writeFileSync(at('big.prg'), prg);
+  eq(disk(['new', at('e.d81'), '--name', 'EIGHTY ONE']), 0, 'disk new formats a .d81');
+  const v = d64Variant(fs.statSync(at('e.d81')).size);
+  assert(v && v.kind === 'd81', 'the new image has a D81 length');
+  eq(disk(['add', at('e.d81'), at('big.prg')]), 0, 'disk add writes onto a .d81');
+  const d = new D64(new Uint8Array(fs.readFileSync(at('e.d81'))));
+  eq(d.freeBlocks, 3160 - 45, 'the 1581 BAM accounts for the blocks');
+  eq(disk(['extract', at('e.d81'), '-d', at('out81')]), 0, 'disk extract reads a .d81');
+  assert(Buffer.compare(fs.readFileSync(at('out81', 'BIG.prg')), prg) === 0, 'the extracted PRG is byte-identical');
+  eq(d812prg([at('e.d81'), '-d', at('out81b')]), 0, 'd812prg is the same door');
+  assert(Buffer.compare(fs.readFileSync(at('out81b', 'BIG.prg')), prg) === 0, 'and hands back the same bytes');
+  let threw = null;
+  try { d642prg([at('e.d81')]); } catch (e) { threw = e; }
+  assert(threw && /takes a \.d64 disk image, not a \.d81/.test(threw.message), 'd642prg refuses a .d81 by name');
+  eq(disk(['rm', at('e.d81'), 'BIG']), 0, 'disk rm scratches on a .d81');
+  eq(new D64(new Uint8Array(fs.readFileSync(at('e.d81')))).freeBlocks, 3160, 'and gives every block back');
 }
 
 // new refuses to reformat an existing image.

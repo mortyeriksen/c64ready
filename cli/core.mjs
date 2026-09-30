@@ -15,8 +15,8 @@ export { tapDirectory, tapeFacts } from '../src/media/tap-directory.js';
 export { repairTape } from '../src/media/tap-repair.js';
 export { dmpToTap } from '../src/media/dmp-tape.js';
 export {
-  D64, createBlankD64, createPRGDisk, d64Variant, diskNameFromFilename,
-  prgOverflow,
+  D64, createBlankD64, createBlankD81, createBlankDisk, createPRGDisk, d64Variant,
+  diskNameFromFilename, prgOverflow,
 } from '../src/media/d64.js';
 export { G64, isG64, parseG64 } from '../src/media/g64.js';
 export { isNib, isNbz, lzUncompress, parseNib, nibToG64, nibFileToG64 } from '../src/media/nib.js';

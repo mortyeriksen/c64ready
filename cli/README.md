@@ -1,7 +1,7 @@
 # C64 READY. CLI — the command line for your cassettes, cartridges and disks
 
 You have a stack of C64 cassettes recorded as WAV files, or a folder of `.tap`,
-`.d64`, `.g64`, `.nbz`, `.crt` and `.prg` files, and you want to convert, inspect, repair and
+`.d64`, `.d81`, `.g64`, `.nbz`, `.crt` and `.prg` files, and you want to convert, inspect, repair and
 run them in batches, without dragging each 285 MB recording through a browser.
 `c64rdy` is the [C64 Ready](https://c64ready.com) tape and disk engine with a
 terminal in front of it: the same decoder, the same repairs, the same listings,
@@ -37,7 +37,7 @@ where it couldn't; `dir` and `loadtest` tell you what survived. One quoted
 wildcard converts a whole shelf, and a damaged tape is a result, not a crash.
 
 **The player** has a folder of downloaded games and wants to see one run.
-`run` boots a `.prg`, `.tap`, `.d64`, `.g64`, `.crt` or `.t64` headless and saves a PNG
+`run` boots a `.prg`, `.tap`, `.d64`, `.d81`, `.g64`, `.crt` or `.t64` headless and saves a PNG
 of the screen, or with `--all` a PNG for every program on a side at once, so
 you can tell a working dump from a broken one without opening an emulator.
 
@@ -72,7 +72,7 @@ c64rdy --version
 | --- | --- |
 | **Recordings into tapes** | `wav2tap`, `dmp2tap`, `tapfix`, `tapcat` |
 | **Tapes into anything** | `tap2wav`, `tap2d64`, `tap2prg`, `tap2t64` |
-| **`.t64` archives** | `t642d64`, `t642prg`, `t642tap` out; `d642t64`, `g642t64` in |
+| **`.t64` archives** | `t642d64`, `t642prg`, `t642tap` out; `d642t64`, `d812t64`, `g642t64` in |
 | **Nibbler dumps into disks** | `nbz2g64` |
 | **Programs into containers** | `prg2d64`, `prg2crt`, `prg2tap`, `prg2turbo` |
 | **SID music into player or audio** | `sid2prg`, `sid2wav` |
@@ -150,6 +150,9 @@ rest) are credited in
   `disk add` and `disk rm` refuse it.
 - **Nibbler dumps.** `nbz2g64` turns a `.nbz` into a `.g64`, cut and aligned as
   nibtools' nibconv does it. `info` reads `.nib` and `.nbz`.
+- **D81 disk images.** `dir`, `info`, `run` and the `disk` group take a
+  1581's `.d81` (`disk new` formats one when the output name ends in `.d81`),
+  and `d812prg` and `d812t64` pull files and archives out of one.
 
 ### 0.9.3
 

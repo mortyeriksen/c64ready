@@ -73,7 +73,7 @@ const FILE = makeFile();
 // SETNAM ($FFBD), SETLFS ($FFBA), LOAD ($FFD5) — the documented calling
 // sequence — then record what came back and park.
 function poke(m, addr, bytes) { bytes.forEach((b, i) => { m.mem.ram[addr + i] = b; }); }
-function buildStub(m, { name, sa, verb, loadAddr }) {
+function buildStub(m, { name, sa, verb, loadAddr, entry = 0xFFD5 }) {
   for (let i = 0; i < name.length; i++) m.mem.ram[NAME + i] = name.charCodeAt(i);
   poke(m, STUB, [
     0xA9, name.length,                    // LDA #len
@@ -86,7 +86,7 @@ function buildStub(m, { name, sa, verb, loadAddr }) {
     0xA9, verb,                           // LDA #verb     0 = LOAD, 1 = VERIFY
     0xA2, loadAddr & 0xFF,                // LDX #<addr
     0xA0, loadAddr >> 8,                  // LDY #>addr
-    0x20, 0xD5, 0xFF,                     // JSR LOAD
+    0x20, entry & 0xFF, entry >> 8,       // JSR LOAD ($FFD5, or the routine behind its vector)
     0x8D, RESULT & 0xFF, RESULT >> 8,     // STA result+0  error code
     0x8E, (RESULT + 1) & 0xFF, RESULT >> 8, // STX result+1  end address low
     0x8C, (RESULT + 2) & 0xFF, RESULT >> 8, // STY result+2  end address high
@@ -110,7 +110,7 @@ function screenText(m) {
 
 // Boot to READY, poke the stub, run it to its parking loop, and report what the
 // KERNAL call returned.
-function callLoad({ name = 'TARGET', sa = 0, verb = 0, loadAddr = TARGET, prefill = null } = {}) {
+function callLoad({ name = 'TARGET', sa = 0, verb = 0, loadAddr = TARGET, prefill = null, entry = 0xFFD5 } = {}) {
   const m = new C64Machine();
   m.loadROMs({ kernal: rom(ROMS[0]), basic: rom(ROMS[1]), charRom: rom(ROMS[2]) });
   m.setTrueDrive(false);                 // no drive on the bus: the $FFD5 trap serves device 8
@@ -124,7 +124,7 @@ function callLoad({ name = 'TARGET', sa = 0, verb = 0, loadAddr = TARGET, prefil
   // clobber the registers — the case the banking exists for.
   m.mem.ram[0x9D] = 0xC0;
   if (prefill !== null) m.mem.ram.fill(prefill, loadAddr, loadAddr + PAYLOAD_LEN);
-  buildStub(m, { name, sa, verb, loadAddr });
+  buildStub(m, { name, sa, verb, loadAddr, entry });
   m.cpu.pc = STUB;
 
   for (let f = 0; f < 120 && m.cpu.pc !== PARK; f++) m.runFrame();
@@ -206,6 +206,21 @@ const hex4 = (n) => (n < 0 ? 'nowhere' : `$${n.toString(16).toUpperCase().padSta
   expect(r.a === 4, `and FILE NOT FOUND ($04) in A (got $${r.a.toString(16).padStart(2, '0')})`);
   expect(r.at(TARGET).every((b) => b === 0), 'and stores nothing');
   ok('a missing file reports FILE NOT FOUND and loads nothing');
+}
+
+// ── Rule: entering the LOAD routine behind the ILOAD vector is served too ───
+// $FFD5 is JMP $F49E, which banks X/Y and jumps through $0330 to the routine
+// at $F4A5. Loaders that read the vector once and jump to it directly, or that
+// hook the vector and chain to it, never pass $FFD5; the KERNAL contract is
+// the same at both doors.
+{
+  const r = callLoad({ sa: 1, loadAddr: TARGET, entry: 0xF4A5 });
+  expect(r.carry === 0 && same(r.at(FILE_ADDR), payload),
+    `a LOAD entered at $F4A5 is served like one entered at $FFD5 (got ${first(r.at(FILE_ADDR))})`);
+  expect(r.end === FILE_ADDR + PAYLOAD_LEN, 'and returns the end address the same way');
+  const text = screenText(r.m);
+  expect(/SEARCHING FOR TARGET/.test(text) && /\nLOADING\s*\n/.test(text), 'and prints the same messages');
+  ok('the routine behind the ILOAD vector is trap-served');
 }
 
 if (failed) { console.error(`\n${failed} failure(s)`); process.exit(1); }

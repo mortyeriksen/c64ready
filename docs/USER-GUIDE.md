@@ -207,7 +207,7 @@ as `c64ready-<date-and-time>.mp4`.
 | **📂 LOAD STATE** | Opens the [Save states dialog](#save-states-dialog) to restore a frozen machine; also imports / exports state files. |
 | **💾 SAVE STATE** | Freezes the *whole* machine (RAM, every chip register, and whatever disk / tape / cartridge is inserted) into a named slot stored in this browser (browse them later with LOAD STATE). |
 | **📂 LOAD LIB** | Opens the [Library dialog](#library-dialog) of files you've loaded before, cached in this browser. |
-| **▶ LOAD ANY** | Picks any C64 file (`.prg`, `.d64`, `.g64`, `.nbz`, `.crt`, `.tap`, `.t64`, `.sid`, `.wav`, `.dmp` or `.reu`) and does the right thing with it. |
+| **▶ LOAD ANY** | Picks any C64 file (`.prg`, `.d64`, `.d81`, `.g64`, `.nbz`, `.crt`, `.tap`, `.t64`, `.sid`, `.wav`, `.dmp` or `.reu`) and does the right thing with it. |
 
 ### Save states dialog
 
@@ -439,12 +439,12 @@ The primary 1541 floppy drive (IEC device 8).
 
 | Control | What it does |
 | --- | --- |
-| **💾 LOAD** | Inserts a `.d64` or `.g64` disk image (or drop one on the screen); a `.nbz` nibbler dump becomes a `.g64` on the way in. A `.prg` works too; see [Loading a .prg](#loading-a-prg). |
+| **💾 LOAD** | Inserts a `.d64`, `.d81` or `.g64` disk image (or drop one on the screen); a `.nbz` nibbler dump becomes a `.g64` on the way in. A `.prg` works too; see [Loading a .prg](#loading-a-prg). |
 | **💾 BLANK** | Inserts a **blank, unformatted** disk (shows 0 blocks free). Format it (with **FORMAT**, or from BASIC with `N:name,id`) before you can save to it. |
 | **⏏ EJECT** | Removes the disk. |
 | **🔒 / 🔓** | Write-protect toggle. Loaded disks start **protected** (🔒); click to allow the drive to write (🔓). A freshly inserted blank disk starts writable. |
-| **🧹 FORMAT** | Erases the inserted disk to an empty format (asks for a name). Disabled while the disk is write-protected (🔒). Formatting a `.g64` replaces it with a standard blank `.d64`. |
-| **⤓ .D64** | Downloads the disk, with your changes, as a `.d64` file; for a `.g64` the button reads **.G64** and downloads one. **Enabled once the disk has changes** to save; disables again after you export. |
+| **🧹 FORMAT** | Erases the inserted disk to an empty format (asks for a name). Disabled while the disk is write-protected (🔒). Formatting a `.g64` replaces it with a standard blank `.d64`; a `.d81` stays a 1581 disk. |
+| **⤓ .D64** | Downloads the disk, with your changes, as a `.d64` file; for a `.d81` or `.g64` the button reads **.D81** or **.G64** and downloads one. **Enabled once the disk has changes** to save; disables again after you export. |
 | **TDE: OFF / ON** | With **True Drive Emulation** on, the real 1541 handles `LOAD` over the IEC bus, needed for custom fastloaders. With it off, `LOAD` is served directly from the disk image (faster, but some loaders won't work). With a 1541 ROM loaded, drive 8 still handles other bus operations in either mode. Remembered between sessions. |
 | **Drive LED** | Lights while the drive is active. |
 | **▼ *n* files** | Expands the directory: disk name, blocks free, and the file list. It updates itself when the running program changes the disk. Click a **PRG** or **USR** row to load and run that file; SEQ and REL rows are data, so they stay dim. |
@@ -464,6 +464,13 @@ one turns TDE on for that drive when the 1541 ROM is available; without the
 ROM, the built-in load can only serve the standard sectors it finds on the
 disk. The directory, click-to-load and export work as for a `.d64`. A `.nbz`
 nibbler dump becomes a `.g64` on the way in and is kept as one.
+
+**1581 disk images.** A `.d81` is a 1581 disk: 80 tracks, 3160 blocks free
+when empty, the same `LOAD` commands. A 1541 cannot read one, so the emulator
+serves it directly: inserting a `.d81` turns TDE off for that drive, and it
+stays off after you eject. The directory, click-to-load, FORMAT and export
+work as for a `.d64`. Programs cannot `SAVE` to it; the CLI's `disk add`
+writes files onto one.
 
 **Writing to disk.** The drive writes back to the `.d64`: `SAVE` a program, scratch
 or rename a file, and the change lands on the disk. Writing needs the disk unlocked
@@ -509,12 +516,13 @@ until you switch it on. It reads, writes, and formats just like drive 8.
 | Control | What it does |
 | --- | --- |
 | **Power switch** | Connects / disconnects device 9. Turning it on opens a confirmation dialog first (see the warning below). |
-| **💾 LOAD / 💾 BLANK / ⏏ EJECT** | Insert / insert-blank / remove a `.d64`, `.g64` or `.nbz` as device 9. |
+| **💾 LOAD / 💾 BLANK / ⏏ EJECT** | Insert / insert-blank / remove a `.d64`, `.d81`, `.g64` or `.nbz` as device 9. |
 | **🔒 / 🧹 FORMAT / ⤓ .D64** | Write-protect toggle, format, and export, the same as [drive 8](#disk-drive-8). |
 | **TDE: OFF / ON** | True Drive Emulation for device 9 (needs the 1541 ROM). |
 
 Loading a `.d64` with TDE off offers to enable it for drive 9, using the same
 [prompt as drive 8](#disk-drive-8). The choice affects only the selected drive.
+A `.d81` turns TDE off for drive 9, as it does for drive 8.
 
 > ⚠️ **A second drive on the bus can crash fastloader demos and games.** When
 > you flip the power switch on, a confirmation dialog appears:

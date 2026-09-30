@@ -58,6 +58,10 @@ installs as an app. For a step-by-step walkthrough see the
   unlocked `.g64`.
 - **`.nbz` nibbler dumps**: the C64 Preservation Project's raw dumps become a
   `.g64` on the way in, one revolution per half-track, and load like one.
+- **`.d81` disk images**: 1581 disks, 80 tracks and 3160 blocks, with
+  directory listing, wildcard loading and click-to-load. A 1541 cannot read
+  them, so the emulator serves the disk itself: inserting one turns TDE off
+  for that drive, and programs cannot `SAVE` to it.
 - **`.crt` cartridges**: the supported families are listed under
   **Cartridges & expansions** below.
 - **`.tap` tapes**: datasette images (v0 / v1 / v2), played like real hardware.
@@ -97,7 +101,7 @@ of scene groups and creators.
   Source filters, and see ten results in the control. Demos is the default type.
 - **Explore**: start with the newest demos in the Assembly64 Browser, with advanced filters,
   sorting and pagination. Refine Search carries a quick search into the browser.
-- **Load or download**: PRG, D64, G64, CRT, TAP and REU files use the emulator's media
+- **Load or download**: PRG, D64, D81, G64, CRT, TAP and REU files use the emulator's media
   controls. ZIP archives offer a choice of supported files. Disk loads are write
   protected and can use drive 8 or 9, with autorun or mount only.
 - **Local collections**: favorites and named searches survive a reload. Save
@@ -158,7 +162,7 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **Blank & format**: insert a fresh blank (unformatted) disk, then format it
   from the panel or with BASIC `N:name,id`, ready to save to.
 - **Export**: download the current disk, with your changes, as a `.d64` file
-  (or a `.g64`, for a disk that came in as one).
+  (or a `.d81` or `.g64`, for a disk that came in as one).
 - **Write-protect toggle**: lock a disk against writes (or unlock it) per drive;
   loaded disks start protected so nothing is changed by accident.
 - **Eject** control per drive.

@@ -6,7 +6,9 @@ export const MAX_DOWNLOAD_BYTES = 32 * 1024 * 1024;
 // .t64 is an archive and a .sid is a tune, and both become a .prg on the way in
 // (see openT64 and openSid). They belong here all the same — they are offered,
 // run and saved like the rest.
-export const SUPPORTED_MEDIA = Object.freeze(['prg', 'd64', 'g64', 'crt', 'tap', 't64', 'sid', 'reu']);
+export const SUPPORTED_MEDIA = Object.freeze(['prg', 'd64', 'd81', 'g64', 'crt', 'tap', 't64', 'sid', 'reu']);
+// The disk images: they mount in a drive rather than run.
+export const DISK_MEDIA = Object.freeze(['d64', 'd81', 'g64']);
 export const mediaTypeOf = name => {
   const type = String(name).split('.').pop().toLowerCase();
   return /^[a-z0-9]{1,16}$/.test(type) ? type : 'unknown';
@@ -25,7 +27,7 @@ export function safeExternalUrl(value, hosts) {
   } catch { return null; }
 }
 export function allowedActions(type) {
-  if (type === 'd64' || type === 'g64') return ['mount', 'run', 'save', 'download'];
+  if (DISK_MEDIA.includes(type)) return ['mount', 'run', 'save', 'download'];
   if (SUPPORTED_MEDIA.includes(type)) return ['run', 'save', 'download'];
   if (type === 'zip') return ['extract', 'download'];
   return ['download'];

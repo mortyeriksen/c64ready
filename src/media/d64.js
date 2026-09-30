@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
-// src/media/d64.js – Commodore 1541 D64 disk image parser
-// Standard 35-track format: 683 sectors × 256 bytes = 174 848 bytes. The
-// 40-track (768 sectors) and 42-track (802 sectors) extensions are handled too,
-// as is the variant of each that carries an appended error table.
+// src/media/d64.js – CBM DOS sector images: the 1541's D64 (35, 40 and 42
+// tracks, with or without an appended error table) and the 1581's D81. One
+// class reads and writes both; a layout says where each DOS keeps its header,
+// BAM and directory.
 
-// Sectors per track (1-indexed, index 0 unused)
+// 1541 sectors per track (1-indexed, index 0 unused): the CAV zones the head
+// steps through, and what the GCR encoder lays down.
 export const SPT = [
   0,
   21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21, // tracks  1-17
@@ -16,73 +17,75 @@ export const SPT = [
   17,17,                                               // tracks 41-42 (extended)
 ];
 
+// Where a DOS keeps things. `spt` is a track's sector count, `header` the sector
+// naming the disk and the offsets of name, ID and DOS type in it, `bam` where a
+// track's entry (free count, then bitmap) sits: `perSector` tracks per BAM
+// sector, `width` bytes each, from `entry`. Files go down `interleave` sectors
+// apart. `readableBy1541` says whether that drive can read the medium at all.
+const LAYOUT_1541 = {
+  kind: 'd64',
+  spt: t => SPT[t] || 0,
+  maxTracks: 42,
+  dirTrack: 18,
+  header: { track: 18, sector: 0, name: 0x90, id: 0xA2, dos: 0xA5 },
+  bam: { sectors: [[18, 0]], entry: 4, width: 4, perSector: 35 },
+  dirStart: [18, 1],
+  interleave: 10,
+  readableBy1541: true,
+};
+// The 1581 keeps the header apart from the BAM: 40/0 names the disk, 40/1 and
+// 40/2 describe forty tracks each with six bytes per track (a count and a 40-bit
+// map), and the directory starts at 40/3. Sectors go down consecutively, since
+// the drive buffers a whole track. A 1541 has no head for a 3.5" MFM disk.
+const LAYOUT_1581 = {
+  kind: 'd81',
+  spt: () => 40,
+  maxTracks: 80,
+  dirTrack: 40,
+  header: { track: 40, sector: 0, name: 0x04, id: 0x16, dos: 0x19 },
+  bam: { sectors: [[40, 1], [40, 2]], entry: 0x10, width: 6, perSector: 40 },
+  dirStart: [40, 3],
+  interleave: 1,
+  readableBy1541: false,
+};
+for (const layout of [LAYOUT_1541, LAYOUT_1581]) {
+  // Each track's first sector as a running count, so a sector's byte offset is
+  // one lookup.
+  const base = [0, 0];
+  for (let t = 1; t < layout.maxTracks; t++) base[t + 1] = base[t] + layout.spt(t);
+  layout.base = base;
+}
+
 // Image-size variants: a data area of (sectors × 256), optionally followed by an
 // error table of one byte per sector. Nothing inside the file distinguishes them,
 // so the byte length IS the variant — and the only way to tell a disk image from
-// a file that merely ends in .d64.
+// a file that merely ends in .d64 or .d81.
 const IMAGE_VARIANTS = [
-  { bytes: 174848, tracks: 35, sectors: 683, errorInfo: false },
-  { bytes: 175531, tracks: 35, sectors: 683, errorInfo: true  },
-  { bytes: 196608, tracks: 40, sectors: 768, errorInfo: false },
-  { bytes: 197376, tracks: 40, sectors: 768, errorInfo: true  },
-  { bytes: 205312, tracks: 42, sectors: 802, errorInfo: false },
-  { bytes: 206114, tracks: 42, sectors: 802, errorInfo: true  },
-];
+  { bytes: 174848, tracks: 35, sectors: 683,  errorInfo: false, layout: LAYOUT_1541 },
+  { bytes: 175531, tracks: 35, sectors: 683,  errorInfo: true,  layout: LAYOUT_1541 },
+  { bytes: 196608, tracks: 40, sectors: 768,  errorInfo: false, layout: LAYOUT_1541 },
+  { bytes: 197376, tracks: 40, sectors: 768,  errorInfo: true,  layout: LAYOUT_1541 },
+  { bytes: 205312, tracks: 42, sectors: 802,  errorInfo: false, layout: LAYOUT_1541 },
+  { bytes: 206114, tracks: 42, sectors: 802,  errorInfo: true,  layout: LAYOUT_1541 },
+  { bytes: 819200, tracks: 80, sectors: 3200, errorInfo: false, layout: LAYOUT_1581 },
+  { bytes: 822400, tracks: 80, sectors: 3200, errorInfo: true,  layout: LAYOUT_1581 },
+].map(v => ({ ...v, kind: v.layout.kind }));
 
 /**
- * The variant a byte length describes, or null when no D64 has that size. Callers
- * taking a file from the user check this first: a truncated download otherwise
- * parses into a directory full of nonsense instead of being turned away.
+ * The variant a byte length describes, or null when no D64 or D81 has that size.
+ * Its `kind` is 'd64' or 'd81'. Callers taking a file from the user check this
+ * first: a truncated download otherwise parses into a directory full of
+ * nonsense instead of being turned away.
  * @param {number} byteLength
  */
 export function d64Variant(byteLength) {
   return IMAGE_VARIANTS.find(v => v.bytes === byteLength) || null;
 }
 
-function sectorOffset(track, sector) {
-  let offset = 0;
-  for (let t = 1; t < track; t++) offset += (SPT[t] || 17);
-  return (offset + sector) * 256;
-}
-
-/** Linear sector number (0-based, in image order) — indexes the error table. */
-function sectorIndex(track, sector) {
-  return sectorOffset(track, sector) / 256;
-}
-
-function readSec(img, track, sector) {
-  const off = sectorOffset(track, sector);
+/** A live 256-byte view of one sector; no bounds check. */
+function sectorView(img, layout, track, sector) {
+  const off = (layout.base[track] + sector) * 256;
   return img.subarray(off, off + 256);
-}
-
-// Read full data chain starting at (track, sector)
-function readChain(img, track, sector, trackCount = 35) {
-  const chunks = [];
-  const seen = new Set();
-  while (track !== 0) {
-    // A link off the disk, or back into the chain already read, means a damaged
-    // (or deliberately looping) file. Without the visited set a self-linking
-    // sector comes back as a quarter-megabyte of the same block.
-    if (track < 1 || track > trackCount) break;
-    if (sector < 0 || sector >= (SPT[track] || 0)) break;
-    const key = (track << 8) | sector;
-    if (seen.has(key)) break;
-    seen.add(key);
-    const s = readSec(img, track, sector);
-    const nxt = s[0], nxs = s[1];
-    if (nxt === 0) {
-      // Last sector: s[1] = index of last valid byte (1-based from data start)
-      chunks.push(s.slice(2, nxs + 1));
-    } else {
-      chunks.push(s.slice(2, 256));
-    }
-    track = nxt; sector = nxs;
-  }
-  const total = chunks.reduce((a, c) => a + c.length, 0);
-  const out = new Uint8Array(total);
-  let pos = 0;
-  for (const c of chunks) { out.set(c, pos); pos += c.length; }
-  return out;
 }
 
 // PETSCII name → JS string, preserving byte values so the string can be fed
@@ -102,7 +105,10 @@ function petName(bytes, start, len) {
   return s;
 }
 
-const FILE_TYPES = ['DEL','SEQ','PRG','USR','REL','???','???','???'];
+// Type 5 is a 1581 partition: a span of blocks with a directory entry, not a
+// file. 6 and 7 are nothing on either DOS.
+const FILE_TYPES = ['DEL','SEQ','PRG','USR','REL','CBM','???','???'];
+const TYPE_CBM = 5;
 
 // ── CBM DOS name matching ────────────────────────────────────────────────────
 // Pattern vs the 16-byte name, both padded in shift-space: '*' matches
@@ -159,9 +165,12 @@ export class D64 {
     this.img     = data instanceof Uint8Array ? data : new Uint8Array(data);
     // Variant from the byte length (see IMAGE_VARIANTS); the error table, when
     // present, sits after the data region. An unknown length is taken for a
-    // 35-track disk so synthetic buffers and test doubles still work — callers
+    // 35-track D64 so synthetic buffers and test doubles still work — callers
     // handling a user's file check d64Variant() first.
     const variant     = d64Variant(this.img.length);
+    this.layout       = variant ? variant.layout : LAYOUT_1541;
+    this.kind         = this.layout.kind;
+    this.readableBy1541 = this.layout.readableBy1541;
     this.trackCount   = variant ? variant.tracks : 35;
     this.hasErrorInfo = !!variant?.errorInfo;
     this._errorBase   = variant?.errorInfo ? variant.sectors * 256 : 0;
@@ -173,9 +182,9 @@ export class D64 {
     this.freeBlocks = 0;
     // Write support. `dirty` = the image has unsaved changes vs its persisted
     // copy (drives the UI marker + Library auto-save). `writeProtected` is a
-    // session attribute — it is NOT stored in the .d64 (real hardware senses a
-    // physical notch on VIA2 PB4); mounted images default protected, freshly
-    // created ones default write-enabled (see createBlankD64).
+    // session attribute — it is NOT stored in the image (real hardware senses a
+    // physical notch); mounted images default protected, freshly created ones
+    // default write-enabled (see createBlankD64).
     this.dirty = false;
     this.writeProtected = true;
     // UI hint only: custom loader disks can have valid directory entries whose
@@ -184,39 +193,45 @@ export class D64 {
     this._parse();
   }
 
+  _spt(track) { return this.layout.spt(track); }
+  _sec(track, sector) { return sectorView(this.img, this.layout, track, sector); }
+  /** Linear sector number (0-based, in image order) — indexes the error table. */
+  _index(track, sector) { return this.layout.base[track] + sector; }
+  _inRange(track, sector) {
+    return track >= 1 && track <= this.trackCount && sector >= 0 && sector < this._spt(track);
+  }
+
   _parse() {
-    // BAM: track 18, sector 0
-    const bam = readSec(this.img, 18, 0);
+    const { header, dirTrack } = this.layout;
+    const hdr = this._sec(header.track, header.sector);
 
-    // A GEOS disk says so at BAM $AD. Needed before anything is displayed: GEOS
-    // writes names in ASCII (its own fonts draw them), not PETSCII, and its USR
-    // files are VLIR record structures rather than programs.
-    this.isGEOS = 'GEOS format'.split('').every((c, i) => bam[0xAD + i] === c.charCodeAt(0));
+    // A GEOS disk says so in its header at $AD. Needed before anything is
+    // displayed: GEOS writes names in ASCII (its own fonts draw them), not
+    // PETSCII, and its USR files are VLIR record structures rather than programs.
+    this.isGEOS = 'GEOS format'.split('').every((c, i) => hdr[0xAD + i] === c.charCodeAt(0));
 
-    // Disk name (bytes $90–$9F, 16 chars)
-    this.diskName = petName(bam, 0x90, 16);
-    // Disk ID ($A2–$A3), DOS type ($A5–$A6)
-    this.diskId  = petName(bam, 0xA2, 2);
-    this.dosType = petName(bam, 0xA5, 2);
+    this.diskName = petName(hdr, header.name, 16);
+    this.diskId  = petName(hdr, header.id, 2);
+    this.dosType = petName(hdr, header.dos, 2);
 
-    // Free block count from BAM entries (4 bytes each: free-count, bitmask×3).
-    // Tracks past 35 count only when this image carries a BAM extension that
-    // describes them — see _detectBamExtension.
-    this._bamExt = this._detectBamExtension(bam);
+    // Free block count from the BAM entries, the directory track left out as
+    // DOS leaves it out. Tracks past 35 of a D64 count only when the image
+    // carries a BAM extension that describes them — see _detectBamExtension.
+    this._bamExt = this._detectBamExtension(hdr);
     let free = 0;
     for (let t = 1; t <= this.trackCount; t++) {
-      if (t === 18) continue;           // directory track not counted
-      const off = this._bamOffset(t);
-      if (off >= 0) free += bam[off];
+      if (t === dirTrack) continue;
+      const e = this._bamEntry(t);
+      if (e) free += e.sec[e.off];
     }
     this.freeBlocks = free;
 
-    // Directory: chain from track 18, sector 1
-    let dt = 18, ds = 1;
+    // Directory: the chain from the layout's first directory sector.
+    let [dt, ds] = this.layout.dirStart;
     let safety = 0;
     this.entries = [];
     while (dt !== 0 && safety++ < 100) {
-      const sec = readSec(this.img, dt, ds);
+      const sec = this._sec(dt, ds);
       dt = sec[0]; ds = sec[1];
       for (let e = 0; e < 8; e++) {
         const b = e * 32;
@@ -250,10 +265,8 @@ export class D64 {
    *  head can step out to track 42 whatever the image holds, and a 35-track disk
    *  has no more recorded there than a real one does. */
   readSector(track, sector) {
-    if (track < 1 || track > this.trackCount) return null;
-    const count = SPT[track] || 0;
-    if (sector < 0 || sector >= count) return null;
-    return readSec(this.img, track, sector);
+    if (!this._inRange(track, sector)) return null;
+    return this._sec(track, sector);
   }
 
   /**
@@ -263,11 +276,9 @@ export class D64 {
    * ID). Images without a table read as 1 throughout.
    */
   errorForSector(track, sector) {
-    if (!this._errorBase) return 1;
-    if (track < 1 || track > this.trackCount) return 1;
-    if (sector < 0 || sector >= (SPT[track] || 0)) return 1;
+    if (!this._errorBase || !this._inRange(track, sector)) return 1;
     // 0 isn't in the numbering; tools that leave the table zeroed mean "fine".
-    return this.img[this._errorBase + sectorIndex(track, sector)] || 1;
+    return this.img[this._errorBase + this._index(track, sector)] || 1;
   }
 
   /**
@@ -278,19 +289,17 @@ export class D64 {
    * @param {number} track @param {number} sector @param {Uint8Array} bytes
    */
   writeSector(track, sector, bytes) {
-    if (track < 1 || track > this.trackCount) return false;
-    const count = SPT[track] || 0;
-    if (sector < 0 || sector >= count) return false;
-    readSec(this.img, track, sector).set(bytes.subarray(0, 256));
+    if (!this._inRange(track, sector)) return false;
+    this._sec(track, sector).set(bytes.subarray(0, 256));
     // A just-written sector is readable by definition, so drop any error recorded
     // for it — left in place it would revive when the export is re-mounted.
-    if (this._errorBase) this.img[this._errorBase + sectorIndex(track, sector)] = 1;
+    if (this._errorBase) this.img[this._errorBase + this._index(track, sector)] = 1;
     this.dirty = true;
     return true;
   }
 
   /**
-   * The BAM extension offset of a 40-track image, or 0 for none. Nothing says
+   * The BAM extension offset of a 40-track D64, or 0 for none. Nothing says
    * which DOS wrote it, so go by shape: five 4-byte entries whose free count
    * matches their 17-sector bitmap, no bits above sector 16, at least one track
    * with room. A disk name fails that (a PETSCII byte is a count far above 17)
@@ -298,7 +307,7 @@ export class D64 {
    * what keeps writes off tracks nothing is recording allocation for.
    */
   _detectBamExtension(bam) {
-    if (this.trackCount < 40) return 0;
+    if (this.kind !== 'd64' || this.trackCount < 40) return 0;
     for (const base of BAM_EXTENSIONS) {
       let ok = true, anyFree = false;
       for (let t = 36; t <= 40 && ok; t++) {
@@ -314,30 +323,35 @@ export class D64 {
   }
 
   /**
-   * Offset of track `track`'s 4-byte BAM entry, or -1 when this BAM doesn't
-   * describe it (the standard table covers 1-35; beyond that needs the extension).
-   * The -1 is the point: the arithmetic for track 36 lands on $90, the disk name,
-   * so a caller allocating there would rename the disk.
+   * The BAM bytes describing `track`: a live view of the sector holding them and
+   * the offset of the free count, with the bitmap right after it. Null when this
+   * BAM doesn't describe the track (a D64's 36-40 without an extension). The
+   * null is the point: the standard arithmetic for track 36 lands on the disk
+   * name, so a caller allocating there would rename the disk.
    */
-  _bamOffset(track) {
-    if (track >= 1 && track <= 35) return 4 + (track - 1) * 4;
-    if (this._bamExt && track >= 36 && track <= 40) return this._bamExt + (track - 36) * 4;
-    return -1;
+  _bamEntry(track) {
+    if (track < 1 || track > this.trackCount) return null;
+    const { sectors, entry, width, perSector } = this.layout.bam;
+    const i = track - 1;
+    const at = sectors[Math.floor(i / perSector)];
+    if (at) return { sec: this._sec(at[0], at[1]), off: entry + (i % perSector) * width };
+    if (this._bamExt && track <= 40) return { sec: this._sec(18, 0), off: this._bamExt + (track - 36) * 4 };
+    return null;
   }
 
-  /** Is (track, sector) still free in the BAM? `bam` is the live 18/0 view. */
-  _bamIsFree(bam, track, sector) {
-    const off = this._bamOffset(track);
-    if (off < 0) return false;
-    return !!(bam[off + 1 + (sector >> 3)] & (1 << (sector & 7)));
+  /** Is (track, sector) still free in the BAM? */
+  _bamIsFree(track, sector) {
+    const e = this._bamEntry(track);
+    if (!e) return false;
+    return !!(e.sec[e.off + 1 + (sector >> 3)] & (1 << (sector & 7)));
   }
 
   /** Mark (track, sector) allocated: clear its bit, drop the track's free count. */
-  _bamTake(bam, track, sector) {
-    const off = this._bamOffset(track);
-    if (off < 0) return;
-    bam[off + 1 + (sector >> 3)] &= ~(1 << (sector & 7));
-    if (bam[off] > 0) bam[off]--;
+  _bamTake(track, sector) {
+    const e = this._bamEntry(track);
+    if (!e) return;
+    e.sec[e.off + 1 + (sector >> 3)] &= ~(1 << (sector & 7));
+    if (e.sec[e.off] > 0) e.sec[e.off]--;
   }
 
   /**
@@ -345,60 +359,62 @@ export class D64 {
    * inverse of _bamTake, and idempotent — a block already free is left alone, so
    * the count can't drift above what the track holds.
    */
-  _bamFree(bam, track, sector) {
-    const off = this._bamOffset(track);
-    if (off < 0) return;
-    const byte = off + 1 + (sector >> 3), bit = 1 << (sector & 7);
-    if (bam[byte] & bit) return;             // already free
-    bam[byte] |= bit;
-    bam[off]++;
+  _bamFree(track, sector) {
+    const e = this._bamEntry(track);
+    if (!e) return;
+    const byte = e.off + 1 + (sector >> 3), bit = 1 << (sector & 7);
+    if (e.sec[byte] & bit) return;             // already free
+    e.sec[byte] |= bit;
+    e.sec[e.off]++;
   }
 
   /**
    * Claim `count` free blocks and return them as [track, sector] pairs in chain
    * order, or null if the disk hasn't room. Follows the DOS habit of filling
-   * outwards from the directory track and stepping 10 sectors at a time, so the
-   * layout looks like something a 1541 would have produced.
+   * outwards from the directory track, stepping the layout's interleave, so the
+   * layout looks like something the drive would have produced.
    */
   _allocateBlocks(count) {
-    const bam = readSec(this.img, 18, 0);
+    const { dirTrack, interleave } = this.layout;
     const tracks = [];
-    for (let t = 17; t >= 1; t--) tracks.push(t);
-    for (let t = 19; t <= this.trackCount; t++) tracks.push(t);
-    // Only tracks the BAM actually describes (see _bamOffset).
-    const usable = tracks.filter((t) => this._bamOffset(t) >= 0);
+    for (let t = dirTrack - 1; t >= 1; t--) tracks.push(t);
+    for (let t = dirTrack + 1; t <= this.trackCount; t++) tracks.push(t);
+    // Only tracks the BAM actually describes (see _bamEntry).
+    const usable = tracks.filter((t) => this._bamEntry(t));
 
     const got = [];
     for (const t of usable) {
-      const n = SPT[t] || 0;
+      const n = this._spt(t);
       const seen = new Set();
       let s = 0;
       for (let k = 0; k < n && got.length < count; k++) {
         while (seen.has(s)) s = (s + 1) % n;
         seen.add(s);
-        if (this._bamIsFree(bam, t, s)) { this._bamTake(bam, t, s); got.push([t, s]); }
-        s = (s + 10) % n;
+        if (this._bamIsFree(t, s)) { this._bamTake(t, s); got.push([t, s]); }
+        s = (s + interleave) % n;
       }
       if (got.length >= count) break;
     }
     if (got.length === count) return got;
-    // Not enough room. readSec hands out a live view of the image, so every block
-    // found above is already marked allocated — return them, or a write that
-    // reports "didn't fit" silently swallows whatever free space was left. The
-    // caller's next attempt would then find a disk that looks full.
-    for (const [t, s] of got) this._bamFree(bam, t, s);
+    // Not enough room. The BAM views are live, so every block found above is
+    // already marked allocated — return them, or a write that reports "didn't
+    // fit" silently swallows whatever free space was left. The caller's next
+    // attempt would then find a disk that looks full.
+    for (const [t, s] of got) this._bamFree(t, s);
     return null;
   }
 
   /**
    * Point a directory slot at a file. Reuses the first free slot in the chain
-   * and extends the chain with a fresh track-18 sector when all are taken.
+   * and extends the chain with a fresh directory-track sector when all are taken.
    */
   _addDirEntry(name, track, sector, blocks) {
     const nm = String(name).slice(0, 16);
-    let dt = 18, ds = 1, guard = 0;
+    const { dirTrack } = this.layout;
+    let [dt, ds] = this.layout.dirStart;
+    let guard = 0;
     for (;;) {
-      const sec = readSec(this.img, dt, ds);
+      const sec = this._sec(dt, ds);
       for (let e = 0; e < 8; e++) {
         const b = e * 32;
         if (!(sec[b + 2] === 0 && sec[b + 3] === 0 && sec[b + 5] === 0)) continue;
@@ -412,18 +428,17 @@ export class D64 {
         return true;
       }
       if (sec[0] !== 0) { dt = sec[0]; ds = sec[1]; if (guard++ > 40) return false; continue; }
-      // Chain full — hang one more directory sector off track 18.
-      const bam = readSec(this.img, 18, 0);
+      // Chain full — hang one more sector off the directory track.
       let next = null;
-      for (let s = 0; s < SPT[18]; s++) {
-        if (this._bamIsFree(bam, 18, s)) { this._bamTake(bam, 18, s); next = s; break; }
+      for (let s = 0; s < this._spt(dirTrack); s++) {
+        if (this._bamIsFree(dirTrack, s)) { this._bamTake(dirTrack, s); next = s; break; }
       }
       if (next === null) return false;
-      sec[0] = 18; sec[1] = next;
-      const fresh = readSec(this.img, 18, next);
+      sec[0] = dirTrack; sec[1] = next;
+      const fresh = this._sec(dirTrack, next);
       fresh.fill(0);
       fresh[0] = 0; fresh[1] = 0xFF;
-      dt = 18; ds = next;
+      dt = dirTrack; ds = next;
       if (guard++ > 40) return false;
     }
   }
@@ -446,16 +461,16 @@ export class D64 {
       const chunk = data.subarray(i * 254, i * 254 + 254);
       sec.set(chunk, 2);
       if (i + 1 < chain.length) { sec[0] = chain[i + 1][0]; sec[1] = chain[i + 1][1]; }
-      else { sec[0] = 0; sec[1] = chunk.length + 1; }   // last byte index, per readChain
+      else { sec[0] = 0; sec[1] = chunk.length + 1; }   // last byte index, per _readChain
       this.writeSector(chain[i][0], chain[i][1], sec);
     }
     if (!this._addDirEntry(name, chain[0][0], chain[0][1], chain.length)) {
-      // Directory full — track 18 holds at most 18 directory sectors, so 144
-      // files. The chain is allocated and written but now unreachable, so give the
-      // blocks back and leave the disk as it was. Their contents stay behind,
-      // which is harmless: a free block's bytes mean nothing until it is reused.
-      const bam = readSec(this.img, 18, 0);
-      for (const [t, s] of chain) this._bamFree(bam, t, s);
+      // Directory full — the directory track has no sector left for another
+      // eight entries. The chain is allocated and written but now unreachable,
+      // so give the blocks back and leave the disk as it was. Their contents
+      // stay behind, which is harmless: a free block's bytes mean nothing until
+      // it is reused.
+      for (const [t, s] of chain) this._bamFree(t, s);
       return 0;
     }
 
@@ -464,13 +479,43 @@ export class D64 {
     return chain.length;
   }
 
+  /** The data chain from (track, sector). A link off the disk, or back into the
+   *  chain already read, means a damaged (or deliberately looping) file and ends
+   *  it: without the visited set a self-linking sector comes back as a
+   *  quarter-megabyte of the same block. */
+  _readChain(track, sector) {
+    const chunks = [];
+    const seen = new Set();
+    while (track !== 0) {
+      if (!this._inRange(track, sector)) break;
+      const key = (track << 8) | sector;
+      if (seen.has(key)) break;
+      seen.add(key);
+      const s = this._sec(track, sector);
+      const nxt = s[0], nxs = s[1];
+      if (nxt === 0) {
+        // Last sector: s[1] = index of last valid byte (1-based from data start)
+        chunks.push(s.slice(2, nxs + 1));
+      } else {
+        chunks.push(s.slice(2, 256));
+      }
+      track = nxt; sector = nxs;
+    }
+    const total = chunks.reduce((a, c) => a + c.length, 0);
+    const out = new Uint8Array(total);
+    let pos = 0;
+    for (const c of chunks) { out.set(c, pos); pos += c.length; }
+    return out;
+  }
+
   /**
    * Load file bytes by name, the way DOS resolves one: '*' and '?' wildcards, a
    * "0:" drive prefix and a ",P"/",S,R" type-and-mode suffix all understood (see
    * matchDirName / dosPattern). Returns raw chain bytes — for PRG files the
    * first 2 bytes are the load address. Any file type resolves; DOS reserves
    * LOAD for everything except REL, and a program stored as USR is a habit as
-   * old as the disks themselves.
+   * old as the disks themselves. A 1581 partition is not a file: the DOS
+   * refuses it (64, FILE TYPE MISMATCH) and the C64 reports FILE NOT FOUND.
    * @param {string} name
    * @returns {Uint8Array|null}
    */
@@ -478,14 +523,15 @@ export class D64 {
     const pattern = dosPattern(name);
     // Scratched/DEL entries aren't matched by LOAD.
     const entry = this.entries.find(e => !e.deleted && matchDirName(e.name, pattern));
-    if (!entry || entry.startTrack === 0) return null;
-    return readChain(this.img, entry.startTrack, entry.startSector, this.trackCount);
+    if (!entry || entry.startTrack === 0 || entry.typeCode === TYPE_CBM) return null;
+    return this._readChain(entry.startTrack, entry.startSector);
   }
 
   /**
    * Scratch every file matching `name`, the way the DOS `S0:name` command does:
    * clear each directory entry's file-type byte and give its blocks back to the
    * BAM. The name accepts the same '*'/'?' wildcards and "0:" prefix LOAD does.
+   * A 1581 partition is left alone: its blocks are a span, not a chain.
    * @param {string} name
    * @returns {{ scratched: string[], blocks: number }}
    */
@@ -494,26 +540,27 @@ export class D64 {
     const scratched = [];
     let blocks = 0;
     // Walk the directory sectors, matching entries and clearing them in place —
-    // readSec hands back a view into the image, so the edits land in the file.
-    let dt = 18, ds = 1, guard = 0;
+    // the sector views are live, so the edits land in the image.
+    let [dt, ds] = this.layout.dirStart;
+    let guard = 0;
     while (dt !== 0 && guard++ < 100) {
-      const sec = readSec(this.img, dt, ds);
+      const sec = this._sec(dt, ds);
       for (let e = 0; e < 8; e++) {
         const b = e * 32;
-        if ((sec[b + 2] & 0x07) === 0) continue;          // empty or already scratched
+        const typeCode = sec[b + 2] & 0x07;
+        if (typeCode === 0 || typeCode === TYPE_CBM) continue;   // empty, scratched, or a partition
         const nm = petName(sec, b + 5, 16);
         if (!matchDirName(nm, pattern)) continue;
         // Give the file's chain back to the BAM, reading each link before it is
         // freed, and stopping on a link that leaves the disk or loops.
-        const bam = readSec(this.img, 18, 0);
         let t = sec[b + 3], s = sec[b + 4];
         const seen = new Set();
-        while (t >= 1 && t <= this.trackCount) {
+        while (this._inRange(t, s)) {
           const key = (t << 8) | s;
           if (seen.has(key)) break;
           seen.add(key);
-          const link = readSec(this.img, t, s);
-          this._bamFree(bam, t, s);
+          const link = this._sec(t, s);
+          this._bamFree(t, s);
           blocks++;
           t = link[0]; s = link[1];
         }
@@ -591,6 +638,27 @@ export class D64 {
   }
 }
 
+/** A disk name into a 16-byte shift-space-padded field. */
+function putName(sec, at, name) {
+  for (let i = 0; i < 16; i++) sec[at + i] = 0xA0;
+  const nm = String(name).slice(0, 16);
+  for (let i = 0; i < nm.length; i++) sec[at + i] = nm.charCodeAt(i) & 0xFF;
+}
+
+/** The two ID bytes of a disk ID string. */
+function idBytes(id) {
+  const s = String(id).padEnd(2, ' ').slice(0, 2);
+  return [s.charCodeAt(0) & 0xFF, s.charCodeAt(1) & 0xFF];
+}
+
+/** A freshly created disk is meant to be written, and has never been saved. */
+function fresh(img) {
+  const disk = new D64(img);
+  disk.writeProtected = false;
+  disk.dirty = true;
+  return disk;
+}
+
 /**
  * Build a fresh, empty *formatted* 35-track disk image and return it as a D64.
  * Used by the UI "NEW" and "FORMAT" actions — no drive/DOS involvement, so it is
@@ -604,13 +672,13 @@ export class D64 {
  */
 export function createBlankD64(name = '', id = '00') {
   const img = new Uint8Array(174848);           // 683 sectors × 256, 35-track
-  const bam = sectorOffset(18, 0);
+  const bam = sectorView(img, LAYOUT_1541, 18, 0);
 
   // BAM header: first directory sector link + DOS version byte.
-  img[bam + 0x00] = 18;    // first directory track
-  img[bam + 0x01] = 1;     // first directory sector
-  img[bam + 0x02] = 0x41;  // DOS version 'A'
-  img[bam + 0x03] = 0x00;
+  bam[0x00] = 18;    // first directory track
+  bam[0x01] = 1;     // first directory sector
+  bam[0x02] = 0x41;  // DOS version 'A'
+  bam[0x03] = 0x00;
 
   // Per-track allocation: [free-count, 3-byte sector bitmap] (bit set = free).
   // All data sectors free; track 18 reserves sectors 0 (BAM) and 1 (dir).
@@ -625,32 +693,75 @@ export function createBlankD64(name = '', id = '00') {
       else if (s < 16) b1 |= 1 << (s - 8);
       else b2 |= 1 << (s - 16);
     }
-    const off = bam + 4 + (t - 1) * 4;
-    img[off] = free; img[off + 1] = b0; img[off + 2] = b1; img[off + 3] = b2;
+    const off = 4 + (t - 1) * 4;
+    bam[off] = free; bam[off + 1] = b0; bam[off + 2] = b1; bam[off + 3] = b2;
   }
 
   // Disk name ($90–$9F, shift-space padded), ID ($A2–$A3), DOS type "2A".
-  for (let i = 0; i < 16; i++) img[bam + 0x90 + i] = 0xA0;
-  const nm = String(name).slice(0, 16);
-  for (let i = 0; i < nm.length; i++) img[bam + 0x90 + i] = nm.charCodeAt(i) & 0xFF;
-  const idStr = String(id).padEnd(2, ' ').slice(0, 2);
-  img[bam + 0xA0] = 0xA0; img[bam + 0xA1] = 0xA0;
-  img[bam + 0xA2] = idStr.charCodeAt(0) & 0xFF;
-  img[bam + 0xA3] = idStr.charCodeAt(1) & 0xFF;
-  img[bam + 0xA4] = 0xA0;
-  img[bam + 0xA5] = 0x32; img[bam + 0xA6] = 0x41;  // "2A"
-  img[bam + 0xA7] = 0xA0; img[bam + 0xA8] = 0xA0;
-  img[bam + 0xA9] = 0xA0; img[bam + 0xAA] = 0xA0;
+  putName(bam, 0x90, name);
+  const [i0, i1] = idBytes(id);
+  bam[0xA0] = 0xA0; bam[0xA1] = 0xA0;
+  bam[0xA2] = i0; bam[0xA3] = i1;
+  bam[0xA4] = 0xA0;
+  bam[0xA5] = 0x32; bam[0xA6] = 0x41;  // "2A"
+  bam[0xA7] = 0xA0; bam[0xA8] = 0xA0;
+  bam[0xA9] = 0xA0; bam[0xAA] = 0xA0;
 
   // Empty directory sector (track 18/1): no next sector, no entries.
-  const dir = sectorOffset(18, 1);
-  img[dir + 0x00] = 0x00;  // next dir track = 0 (end of chain)
-  img[dir + 0x01] = 0xFF;  // last used byte in sector
+  const dir = sectorView(img, LAYOUT_1541, 18, 1);
+  dir[0x00] = 0x00;  // next dir track = 0 (end of chain)
+  dir[0x01] = 0xFF;  // last used byte in sector
+  return fresh(img);
+}
 
-  const disk = new D64(img);
-  disk.writeProtected = false;  // a disk you just created is meant to be written
-  disk.dirty = true;            // never persisted yet
-  return disk;
+/**
+ * A fresh, empty formatted 1581 disk: the header at 40/0, both BAM sectors with
+ * every track free but the four sectors the directory track uses, and an empty
+ * directory at 40/3. Parses to "3160 BLOCKS FREE", as the drive reports.
+ * @param {string} name  disk header name (PETSCII, ≤16 chars)
+ * @param {string} id    2-char disk ID
+ * @returns {D64}
+ */
+export function createBlankD81(name = '', id = '00') {
+  const img = new Uint8Array(819200);           // 3200 sectors × 256
+  const [i0, i1] = idBytes(id);
+
+  // Header: first directory sector, DOS version 'D', name, ID, DOS type "3D".
+  const hdr = sectorView(img, LAYOUT_1581, 40, 0);
+  hdr[0x00] = 40; hdr[0x01] = 3; hdr[0x02] = 0x44;
+  hdr.fill(0xA0, 0x04, 0x1D);
+  putName(hdr, 0x04, name);
+  hdr[0x16] = i0; hdr[0x17] = i1;
+  hdr[0x19] = 0x33; hdr[0x1A] = 0x44;
+
+  // BAM: 40/1 links to 40/2, which ends the chain. Each names the version and
+  // its complement, repeats the ID, and sets the I/O byte the DOS formats with.
+  for (const s of [1, 2]) {
+    const bam = sectorView(img, LAYOUT_1581, 40, s);
+    bam[0x00] = s === 1 ? 40 : 0; bam[0x01] = s === 1 ? 2 : 0xFF;
+    bam[0x02] = 0x44; bam[0x03] = 0xBB;
+    bam[0x04] = i0; bam[0x05] = i1;
+    bam[0x06] = 0xC0;
+    for (let i = 0; i < 40; i++) {
+      const t = (s - 1) * 40 + i + 1;
+      const off = 0x10 + i * 6;
+      // The directory track gives up its header, both BAM sectors and the
+      // first directory sector.
+      bam[off] = t === 40 ? 36 : 40;
+      bam.fill(0xFF, off + 1, off + 6);
+      if (t === 40) bam[off + 1] = 0xF0;
+    }
+  }
+
+  const dir = sectorView(img, LAYOUT_1581, 40, 3);
+  dir[0x00] = 0x00;
+  dir[0x01] = 0xFF;
+  return fresh(img);
+}
+
+/** A blank formatted disk of the given kind ('d64' or 'd81'). */
+export function createBlankDisk(kind, name = '', id = '00') {
+  return kind === 'd81' ? createBlankD81(name, id) : createBlankD64(name, id);
 }
 
 /**

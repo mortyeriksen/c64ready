@@ -6,7 +6,7 @@ import { parseCRT } from './crt.js';
 import { createCartridgeFromCRT } from '../cartridges/registry.js';
 import { Datasette } from '../datasette.js';
 import { REU_MODELS } from '../reu.js';
-import { MAX_DOWNLOAD_BYTES, allowedActions, safeFilename } from './formats.js';
+import { MAX_DOWNLOAD_BYTES, DISK_MEDIA, allowedActions, safeFilename } from './formats.js';
 import { sourceMetadata } from './source-metadata.js';
 import { isT64 } from './t64.js';
 import { parseSid, openSid } from './sid.js';
@@ -16,8 +16,9 @@ export function validateMedia(bytes, type) {
   if (bytes.length > MAX_DOWNLOAD_BYTES) throw new Error('Media exceeds the 32 MiB limit.');
   if (type === 'prg') {
     if (bytes.length < 3 || prgOverflow(bytes)) throw new Error('Invalid PRG address or size.');
-  } else if (type === 'd64') {
-    if (!d64Variant(bytes.length)) throw new Error('Unsupported D64 size.');
+  } else if (type === 'd64' || type === 'd81') {
+    // The length is the whole check, and it also says which of the two it is.
+    if (d64Variant(bytes.length)?.kind !== type) throw new Error(`Unsupported ${type.toUpperCase()} size.`);
     return new D64(bytes);
   } else if (type === 'g64') {
     return new G64(bytes);   // parseG64 throws on a malformed header or table
@@ -112,9 +113,9 @@ export function createOpenMedia(port) {
         if (reset && !['crt', 'reu'].includes(load.type) && port.reset && !port.reset()) {
           throw new Error('Could not reset the machine to load this.');
         }
-        if (['prg', 'd64', 'g64', 'crt', 'tap'].includes(load.type)) port.configureSid?.(load.tune ?? null);
-        if (load.type === 'd64' || load.type === 'g64') {
-          await port.prepareDisk?.({ targetDrive, signal, rawGcr: load.type === 'g64' });
+        if (['prg', 'd64', 'd81', 'g64', 'crt', 'tap'].includes(load.type)) port.configureSid?.(load.tune ?? null);
+        if (DISK_MEDIA.includes(load.type)) {
+          await port.prepareDisk?.({ targetDrive, signal, rawGcr: load.type === 'g64', kind: load.type });
           signal?.throwIfAborted();
           disk._libName = load.name;
           disk.writeProtected = !!writeProtected;

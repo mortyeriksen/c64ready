@@ -21,6 +21,13 @@ The version you are running is shown at the bottom of the About dialog.
   Loading one turns True Drive Emulation on.
 - **Nibbler dumps.** A `.nbz` from the C64 Preservation Project loads too; it
   becomes a `.g64` on the way in.
+- **1581 disk images.** Load a `.d81` into drive 8 or 9, browse it and
+  click a program to load it. A 1541 cannot read a 1581 disk, so the emulator
+  serves it directly and turns True Drive Emulation off for that drive.
+  FORMAT, export, the Library and Assembly64 handle it like a `.d64`.
+- **More disk loaders work with TDE off.** A program that calls the KERNAL's
+  LOAD routine through its vector, as some 1581 releases do, now loads from
+  the image instead of talking to an empty drive.
 - **Shorter tooltips** on the controls.
 - **CRT looks redrawn.** Scanlines sit on the C64's own raster lines and the
   phosphor mask on your screen's pixels, so no more ripple or banding at any

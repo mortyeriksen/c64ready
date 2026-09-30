@@ -28,7 +28,7 @@ import {
   setRunning, setPristineBoot, setHasBeenReady,
 } from './state.js';
 import { confirmDialog, promptDialog } from './dialogs.js';
-import { D64, createBlankD64, createPRGDisk, d64Variant, prgAutostart, prgOverflow } from './media/d64.js';
+import { D64, createBlankDisk, createPRGDisk, d64Variant, prgAutostart, prgOverflow } from './media/d64.js';
 import { G64, isG64 } from './media/g64.js';
 import { nibFileToG64, isNbz } from './media/nib.js';
 import { tapToPcm, pcmToWav } from './media/tap-audio.js';
@@ -193,7 +193,7 @@ async function _renderLibrary() {
   if (libraryFilterEl)  libraryFilterEl.style.display = all.length ? '' : 'none';
   if (libraryEmptyEl) {
     if (!all.length) {
-      libraryEmptyEl.textContent = "No cached files yet. Load a .PRG, .D64, .CRT, .TAP, .T64, .SID, .WAV or .DMP and it'll show up here.";
+      libraryEmptyEl.textContent = "No cached files yet. Load a .PRG, .D64, .D81, .G64, .CRT, .TAP, .T64, .SID, .WAV or .DMP and it'll show up here.";
       libraryEmptyEl.hidden = false;
     } else if (!list.length) {
       libraryEmptyEl.textContent = `No files match “${q}”.`;
@@ -221,7 +221,7 @@ async function _renderLibrary() {
 // current state and auto-load when AUTORUN is on; crt cold-boots itself.
 // Returns false when validation or power-on fails.
 async function _loadLibraryEntry(entry) {
-  if (!['prg', 'd64', 'g64', 'crt', 'tap', 't64', 'sid', 'reu'].includes(entry.type)) return false;
+  if (!['prg', 'd64', 'd81', 'g64', 'crt', 'tap', 't64', 'sid', 'reu'].includes(entry.type)) return false;
   // A program is here to run, so it asks for a prompt to type its LOAD at, as a
   // catalog load does: a tune's player owns the interrupts and the screen, and
   // a LOAD typed at it would wait forever. A disk or tape goes in as it is,
@@ -815,19 +815,19 @@ function _leavePristineBoot() {
 }
 
 // Wording for prgOverflow()'s verdict — see the rule and why it matters there.
-// Is this really a disk image? Nothing inside a .d64 identifies the format, so
-// its fixed size is the only check there is. Without it a truncated download or a
+// Is this really a disk image? Nothing inside a .d64 or .d81 identifies the
+// format, so its fixed size is the only check there is. Without it a truncated download or a
 // renamed archive mounts happily and shows a directory of several hundred entries
 // made of whatever bytes the file held.
 function _d64SizeError(data, fileName = '') {
   if (d64Variant(data.length)) return null;
   const name = fileName ? `"${fileName}"` : 'That file';
   const kb = (data.length / 1024).toFixed(1);
-  return `${name} is not a disk image — ${kb} KB is not a D64 size (170.8, 192 or 200.5 KB)`;
+  return `${name} is not a disk image — ${kb} KB is not a D64 or D81 size (170.8, 192, 200.5 or 800 KB)`;
 }
 
 // A picked disk file as a mountable image, by extension: a .g64 is checked by
-// its header and track tables, a .d64 by its size. Returns { disk } or { error }.
+// its header and track tables, a .d64 or .d81 by its size. Returns { disk } or { error }.
 function _diskFromFile(data, fileName = '') {
   if (mediaTypeOf(fileName) === 'g64') {
     try { return { disk: new G64(data) }; } catch (err) {
@@ -839,7 +839,7 @@ function _diskFromFile(data, fileName = '') {
 }
 
 // The Library type and file extension a disk image is kept and exported under.
-const _diskType = disk => disk?.isG64 ? 'g64' : 'd64';
+const _diskType = disk => disk?.isG64 ? 'g64' : (disk?.kind || 'd64');
 
 // A picked disk file as the bytes and name the app keeps: a .nbz nibbler dump
 // becomes a .g64 here; anything else passes through.
@@ -982,6 +982,7 @@ function _rejectWrongExt(file, exts, input) {
 export function mediaTypeOf(filename) {
   const n = String(filename || '').toLowerCase();
   return n.endsWith('.d64') ? 'd64'
+    : n.endsWith('.d81') ? 'd81'
     // A nibbler dump is a disk: _diskFileBytes makes it a .g64 on the way in.
     : (n.endsWith('.g64') || n.endsWith('.nbz')) ? 'g64'
     // A recording of a tape is a tape, and so is a DC2N dump of one: _loadTape
@@ -1005,7 +1006,7 @@ prgBtn.addEventListener('click', () => prgInput.click());
 prgInput.addEventListener('change', async e => {
   const file = e.target.files[0];
   if (!file) return;
-  if (_rejectWrongExt(file, ['.prg', '.d64', '.g64', '.nbz', '.crt', '.tap', '.t64', '.sid', '.wav', '.dmp', '.reu'], prgInput)) return;
+  if (_rejectWrongExt(file, ['.prg', '.d64', '.d81', '.g64', '.nbz', '.crt', '.tap', '.t64', '.sid', '.wav', '.dmp', '.reu'], prgInput)) return;
   const buf  = await file.arrayBuffer();
   let data, name;
   try { ({ data, name } = _diskFileBytes(new Uint8Array(buf), file.name)); }
@@ -1259,7 +1260,7 @@ if (d64Btn && d64Input) {
   d64Input.addEventListener('change', async e => {
     const file = e.target.files[0];
     if (!file) return;
-    if (_rejectWrongExt(file, ['.d64', '.g64', '.nbz', '.prg'], d64Input)) return;
+    if (_rejectWrongExt(file, ['.d64', '.d81', '.g64', '.nbz', '.prg'], d64Input)) return;
     const buf = await file.arrayBuffer();
     const data = new Uint8Array(buf);
     try {
@@ -1276,7 +1277,7 @@ if (d64Btn && d64Input) {
       if (error) { setStatus(error, 'error'); d64Input.value = ''; return; }
       _libRemember(_diskType(disk), dump.name, dump.data);
       disk._libName = dump.name;
-      await _prepareD64({ targetDrive: 8, rawGcr: !!disk.isG64 });
+      await _prepareD64({ targetDrive: 8, rawGcr: !!disk.isG64, kind: disk.kind });
       await _loadDisk(disk);
     } catch (err) {
       setStatus(`Disk error: ${err.message}`, 'error');
@@ -1306,7 +1307,7 @@ function _slug(name) {
 // A filename for exporting/persisting a disk: prefer the name it was loaded/created
 // under, else its BAM disk name, always ending in the image's own extension.
 function _diskExportName(disk) {
-  const base = disk._libName ? disk._libName.replace(/\.[dg]64$/i, '') : _slug(disk.diskName);
+  const base = disk._libName ? disk._libName.replace(/\.(d64|d81|g64)$/i, '') : _slug(disk.diskName);
   return `${_slug(base) || 'disk'}.${_diskType(disk)}`;
 }
 
@@ -1369,7 +1370,7 @@ function _toggleWriteProtect(d) {
     machine?.ready ? 'running' : 'idle');
 }
 
-// Download the current image as its own format (.d64 or .g64), folding any
+// Download the current image as its own format (.d64, .d81 or .g64), folding any
 // pending head writes in first.
 function _exportDisk(d) {
   const disk = d.get();
@@ -1420,11 +1421,12 @@ async function _formatDisk(d) {
   if (name == null) return;
   // Formatting discards the old content, so don't let the swap-eject persist it.
   disk.dirty = false;
-  const fresh = createBlankD64(String(name).toUpperCase().slice(0, 16), '00');
-  // Formatting writes a standard layout, so the fresh disk is a .d64 even when
-  // the one it replaces was a .g64.
-  fresh._libName = disk._libName?.replace(/\.g64$/i, '.d64') || `${_slug(name) || 'blank'}.d64`;
-  _libRemember('d64', fresh._libName, fresh.img.slice());
+  // Formatting keeps the disk's own kind, so a .d81 stays a 1581 disk. A .g64
+  // becomes a .d64: a standard layout goes down over its raw tracks.
+  const kind = disk.kind === 'd81' ? 'd81' : 'd64';
+  const fresh = createBlankDisk(kind, String(name).toUpperCase().slice(0, 16), '00');
+  fresh._libName = disk._libName?.replace(/\.g64$/i, '.d64') || `${_slug(name) || 'blank'}.${kind}`;
+  _libRemember(kind, fresh._libName, fresh.img.slice());
   fresh.dirty = false;   // just persisted to the Library — not "unsaved"
   _mountDisk(d.num, fresh);
   setStatus(`Drive ${d.num}: formatted "${fresh.diskName}"`, machine?.ready ? 'running' : 'idle');
@@ -1654,7 +1656,7 @@ if (DRIVE9_UI.loadBtn && DRIVE9_UI.fileInput) {
   DRIVE9_UI.fileInput.addEventListener('change', async e => {
     const file = e.target.files[0];
     if (!file) return;
-    if (_rejectWrongExt(file, ['.d64', '.g64', '.nbz', '.prg'], DRIVE9_UI.fileInput)) return;
+    if (_rejectWrongExt(file, ['.d64', '.d81', '.g64', '.nbz', '.prg'], DRIVE9_UI.fileInput)) return;
     const buf = await file.arrayBuffer();
     const data = new Uint8Array(buf);
     try {
@@ -1670,7 +1672,7 @@ if (DRIVE9_UI.loadBtn && DRIVE9_UI.fileInput) {
       if (!disk) { setStatus('Drive 9: program too large for a disk', 'error'); return; }
       _libRemember(isPrg ? 'prg' : _diskType(disk), dump.name, dump.data);
       disk._libName = dump.name;
-      if (!isPrg) await _prepareD64({ targetDrive: 9, rawGcr: !!disk.isG64 });
+      if (!isPrg) await _prepareD64({ targetDrive: 9, rawGcr: !!disk.isG64, kind: disk.kind });
       _onD64Drive9Loaded(disk, { autorun: true, startCmd: isPrg ? prgAutostart(data) : 'RUN\r' });
     } catch (err) {
       setStatus(`Drive 9 disk error: ${err.message}`, 'error');
@@ -3278,6 +3280,14 @@ const _prepareD64 = createDiskCompatibilityPrompt({
     else {
       drive9TdeEnabled = true;
       try { localStorage.setItem('c64emu.drive9tde', 'on'); } catch {}
+      _applyDrive9Tde();
+    }
+  },
+  disable: drive => {
+    if (drive === 8) setTdeEnabled(false);
+    else {
+      drive9TdeEnabled = false;
+      try { localStorage.setItem('c64emu.drive9tde', 'off'); } catch {}
       _applyDrive9Tde();
     }
   },

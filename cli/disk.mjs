@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 // cli/disk.mjs — the disk group, plus prg2d64. `disk` is the one command group
-// in the tool because a .d64 is the one file with an interior you edit: you add
-// to it and take from it over its lifetime.
+// in the tool because a disk image (.d64 or .d81) is the one file with an
+// interior you edit: you add to it and take from it over its lifetime.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,7 +12,7 @@ import { say, fail } from './report.mjs';
 import { diskListing } from './listing.mjs';
 import { outFileFor, oneOutputOnly, writeOut } from './tape.mjs';
 import {
-  D64, createBlankD64, createPRGDisk, d64Variant, diskNameFromFilename, prgOverflow,
+  D64, createBlankD64, createBlankDisk, createPRGDisk, d64Variant, diskNameFromFilename, prgOverflow,
   G64, isG64,
 } from './core.mjs';
 
@@ -21,7 +21,7 @@ export function disk(argv) {
   const rest = argv.slice(1);
   if (sub === 'new') return diskNew(rest);
   if (sub === 'add') return diskAdd(rest);
-  if (sub === 'extract') return diskExtract(rest, 'disk extract', ['d64', 'g64']);
+  if (sub === 'extract') return diskExtract(rest, 'disk extract', ['d64', 'd81', 'g64']);
   if (sub === 'rm') return diskRm(rest);
   throw new UsageError('Usage: c64rdy disk <new|add|extract|rm> …');
 }
@@ -30,7 +30,7 @@ export function disk(argv) {
 
 function diskRm(argv) {
   const { args } = parseArgs(argv);
-  if (args.length !== 2) throw new UsageError('Usage: c64rdy disk rm <disk.d64> <pattern>');
+  if (args.length !== 2) throw new UsageError('Usage: c64rdy disk rm <disk.d64|d81> <pattern>');
   const [diskPath, pattern] = args;
   const d = openDisk(diskPath);
   const { scratched, blocks } = d.scratch(pattern);
@@ -44,20 +44,22 @@ function diskRm(argv) {
   return 0;
 }
 
-/** Open a disk image of one of `kinds` ('d64', 'g64'). A .g64 is the disk's
+/** Open a disk image of one of `kinds` ('d64', 'd81', 'g64'). A .g64 is the disk's
  *  raw tracks: files come out of the sectors decoded from them, but nothing
  *  here writes into it, since that would mean re-mastering GCR around whatever
  *  the tracks hold, which is the app's drive's job. */
-function openDisk(p, { write = true, kinds = ['d64', 'g64'] } = {}) {
+function openDisk(p, { write = true, kinds = ['d64', 'd81', 'g64'] } = {}) {
   const bytes = fs.readFileSync(p);
-  const wanted = kinds.length === 1 ? `a .${kinds[0]} disk image` : 'a .d64 or .g64 disk image';
+  const wanted = kinds.length === 1 ? `a .${kinds[0]} disk image`
+    : `a ${kinds.slice(0, -1).map(k => `.${k}`).join(', ')} or .${kinds.at(-1)} disk image`;
   if (isG64(bytes)) {
     if (!kinds.includes('g64')) throw new Error(`this command takes ${wanted}`);
     if (write) throw new Error('a .g64 holds raw GCR tracks and is read-only here — extract from it, or build a .d64');
     return new G64(bytes);
   }
-  if (!d64Variant(bytes.length)) throw new Error(`not ${wanted} (no D64 variant has this byte length)`);
-  if (!kinds.includes('d64')) throw new Error(`this command takes ${wanted}`);
+  const variant = d64Variant(bytes.length);
+  if (!variant) throw new Error(`not ${wanted} (no D64 or D81 variant has this byte length)`);
+  if (!kinds.includes(variant.kind)) throw new Error(`this command takes ${wanted}, not a .${variant.kind}`);
   return new D64(bytes);
 }
 
@@ -67,7 +69,7 @@ function diskNew(argv) {
   const { args, flags } = parseArgs(argv, {
     name: { value: true }, id: { value: true },
   });
-  if (args.length < 1) throw new UsageError('Usage: c64rdy disk new <out.d64> [file.prg…] [--name NAME] [--id ID]');
+  if (args.length < 1) throw new UsageError('Usage: c64rdy disk new <out.d64|out.d81> [file.prg…] [--name NAME] [--id ID]');
   const [out, ...prgArgs] = args;
   // `new` formats a blank disk; pointing it at an existing image would wipe it,
   // so it refuses one unless --force says to reformat.
@@ -75,7 +77,8 @@ function diskNew(argv) {
     throw new Error(`${out} already exists — --force reformats it`);
   }
   const name = flags.name ?? diskNameFromFilename(path.basename(out));
-  const d = createBlankD64(name, flags.id ?? '00');
+  // The output name picks the drive: a .d81 formats a 1581 disk.
+  const d = createBlankDisk(/\.d81$/i.test(out) ? 'd81' : 'd64', name, flags.id ?? '00');
   say(`${out}: formatted "${name}", ${d.freeBlocks} blocks free`);
   // Files named on the same line are written straight in, so a disk is built in
   // one command rather than a new-then-add pair.
@@ -89,7 +92,7 @@ function diskNew(argv) {
 
 function diskAdd(argv) {
   const { args } = parseArgs(argv);
-  if (args.length < 2) throw new UsageError('Usage: c64rdy disk add <disk.d64> <file.prg…>');
+  if (args.length < 2) throw new UsageError('Usage: c64rdy disk add <disk.d64|d81> <file.prg…>');
   const [diskPath, ...rest] = args;
   const d = openDisk(diskPath);
   const failed = addPRGs(d, inputFiles(rest));
@@ -263,6 +266,8 @@ export function packPRGs(items, diskName) {
 
 /** The same extraction, under the name that pairs with prg2d64. */
 export function d642prg(argv) { return diskExtract(argv, 'd642prg', ['d64']); }
+/** And off a 1581 disk. */
+export function d812prg(argv) { return diskExtract(argv, 'd812prg', ['d81']); }
 /** The same off a .g64, whose files come from the sectors decoded out of its
  *  raw tracks. Its own command: the name says which image goes in. */
 export function g642prg(argv) { return diskExtract(argv, 'g642prg', ['g64']); }

@@ -203,6 +203,12 @@ revisions:
   for the per-sector error table `src/gcr.js` turns back into read failures, and
   for the 40-track BAM extension locations.
   <https://ist.uwaterloo.ca/~schepers/formats/D64.TXT>
+- **D81 disk-image format**: Peter Schepers, _D81 (Electronic form of a physical
+  1581 disk)_. `src/media/d64.js` follows it for the image sizes, the header at
+  40/0, the BAM at 40/1 and 40/2 and the directory from 40/3, reading and
+  writing alike; the 3160 free blocks of a formatted disk are the 1581 User's
+  Guide's figure.
+  <https://ist.uwaterloo.ca/~schepers/formats/D81.TXT>
 - **G64 disk-image format**: Peter Schepers, _G64 (GCR-encoded 1541 disk image)_,
   and the VICE manual's description of the same layout. `src/media/g64.js`
   follows them for the header, the half-track offset and speed-zone tables,

@@ -306,6 +306,8 @@ export function d642t64(argv) { return diskArchives(argv, 'd642t64', 'd64'); }
 /** The same off a .g64, whose programs come from the sectors decoded out of
  *  its raw tracks. Its own command: the name says which image goes in. */
 export function g642t64(argv) { return diskArchives(argv, 'g642t64', 'g64'); }
+/** And off a 1581 disk. */
+export function d812t64(argv) { return diskArchives(argv, 'd812t64', 'd81'); }
 
 function diskArchives(argv, as, kind) {
   const { args, flags } = parseArgs(argv, { out: { value: true, alias: 'o' }, 'out-dir': { value: true } });

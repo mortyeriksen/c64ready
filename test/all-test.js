@@ -372,6 +372,8 @@ const TESTS = [
   'test/library-load-reset-spec-test.js',
   'test/drive/d64-format-spec-test.js',
   'test/drive/d64-error-table-dos-spec-test.js',
+  'test/drive/d81-format-spec-test.js',
+  'test/drive/d81-trap-load-spec-test.js',
   'test/drive/g64-format-spec-test.js',
   'test/drive/g64-drive-spec-test.js',
   'test/drive/g64-read-circuit-spec-test.js',

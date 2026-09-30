@@ -2,7 +2,7 @@
 // Copyright © 2026 Morten Øien Eriksen
 // cli/formats.mjs — what kind of file is this, read off the bytes so a user
 // never has to name a format. Magic strings first (a .g64 signs itself
-// GCR-1541); a .d64 has none, so its exact byte length is the test
+// GCR-1541); a .d64 or .d81 has none, so the exact byte length is the test
 // (d64Variant); a .prg has nothing at all, so it is the fallback for anything
 // small enough to fit a C64's memory.
 
@@ -17,7 +17,7 @@ const ascii = (bytes, at, s) => {
  * @param {Uint8Array} bytes
  * @param {string} filename  only consulted for the extension, and only after
  *   every magic has failed — a renamed file should still be what it is
- * @returns {'tap'|'wav'|'dmp'|'crt'|'sid'|'d64'|'g64'|'nib'|'nbz'|'t64'|'prg'|'unknown'}
+ * @returns {'tap'|'wav'|'dmp'|'crt'|'sid'|'d64'|'d81'|'g64'|'nib'|'nbz'|'t64'|'prg'|'unknown'}
  */
 export function sniff(bytes, filename = '') {
   if (bytes.length >= 12 && ascii(bytes, 0, 'C64-TAPE-RAW')) return 'tap';
@@ -35,7 +35,8 @@ export function sniff(bytes, filename = '') {
   // least one entry is the test. The .tap and .crt magics above go first: both
   // begin with the same three letters.
   if (bytes.length >= 96 && ascii(bytes, 0, 'C64') && (bytes[34] | (bytes[35] << 8)) > 0) return 't64';
-  if (d64Variant(bytes.length)) return 'd64';
+  const disk = d64Variant(bytes.length);
+  if (disk) return disk.kind;
   if (/\.prg$/i.test(filename)) return 'prg';
   // A load address and data that fits below $10000 is all a .prg is.
   if (bytes.length >= 2 && bytes.length <= 65538) {
@@ -51,6 +52,7 @@ export const KIND_NAMES = {
   dmp: 'DC2N tape dump',
   crt: 'cartridge image',
   d64: 'disk image',
+  d81: '1581 disk image',
   g64: 'raw GCR disk image',
   nib: 'nibbler disk dump',
   nbz: 'compressed nibbler disk dump',

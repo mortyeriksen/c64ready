@@ -162,7 +162,7 @@
             <img src="/guide/drive8-loaded.webp" width="638" height="632" loading="lazy"
               alt="The Disk Drive 8 panel: LOAD, BLANK, FORMAT and .D64 export controls above a directory whose filenames form PETSCII artwork">
             <h2>Real disks, real saves</h2>
-            <p>LOAD, SAVE, format and export .d64s through a true 1541, and run copy-protected .g64s. Save states resume anytime.</p>
+            <p>LOAD, SAVE, format and export .d64s through a true 1541, run copy-protected .g64s, and load 1581 .d81s. Save states resume anytime.</p>
           </li>
           <li class="card-phone">
             <div class="splash-phone">
@@ -261,7 +261,7 @@
            get the tap-to-keyboard hint; everything else keeps the drop-files
            hint (drag-drop only works with a pointer). One is hidden via CSS. -->
       <div class="drop-hint hint-pointer">Drop <span class="drop-hint-types"
-          title="Supported: .PRG, .D64, .G64, .NBZ, .CRT, .TAP, .T64, .SID, .WAV, .DMP and .REU">files</span> onto the screen.<span id="keyboard-focus-hint" hidden> Click screen to capture keyboard.</span></div>
+          title="Supported: .PRG, .D64, .D81, .G64, .NBZ, .CRT, .TAP, .T64, .SID, .WAV, .DMP and .REU">files</span> onto the screen.<span id="keyboard-focus-hint" hidden> Click screen to capture keyboard.</span></div>
       <div class="drop-hint hint-touch">Tap the screen to open the native keyboard</div>
     </div>
 
@@ -398,8 +398,8 @@
               <button class="btn" id="btn-library"
                 title="Files you have loaded before, cached in this browser.">📂 LOAD LIB</button>
               <button class="btn btn-prg" id="btn-prg"
-                title="Load any C64 file: .prg, .d64, .g64, .nbz, .crt, .tap, .t64, .sid, .wav, .dmp or .reu." disabled>▶ LOAD ANY</button>
-              <input type="file" id="prg-input" accept=".prg,.d64,.g64,.nbz,.crt,.tap,.t64,.sid,.wav,.dmp,.reu">
+                title="Load any C64 file: .prg, .d64, .d81, .g64, .nbz, .crt, .tap, .t64, .sid, .wav, .dmp or .reu." disabled>▶ LOAD ANY</button>
+              <input type="file" id="prg-input" accept=".prg,.d64,.d81,.g64,.nbz,.crt,.tap,.t64,.sid,.wav,.dmp,.reu">
             </div>
           </div>
 
@@ -424,8 +424,8 @@
               <div class="drive-deck">
                 <div class="drive-transport">
                   <button class="btn btn-d64" id="btn-d64"
-                title="Insert a .d64, .g64 or .nbz into drive 8; a .prg gets its own disk." disabled>💾 LOAD</button>
-                  <input type="file" id="d64-input" accept=".d64,.g64,.nbz,.prg">
+                title="Insert a .d64, .d81, .g64 or .nbz into drive 8; a .prg gets its own disk." disabled>💾 LOAD</button>
+                  <input type="file" id="d64-input" accept=".d64,.d81,.g64,.nbz,.prg">
                   <button class="btn btn-eject" id="btn-d64-eject"
                 title="Eject the disk in drive 8." disabled>⏏ EJECT</button>
                   <div class="drive-cell">
@@ -441,7 +441,7 @@
                   </div>
                 </div>
                 <div class="drive-dropzone" id="drive-dropzone">
-                  <span id="drive-empty-hint">click LOAD or drop a .d64, .g64 or .nbz onto the screen</span>
+                  <span id="drive-empty-hint">click LOAD or drop a .d64, .d81, .g64 or .nbz onto the screen</span>
                   <div id="drive-loaded" hidden>
                     <div class="drive-disk-info">
                       <span class="drive-disk-name" id="drive-disk-name"></span>
@@ -472,8 +472,8 @@
               <div class="drive-deck" id="drive9-deck" hidden>
                 <div class="drive-transport">
                   <button class="btn btn-d64" id="btn-d64-9"
-                title="Insert a .d64, .g64 or .nbz into drive 9; a .prg gets its own disk."  disabled>💾 LOAD</button>
-                  <input type="file" id="d64-input-9" accept=".d64,.g64,.nbz,.prg">
+                title="Insert a .d64, .d81, .g64 or .nbz into drive 9; a .prg gets its own disk."  disabled>💾 LOAD</button>
+                  <input type="file" id="d64-input-9" accept=".d64,.d81,.g64,.nbz,.prg">
                   <button class="btn btn-eject" id="btn-d64-eject-9"
                 title="Eject the disk in drive 9." disabled>⏏ EJECT</button>
                   <div class="drive-cell">
@@ -489,7 +489,7 @@
                   </div>
                 </div>
                 <div class="drive-dropzone" id="drive9-dropzone">
-                  <span id="drive9-empty-hint">click LOAD to insert a .d64, .g64 or .nbz as device 9</span>
+                  <span id="drive9-empty-hint">click LOAD to insert a .d64, .d81, .g64 or .nbz as device 9</span>
                   <div id="drive9-loaded" hidden>
                     <div class="drive-disk-info">
                       <span class="drive-disk-name" id="drive9-disk-name"></span>
@@ -859,7 +859,7 @@
       <p class="library-hint">Files you've loaded before, cached in this browser. Click one to load it again.</p>
       <div class="library-list" id="library-list"></div>
       <p class="library-empty" id="library-empty" hidden>
-        No cached files yet. Load a .PRG, .D64, .CRT, .TAP, .T64, .SID, .WAV or .DMP and it'll show up here.
+        No cached files yet. Load a .PRG, .D64, .D81, .G64, .CRT, .TAP, .T64, .SID, .WAV or .DMP and it'll show up here.
       </p>
       <p class="library-import-status" id="library-import-status" role="status" aria-live="polite" hidden></p>
       <div class="library-footer">

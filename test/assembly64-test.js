@@ -325,6 +325,33 @@ for (const [name, enabled, available] of [['TDE already on', true, true], ['driv
     assert.equal(prompted, false);
   });
 }
+for (const drive of [8, 9]) {
+  test(`A D81 turns TDE off for drive ${drive} without asking`, async () => {
+    const { createDiskCompatibilityPrompt } = await import('../src/media/disk-compatibility.js');
+    const disabled = [], notices = [];
+    let prompted = false;
+    const prepare = createDiskCompatibilityPrompt({ enabled: () => true, available: () => true, enable: () => {}, disable: d => disabled.push(d), confirm: async () => { prompted = true; }, notify: text => notices.push(text) });
+    await prepare({ targetDrive: drive, kind: 'd81' });
+    assert.deepEqual(disabled, [drive]);
+    assert.equal(prompted, false);
+    assert.match(notices[0], /1581/);
+  });
+}
+for (const [name, enabled, available] of [['TDE already off', false, true], ['drive ROM unavailable', true, false]]) {
+  test(`A D81 leaves TDE alone when ${name}`, async () => {
+    const { createDiskCompatibilityPrompt } = await import('../src/media/disk-compatibility.js');
+    let changed = false, prompted = false;
+    await createDiskCompatibilityPrompt({ enabled: () => enabled, available: () => available, enable: () => { changed = true; }, disable: () => { changed = true; }, confirm: async () => { prompted = true; } })({ targetDrive: 8, kind: 'd81' });
+    assert.equal(changed, false);
+    assert.equal(prompted, false);
+  });
+}
+test('A D64 still gets the TDE offer when the prompt knows its kind', async () => {
+  const { createDiskCompatibilityPrompt } = await import('../src/media/disk-compatibility.js');
+  let prompted = false;
+  await createDiskCompatibilityPrompt({ enabled: () => false, available: () => true, enable: () => {}, disable: () => {}, confirm: async () => { prompted = true; return false; } })({ targetDrive: 8, kind: 'd64' });
+  assert.equal(prompted, true);
+});
 test('Cancelling a pending D64 confirmation never changes TDE', async () => {
   const { createDiskCompatibilityPrompt } = await import('../src/media/disk-compatibility.js');
   const abort = new AbortController(); let changed = false;

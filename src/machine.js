@@ -39,6 +39,10 @@ function c64IecLineLow(portA, ddr, bit) {
   return pinHigh ? 0 : 1;
 }
 
+// The KERNAL LOAD routine proper, the default target of the ILOAD vector at
+// $0330. $FFD5 reaches it through $F49E; the load trap serves both doors.
+const KERNAL_LOAD_ROUTINE = 0xF4A5;
+
 // 1541 drive-CPU cycles per C64 master cycle, 16.16 fixed point. True PAL
 // ratio = drive 1 MHz (16 MHz crystal / 16) against C64 phi2 985248 Hz;
 // the constant is floor(65536 * 1e6 / 985248).
@@ -942,6 +946,19 @@ export class C64Machine {
     return null;
   }
 
+  // Is the LOAD routine behind the ILOAD vector the stock one? $F49E banks X/Y
+  // and jumps through $0330, whose default target opens `STA $93; LDA #0;
+  // STA $90`. A loader that saved the vector and jumps to it directly, or that
+  // hooks the vector and chains on, arrives there without passing $FFD5.
+  _kernalLoadRoutineIsStock() {
+    const rom = this.mem._kernal;
+    if (!rom || rom.length < 0x2000) return false;
+    const at = a => rom[a - 0xE000];
+    return at(0xF49E) === 0x86 && at(0xF49F) === 0xC3 && at(0xF4A0) === 0x84 && at(0xF4A1) === 0xC4
+        && at(0xF4A2) === 0x6C && at(0xF4A3) === 0x30 && at(0xF4A4) === 0x03
+        && at(0xF4A5) === 0x85 && at(0xF4A6) === 0x93 && at(0xF4A7) === 0xA9 && at(0xF4A8) === 0x00;
+  }
+
   // Do the ROM's message routines actually live where we are about to jump?
   // $F5AF opens `LDA MSGFLG` and $F5D2 opens `LDY #$49`. A replacement or stub
   // KERNAL that has something else there gets the silent load instead of a jump
@@ -1803,7 +1820,8 @@ export class C64Machine {
     // take several $DD00 samples per byte.
     this._masterPhase = 'cpu';
     const trapDisk =
-      (this.cpu.atInstructionBoundary() && !cpuBlocked && this.cpu.pc === 0xFFD5)
+      (this.cpu.atInstructionBoundary() && !cpuBlocked
+        && (this.cpu.pc === 0xFFD5 || (this.cpu.pc === KERNAL_LOAD_ROUTINE && this._kernalLoadRoutineIsStock())))
         ? this._loadTrapDisk()
         : null;
     if (trapDisk) {

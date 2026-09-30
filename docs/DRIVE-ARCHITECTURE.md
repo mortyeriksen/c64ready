@@ -58,7 +58,7 @@ bit-bang the bus / count cycles) behave correctly.
 
 **Two host-integration modes** (chosen in `machine.js`):
 - **KERNAL load trap** (TDE off): the machine intercepts the KERNAL LOAD entry
-  `$FFD5` and reads the file straight from the D64. Fast, but only handles standard
+  `$FFD5` and reads the file straight from the disk image, a D64 or a D81. Fast, but only handles standard
   LOADs (and `SAVE`/format are never trapped, so they still reach the real drive).
   The trap is not silent: it runs the ROM's own `SEARCHING FOR` and `LOADING`
   printing first, so the screen and cursor end up exactly where a real load
@@ -85,7 +85,7 @@ bit-bangs `$DD00` can talk to the drive CPU/VIA state.
 | `drive1541.js` | **`Drive1541`**, the orchestrator: a 6502 CPU + VIA1 + VIA2 + ROM + RAM + the spindle/GCR read+write engine + IEC wiring + stepper |
 | `6522.js` | **`VIA6522`** ×2: VIA1 (serial bus) and VIA2 (mechanics + read/write head); timers, ports, CA1/CA2, IRQ |
 | `gcr.js` | **`GCRDisk`**: wraps a D64 and synthesizes a raw GCR track bitstream on demand (4-to-5 encode, sync, gaps) |
-| `media/d64.js` | **`D64`**: parses the disk image: sectors, BAM, directory, file chains, `$`-directory PRG synthesis |
+| `media/d64.js` | **`D64`**: parses a D64 or D81 sector image by its layout: sectors, BAM, directory, file chains, `$`-directory PRG synthesis |
 | `drive-sounds.js` | cosmetic head-step/motor sound effects (not part of the data path) |
 
 ---
@@ -342,14 +342,21 @@ into the image:
 
 ---
 
-## 9. The D64 image (`media/d64.js`)
+## 9. The sector image: D64 and D81 (`media/d64.js`)
 
-`D64` parses a standard 35-track (683-sector) image or one of the extended
-variants:
+`D64` parses a 35-track (683-sector) image, an extended variant, or a 1581's
+D81. A **layout** per kind says where the DOS keeps things: the 1541's header
+and BAM share 18/0 (4-byte entries) with the directory from 18/1; the 1581 has
+its header at 40/0, forty tracks per BAM sector at 40/1 and 40/2 (6-byte
+entries: count plus a 40-bit map) and its directory from 40/3, interleave 1.
+`_bamEntry`, `_allocateBlocks` and `createBlankDisk(kind)` all go through
+the layout. A D81 is `readableBy1541: false`: `Drive1541.setDisk()` treats it
+as an empty drive, and only the load trap serves it.
 
 - **`d64Variant(byteLength)`**: the length is the only thing identifying the
-  format, so it serves as both the variant lookup (35/40/42 tracks, ± error
-  table) and the "is this a disk image at all" check callers run before
+  format, so it serves as both the variant lookup (35/40/42 tracks or an
+  80-track D81, ± error table, with a `kind`) and the "is this a disk image at
+  all" check callers run before
   mounting. `errorForSector()` reads the table; `writeSector()` clears an entry.
 - **`SPT`**: sectors-per-track table (21 on tracks 1-17 down to 17 on 31-35 and
   the extended tracks), the CAV zone structure.
@@ -363,9 +370,12 @@ variants:
   (marks the image dirty), used by `gcr.js`'s decoder.
 - **`createBlankD64(name, id)`**: synthesizes a fresh empty *formatted* image
   (empty BAM at 18/0 + directory at 18/1, 664 blocks free) for the FORMAT action.
-- **Directory** (`_parse`): reads the BAM (track 18 sector 0) for disk
-  name/ID/DOS-type/free-blocks, then walks the directory chain (track 18 sector
-  1) collecting file entries (name, type, start track/sector, block count).
+  `createBlankD81` does the same for a 1581 disk (header at 40/0, BAM at 40/1
+  and 40/2, directory at 40/3, 3160 blocks free); `createBlankDisk(kind)` picks.
+- **Directory** (`_parse`): reads the header sector for name/ID/DOS type,
+  sums the BAM's free counts (directory track left out), then walks the
+  directory chain collecting entries (name, type, start track/sector, block
+  count). Type 5 is a 1581 partition: listed as CBM, never loaded or scratched.
 - **`loadFile(name)`**: resolves a name as DOS does (`*` matches from there on,
   `?` any one byte, `0:` prefix and `,P`/`,S,R` suffix stripped), then follows
   its chain with `readChain`, which stops on a link that loops or leaves the
@@ -376,9 +386,10 @@ variants:
   BASIC program so `LOAD "$",8` + `LIST` shows the catalog; a pattern
   (`LOAD"$:A*",8`) narrows it. Unclosed files get the `*` splat, locked ones `<`.
 - **`writePRG(name, bytes)`**: the inverse of `loadFile`: allocates blocks from
-  the BAM (outward from the directory track, 10-sector interleave, the way DOS
-  fills a disk), chains them, and adds a closed PRG directory entry. Long files
-  extend the directory chain with another track-18 sector when the first is full.
+  the BAM (outward from the directory track at the layout's interleave, 10 on a
+  1541 and 1 on a 1581, the way DOS fills a disk), chains them, and adds a closed
+  PRG directory entry. Long files extend the directory chain with another
+  directory-track sector when the first is full.
 - **`createPRGDisk(filename, bytes)`**: a blank write-protected image with the
   program written into it: how a `.prg` arrives through the ordinary
   `LOAD"*",8,1` path; the loading policy around it (`prgAutostart()`) belongs to
@@ -497,10 +508,14 @@ idle scheduler before the first LOAD, so the C64 doesn't time out racing the boo
   tail, per-zone gaps) or cycle-counted decoders reject it.
 - **Two opposite zone numberings exist** (`zoneForTrack` vs. the VIA2 density
   bits); don't conflate them.
-- **The load trap (TDE off) bypasses DOS only at `$FFD5`**: it reads the D64
-  directly for standard KERNAL LOADs, but an attached drive 8 still remains live
+- **The load trap (TDE off) bypasses DOS only at the LOAD entry**, `$FFD5` or
+  the `$F4A5` routine behind the ILOAD vector: it reads the image directly for
+  standard KERNAL LOADs, but an attached drive 8 still remains live
   on the IEC bus for lower-level protocol traffic and bit-banged loaders. LOAD is
   all it serves; SAVE, sequential files and the command channel need TDE on.
+- **A 1541 never holds a `.d81`**: `setDisk()` treats media it cannot read as
+  an empty drive, so with TDE on the DOS answers DRIVE NOT READY; the trap (TDE
+  off) is the only path to a 1581 image.
 - **The trap still prints the KERNAL's load messages** via the ROM's own
   routines; a program reading its next command off the screen counts on them.
 - **`$FFD5`'s register arguments are banked before those routines run**: A picks

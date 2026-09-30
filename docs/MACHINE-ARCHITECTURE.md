@@ -267,20 +267,23 @@ Several entry points get code into the machine:
 | `injectSys` / `injectRun` / `injectLoadAndRun` / `bufferKeyboardText` | stuff the KERNAL keyboard buffer ($0277, count at $C6, max 10 bytes) to auto-type SYS/RUN/LOAD |
 
 The browser's public `openMedia(request)` entry point in `src/media.js` validates
-PRG/D64/CRT/TAP/REU through `src/media/open.js` and delegates to existing media
+PRG/D64/D81/G64/CRT/TAP/REU through `src/media/open.js` and delegates to existing media
 loaders. Assembly64 and Library use this entry point; Assembly64 has no machine
 reference. Requests select autorun, drive 8/9, write protection and optional
 Library saving. Power-on uses the existing ROM checks; disk swaps await eject,
 cartridges use the existing cold boot, and REU loads use the expansion control.
-D64 loading offers TDE when it is off and the drive ROM is available. Library
+D64 loading offers TDE when it is off and the drive ROM is available; a D81
+turns TDE off for the target drive, since only the load trap can serve it. Library
 metadata can include source, release title and versioned provenance; its blob
 stores and export format remain compatible with older entries. Library storage
 lives in `src/media/library.js`; tape conversion, inspection, repair and the
 WAV import worker live in `src/media/`.
 
 **KERNAL load trap** (`_trapLoad`): with TDE *off*, when the CPU reaches the
-KERNAL LOAD entry `$FFD5` with device 8, the machine intercepts it. It reads the
-file straight from the D64 (`buildDirectoryPRG` for `$`, `loadFile` for a name
+KERNAL LOAD entry `$FFD5` with device 8, or the routine behind the ILOAD
+vector at `$F4A5` (loaders that save the vector jump there directly), the
+machine intercepts it. It reads the
+file straight from the disk image, a D64 or a D81 (`buildDirectoryPRG` for `$`, `loadFile` for a name
 or `*` wildcard), writes it into RAM, fixes up the KERNAL end-of-load pointers
 and the carry/X/Y return state, then simulates the `RTS`. The call's own
 arguments (A for LOAD vs. VERIFY, X/Y for where a secondary address of 0 loads
@@ -358,8 +361,9 @@ holds a `mem` back-reference.
 - **The IEC bus is wired-AND and DDR-direction-aware**: `_syncIecBus()` is the
   only place that computes it; the drive sees the reflected bus, not its own
   output.
-- **The load trap only runs with TDE off** at `$FFD5`/device-8; with TDE on the
-  real drive handles loading.
+- **The load trap only runs with TDE off**, at `$FFD5` or `$F4A5` for device
+  8; with TDE on the real drive handles loading. A mounted D81 turns TDE off
+  for its drive, since the 1541 holds no disk it can read.
 - **SID needs `SharedArrayBuffer`** (COOP/COEP): the constructor throws without
   it. Voice-3 readback comes from the main-thread shadow voices, not the worklet.
 - **`reset()` wipes RAM (cold boot); `softReset()` preserves it** (/RESET pulse).

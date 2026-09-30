@@ -48,8 +48,7 @@ software:
 
 ## File formats
 
-- **`.d71`, `.d81` and `.p00`** download from the Assembly64 browser but do not
-  load.
+- **`.d71` and `.p00`** download from the Assembly64 browser but do not load.
 - **`.nib`**, the uncompressed nibbler dump, does not load; only its
   compressed form, `.nbz`, does. The CLI's `info` reads either.
 
@@ -59,6 +58,15 @@ software:
   recorded has no bytes to write into, so what the DOS writes there is lost. A
   `N:` format of an image with gaps leaves the gaps empty. Every track of a
   normal image is recorded, so this only shows on partial dumps.
+
+## D81 disk images
+
+The emulator serves a `.d81` itself, and that path handles `LOAD` only:
+
+- **No writing from the C64**: `SAVE` and DOS commands reach the emulated
+  1541, which holds no disk, and fail as on an empty drive. The CLI's
+  `disk add` writes files onto one.
+- **Partitions** are listed as `CBM` but cannot be entered or loaded.
 
 ## D64 disk images
 

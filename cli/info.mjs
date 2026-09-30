@@ -54,11 +54,12 @@ function describe(bytes, filename) {
       const video = bytes[14] === 1 ? 'NTSC' : 'PAL';
       return `${name} (.dmp v${bytes[12]}), ${machine} ${video}`;
     }
-    case 'd64': {
+    case 'd64':
+    case 'd81': {
       const v = d64Variant(bytes.length);
       const disk = new D64(bytes);
       const files = disk.entries.filter(e => !e.deleted).length;
-      return `${name} (.d64, ${v.tracks} tracks${v.errorInfo ? ' + error table' : ''}), ` +
+      return `${name} (.${kind}, ${v.tracks} tracks${v.errorInfo ? ' + error table' : ''}), ` +
         `"${disk.diskName}", ${files} ${files === 1 ? 'file' : 'files'}, ${disk.freeBlocks} blocks free`;
     }
     case 'g64': {
