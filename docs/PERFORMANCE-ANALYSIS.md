@@ -63,9 +63,15 @@ var for node harnesses.
 - **WebGL presenter** (`WEBGL_PRESENTER`, default on). Uploads the finished
   framebuffer as a single texture per displayed frame instead of
   `putImageData`, saving a per-frame convert+upload on the main thread; most
-  valuable on mobile GPUs. Output is byte-exact (CSS still does all scaling), and
-  it falls back to the 2D path automatically when WebGL is unavailable;
-  `?WEBGL_PRESENTER=0` forces the 2D path.
+  valuable on mobile GPUs. With CRT off the output is byte-exact (1:1 store, CSS
+  scales it), and it falls back to the 2D path automatically when WebGL is
+  unavailable; `?WEBGL_PRESENTER=0` forces the 2D path.
+- **CRT shader** (`CRT_SHADER`, default on). Draws the CRT presets in the
+  presenter's fragment shader at device resolution: four texel fetches per
+  pixel, no per-frame allocation. Replaces the CSS path's filtered canvas
+  under two blended overlays. `?CRT_SHADER=0` forces the CSS overlays, which
+  browsers without WebGL and software rasterisers get anyway;
+  `?CRT_SHADER_SOFTWARE=1` runs the shader on a software rasteriser (tooling).
 - **Prebuilt CPU opcode / micro-op table** (always on). Each opcode's micro-op
   program is built once at construction and aliased by reference at dispatch,
   instead of allocating a fresh set of per-cycle closures every instruction. This

@@ -170,6 +170,7 @@ export const fullscreenBtn = document.getElementById('btn-fullscreen');
 export const fsCloseBtn    = document.getElementById('btn-fs-close');
 export const sizeBtn       = document.getElementById('btn-size');
 export const crtEffectBtn  = document.getElementById('btn-crt-effect');
+export const crtSettingsBtn = document.getElementById('btn-crt-settings');
 
 export const _logoText = document.querySelector('.logo-text');
 

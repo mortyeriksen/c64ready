@@ -16,6 +16,14 @@ The version you are running is shown at the bottom of the About dialog.
 - **Nibbler dumps.** A `.nbz` from the C64 Preservation Project loads too; it
   becomes a `.g64` on the way in.
 - **Shorter tooltips** on the controls.
+- **CRT looks redrawn.** Scanlines sit on the C64's own raster lines and the
+  phosphor mask on your screen's pixels, so no more ripple or banding at any
+  size or on Retina screens. Bright areas glow instead of dimming.
+- **One frame for every look.** No thick bezel on the tube looks; the picture
+  keeps its size.
+- **CRT settings.** A CRT SETTINGS button in Options (or Cmd/Ctrl+Shift+F)
+  opens a draggable panel with the six looks and a slider for every setting
+  behind them, remembered per look. The CRT button still cycles the looks.
 
 ---
 

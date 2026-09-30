@@ -89,15 +89,36 @@ const SWITCHES = {
   },
 
   // Present the framebuffer through a WebGL texture instead of
-  // ctx.putImageData (src/webgl-presenter.js). Same 384×272 backing store,
-  // NEAREST 1:1, opaque context — byte-exact output; CSS still does all
-  // scaling, so nothing looks different. Saves the per-frame putImageData
-  // convert+upload on the main thread (matters most on mobile GPUs). Falls
-  // back to the 2D path automatically when WebGL is unavailable. Browser
-  // A/B: append ?WEBGL_PRESENTER=0 to the URL to force the legacy 2D path.
+  // ctx.putImageData (src/webgl-presenter.js). With CRT off it keeps the same
+  // 384×272 backing store, NEAREST 1:1, opaque context — byte-exact output
+  // with CSS doing the scaling; under a CRT preset it also hosts the shader
+  // (crtShader below). Saves the per-frame putImageData convert+upload on the
+  // main thread (matters most on mobile GPUs). Falls back to the 2D path
+  // automatically when WebGL is unavailable. Browser A/B: append
+  // ?WEBGL_PRESENTER=0 to the URL to force the legacy 2D path.
   webglPresenter: {
     default: true,
     env: ['WEBGL_PRESENTER'],
+  },
+
+  // Draw the CRT presets (scanlines, phosphor mask, beam softness, tone) in the
+  // WebGL presenter's fragment shader, at device resolution and locked to the
+  // 272 raster lines (src/webgl-presenter.js, src/crt-params.js). OFF keeps
+  // the presenter at 1:1 and renders the presets with the CSS overlay fallback,
+  // which is also what a browser without WebGL gets. Browser A/B:
+  // ?CRT_SHADER=0.
+  crtShader: {
+    default: true,
+    env: ['CRT_SHADER'],
+  },
+
+  // Run the CRT shader even on a software WebGL rasteriser (SwiftShader,
+  // llvmpipe), where main.js otherwise keeps the CSS presets because a
+  // per-pixel shader at device resolution crawls there. For tooling that
+  // drives the shader path in a headless browser: ?CRT_SHADER_SOFTWARE=1.
+  crtShaderSoftware: {
+    default: false,
+    env: ['CRT_SHADER_SOFTWARE'],
   },
 };
 

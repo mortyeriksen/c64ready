@@ -16,8 +16,6 @@ hardware, see [Component status](COMPONENT-STATUS.md).
 ## Demos & games in general
 
 - **NTSC-only productions won't run**: the machine is PAL.
-- **Multi-disk** demos: eject and load the next disk yourself when the program
-  asks you to flip.
 - On **slower phones and tablets**, the heaviest demos may drop visible frames
   or slow down.
 
@@ -72,11 +70,9 @@ software:
 
 None of these affect ordinary loading:
 
-1. **REL files** need True Drive Emulation, where the drive's own DOS handles
-   them; the built-in loader only ever returns a file's data chain.
-2. **GEOS disks**: filenames render as text, but the per-entry GEOS info bytes
+1. **GEOS disks**: filenames render as text, but the per-entry GEOS info bytes
    are ignored.
-3. **40-track images**: tracks 36-40 count only for the three known
+2. **40-track images**: tracks 36-40 count only for the three known
    BAM-extension layouts; an unrecognised one leaves those tracks alone rather
    than guessing.
 
@@ -117,15 +113,6 @@ scrubber.
 **NTSC tunes run about 17% slow**, like any NTSC software here; the player says
 so on screen.
 
-## Display
-
-- **CRT presets ripple.** The scanline and phosphor overlays are CSS gradients
-  whose period is a fraction of the picture rather than a whole raster line, so
-  at every picture size, and on high-density screens, they beat against the
-  emulated lines and the device pixels: bands of uneven darkness that do not
-  line up with the picture. TUBE, B&W and HUM also blur the whole picture
-  rather than shaping the beam.
-
 ## Keyboard shortcuts
 
 - **Most of the app's own controls have no keyboard shortcuts.** POWER, PAUSE,
@@ -143,11 +130,6 @@ so on screen.
 
 See the [key map and shortcut list](USER-GUIDE.md#keyboard-shortcuts).
 
-## Audio
-
-- On tab switch or phone standby the machine **pauses and mutes**; audio resumes
-  when you return, and on some mobile browsers only on the first tap after
-  returning.
 
 ## VR (WebXR), experimental
 

@@ -22,10 +22,13 @@
 // named shots and skips the slow retro-vibes / overview-running passes — a
 // targeted refresh that won't rewrite every tracked shot.
 //
-// The script captures 21 UI shots: overview, overview-running, the main feature
-// cards, the modals, directory zoom, Retro Vibes, and the SID player. It pre-seeds localStorage
-// for reproducibility, including hiding the PWA card and forcing the lighter
-// VIBES model for software WebGL.
+// The script captures 22 UI shots: overview, overview-running, the main feature
+// cards, the modals, the CRT settings panel, directory zoom, Retro Vibes, and
+// the SID player. It pre-seeds localStorage for reproducibility, including
+// hiding the PWA card and forcing the lighter VIBES model for software WebGL,
+// and loads the app with ?CRT_SHADER_SOFTWARE=1 so the CRT looks are the
+// shader's (what a real GPU shows) rather than the CSS fallback headless
+// Chromium's software WebGL would otherwise get.
 //
 // FULL REGENERATION of public/guide/ — start your Vite first, then, in order:
 //   node tools/guide-shots.mjs                     20 shots (above)
@@ -174,7 +177,7 @@ async function closeModal(sel) {
 
 console.log(`\nGuide screenshots → ${OUT}\n  base=${BASE}  disk=${hasDisk ? DISK : '(none)'}`);
 
-await page.goto(BASE, { waitUntil: 'networkidle' });
+await page.goto(`${BASE}/?CRT_SHADER_SOFTWARE=1`, { waitUntil: 'networkidle' });
 
 // ROMs auto-load from /roms/ → POWER enables. Dismiss the Setup dialog if
 // it popped (only happens when no ROMs are found on the server).
@@ -261,7 +264,7 @@ try {
 
 // If only the shots up to here were requested, stop now — skip the modals,
 // the slow Retro Vibes / overview-running passes, and the disk load entirely.
-const restShots = ['options', 'keymap', 'library', 'save-states', 'key-joystick', 'retro-vibes', 'drive8-loaded', 'directory-zoom', 'overview-running', 'sid-player'];
+const restShots = ['options', 'crt-settings', 'keymap', 'library', 'save-states', 'key-joystick', 'retro-vibes', 'drive8-loaded', 'directory-zoom', 'overview-running', 'sid-player'];
 if (ONLY.length && !restShots.some(want)) {
   await browser.close();
   console.log(`\nDone. ${done.length} shots → ${OUT}`);
@@ -279,6 +282,21 @@ if (want('options')) await page.setViewportSize({ width: 1460, height: 1600 });
 await shot('#settings-modal .modal-card', 'options');
 if (want('options')) await page.setViewportSize({ width: 1460, height: 1180 });
 await closeModal('#btn-settings-close');
+
+// CRT settings: the panel floats over the monitor's top-right corner, so the
+// shot is the monitor with the panel on it, in the default ON look. Opened the
+// way the guide describes (Options ▸ CRT SETTINGS closes Options and opens the
+// panel); Escape closes it.
+if (want('crt-settings')) {
+  await click('#btn-settings');
+  await page.waitForSelector('#settings-modal:not([hidden])', { timeout: 5000 });
+  await click('#btn-crt-settings');
+  await page.waitForSelector('.crt-panel:not([hidden])', { timeout: 5000 });
+  await sleep(300);
+  await shot('#monitor', 'crt-settings');
+  await page.keyboard.press('Escape');
+  await sleep(200);
+}
 // The Setup C64 READY. dialog only auto-opens on first run (no ROMs), which the
 // running-app shots can't reproduce — capture setup-dialog.png separately with a
 // fresh context that blocks /roms/ so autoLoad finds none.

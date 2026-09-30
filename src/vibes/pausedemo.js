@@ -164,8 +164,9 @@ export class PauseDemo {
       pointerEvents: 'none',
       zIndex: '5',
     });
-    // image-rendering + the CRT preset filters live in CSS (.pause-demo-canvas
-    // and the body.crt-* rules) so the demo gets the same look as #screen.
+    // The CRT look comes from CSS (.pause-demo-canvas and the body.crt-*
+    // overlay rules, switched on by .demo-live on the bezel while the demo
+    // shows): the shader that draws #screen's presets cannot reach this canvas.
     this.container.appendChild(el);
     this.renderer = renderer;
 
@@ -888,6 +889,7 @@ export class PauseDemo {
     this._last = 0;
     if (!this._guarded) this._frames = [];   // fresh sample per attempt
     this.renderer.domElement.style.display = 'block';
+    this.container.classList.add('demo-live');
     this._raf = requestAnimationFrame(this._loop);
   }
 
@@ -904,5 +906,6 @@ export class PauseDemo {
       this._raf = null;
     }
     this.renderer.domElement.style.display = 'none';
+    this.container.classList.remove('demo-live');
   }
 }

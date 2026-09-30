@@ -177,8 +177,12 @@ to per-cycle rendering at every CPU-observable point (verified by a lockstep
 equivalence suite, framebuffer hashes, ≈200 reference screenshots and the demo
 status board), and measurably faster on sprite- and graphics-heavy demos. The
 finished framebuffer reaches the canvas through a WebGL presenter, with an
-automatic 2D `putImageData` fallback. Both pipelines, and the runtime switches
-that A/B them, are detailed in the [VIC-II](VIC2-ARCHITECTURE.md) §8 and §14.
+automatic 2D `putImageData` fallback. Under a CRT preset the presenter backs
+the canvas at device resolution and draws the preset in its shader
+(`src/crt-params.js` holds the numbers); with CRT off or no usable WebGL the
+canvas stays 1:1 and CSS overlays take over. Both pipelines, and the runtime
+switches that A/B them, are detailed in the [VIC-II](VIC2-ARCHITECTURE.md) §8
+and §14.
 
 ### Audio  (CPU → SID → speakers): crosses the thread boundary
 ```

@@ -54,7 +54,7 @@ const IS_WINDOWS =
   /Windows/i.test(navigator.userAgent || '');
 
 // ── Injected core hooks (assigned by initInput) ──────────────────────────────
-let downloadSnapshot, clearPendingPaste, cycleCrtEffect, toggleVibesZoom, pasteFromShortcut;
+let downloadSnapshot, clearPendingPaste, toggleCrtPanel, toggleVibesZoom, pasteFromShortcut;
 let toggleVibesStudio;
 
 // ── Control Port state ──────────────────────────────────────────────────────
@@ -1854,8 +1854,8 @@ registerAppShortcut({
   run: () => pasteFromShortcut?.(),
 });
 registerAppShortcut({
-  code: 'KeyF', label: 'Cycle CRT look',
-  run: () => cycleCrtEffect(),
+  code: 'KeyF', label: 'CRT settings',
+  run: () => toggleCrtPanel(),
 });
 registerAppShortcut({
   code: 'KeyZ', label: 'Zoom VIBES button 10x',
@@ -2270,6 +2270,6 @@ document.addEventListener('pointerlockchange', () => {
 
 // ── Dependency injection ─────────────────────────────────────────────────────
 export function initInput(deps) {
-  ({ downloadSnapshot, clearPendingPaste, cycleCrtEffect, toggleVibesZoom, pasteFromShortcut,
+  ({ downloadSnapshot, clearPendingPaste, toggleCrtPanel, toggleVibesZoom, pasteFromShortcut,
      toggleVibesStudio } = deps);
 }

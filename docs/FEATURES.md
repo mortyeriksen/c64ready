@@ -134,7 +134,7 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **PETSCII directory listings**: disk directories render through the real
   character ROM, so custom cracker-art charsets display correctly.
 - **App shortcuts**: **Cmd+Shift** on a Mac, **Ctrl+Shift** on Windows and Linux
-  (both work everywhere) for paste, the CRT look, the VIBES zoom and Retro
+  (both work everywhere) for paste, the CRT settings, the VIBES zoom and Retro
   Vibes Studio mode; the **KEY MAP** dialog lists them. Only those letters are
   borrowed; **Ctrl** on its own is still the C64's.
 
@@ -217,7 +217,12 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 
 - **CRT display modes**: a single button cycles: scanlines → phosphor-mask
   colour tube → black-and-white tube → bright arcade → tube with a rolling
-  mains-hum bar → off.
+  mains-hum bar → off. Drawn by a shader locked to the C64's raster lines, so
+  the looks hold at every picture size and pixel density; browsers without
+  WebGL get a CSS version.
+- **CRT settings**: **CRT SETTINGS** in Options (or **Cmd/Ctrl+Shift+F**)
+  opens a draggable panel with the six looks and a slider for every setting
+  behind them, remembered per look.
 - **Picture size**: 1X / 2X / 2.5X / 3X (each a whole multiple of the C64's
   own 384x272 screen so no scaling step softens a pixel), plus **MAX** to fill
   the width and **fullscreen**; sizes too big for the window are left out of

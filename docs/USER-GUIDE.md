@@ -733,11 +733,14 @@ ROM management. All choices persist in this browser.
 
 | Button | What it does |
 | --- | --- |
-| **🖥 CRT** | Cycles the CRT visual effect: **ON** (basic scanlines) → **TUBE** (phosphor mask + vignette + glow) → **B&W** (monochrome tube) → **ARCADE** (bright, sharp scanlines) → **HUM** (tube look with a slow rolling mains-hum bar) → **OFF** (flat, crisp pixels). |
+| **🖥 CRT** | Cycles the CRT look: **ON** (basic scanlines) → **TUBE** (phosphor mask + vignette + glow) → **B&W** (monochrome tube) → **ARCADE** (bright, sharp scanlines) → **HUM** (tube look with a slow rolling mains-hum bar) → **OFF** (flat, crisp pixels). |
+| **CRT SETTINGS** | Opens the CRT settings panel (also **Cmd/Ctrl+Shift+F**): the six looks and a slider for every setting behind them, remembered per look, with **Reset preset**. Drag it by its title bar; **Esc** closes it. |
 | **ATTRACT MODE** | On by default: plays an animated attract-mode demo on the screen while the machine is powered off. Turn it off to show a simple "press power to boot" hint instead. It also steps aside on its own if your system asks for reduced motion, or the machine has no GPU to spare, you get the hint instead. |
 | **3D MODEL** | Which model the VIBES viewer loads: **SMALL** (default, a light model that's easy on memory everywhere), **AUTO** (picks by device: lighter on phones/tablets, detailed 4K on desktop), or **LARGE** (force the 4K model). Takes effect next time you open VIBES. |
 | **STAY AWAKE** | Keeps the screen awake while a demo runs, so the device doesn't dim or lock (which would pause the emulator). |
 | **VIBES BUTTON FX** | On by default: runs a tiny demo inside the VIBES button itself: a field of dark pixels drifting through ten sine patterns in 3D. Turn it off for a plain button. |
+
+![The CRT settings panel floating over the top-right of the picture: six look buttons with ON selected, sliders for scanlines, beam width, softness, mask, brightness, contrast, saturation, vignette, black level and hum bar, a mask type selector, and a Reset preset button.](/guide/crt-settings.webp)
 
 ### Video
 
@@ -883,7 +886,7 @@ on every platform.
 | With the modifier | Action |
 | --- | --- |
 | **V** | Pastes the clipboard into the C64 as keystrokes, same as **PASTE**. |
-| **F** | Cycles the CRT look, same as the CRT button in [Options](#options). |
+| **F** | Opens **CRT SETTINGS** (also a button in [Options](#options)): the six looks and a slider for every setting behind them, remembered per look, with **Reset preset**. Drag it by its title bar. Press again, or **Esc**, to close. |
 | **Z** | Zooms the VIBES button to 10x, so the little pixel demo running inside it can be watched properly: magnified, and running at your display's refresh rate. It stays a working button: clicking it opens [Retro Vibes](#retro-vibes). Press it again (or **Esc**) to send it back. |
 | **X** | Opens [Retro Vibes](#retro-vibes) in Studio mode: the 3D scene and the C64 READY. logo, nothing else. Press it again to bring the controls back. The mode is remembered between visits. |
 

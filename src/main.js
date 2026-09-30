@@ -23,6 +23,8 @@ import { VERSION }     from './version.js';
 import { switchOn }   from './switches.js';
 import { attachVibesButtonFx, createVibesZoom } from './vibes/vibes-btn-fx.js';
 import { WebGLPresenter } from './webgl-presenter.js';
+import { resolveParams, readOverrides, CRT_STORAGE_KEY } from './crt-params.js';
+import { createCrtPanel } from './crt-panel.js';
 import sidWorkletUrl   from './sid-worklet.js?worker&url';
 import { registerSW }  from 'virtual:pwa-register';
 import {
@@ -56,7 +58,7 @@ import {
   saveStateBtn, crtBtn, d64Btn, d64NewBtn, tapBtn, tapNewBtn, kernalInput, basicInput,
   charInput, drive1541Input, romStatus, sidToggleBtn, vicToggleBtn, paletteToggleBtn,
   tapeListenBtn, tdeToggleBtn, fpsCounter, fpsDisplay, frametimeDisplay, frametimeWrap,
-  heapDisplay, heapWrap, fullscreenBtn, fsCloseBtn, sizeBtn, crtEffectBtn, _logoText,
+  heapDisplay, heapWrap, fullscreenBtn, fsCloseBtn, sizeBtn, crtEffectBtn, crtSettingsBtn, _logoText,
   driveSoundToggleBtn, sidEngineToggleBtn, wakeLockToggleBtn, muteToggleBtn, volumeSlider,
   volumeValue, attractToggleBtn, vibesModelBtn, recResToggleBtn, runBackgroundBtn, _romFnSpans, romClearBtn,
   mobileKbd, touchControls, autorunBtn, creditsModal, creditsBtn, creditsClose, creditsVer,
@@ -76,12 +78,20 @@ canvas.height = CANVAS_H;
 // ?WEBGL_PRESENTER=0 in the URL for an A/B). Decided before any getContext
 // call because a canvas binds permanently to its first context type; when
 // WebGL is unavailable, create() returns null WITHOUT binding the canvas, so
-// the 2D fallback below still works. Only the framebuffer→canvas hop changes:
-// same 384×272 backing store, CSS does all scaling, CRT presets are CSS.
+// the 2D fallback below still works. With CRT off both paths share the
+// 384×272 backing store and CSS does the scaling. The CRT presets are drawn
+// by the presenter's shader when it has one ('crtShader' switch, body.crt-gl);
+// otherwise the CSS overlays in styles-display.css draw them (body.crt-css,
+// also forced with ?CRT_SHADER=0). A software rasteriser behind WebGL counts
+// as not having one, unless 'crtShaderSoftware' says otherwise.
 const presenter = switchOn('webglPresenter')
   ? WebGLPresenter.create(canvas, CANVAS_W, CANVAS_H)
   : null;
 const ctx = presenter ? null : canvas.getContext('2d');
+const crtShader = !!presenter && presenter.crtAvailable && switchOn('crtShader')
+  && (!presenter.softwareGl || switchOn('crtShaderSoftware'));
+document.body.classList.add(crtShader ? 'crt-gl' : 'crt-css');
+if (!crtShader) document.querySelector('.crt-bezel')?.classList.add('crt-css');
 
 function _isFacebookInAppBrowser() {
   const ua = navigator.userAgent || '';
@@ -155,8 +165,10 @@ const _attractCapable = () => {
 // font, a power symbol between the words, a Colodore light-blue halo under a
 // white core) and gently pulsed by a lightweight 2D loop — so it feels like the
 // animated demo's banner without loading any Three.js. Rendered on an offscreen
-// 384×272 canvas (reused) so one path serves both presenters (the WebGL screen
-// has no fillText — it shows this canvas through the frame texture).
+// canvas (reused) at the framebuffer's 384×272, never the screen canvas's own
+// size (a CRT preset backs that at device resolution), so one path serves both
+// presenters: the WebGL screen has no fillText and shows this canvas through
+// the frame texture, which must keep the framebuffer's dimensions.
 let _bootHintRaf = null;
 let _bootHintCanvas = null;
 
@@ -184,7 +196,7 @@ const _romsReady = () => !loader || !!loader.allLoaded;
 function _drawBootHint(alpha = 1) {
   if (!_bootHintCanvas) _bootHintCanvas = document.createElement('canvas');
   const off = _bootHintCanvas;
-  if (off.width !== canvas.width || off.height !== canvas.height) { off.width = canvas.width; off.height = canvas.height; }
+  if (off.width !== CANVAS_W || off.height !== CANVAS_H) { off.width = CANVAS_W; off.height = CANVAS_H; }
   const g = off.getContext('2d');
   g.fillStyle = '#000'; g.fillRect(0, 0, off.width, off.height);
   g.globalAlpha = alpha;
@@ -2016,7 +2028,7 @@ function vibesBusyEnd() {
   // whatever size is showing — measuring it would let 1X answer "only 1X fits"
   // and strand the cycle there. Work from the row instead, leaving the panel its
   // minimum track when the two sit side by side, and take off whatever the frame
-  // draws around the picture (26px a side under the CRT presets, otherwise 1px).
+  // draws around the picture (its border and padding, measured live).
   const availableWidth = () => {
     const wrap = document.querySelector('.main-wrap');
     if (!wrap) return Infinity;
@@ -2061,6 +2073,10 @@ function vibesBusyEnd() {
     document.body.classList.toggle('size-max', eff === 'max');
     // Label what is on screen, not what is in storage.
     if (sizeBtn) sizeBtn.textContent = `SIZE: ${SIZE_LABEL[eff]}`;
+    // The CSS scanline overlay needs two CSS pixels per raster line for a real
+    // band; a picture squeezed under 768px has less (1X has its own rule).
+    const bezel = document.querySelector('.crt-bezel');
+    document.body.classList.toggle('crt-fine', eff !== '1x' && !!bezel && bezel.clientWidth < 768);
   };
 
   apply();
@@ -2115,9 +2131,9 @@ document.addEventListener('fullscreenchange', () => {
   if (sidNode) sidNode.port.postMessage({ type: 'resync' });
 });
 
-// Assigned by the CRT block below so input.js can drive it from the shortcut; the mode
-// state stays scoped to that block.
-let _cycleCrtEffect = () => {};
+// Assigned by the CRT block below so input.js can open the control panel from
+// the shortcut; the mode state stays scoped to that block.
+let _toggleCrtPanel = () => {};
 
 // CRT effect — persisted under c64emu.crtMode. Modes:
 //   'on'     basic scanlines (no body class)
@@ -2126,15 +2142,23 @@ let _cycleCrtEffect = () => {};
 //   'arcade' punchy sharp arcade monitor (bright, strong tight scanlines)
 //   'hum'    tube look + a slow rolling mains-hum brightness bar
 //   'off'    flat
-// Legacy 'on'/'off' values remain valid. Default = 'on'.
-// Button cycles on → tube → bw → arcade → hum → off → on.
+// Default = 'on'. Button cycles on → tube → bw → arcade → hum → off → on.
+// The body class drives the CSS path and the bezel frame; under the shader
+// path the presenter takes the preset's numbers (crt-params.js) as well, with
+// the user's per-preset tuning from the control panel (c64emu.crtParams) laid
+// over them. The panel opens from CRT SETTINGS in Options or the app shortcut.
 {
   const MODES = ['on', 'tube', 'bw', 'arcade', 'hum', 'off'];
   let crtMode = 'on';
+  let overrides = {};
   try {
     const v = localStorage.getItem('c64emu.crtMode');
     if (MODES.includes(v)) crtMode = v;
+    overrides = readOverrides(localStorage.getItem(CRT_STORAGE_KEY));
   } catch {}
+  const saveOverrides = () => { try { localStorage.setItem(CRT_STORAGE_KEY, JSON.stringify(overrides)); } catch {} };
+  const params = () => resolveParams(crtMode, overrides);
+  let panel = null;
   const LABELS = {
     on:     '🖥 CRT: ON',
     tube:   '🖥 CRT: TUBE',
@@ -2152,17 +2176,50 @@ let _cycleCrtEffect = () => {};
     if (crtEffectBtn) {
       crtEffectBtn.textContent = LABELS[crtMode];
     }
+    if (crtShader) presenter.setCrt(params(), { reducedMotion: _reducedMotion() });
+    panel?.refresh();
   };
   apply();
-  const cycle = () => {
-    crtMode = MODES[(MODES.indexOf(crtMode) + 1) % MODES.length];
+  // The hum bar stands still under reduced motion; follow the setting live.
+  window.matchMedia?.('(prefers-reduced-motion: reduce)')?.addEventListener?.('change', apply);
+  const setMode = (mode) => {
+    crtMode = mode;
     apply();
     try { localStorage.setItem('c64emu.crtMode', crtMode); } catch {}
   };
+  const cycle = () => setMode(MODES[(MODES.indexOf(crtMode) + 1) % MODES.length]);
   if (crtEffectBtn) crtEffectBtn.addEventListener('click', cycle);
-  // Cmd+Shift+F is bound in input.js, next to the snapshot shortcut — see
-  // initInput below.
-  _cycleCrtEffect = cycle;
+  // The control panel: built on first use, over the picture inside the frame.
+  const ensurePanel = () => panel ??= createCrtPanel({
+    host: document.body,
+    anchor: document.getElementById('monitor'),
+    getMode: () => crtMode,
+    setMode,
+    getParams: params,
+    setParam: (key, value) => {
+      (overrides[crtMode] ??= {})[key] = value;
+      saveOverrides();
+      apply();
+    },
+    resetParams: () => {
+      delete overrides[crtMode];
+      saveOverrides();
+      apply();
+    },
+    tunable: crtShader,
+    onClose: () => canvas.focus(),
+    initialPos: (() => {
+      try {
+        const p = JSON.parse(localStorage.getItem('c64emu.crtPanelPos') || 'null');
+        return p && Number.isFinite(p.x) && Number.isFinite(p.y) ? p : null;
+      } catch { return null; }
+    })(),
+    savePos: (p) => { try { localStorage.setItem('c64emu.crtPanelPos', JSON.stringify(p)); } catch {} },
+  });
+  // Cmd+Shift+F is bound in input.js — see initInput below. The Options button
+  // closes the dialog first: the panel floats under it otherwise.
+  _toggleCrtPanel = () => ensurePanel().toggle();
+  if (crtSettingsBtn) crtSettingsBtn.addEventListener('click', () => { _closeSettings(); ensurePanel().open(); });
 }
 
 // Autorun toggle: when ON, the file-picker / drag-drop / D64-entry-click
@@ -2946,7 +3003,7 @@ setTimeout(() => {
 // two core hooks it needs — the debug-snapshot download (from media.js) and clearing
 // the keyboard paste buffer on focus loss.
 initInput({
-  cycleCrtEffect: () => _cycleCrtEffect(),
+  toggleCrtPanel: () => _toggleCrtPanel(),
   toggleVibesZoom: () => vibesZoom?.toggle(),
   downloadSnapshot,
   clearPendingPaste: () => { pendingPasteText = ''; },
