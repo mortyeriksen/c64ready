@@ -31,10 +31,6 @@ Found something broken? Note the demo and where it breaks, and
   empty cartridge slot, and `$DF00-$DFFF` cannot share an attached REU.
 - **Cartridge families beyond the five in the Features list, user-port
   devices, printers and modems** are not implemented.
-- **A RAM Expansion Unit alongside an Action Replay, Final Cartridge III or
-  EasyFlash cartridge**: all four decode `$DF00-$DFFF`, so the expansion answers
-  where the cartridge expects to. Real hardware has the same conflict and needs
-  a port expander to run both.
 
 ## Unmodelled hardware quirks
 

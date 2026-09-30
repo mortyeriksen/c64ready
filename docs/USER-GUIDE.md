@@ -555,7 +555,9 @@ A Commodore RAM Expansion Unit, the box that plugs into the expansion port and
 gives the C64 a bank of extra memory. The C64 cannot see that memory directly;
 a controller inside the unit shifts blocks between it and normal C64 memory,
 about a megabyte a second, with the processor stopped while it works. GEOS and
-a good number of demos ask for one.
+a good number of demos ask for one. As on the real machine, it shares
+`$DF00-$DFFF` with an Action Replay, Final Cartridge III or EasyFlash
+cartridge, and answers there ahead of it.
 
 Nothing is fitted until you turn the switch in the card header on. Pick the
 unit from the dropdown:
