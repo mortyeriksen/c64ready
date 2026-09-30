@@ -286,6 +286,15 @@ come from three distinct half-cycles (VIC-Addendum "sprite idle fetch"): byte 0
 (`_spritePCyclePhi2Bus`, `_spriteSCyclePhi1Ghost`, `spriteIdleFetchLeakEnabled`).
 
 ### Sprite rendering
+The pre-canvas X-match guard applies to the current fetched row. An early
+DMA-fetch bitmask records actual s-accesses for sprites 3-7, including reloads
+of identical bytes. If offscreen emission finishes before the first s-access
+(p-cycle phi2), the fresh row remains eligible for a later X match. Emission
+overlapping the fetch retains the existing guard. The bitmask is constant
+during visible rendering, so live rendering, deferred replay and sprite-state
+rollback share the same fetch history. Line start and reset clear it; save
+states preserve it.
+
 `_renderSpriteSegmentForSprite` drives a per-sprite sequencer state
 (`_createSpriteRenderState` / `_advanceSpriteSequencerState`) that persists
 across cycle segments, so the incremental render resumes the shifter at the

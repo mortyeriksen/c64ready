@@ -16,6 +16,7 @@ import {
 export const spriteOps = {
 
   _clearSpriteFetchState() {
+    this._spriteEarlyDmaFetched = 0;
     this.spritePointerValue.fill(0);
     this.spriteRowByteMask.fill(0);
     this.spriteShiftReg.fill(0);
@@ -215,6 +216,9 @@ export const spriteOps = {
     if (s < 0) return;
     if (this.spriteDmaOn[s] && this.spritePointerFresh[s]) {
       this._performSpriteRowSAccesses(s);
+      // Only fetches preceding the visible sprite segments belong to this
+      // row's pre-canvas history. Sprites 0-2 fetch at the line's other end.
+      if (cycle <= 10) this._spriteEarlyDmaFetched |= 1 << s;
     } else {
       this._spriteSCyclePhi1Ghost[s] = this._vicReadWithBank(0x3FFF, this.currentVicBank) & 0xFF;
       this._spriteSCyclePhi1GhostValid[s] = 1;
@@ -916,11 +920,9 @@ export const spriteOps = {
       // by the skip-loop, so the end-of-line wrap painted nothing and the glyph
       // vanished at the left edge instead of clipping (The Hat "12 sprites wide
       // scroller"; see vic2-sprite-wrap-lowx-rewrite-preserve spec).
-      // A line-start state in the pre-canvas sweep zone (raw X $1A0..$1F7,
-      // swept at cycles 1..11 before canvas X=0) already matched: in line-time
-      // EVERY later write is behind the beam, so it cannot reposition either —
-      // its register survives for the end-of-line wrap / off-canvas collision
-      // (The Hat "13 sprites scroller" left-exit columns).
+      // A pre-canvas match blocks repositioning only when it consumes the
+      // current fetched row. A full DMA reload after completed emission
+      // leaves fresh data available for a later comparator match.
       if (sx >= seg.start && !this._spriteLineSweptPreCanvas[s]) {
         spriteLeft = sx;
         renderState.currentX = sx;
@@ -959,22 +961,21 @@ export const spriteOps = {
         renderState = this._createSpriteRenderState(
           shiftReg, rowByteMask, spriteLeft, stateStartX, !!spriteIsMulti, !!spriteXExp
         );
-        // Bauer §3.8.1: raw X $1A0..$1F7 (canvas 424..511) is swept by the
-        // X counter at cycles 1..11, before canvas X=0. A line-start state
-        // with X there has already had its comparator match this line — mark
-        // it so the pre-start rewrite branch treats later low-X writes as
-        // rule-6 beam-passed no-ops (shift register preserved for the
-        // end-of-line wrap + off-canvas collision). Raw $1F8+ never matches
-        // (skipped counter band) and remains repositionable.
-        this._spriteLineSweptPreCanvas[s] =
-          (seg.start === 0 && spriteLeft >= 424 && spriteLeft <= 511) ? 1 : 0;
         const pixelsPerUnit = (spriteIsMulti ? 2 : 1) * (spriteXExp ? 2 : 1);
         const spriteWidth = (spriteIsMulti ? 12 : 24) * pixelsPerUnit;
-        // A high-X sprite only counts as already-started at canvas X=0 when its
-        // body crossed the raw X=$1F7 -> $000 wrap point and emitted same-line
-        // left-edge pixels. High-X sprites that do not reach the wrap point are
-        // still pending; a later write ahead of the beam may legitimately move
-        // their first comparator match.
+        // Bauer §3.8.1 rules 5/6: an early X match can consume the old row,
+        // then s-accesses refill it before a later X match. PAL starts at
+        // raw X=404; the first s-access is p-cycle phi2 (four pixels later).
+        // Release only a row whose entire old emission ended before that
+        // first access. Overlapping fetch/emission retains the wrap guard.
+        const firstFetchX = 408 + 8 * (SPRITE_PTR_CYCLE[s] - 1);
+        const freshAfterSweep = (this._spriteEarlyDmaFetched & (1 << s)) !== 0
+          && rawSpriteX + spriteWidth <= firstFetchX;
+        this._spriteLineSweptPreCanvas[s] =
+          (seg.start === 0 && spriteLeft >= 424 && spriteLeft <= 511
+            && !freshAfterSweep) ? 1 : 0;
+        // Preserve the wrapped tail separately: later X writes cannot erase
+        // left-edge pixels already emitted by the pre-canvas match.
         const lineWrapPointInCanvas = 504;
         if (rawSpriteX < lineWrapPointInCanvas && sx + spriteWidth > lineWrapPointInCanvas
             && (spriteXExp || rawSpriteX >= 0x1F0)) {

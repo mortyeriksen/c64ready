@@ -10,6 +10,9 @@ The version you are running is shown at the bottom of the About dialog.
 
 ## Next release
 
+- **Complete picture in Flescos.** The full-height black stripe through the
+  picture is gone.
+
 - **G64 disk images.** Load `.g64` raw disk images into drive 8 or 9: the disk
   as the original recorded it, so copy-protected games load as on a real 1541.
   Loading one turns True Drive Emulation on.

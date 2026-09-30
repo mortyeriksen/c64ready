@@ -198,6 +198,7 @@ const TESTS = [
   'test/vic2/vic2-sprite-final-row-idle-fetch-spec-test.js',
   'test/vic2/vic2-sprite-wrap-midline-x-spec-test.js',
   'test/vic2/vic2-sprite-wrap-lowx-rewrite-preserve-spec-test.js',
+  'test/vic2/vic2-sprite-fetch-reposition-spec-test.js',
   'test/vic2/vic2-sprite-datarow-midline-spec-test.js',
   'test/vic2/vic2-sprite-d018-banking-spec-test.js',
   'test/vic2/vic2-d016-res-bit-spec-test.js',

@@ -588,13 +588,12 @@ export class VIC2 {
     this._spriteLinePendingWrapIsMulti = new Uint8Array(8);
     this._spriteLinePendingWrapXExp = new Uint8Array(8);
     this._spriteLinePendingWrapStartCanvasX = new Int32Array(8);
-    // Bauer §3.8.1 pre-canvas sweep: the X counter passes raw X $1A0..$1F7
-    // (canvas 424..511) during cycles 1..11, BEFORE canvas X=0. A sprite whose
-    // render state is created at line start with X in that zone has already
-    // been matched by the comparator this line, so a later mid-line rewrite to
-    // a lower X is rule-6 beam-passed and must NOT reposition it (The Hat "13
-    // sprites scroller": s1 parked at raw $1E8, $D010-cleared to $E8 at cy16).
-    // Raw $1F8..$1FF (canvas 512+) never matches at all and stays movable.
+    // Early DMA fetch events are independent of byte values and remain
+    // constant throughout visible rendering, including deferred replay.
+    this._spriteEarlyDmaFetched = 0;
+    // A pre-canvas X match protects consumed rows and wrapped tails from
+    // later repositioning. A full fetch after completed emission makes the
+    // new row available again. Raw $1F8..$1FF never matches the comparator.
     this._spriteLineSweptPreCanvas = new Uint8Array(8);
     // Sprite-line snapshots are now stored per-pending-record on the
     // _pendingFFTransitions queue (see _captureSpriteLineSnapshot /
@@ -2126,6 +2125,7 @@ export class VIC2 {
       spriteDataBase: cp(this.spriteDataBase), spriteDataBank: cp(this.spriteDataBank),
       spriteLineDataRow: cp(this.spriteLineDataRow),
       spriteStartPending: cp(this.spriteStartPending), spriteStopPending: cp(this.spriteStopPending),
+      _spriteEarlyDmaFetched: this._spriteEarlyDmaFetched,
       // internal pipeline / bad-line / raster-compare state
       _prevBadLineCondition: this._prevBadLineCondition,
       _lineBadLineLatch: this._lineBadLineLatch,
@@ -2179,6 +2179,7 @@ export class VIC2 {
     this.spriteDataBase.set(s.spriteDataBase); this.spriteDataBank.set(s.spriteDataBank);
     this.spriteLineDataRow.set(s.spriteLineDataRow);
     this.spriteStartPending.set(s.spriteStartPending); this.spriteStopPending.set(s.spriteStopPending);
+    this._spriteEarlyDmaFetched = s._spriteEarlyDmaFetched ?? 0;
     this._prevBadLineCondition = !!s._prevBadLineCondition;
     this._lineBadLineLatch = !!s._lineBadLineLatch;
     // Accept the legacy key so pre-rename .c64state saves keep loading.

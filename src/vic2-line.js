@@ -683,6 +683,7 @@ export const lineOps = {
     this._clearCycleState();
     this.spritePointerFresh.fill(0);
     this._spriteIdleFetchedThisLine.fill(0);
+    this._spriteEarlyDmaFetched = 0;
     this._spriteByte0Floats.fill(0);
     for (let s = 0; s < 8; s++) {
       if (this.spriteStopPending[s]) {
