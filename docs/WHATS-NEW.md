@@ -10,6 +10,9 @@ The version you are running is shown at the bottom of the About dialog.
 
 ## Next release
 
+- **Less CPU work to draw the screen.** The video renderer spends less time
+  recording unchanged state and processing sprites between their visible pixels.
+
 - **Complete picture in Flescos.** The full-height black stripe through the
   picture is gone.
 

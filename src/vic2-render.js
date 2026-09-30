@@ -408,6 +408,43 @@ export const renderOps = {
     return PALETTE_RGBA[regs[reg] & 0x0F];
   },
 
+  // Latch the source bytes at the same phase as cycle-incremental emission.
+  // XSCROLL may consume the previous column as well as the current column.
+  // The stream contains data only: bus ownership and latches run separately.
+  _recordGraphicsFetch(cycle) {
+    if (!this.lineCycleDisplayColumnActive[cycle]) return;
+    const seg = this._buildCycleRasterSegment(cycle);
+    const line = seg.rc & 7;
+    const currentCol = cycle - 15;
+    const firstCol = (seg.regs[0x16] & 7) ? currentCol - 1 : currentCol;
+    const writeCol = this.lineCycleCWriteCol[cycle];
+    const shift = writeCol >= 0 ? writeCol - currentCol : 0;
+    for (let col = firstCol; col <= currentCol; col++) {
+      const src = col + shift;
+      if (col < 0 || src < 0 || src >= 40 || !seg.rowFetchedCols[src]) continue;
+      const d011 = seg.nextRegs[0x11], prev = seg.regs[0x11];
+      const base = ((d011 | prev) & 0x20) ? seg.liveVcBase : seg.rowVcBase;
+      const address = this._graphicsFetchAddr(d011, prev, seg.nextRegs[0x18],
+        seg.rowCodes[src], (base + src) & 0x3ff, line, seg.bank);
+      const slot = cycle * 2 + (col === currentCol ? 1 : 0);
+      this._fetchFeedAddress[slot] = seg.bank + address;
+      this._fetchFeedBytes[slot] = this._vicMemRead(address, seg.bank);
+      this._fetchFeedValid[slot] = 1;
+    }
+  },
+
+  _graphicsSourceByte(col, seg, address, bank) {
+    if (this._fetchFeedLine) {
+      const cycle = Math.max(seg.cycle, col + 15);
+      const slot = cycle * 2 + (col === cycle - 15 ? 1 : 0);
+      if (this._fetchFeedValid[slot]
+          && this._fetchFeedAddress[slot] === bank + address) {
+        return this._fetchFeedBytes[slot];
+      }
+    }
+    return this._vicMemRead(address, bank);
+  },
+
   _renderSourceColumn(col, line, seg, outPixels, outFgMap, outOffset = 0) {
     // Bauer §3.7.3 defines the normal ECM/BMM/MCM g-access address
     // schemes and pixel colouring. $D018 CB / bitmap-base is sampled at the
@@ -516,7 +553,9 @@ export const renderOps = {
       // Renderer reads use the non-bus-driving peek — real silicon
       // already drove the bus at g-access time and latched the byte;
       // re-fetching at render time is an emulator-side convenience.
-      const charByte = this._vicMemRead(fetchAddr, bank);
+      const charByte = this._fetchFeedLine
+        ? this._graphicsSourceByte(col, seg, fetchAddr, bank)
+        : this._vicMemRead(fetchAddr, bank);
       const fgRGBA = PALETTE_RGBA[colorNib];
       outPixels[o + 0] = (charByte & 0x80) ? fgRGBA : bg0; outFgMap[o + 0] = (charByte >> 7) & 1;
       outPixels[o + 1] = (charByte & 0x40) ? fgRGBA : bg0; outFgMap[o + 1] = (charByte >> 6) & 1;
@@ -528,7 +567,9 @@ export const renderOps = {
       outPixels[o + 7] = (charByte & 0x01) ? fgRGBA : bg0; outFgMap[o + 7] = charByte & 1;
     } else if (ecm && !bmm && !mcm) {
       const bgSel = (rawCode >> 6) & 0x03;
-      const charByte = this._vicMemRead(fetchAddr, bank);
+      const charByte = this._fetchFeedLine
+        ? this._graphicsSourceByte(col, seg, fetchAddr, bank)
+        : this._vicMemRead(fetchAddr, bank);
       const fgRGBA = PALETTE_RGBA[colorNib];
       // Pre-resolve bg by bgSel without allocating a 4-element lookup array.
       const bgRGBA = bgSel === 0 ? bg0 :
@@ -541,7 +582,9 @@ export const renderOps = {
         outFgMap[o + bit] = px;
       }
     } else if (mcm && !bmm && !ecm) {
-      const charByte = this._vicMemRead(fetchAddr, bank);
+      const charByte = this._fetchFeedLine
+        ? this._graphicsSourceByte(col, seg, fetchAddr, bank)
+        : this._vicMemRead(fetchAddr, bank);
       const isMulti = (colorNib & 0x08) !== 0;
       if (!isMulti) {
         const fgRGBA = PALETTE_RGBA[colorNib & 0x07];
@@ -566,14 +609,18 @@ export const renderOps = {
     } else if (bmm && !mcm && !ecm) {
       const fg = PALETTE_RGBA[(rawCode >> 4) & 0x0F];
       const bg = PALETTE_RGBA[rawCode & 0x0F];
-      const bitmapByte = this._vicMemRead(fetchAddr, bank);
+      const bitmapByte = this._fetchFeedLine
+        ? this._graphicsSourceByte(col, seg, fetchAddr, bank)
+        : this._vicMemRead(fetchAddr, bank);
       for (let bit = 0; bit < 8; bit++) {
         const px = (bitmapByte >> (7 - bit)) & 1;
         outPixels[o + bit] = px ? fg : bg;
         outFgMap[o + bit] = px;
       }
     } else if (bmm && mcm && !ecm) {
-      const bitmapByte = this._vicMemRead(fetchAddr, bank);
+      const bitmapByte = this._fetchFeedLine
+        ? this._graphicsSourceByte(col, seg, fetchAddr, bank)
+        : this._vicMemRead(fetchAddr, bank);
       const c1 = PALETTE_RGBA[(rawCode >> 4) & 0x0F];
       const c2 = PALETTE_RGBA[rawCode & 0x0F];
       const c3 = PALETTE_RGBA[colorNib];
@@ -589,7 +636,9 @@ export const renderOps = {
         outFgMap[idx] = fg; outFgMap[idx + 1] = fg;
       }
     } else if (!bmm && mcm && ecm) {
-      const charByte = this._vicMemRead(fetchAddr, bank);
+      const charByte = this._fetchFeedLine
+        ? this._graphicsSourceByte(col, seg, fetchAddr, bank)
+        : this._vicMemRead(fetchAddr, bank);
       for (let pair = 0; pair < 4; pair++) {
         const twoBit = (charByte >> (6 - pair * 2)) & 0x03;
         const fg = (twoBit >= 2) ? 1 : 0;
@@ -600,7 +649,9 @@ export const renderOps = {
     } else if (bmm && !mcm && ecm) {
       // Bauer §3.7.3.7: g-access addr 13=CB13, 12=VC9, 11=VC8, 10-9=0,
       // 8-3=VC5..VC0. VC6 and VC7 are dropped — i.e. mask = $33F.
-      const bitmapByte = this._vicMemRead(fetchAddr, bank);
+      const bitmapByte = this._fetchFeedLine
+        ? this._graphicsSourceByte(col, seg, fetchAddr, bank)
+        : this._vicMemRead(fetchAddr, bank);
       for (let bit = 0; bit < 8; bit++) {
         const px = (bitmapByte >> (7 - bit)) & 1;
         outPixels[o + bit] = black;
@@ -608,7 +659,9 @@ export const renderOps = {
       }
     } else if (bmm && mcm && ecm) {
       // Bauer §3.7.3.8: same address scheme as invalid bitmap mode 1.
-      const bitmapByte = this._vicMemRead(fetchAddr, bank);
+      const bitmapByte = this._fetchFeedLine
+        ? this._graphicsSourceByte(col, seg, fetchAddr, bank)
+        : this._vicMemRead(fetchAddr, bank);
       for (let pair = 0; pair < 4; pair++) {
         const twoBit = (bitmapByte >> (6 - pair * 2)) & 0x03;
         const fg = (twoBit >= 2) ? 1 : 0;
@@ -648,12 +701,13 @@ export const renderOps = {
     const ro = canvasY * CANVAS_W;
     const bb = this.borderBuffer;
     const fb = this.fb32;
-    const lcr = this.lineCycleRegs;
+    const lcr = this._historyRegs;
+    const regCycles = this._regCycle;
     for (let x = 0; x < CANVAS_W; x++) {
       if (bb[x] !== 1) continue;   // border buffer is line-sized (#1)
       let idx = (x + 111) >> 3;
       if (idx > CYCLES_PER_LINE) idx = CYCLES_PER_LINE;
-      fb[ro + x] = PALETTE_RGBA[lcr[idx][0x20] & 0x0F];
+      fb[ro + x] = PALETTE_RGBA[lcr[regCycles[idx]][0x20] & 0x0F];
     }
   },
 
@@ -720,8 +774,17 @@ export const renderOps = {
     // Chain the regs-pointer run across [c-1 .. c+2]: seg c's own snapshot
     // (+0/+1 by variant), its g-access lookahead (+1/+2) AND the interior
     // prevRegs (first-pixel rule collapses to "no override" when equal).
-    const lcr = this.lineCycleRegs;
-    if (lcr[c] !== lcr[p] || lcr[c + 1] !== lcr[c] || lcr[c + 2] !== lcr[c + 1]) return false;
+    const lcr = this._historyRegs;
+    const regCycles = this._regCycle;
+    if (this._sparseCaptureLine && !this._is8565) {
+      const versions = this._graphicsCycleVersion;
+      if (versions[c] !== versions[p] || versions[c + 1] !== versions[c]
+          || versions[c + 2] !== versions[c + 1]) return false;
+    } else {
+      if (lcr[regCycles[c]] !== lcr[regCycles[p]]
+          || lcr[regCycles[c + 1]] !== lcr[regCycles[c]]
+          || lcr[regCycles[c + 2]] !== lcr[regCycles[c + 1]]) return false;
+    }
     const idle = this.lineCycleIdleByte;
     if (idle[c + 1] !== idle[c] || idle[c + 2] !== idle[c + 1]) return false;
     return this.lineCycleBanks[c] === this.lineCycleBanks[p]
@@ -738,9 +801,9 @@ export const renderOps = {
       && this.lineCycleRc[c] === this.lineCycleRc[p]
       && this.lineCycleRowVcBase[c] === this.lineCycleRowVcBase[p]
       && this.lineCycleRowLiveVcBase[c] === this.lineCycleRowLiveVcBase[p]
-      && this.lineCycleRowFetchedCols[c] === this.lineCycleRowFetchedCols[p]
-      && this.lineCycleRowCodes[c] === this.lineCycleRowCodes[p]
-      && this.lineCycleRowColors[c] === this.lineCycleRowColors[p];
+      && this._historyRowFetchedCols[this._rowCycle[c]] === this._historyRowFetchedCols[this._rowCycle[p]]
+      && this._historyRowCodes[this._rowCycle[c]] === this._historyRowCodes[this._rowCycle[p]]
+      && this._historyRowColors[this._rowCycle[c]] === this._historyRowColors[this._rowCycle[p]];
   },
 
   _catchUpDeferredLine() {
@@ -786,6 +849,7 @@ export const renderOps = {
         if (n <= 59) this._renderCycleIncremental(n - 1, canvasY, /*live=*/ false);
       }
     }
+    this._fetchFeedLine = false;
   },
 
   _renderRasterLine(raster) {
@@ -837,6 +901,7 @@ export const renderOps = {
     // Recycle the render-state arena: every slot reference was nulled just
     // above, so no previous-line renter is reachable (snapshots hold their own
     // _rsBuf copies, never arena objects).
+    this._spriteWakeCycle.fill(0);
     this._spriteRsArenaIdx = 0;
     this._renderRowOffset = rowOffset;
   },
@@ -1038,6 +1103,18 @@ export const renderOps = {
       // when bgChangesAtStart is false, segBg0First === segBg0 anyway.
       const bgChangesAtStart = segBg0First !== segBg0;
 
+      // Interior spans have neither edge filler nor a delayed background seam.
+      const copyStart = visibleStart - sourceOriginX - segXscroll - spanBaseX;
+      if (!bgChangesAtStart && copyStart >= 0
+          && copyStart + visibleEnd - visibleStart <= spanLimit) {
+        for (let x = visibleStart, sx = copyStart; x < visibleEnd; x++, sx++) {
+          priorityBuf[x] = spanFgMap[sx];
+          fb32[rowOffset + x] = spanPixels[sx];
+        }
+        continue;
+      }
+
+
       // Standard bitmap mode (BMM=1, MCM=0, ECM=0) has NO $D021 background —
       // a 0-bit's colour is the matrix byte's low nibble (handled per-pixel in
       // _renderSourceColumn). The XSCROLL edge-filler pixels (srcX outside the
@@ -1102,12 +1179,13 @@ export const renderOps = {
   // empty-shifter background.
   _renderRightXscrollSpill(seg, rowOffset, segRenderStart, segRenderEnd) {
     const priorCycle = seg.cycle - 1;
-    const lcr = this.lineCycleRegs;
+    const lcr = this._historyRegs;
+    const regCycles = this._regCycle;
     const corrected = seg.xscrollRegs !== null;
     const priorRegCycle = priorCycle + this._regOffset;
     const priorXscrollRegs = corrected
-      ? lcr[Math.min(priorCycle + 2, CYCLES_PER_LINE)]
-      : lcr[priorRegCycle];
+      ? lcr[regCycles[Math.min(priorCycle + 2, CYCLES_PER_LINE)]]
+      : lcr[regCycles[priorRegCycle]];
     const spillWidth = priorXscrollRegs[0x16] & 0x07;
     const spillStart = Math.max(segRenderStart, GRAPHICS_WINDOW_END);
     const spillEnd = Math.min(segRenderEnd, GRAPHICS_WINDOW_END + spillWidth);
@@ -1131,19 +1209,19 @@ export const renderOps = {
     const savedRowColors = seg.rowColors;
 
     seg.cycle = priorCycle;
-    seg.regs = lcr[priorRegCycle];
-    seg.nextRegs = lcr[Math.min(priorRegCycle + 1, CYCLES_PER_LINE)];
+    seg.regs = lcr[regCycles[priorRegCycle]];
+    seg.nextRegs = lcr[regCycles[Math.min(priorRegCycle + 1, CYCLES_PER_LINE)]];
     seg.modeRegs = corrected
-      ? lcr[Math.min(priorCycle + 2, CYCLES_PER_LINE)]
+      ? lcr[regCycles[Math.min(priorCycle + 2, CYCLES_PER_LINE)]]
       : seg.nextRegs;
     seg.bank = this.lineCycleBanks[priorCycle];
     seg.displayActive = !!this.lineCycleDisplayActive[priorCycle];
     seg.rc = this.lineCycleRc[priorCycle];
     seg.rowVcBase = this.lineCycleRowVcBase[priorCycle];
     seg.liveVcBase = this.lineCycleRowLiveVcBase[priorCycle];
-    seg.rowFetchedCols = this.lineCycleRowFetchedCols[priorCycle];
-    seg.rowCodes = this.lineCycleRowCodes[priorCycle];
-    seg.rowColors = this.lineCycleRowColors[priorCycle];
+    seg.rowFetchedCols = this._historyRowFetchedCols[this._rowCycle[priorCycle]];
+    seg.rowCodes = this._historyRowCodes[this._rowCycle[priorCycle]];
+    seg.rowColors = this._historyRowColors[this._rowCycle[priorCycle]];
 
     const pixels = this._spanPixels;
     const fgMap = this._spanFgMap;
@@ -1238,10 +1316,11 @@ export const renderOps = {
   // part. No-op unless the mode bits change +2 -> +3, so static lines and
   // non-flip columns are untouched.
   _fixupModeSplitRightHalf(seg, c, canvasY, xs, xe) {
-    const lcr = this.lineCycleRegs;
+    const lcr = this._historyRegs;
+    const regCycles = this._regCycle;
     const c2 = c + 2 <= CYCLES_PER_LINE ? c + 2 : CYCLES_PER_LINE;
     const c3 = c + 3 <= CYCLES_PER_LINE ? c + 3 : CYCLES_PER_LINE;
-    const s2 = lcr[c2], s3 = lcr[c3];
+    const s2 = lcr[regCycles[c2]], s3 = lcr[regCycles[c3]];
     if (((s2[0x11] ^ s3[0x11]) & 0x60) === 0 && ((s2[0x16] ^ s3[0x16]) & 0x10) === 0) return;
     const off = this._modeSplitPixel(s2, s3);   // half-character output boundary
     const mid = xs + off < xe ? xs + off : xe;
@@ -1256,9 +1335,9 @@ export const renderOps = {
     }
     seg.modeRegs = s3;
     seg.xscrollRegs = s3;
-    seg.rowFetchedCols = this.lineCycleRowFetchedCols[c3];
-    seg.rowCodes = this.lineCycleRowCodes[c3];
-    seg.rowColors = this.lineCycleRowColors[c3];
+    seg.rowFetchedCols = this._historyRowFetchedCols[this._rowCycle[c3]];
+    seg.rowCodes = this._historyRowCodes[this._rowCycle[c3]];
+    seg.rowColors = this._historyRowColors[this._rowCycle[c3]];
     this._renderCycleSegmentGraphics(seg, canvasY);
     for (let x = xs, i = 0; x < mid; x++, i++) {
       const p = rowOffset + x; fb32[p] = L[i]; pri[x] = LP[i]; bor[x] = LB[i];
@@ -1294,7 +1373,8 @@ export const renderOps = {
   // incremental output). Gated on an actual mid-line mode OR bg change, so
   // static lines pay only a cheap scan.
   _fixupColumns(canvasY) {
-    const lcr = this.lineCycleRegs;
+    const lcr = this._historyRegs;
+    const regCycles = this._regCycle;
     const at = this._fixupAt;   // pre-built in ctor — no per-call closure alloc
     const bgTargetCycle = this._fixupBgTargetCycle;
     const bgPrevCycle = this._fixupBgPrevCycle;
@@ -1317,14 +1397,14 @@ export const renderOps = {
     // XSCROLL changing before the shifter reload reaches the output stage.
     let needed = false;
     for (let c = 15; c <= 54; c++) {
-      const a = lcr[c + 1], b = at(c + 2);
+      const a = lcr[regCycles[c + 1]], b = at(c + 2);
       // Alias fast path: captureDedup shares ONE regs array across cycles with
       // no CPU write between them, so pointer-equal snapshots prove every
       // masked xor below is zero without reading a byte.
-      if (a === b && lcr[c] === a) continue;
+      if (a === b && lcr[regCycles[c]] === a) continue;
       if (((a[0x11] ^ b[0x11]) & 0x60) ||
           ((a[0x16] ^ b[0x16]) & 0x10) ||
-          ((lcr[c][0x16] ^ b[0x16]) & 0x07)) {
+          ((lcr[regCycles[c]][0x16] ^ b[0x16]) & 0x07)) {
         needed = true;
         break;
       }
@@ -1333,7 +1413,7 @@ export const renderOps = {
     if (!needed) {
       for (let c = 11; c <= 58; c++) {
         if (!showsBg(c)) continue;
-        const cur = lcr[c], b3 = at(bgTargetCycle(c));
+        const cur = lcr[regCycles[c]], b3 = at(bgTargetCycle(c));
         if (cur === b3) continue;   // aliased snapshot ⇒ all four compares equal
         if (cur[0x21] !== b3[0x21] || cur[0x22] !== b3[0x22] ||
             cur[0x23] !== b3[0x23] || cur[0x24] !== b3[0x24]) {
@@ -1369,8 +1449,8 @@ export const renderOps = {
       const ro = this._regOffset;
       for (let c = 11; c <= 58; c++) {
         const rc = c + ro;
-        const rcRegs = lcr[rc];
-        const nx = lcr[(rc + 1 <= CYCLES_PER_LINE) ? rc + 1 : rc];
+        const rcRegs = lcr[regCycles[rc]];
+        const nx = lcr[regCycles[(rc + 1 <= CYCLES_PER_LINE) ? rc + 1 : rc]];
         const s2 = at(c + 2);
         const s3 = at(c + 3);
         // Alias fast paths (both windows): captureDedup shares ONE regs array
@@ -1385,7 +1465,7 @@ export const renderOps = {
                    || ((s2[0x16] ^ s3[0x16]) & 0x10) !== 0);
         const cShowsBg = showsBg(c);
         if (cShowsBg && !needFix) {
-          const h = lcr[c - 2];             // c >= 11 ⇒ c-2 >= 9, always a valid index
+          const h = lcr[regCycles[c - 2]];             // c >= 11 ⇒ c-2 >= 9, always a valid index
           const bt = bgTargetCycle(c);
           if (!(at(c - 1) === h && at(c) === h && at(c + 1) === h &&
                 at(c + 2) === h && at(bt) === h)) {
@@ -1410,9 +1490,9 @@ export const renderOps = {
           const dc = Math.min(c + 2, CYCLES_PER_LINE);
           seg0.modeRegs = at(dc);
           seg0.xscrollRegs = at(dc);
-          seg0.rowFetchedCols = this.lineCycleRowFetchedCols[dc];
-          seg0.rowCodes = this.lineCycleRowCodes[dc];
-          seg0.rowColors = this.lineCycleRowColors[dc];
+          seg0.rowFetchedCols = this._historyRowFetchedCols[this._rowCycle[dc]];
+          seg0.rowCodes = this._historyRowCodes[this._rowCycle[dc]];
+          seg0.rowColors = this._historyRowColors[this._rowCycle[dc]];
         }
         if (cShowsBg) {
           const bt = bgTargetCycle(c);
@@ -1451,9 +1531,9 @@ export const renderOps = {
       const dc = Math.min(c + 2, CYCLES_PER_LINE);
       seg.modeRegs = at(dc);
       seg.xscrollRegs = at(dc);
-      seg.rowFetchedCols = this.lineCycleRowFetchedCols[dc];
-      seg.rowCodes = this.lineCycleRowCodes[dc];
-      seg.rowColors = this.lineCycleRowColors[dc];
+      seg.rowFetchedCols = this._historyRowFetchedCols[this._rowCycle[dc]];
+      seg.rowCodes = this._historyRowCodes[this._rowCycle[dc]];
+      seg.rowColors = this._historyRowColors[this._rowCycle[dc]];
       if (showsBg(c)) {
         const bt = bgTargetCycle(c);
         seg.bgRegs = at(bt);

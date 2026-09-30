@@ -116,70 +116,85 @@ export const lineOps = {
     // copying; otherwise copy into this cycle's OWN home buffer (never one an
     // earlier cycle of this line still references — see ctor) and become the
     // new lastRef. Line-start reset forces cy1 to copy so no alias spans a line.
-    // Gated; frame-trace force-copies. The register snapshot (above) and all
-    // scalar stores are NOT deduped (regs is dirtied mid-line by $D01E/$D01F).
-    if (cycle === 1) { this._rowSnapLastVer = -1; this._sprSnapLastVer = -1; this._regSnapLastVer = -1; }
+    // Tracing force-copies payloads. Hardware scalar history stays cycle-indexed;
+    // compact recording replaces repeated payload references with byte indices.
+    if (cycle === 1) {
+      this._sparseCaptureLine = this.sparseRenderState && this.captureDedup && !this.frameTraceEnabled;
+      this._rowSnapLastVer = this._sprSnapLastVer = this._regSnapLastVer = -1;
+    }
     const dedup = this.captureDedup && !this.frameTraceEnabled;
 
-    // (B2) Register snapshot: alias the previous cycle's buffer when no CPU
-    // register write has happened since (version unchanged), else copy into
-    // this cycle's OWN home buffer. Mirrors the row/sprite dedup below; cy1
-    // forces a copy (lastVer reset above) so no alias spans a line boundary.
-    // When dedup is off (or frame-trace), the else-branch copies every cycle —
-    // identical to the old unconditional regs.set(this.regs).
+    const sparse = this._sparseCaptureLine;
+    this._graphicsCycleVersion[cycle] = this._graphicsVersion;
     if (dedup && this._regSnapVersion === this._regSnapLastVer) {
-      this.lineCycleRegs[cycle] = this._regSnapRef;
+      if (sparse) {
+        this._historyIsSparse = true;
+        this._regCycle[cycle] = this._regSnapCycle;
+      } else {
+        this._historyRegs[cycle] = this._regSnapRef;
+        this._regCycle[cycle] = cycle;
+      }
     } else {
-      const rg = this._homeRegs[cycle];
-      rg.set(this.regs);
-      this.lineCycleRegs[cycle] = this._regSnapRef = rg;
+      this._homeRegs[cycle].set(this.regs);
+      this._historyRegs[cycle] = this._regSnapRef = this._homeRegs[cycle];
       this._regSnapLastVer = this._regSnapVersion;
+      this._regCycle[cycle] = this._regSnapCycle = cycle;
     }
-
     if (dedup && this._rowSnapVersion === this._rowSnapLastVer) {
-      this.lineCycleRowFetchedCols[cycle] = this._rowFetchedRef;
-      this.lineCycleRowCodes[cycle]       = this._rowCodesRef;
-      this.lineCycleRowColors[cycle]      = this._rowColorsRef;
+      if (sparse) {
+        this._historyIsSparse = true;
+        this._rowCycle[cycle] = this._rowSnapCycle;
+      } else {
+        this._historyRowFetchedCols[cycle] = this._rowFetchedRef;
+        this._historyRowCodes[cycle] = this._rowCodesRef;
+        this._historyRowColors[cycle] = this._rowColorsRef;
+        this._rowCycle[cycle] = cycle;
+      }
       if (this.captureDedupVerify) this._verifyRowAlias(cycle);
     } else {
-      const fc = this._homeRowFetchedCols[cycle];
-      const cd = this._homeRowCodes[cycle];
-      const cl = this._homeRowColors[cycle];
-      fc.set(this.rowFetchedCols); cd.set(this.rowScreenCodes); cl.set(this.rowColorNibbles);
-      this.lineCycleRowFetchedCols[cycle] = this._rowFetchedRef = fc;
-      this.lineCycleRowCodes[cycle]       = this._rowCodesRef   = cd;
-      this.lineCycleRowColors[cycle]      = this._rowColorsRef  = cl;
+      this._homeRowFetchedCols[cycle].set(this.rowFetchedCols);
+      this._historyRowFetchedCols[cycle] = this._rowFetchedRef = this._homeRowFetchedCols[cycle];
+      this._homeRowCodes[cycle].set(this.rowScreenCodes);
+      this._historyRowCodes[cycle] = this._rowCodesRef = this._homeRowCodes[cycle];
+      this._homeRowColors[cycle].set(this.rowColorNibbles);
+      this._historyRowColors[cycle] = this._rowColorsRef = this._homeRowColors[cycle];
       this._rowSnapLastVer = this._rowSnapVersion;
+      this._rowCycle[cycle] = this._rowSnapCycle = cycle;
     }
-    this.lineCycleIdleByte[cycle] = idleByte;
-    // rowFetchD011/D016/D018 are line-invariant; consumed via the line
-    // scalars in `_buildCycleSegments`. No per-cycle copy needed.
     if (dedup && this._sprSnapVersion === this._sprSnapLastVer) {
-      this.lineCycleSpriteDisplayOn[cycle]    = this._sprDisplayOnRef;
-      this.lineCycleSpriteDataRow[cycle]      = this._sprDataRowRef;
-      this.lineCycleSpriteDataBase[cycle]     = this._sprDataBaseRef;
-      this.lineCycleSpriteDataBank[cycle]     = this._sprDataBankRef;
-      this.lineCycleSpritePointerValue[cycle] = this._sprPointerRef;
-      this.lineCycleSpriteRowByteMask[cycle]  = this._sprByteMaskRef;
-      this.lineCycleSpriteShiftReg[cycle]     = this._sprShiftRef;
+      if (sparse) {
+        this._historyIsSparse = true;
+        this._sprCycle[cycle] = this._sprSnapCycle;
+      } else {
+        this._historySpriteDisplayOn[cycle] = this._sprDisplayOnRef;
+        this._historySpriteDataRow[cycle] = this._sprDataRowRef;
+        this._historySpriteDataBase[cycle] = this._sprDataBaseRef;
+        this._historySpriteDataBank[cycle] = this._sprDataBankRef;
+        this._historySpritePointerValue[cycle] = this._sprPointerRef;
+        this._historySpriteRowByteMask[cycle] = this._sprByteMaskRef;
+        this._historySpriteShiftReg[cycle] = this._sprShiftRef;
+        this._sprCycle[cycle] = cycle;
+      }
       if (this.captureDedupVerify) this._verifySpriteAlias(cycle);
     } else {
-      const a = this._homeSpriteDisplayOn[cycle];    a.set(this.spriteDisplayOn);
-      const b = this._homeSpriteDataRow[cycle];      b.set(this.spriteLineDataRow);
-      const c2 = this._homeSpriteDataBase[cycle];    c2.set(this.spriteDataBase);
-      const d = this._homeSpriteDataBank[cycle];     d.set(this.spriteDataBank);
-      const e = this._homeSpritePointerValue[cycle]; e.set(this.spritePointerValue);
-      const f = this._homeSpriteRowByteMask[cycle];  f.set(this.spriteRowByteMask);
-      const g = this._homeSpriteShiftReg[cycle];     g.set(this.spriteShiftReg);
-      this.lineCycleSpriteDisplayOn[cycle]    = this._sprDisplayOnRef = a;
-      this.lineCycleSpriteDataRow[cycle]      = this._sprDataRowRef   = b;
-      this.lineCycleSpriteDataBase[cycle]     = this._sprDataBaseRef  = c2;
-      this.lineCycleSpriteDataBank[cycle]     = this._sprDataBankRef  = d;
-      this.lineCycleSpritePointerValue[cycle] = this._sprPointerRef   = e;
-      this.lineCycleSpriteRowByteMask[cycle]  = this._sprByteMaskRef  = f;
-      this.lineCycleSpriteShiftReg[cycle]     = this._sprShiftRef     = g;
+      this._homeSpriteDisplayOn[cycle].set(this.spriteDisplayOn);
+      this._historySpriteDisplayOn[cycle] = this._sprDisplayOnRef = this._homeSpriteDisplayOn[cycle];
+      this._homeSpriteDataRow[cycle].set(this.spriteLineDataRow);
+      this._historySpriteDataRow[cycle] = this._sprDataRowRef = this._homeSpriteDataRow[cycle];
+      this._homeSpriteDataBase[cycle].set(this.spriteDataBase);
+      this._historySpriteDataBase[cycle] = this._sprDataBaseRef = this._homeSpriteDataBase[cycle];
+      this._homeSpriteDataBank[cycle].set(this.spriteDataBank);
+      this._historySpriteDataBank[cycle] = this._sprDataBankRef = this._homeSpriteDataBank[cycle];
+      this._homeSpritePointerValue[cycle].set(this.spritePointerValue);
+      this._historySpritePointerValue[cycle] = this._sprPointerRef = this._homeSpritePointerValue[cycle];
+      this._homeSpriteRowByteMask[cycle].set(this.spriteRowByteMask);
+      this._historySpriteRowByteMask[cycle] = this._sprByteMaskRef = this._homeSpriteRowByteMask[cycle];
+      this._homeSpriteShiftReg[cycle].set(this.spriteShiftReg);
+      this._historySpriteShiftReg[cycle] = this._sprShiftRef = this._homeSpriteShiftReg[cycle];
       this._sprSnapLastVer = this._sprSnapVersion;
+      this._sprCycle[cycle] = this._sprSnapCycle = cycle;
     }
+    this.lineCycleIdleByte[cycle] = idleByte;
   },
 
   // captureDedupVerify helpers: assert an aliased snapshot still equals the live
@@ -208,19 +223,50 @@ export const lineOps = {
     }
   },
 
-  // (B2) Ensure lineCycleRegs[cycle] points to its OWN home buffer (not a
-  // shared/aliased one), copying the current contents across if it was aliased.
-  // Used before any in-place patch of a captured reg snapshot so the patch can
-  // never leak into another cycle that shares the buffer.
+  // Each historical patch owns a private register buffer. Other cycles keep
+  // the original payload, including cycles after the patched sample.
   _unaliasRegSnapshot(cycle) {
-    const home = this._homeRegs[cycle];
-    const cur = this.lineCycleRegs[cycle];
-    if (cur !== home) {
-      home.set(cur);
-      this.lineCycleRegs[cycle] = home;
-      return home;
+    // Detach the register timeline before changing a historical sample.
+    // Row and sprite histories remain compact and retain their own lifetimes.
+    for (let c = 0; c < 64; c++) {
+      this._historyRegs[c] = this._historyRegs[this._regCycle[c]];
+      this._regCycle[c] = c;
     }
-    return cur;
+    this._regSnapLastVer = -1;
+    const patch = this._patchedRegs[cycle];
+    const current = this._historyRegs[cycle];
+    if (current !== patch) patch.set(current);
+    this._historyRegs[cycle] = patch;
+    return patch;
+  },
+
+
+  // Diagnostic array access expands sparse history and selects dense recording
+  // for the remainder of the line. Rendering itself uses the compact indices.
+  _materializeRenderHistory() {
+    this._sparseCaptureLine = false;
+    if (!this._historyIsSparse) return;
+    this._historyIsSparse = false;
+    for (let c = 0; c < 64; c++) {
+      const reg = this._regCycle[c];
+      this._historyRegs[c] = this._historyRegs[reg];
+      this._regCycle[c] = c;
+      const row = this._rowCycle[c];
+      this._historyRowFetchedCols[c] = this._historyRowFetchedCols[row];
+      this._historyRowCodes[c] = this._historyRowCodes[row];
+      this._historyRowColors[c] = this._historyRowColors[row];
+      this._rowCycle[c] = c;
+      const spr = this._sprCycle[c];
+      this._historySpriteDisplayOn[c] = this._historySpriteDisplayOn[spr];
+      this._historySpriteDataRow[c] = this._historySpriteDataRow[spr];
+      this._historySpriteDataBase[c] = this._historySpriteDataBase[spr];
+      this._historySpriteDataBank[c] = this._historySpriteDataBank[spr];
+      this._historySpritePointerValue[c] = this._historySpritePointerValue[spr];
+      this._historySpriteRowByteMask[c] = this._historySpriteRowByteMask[spr];
+      this._historySpriteShiftReg[c] = this._historySpriteShiftReg[spr];
+      this._sprCycle[c] = c;
+    }
+    this._sparseCaptureLine = false;
   },
 
   _getCycleMatrixVc(cycle) {
@@ -353,6 +399,7 @@ export const lineOps = {
   },
 
   _clearCycleState() {
+    this._fetchFeedLine = false;
     // The single-byte per-cycle arrays use cheap vectorized fills.
     // Cycle 0 retains these defaults (it is never written by
     // _captureCycleState, which gates on cycle ≥ 1). Cycles 1..63 will be
@@ -430,7 +477,7 @@ export const lineOps = {
     const seg = this._scratchRasterSeg;
     seg.start = cycleStartX;
     seg.end = this._getCycleEndX(cycle) + 8;
-    seg.regs = this.lineCycleRegs[regCycle];
+    seg.regs = this._historyRegs[this._regCycle[regCycle]];
     seg.bank = this.lineCycleBanks[cycle];
     seg.displayEnabled = !!this.lineCycleDisplayEnabled[cycle];
     seg.displayActive = !!this.lineCycleDisplayActive[cycle];
@@ -447,7 +494,7 @@ export const lineOps = {
     seg.rc = this.lineCycleRc[cycle];
     seg.cycle = cycle;
     seg.cycleStart = cycleStartX;
-    seg.prevRegs = cycle > 0 ? this.lineCycleRegs[cycle - 1 + regOffset] : this.lineCycleRegs[regCycle];
+    seg.prevRegs = cycle > 0 ? this._historyRegs[this._regCycle[cycle - 1 + regOffset]] : this._historyRegs[this._regCycle[regCycle]];
     // CB and bitmap-base are sampled at the g-access cycle (= seg cycle + 1
     // per Bauer §3.7.2): c-access at cy 15+K phi2 fetches VM/code; g-access
     // at cy 16+K phi1 fetches bitmap using $D018 CB bits. A CPU write at
@@ -456,8 +503,8 @@ export const lineOps = {
     // nextRegs is the snapshot captured at the START of cy (cycle+1) =
     // state at (cycle+1) phi1 = AFTER any cycle-K phi2 CPU write.
     seg.nextRegs = (regCycle + 1 <= CYCLES_PER_LINE)
-      ? this.lineCycleRegs[regCycle + 1]
-      : this.lineCycleRegs[regCycle];
+      ? this._historyRegs[this._regCycle[regCycle + 1]]
+      : this._historyRegs[this._regCycle[regCycle]];
     // Default mode source = the g-access snapshot (seg.nextRegs, +1). The
     // end-of-line mode-transition fixup (_fixupColumns) overrides this with
     // the +2 snapshot for the columns that need it.
@@ -474,9 +521,9 @@ export const lineOps = {
     seg.bgPrevRegs = null;
     seg.rowVcBase = this.lineCycleRowVcBase[cycle];
     seg.liveVcBase = this.lineCycleRowLiveVcBase[cycle];
-    seg.rowFetchedCols = this.lineCycleRowFetchedCols[cycle];
-    seg.rowCodes = this.lineCycleRowCodes[cycle];
-    seg.rowColors = this.lineCycleRowColors[cycle];
+    seg.rowFetchedCols = this._historyRowFetchedCols[this._rowCycle[cycle]];
+    seg.rowCodes = this._historyRowCodes[this._rowCycle[cycle]];
+    seg.rowColors = this._historyRowColors[this._rowCycle[cycle]];
     // The idle g-access reads $3FFF (or $39FF when ECM=1) — its ADDRESS
     // tracks ECM, so the fetched byte must be sampled at the same g-access
     // cycle (+1, = nextRegs / seg.modeRegs) as the mode bits, not at the
@@ -566,15 +613,15 @@ export const lineOps = {
     const seg = this._scratchSpriteSeg;
     seg.start = this._getCycleStartX(cycle) + 8;
     seg.end = this._getCycleEndX(cycle) + 8;
-    seg.regs = this.lineCycleRegs[cycle + regOffset];
+    seg.regs = this._historyRegs[this._regCycle[cycle + regOffset]];
     seg.bank = this.lineCycleBanks[cycle];
-    seg.spriteDisplayOn = this.lineCycleSpriteDisplayOn[cycle];
-    seg.spriteDataRow = this.lineCycleSpriteDataRow[cycle];
-    seg.spriteDataBase = this.lineCycleSpriteDataBase[cycle];
-    seg.spriteDataBank = this.lineCycleSpriteDataBank[cycle];
-    seg.spritePointerValue = this.lineCycleSpritePointerValue[cycle];
-    seg.spriteRowByteMask = this.lineCycleSpriteRowByteMask[cycle];
-    seg.spriteShiftReg = this.lineCycleSpriteShiftReg[cycle];
+    seg.spriteDisplayOn = this._historySpriteDisplayOn[this._sprCycle[cycle]];
+    seg.spriteDataRow = this._historySpriteDataRow[this._sprCycle[cycle]];
+    seg.spriteDataBase = this._historySpriteDataBase[this._sprCycle[cycle]];
+    seg.spriteDataBank = this._historySpriteDataBank[this._sprCycle[cycle]];
+    seg.spritePointerValue = this._historySpritePointerValue[this._sprCycle[cycle]];
+    seg.spriteRowByteMask = this._historySpriteRowByteMask[this._sprCycle[cycle]];
+    seg.spriteShiftReg = this._historySpriteShiftReg[this._sprCycle[cycle]];
     return seg;
   },
 
@@ -1545,7 +1592,7 @@ export const lineOps = {
     const start = GRAPHICS_WINDOW_START;
     const end = start + 7;
     const rowOffset = this._cycleRenderActiveCanvasY * CANVAS_W;
-    const color = this.lineCycleRegs[c + this._regOffset][0x20] & 0x0F;
+    const color = this._historyRegs[this._regCycle[c + this._regOffset]][0x20] & 0x0F;
     this.fb32.fill(PALETTE_RGBA[color], rowOffset + start, rowOffset + end);
     this.borderBuffer.fill(1, start, end);
     this.spriteVisibleBuffer.fill(0, start, end);

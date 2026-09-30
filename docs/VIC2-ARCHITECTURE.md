@@ -326,10 +326,22 @@ collision detection read that shared result. The mode-split fixup saves and
 restores a single foreground copy alongside its pixel and border snapshots.
 
 ### Per-cycle capture
-`_captureCycleState(cycle)` snapshots, per cycle of the line, the register file
-(`lineCycleRegs[cycle]`), display/border flags, counters, the c-access write
-column and the sprite state; the segment builders read these arrays. Capture is
-deduped (§14).
+Hardware history (BA samples, idle-bus accesses, border flags and counters)
+continues to advance every cycle. Renderer payloads use three independent
+histories: registers, matrix/color data and sprite fetch/display data. A changed
+payload is copied into its preallocated snapshot slot; unchanged cycles store a
+one-byte index of the existing snapshot. `VIC_SPARSE_STATE=0` retains dense
+per-cycle reference recording for comparison.
+
+The cycle-indexed `lineCycleRegs`, row and sprite arrays remain diagnostic views.
+Inspecting a view materializes the compact history and selects dense recording
+for the rest of that line. Historical register patches use private buffers;
+patching a sample cannot change other cycles sharing its original payload.
+Tracing uses dense recording throughout.
+
+On 6569, graphics span grouping tracks graphics-register versions independently
+of sprite and IRQ writes. The 8565 retains full-register equivalence for grouping
+because its delayed register pipeline needs the narrower reference spans.
 
 ### Segments and the register-snapshot pipeline
 `_buildCycleRasterSegment(cycle)` produces one cycle's 8-pixel render segment.
@@ -551,6 +563,30 @@ flippable for A/B bisection:
   **on**; `?LINE_BATCH=0` (browser) / `LINE_BATCH=0` (node) forces the per-cycle
   live path for A/B or triage.
 
+### Sprite interval scheduling
+`VIC_SPRITE_INTERVALS` defaults on. During deferred replay, an unchanged sprite
+waits until the segment containing its next horizontal output position, or
+cycle 58 when its shifter is exhausted. Register or sprite-payload changes wake
+it immediately. Pending wrap, invalid rows and uninitialized shifters retain
+per-cycle processing. Cycle 58 always executes the wrap and off-canvas passes.
+Collision drains still run every virtual cycle in their original order. Live
+rendering and tracing retain per-cycle dispatch for phi2 rollback.
+
+### Fetch-fed deferred graphics
+`VIC_FETCH_FEED` is an experimental comparison path, off by default. It records
+display bytes at the phase used by the incremental renderer, including the
+preceding column when XSCROLL needs it. Deferred graphics consume those bytes
+when the recorded address matches the requested source. Unavailable or different
+sources use the reference memory read. The stream does not drive the bus;
+hardware bus accesses remain independent.
+
+The stream is restricted to deferred lines without a cartridge. RAM/DMA writes,
+fetch-configuration changes and CPU observers retain the existing catch-up
+barriers. Catch-up consumes the available stream, then returns subsequent live
+rendering to current memory. Reset and restore discard the stream. This is a
+bounded data-feed stage, not a replacement for the mode/background correction
+passes or the RAM-write observer contract.
+
 ### Line-batch rendering (Tier-3, `lineBatchRender`)
 
 The per-cycle render pays a fixed dispatch/build/split tax on every cycle
@@ -562,14 +598,15 @@ in one burst through the *same* incremental machinery (`_catchUpDeferredLine`):
 
 - **At line end** (the common case): graphics are emitted as **maximal uniform
   spans**, one wide segment per stretch of cycles whose captured inputs are
-  identical (`_spanExtends`: regs-snapshot pointer equality over `[c-1..c+2]`,
-  courtesy of `captureDedup` aliasing, plus idle-byte and per-cycle scalar
-  equality). `_renderCycleSegmentGraphics` derives its columns from segment
+  identical (`_spanExtends`: graphics-version equality over `[c-1..c+2]`
+  for compact 6569 history, register-snapshot pointer equality otherwise,
+  plus idle-byte and per-cycle scalar equality).
+  `_renderCycleSegmentGraphics` derives its columns from segment
   geometry, so widening `seg.end` is exact. Segments 15/53/54 stay solo (the
   CSEL border edges must remain single-edge per segment for the splitter).
-  Sprites and the collision-pipe drains replay strictly cycle-by-cycle after
-  the spans (order-safe: graphics never feeds the pipe; sprite paints are
-  segment-bounded).
+  Sprites replay after the spans, with stable shifters eligible for interval
+  scheduling. Collision-pipe drains retain every virtual cycle (order-safe:
+  graphics never feeds the pipe; sprite paints are segment-bounded).
 - **Immediately on a mid-line observer**, i.e. anything that would let the CPU
   see render-derived state: a `$D019/$D01E/$D01F` read, a `$D01A` write arming
   the collision IRQs (armed lines render live outright), a fetch-config change

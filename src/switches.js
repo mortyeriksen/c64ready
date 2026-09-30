@@ -48,6 +48,24 @@ const SWITCHES = {
     env: ['IEC_EDGE_LATENCY'],
   },
 
+  // Compact render-history indices; off retains dense cycle snapshots.
+  sparseRenderState: {
+    default: true,
+    env: ['VIC_SPARSE_STATE'],
+  },
+
+  // Stable deferred sprites wait for their next horizontal output interval.
+  spriteIntervals: {
+    default: true,
+    env: ['VIC_SPRITE_INTERVALS'],
+  },
+
+  // Fetch-fed deferred graphics retain the RAM-write observer fallback.
+  fetchFedRender: {
+    default: false,
+    env: ['VIC_FETCH_FEED'],
+  },
+
   // Tier-3 line-batch rendering: defer a raster line's segment paints and
   // replay them in one burst through the SAME incremental machinery — at
   // line end (coalesced into maximal uniform spans, Phase 2), or

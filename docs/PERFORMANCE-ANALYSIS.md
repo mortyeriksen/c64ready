@@ -60,6 +60,14 @@ var for node harnesses.
   event the CPU could observe triggers an immediate catch-up, so the output is
   byte-identical to per-cycle rendering. `?LINE_BATCH=0` forces the per-cycle
   live path. See the [VIC-II](VIC2-ARCHITECTURE.md) §14.
+- **Compact render history** (`VIC_SPARSE_STATE`, default on). Register,
+  matrix/color and sprite payloads record new snapshots only when their source
+  versions change. Each cycle retains three byte indices instead of eleven
+  snapshot references. Diagnostic array access materializes the dense view.
+- **Sprite interval scheduling** (`VIC_SPRITE_INTERVALS`, default on). Deferred
+  sprites with stable inputs wait for their next output interval. Input changes
+  wake them immediately; collision drains and end-of-line passes keep their
+  cycle ordering. Live rendering keeps the reference dispatch path.
 - **WebGL presenter** (`WEBGL_PRESENTER`, default on). Uploads the finished
   framebuffer as a single texture per displayed frame instead of
   `putImageData`, saving a per-frame convert+upload on the main thread; most
@@ -260,6 +268,29 @@ are `time`, `prof`, `alloc`, `allocsites`, `mem`, and `all`. `time` is useful
 for throughput, but V8 can escape-analyze short-lived allocations away. Use
 `allocsites` to see allocation a non-EA engine, such as JavaScriptCore on iOS,
 would still pay for.
+
+For renderer comparisons, `VIC_SPARSE_STATE=0 VIC_SPRITE_INTERVALS=0` selects
+the dense-history, per-cycle sprite path. `VIC_FETCH_FEED=1` enables the
+experimental deferred fetch-data stream. It retains RAM-write catch-up and
+reference reads for unavailable sources; it is not enabled by default.
+The disk-trap workload explicitly disables true-drive mode and rejects a run
+whose pending LOAD/RUN never completes.
+
+An AC-powered candidate/baseline/candidate check of compact history, sprite
+intervals and the interior pixel-copy path measured these median frame times
+(Node v25.6.0, 9 batches of 300 frames each):
+
+| Workload | Baseline | Candidate, first / repeat |
+| --- | --- | --- |
+| BASIC READY | 6.135 ms | 5.947 / 5.868 ms |
+| Orbit Untold | 10.218 ms | 9.715 / 9.662 ms |
+| Raster Time | 7.012 ms | 6.774 / 6.767 ms |
+
+These are modest throughput gains, about 3–5%, for the combined change, not
+isolated attribution to either switch. Desktop WebKit idle measured 5.051 ms
+baseline against 4.996 / 4.999 ms candidate, effectively neutral. These figures
+do not establish a phone performance gain. The experimental fetch stream keeps
+extra capture work and existing catch-up barriers, so it remains off by default.
 
 The Safari/JSC harness is `tools/jsc-perf.mjs` plus
 `tools/jsc-perf-harness.html`:

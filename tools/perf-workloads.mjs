@@ -122,10 +122,12 @@ function boot() {
     return m;
   }
   if (W.kind === 'd64trap') {
+    m.setTrueDrive(false);
     m.setD64(new D64(new Uint8Array(fs.readFileSync(W.file))));
     for (let i = 0; i < 200; i++) m.runFrame();
     m.injectLoadAndRun();
     for (let i = 0; i < W.settle; i++) m.runFrame();
+    if (m._pendingAutoRun) throw new Error('Disk workload did not complete LOAD/RUN');
     return m;
   }
   // truedrive — the demo-status board's chunked UI load path

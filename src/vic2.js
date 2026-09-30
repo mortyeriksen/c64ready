@@ -336,13 +336,13 @@ export class VIC2 {
     this.rowFetchD011 = 0x1B;
     this.rowFetchD016 = 0xC8;
     this.rowFetchD018 = 0x14;
-    this.lineCycleRegs = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(0x40));
+    this._historyRegs = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(0x40));
     // Seed every per-cycle snapshot with the initial canonical register
     // file ($D011=$1B, $D016=$C8, $D018=$14, $D020=$0E, $D021=$06). Without
     // this, the very first frame after POWER ON renders some cycles using
     // an all-zero snapshot (CSEL=0 → 38-col mode), shifting the text by a
     // few pixels until each cycle's phi1 has populated its own snapshot.
-    for (let i = 0; i <= CYCLES_PER_LINE; i++) this.lineCycleRegs[i].set(this.regs);
+    for (let i = 0; i <= CYCLES_PER_LINE; i++) this._historyRegs[i].set(this.regs);
     this.lineCycleBanks = new Uint16Array(CYCLES_PER_LINE + 1);
     this.lineCycleDisplayEnabled = new Uint8Array(CYCLES_PER_LINE + 1);
     this.lineCycleDisplayActive = new Uint8Array(CYCLES_PER_LINE + 1);
@@ -492,20 +492,20 @@ export class VIC2 {
     // §3.14.6 colorfetchbug testprog) VMLI lags the beam by the idle gap, so
     // the freshly fetched columns must be read shifted. See _renderSourceColumn.
     this.lineCycleCWriteCol = new Int8Array(CYCLES_PER_LINE + 1).fill(-1);
-    this.lineCycleRowFetchedCols = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(40));
-    this.lineCycleRowCodes = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(40));
-    this.lineCycleRowColors = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(40));
+    this._historyRowFetchedCols = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(40));
+    this._historyRowCodes = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(40));
+    this._historyRowColors = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(40));
     this.lineCycleIdleByte = new Uint8Array(CYCLES_PER_LINE + 1);
     // rowFetchD011/D016/D018 are line-invariants — set once at bad-line
     // fetch begin (`_beginFetchedRowFromVcBase`) and read until the next
     // bad-line fetch. The renderer reads the scalar via `seg.rowFetchD0xx`
     // populated in `_buildCycleSegments`. Storing one per cycle was 3
     // typed-array writes per master cycle (~120 KB/s of redundant copy).
-    this.lineCycleSpriteDisplayOn = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(8));
-    this.lineCycleSpriteDataRow = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Int8Array(8));
-    this.lineCycleSpriteDataBase = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint16Array(8));
-    this.lineCycleSpriteDataBank = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint16Array(8));
-    this.lineCycleSpritePointerValue = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(8));
+    this._historySpriteDisplayOn = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(8));
+    this._historySpriteDataRow = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Int8Array(8));
+    this._historySpriteDataBase = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint16Array(8));
+    this._historySpriteDataBank = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint16Array(8));
+    this._historySpritePointerValue = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(8));
     // lineCycleSpriteRowData is preserved (some tests populate it) but is
     // no longer captured per cycle by the runtime — the renderer never
     // reads seg.spriteRowData (only seg.spriteShiftReg, which IS captured
@@ -513,8 +513,8 @@ export class VIC2 {
     // the per-cycle hot path. The live `this.spriteRowData` is still
     // used by _updateSpriteShiftReg.
     this.lineCycleSpriteRowData = Array.from({ length: CYCLES_PER_LINE + 1 }, () => Array.from({ length: 8 }, () => new Uint8Array(3)));
-    this.lineCycleSpriteRowByteMask = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(8));
-    this.lineCycleSpriteShiftReg = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint32Array(8));
+    this._historySpriteRowByteMask = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(8));
+    this._historySpriteShiftReg = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint32Array(8));
 
     // Capture-state snapshot dedup (gated by `captureDedup`, see _captureCycleState).
     // The row + sprite source arrays change only at discrete events within a
@@ -524,17 +524,39 @@ export class VIC2 {
     // read) is decoupled from the owned write buffer: _home*[c] keeps the
     // originally-allocated buffer so a dirty cycle always writes into its OWN
     // buffer (never one an earlier cycle of the same line still references).
-    this._homeRowFetchedCols = this.lineCycleRowFetchedCols.slice();
-    this._homeRowCodes = this.lineCycleRowCodes.slice();
-    this._homeRowColors = this.lineCycleRowColors.slice();
-    this._homeSpriteDisplayOn = this.lineCycleSpriteDisplayOn.slice();
-    this._homeSpriteDataRow = this.lineCycleSpriteDataRow.slice();
-    this._homeSpriteDataBase = this.lineCycleSpriteDataBase.slice();
-    this._homeSpriteDataBank = this.lineCycleSpriteDataBank.slice();
-    this._homeSpritePointerValue = this.lineCycleSpritePointerValue.slice();
-    this._homeSpriteRowByteMask = this.lineCycleSpriteRowByteMask.slice();
-    this._homeSpriteShiftReg = this.lineCycleSpriteShiftReg.slice();
-    this._homeRegs = this.lineCycleRegs.slice();   // (B2) reg-snapshot home buffers
+    this._homeRowFetchedCols = this._historyRowFetchedCols.slice();
+    this._homeRowCodes = this._historyRowCodes.slice();
+    this._homeRowColors = this._historyRowColors.slice();
+    this._homeSpriteDisplayOn = this._historySpriteDisplayOn.slice();
+    this._homeSpriteDataRow = this._historySpriteDataRow.slice();
+    this._homeSpriteDataBase = this._historySpriteDataBase.slice();
+    this._homeSpriteDataBank = this._historySpriteDataBank.slice();
+    this._homeSpritePointerValue = this._historySpritePointerValue.slice();
+    this._homeSpriteRowByteMask = this._historySpriteRowByteMask.slice();
+    this._homeSpriteShiftReg = this._historySpriteShiftReg.slice();
+    this._homeRegs = this._historyRegs.slice();   // (B2) reg-snapshot home buffers
+    this.sparseRenderState = switchOn('sparseRenderState');
+    this.spriteIntervals = switchOn('spriteIntervals');
+    this.fetchFedRender = switchOn('fetchFedRender');
+    this._fetchFeedLine = false;
+    this._fetchFeedValid = new Uint8Array(128);
+    this._fetchFeedAddress = new Uint16Array(128);
+    this._fetchFeedBytes = new Uint8Array(128);
+    this._spriteWakeCycle = new Uint8Array(8);
+    this._spriteWakeRegs = new Array(8).fill(null);
+    this._spriteWakeData = new Array(8).fill(null);
+    this._sparseCaptureLine = false;
+    this._regCycle = Uint8Array.from({ length: 64 }, (_, c) => c);
+    this._rowCycle = this._regCycle.slice();
+    this._sprCycle = this._regCycle.slice();
+    this._patchedRegs = Array.from({ length: 64 }, () => new Uint8Array(64));
+    this._historyIsSparse = false;
+    this._regSnapCycle = 0;
+    this._rowSnapCycle = 0;
+    this._sprSnapCycle = 0;
+    this._graphicsVersion = 0;
+    this._graphicsCycleVersion = new Uint32Array(64);
+
     // Monotonic version counters bumped at every row/sprite source-array writer;
     // a cycle whose version matches the last captured cycle's is byte-identical.
     this._rowSnapVersion = 0;
@@ -712,7 +734,7 @@ export class VIC2 {
     // closures inside _fixupColumns — those allocated ~2-3 closures every raster
     // line even when the `needed` gate bailed early. Aliased in _fixupColumns
     // via `const at = this._fixupAt` etc. so the call sites stay unchanged.
-    this._fixupAt = (c) => this.lineCycleRegs[c <= CYCLES_PER_LINE ? c : CYCLES_PER_LINE];
+    this._fixupAt = (c) => this._historyRegs[this._regCycle[c <= CYCLES_PER_LINE ? c : CYCLES_PER_LINE]];
     this._fixupShowsBg = (c) => {
       const openBg = !this.lineCycleVBorder[c] && !this.lineCycleHBorder[c];
       return this.lineCycleDisplayColumnActive[c] ||
@@ -726,7 +748,7 @@ export class VIC2 {
       const owner = this.spriteOwnerBuffer[x];
       if (owner === 0xFF) return false;
       const cycle = Math.min((x >> 3) + 11, CYCLES_PER_LINE);
-      return ((this.lineCycleRegs[cycle][0x1B] >> owner) & 1) !== 0;
+      return ((this._historyRegs[this._regCycle[cycle]][0x1B] >> owner) & 1) !== 0;
     };
     // Per-line arena of sprite render-state objects (see _createSpriteRenderState).
     // States never outlive their raster line — _initRenderRasterLine nulls every
@@ -823,6 +845,19 @@ export class VIC2 {
       spriteRowByteMask: null, spriteShiftReg: null,
     };
   }
+
+  // Dense diagnostic views are materialized only when explicitly inspected.
+  get lineCycleRegs() { this._materializeRenderHistory(); return this._historyRegs; }
+  get lineCycleRowFetchedCols() { this._materializeRenderHistory(); return this._historyRowFetchedCols; }
+  get lineCycleRowCodes() { this._materializeRenderHistory(); return this._historyRowCodes; }
+  get lineCycleRowColors() { this._materializeRenderHistory(); return this._historyRowColors; }
+  get lineCycleSpriteDisplayOn() { this._materializeRenderHistory(); return this._historySpriteDisplayOn; }
+  get lineCycleSpriteDataRow() { this._materializeRenderHistory(); return this._historySpriteDataRow; }
+  get lineCycleSpriteDataBase() { this._materializeRenderHistory(); return this._historySpriteDataBase; }
+  get lineCycleSpriteDataBank() { this._materializeRenderHistory(); return this._historySpriteDataBank; }
+  get lineCycleSpritePointerValue() { this._materializeRenderHistory(); return this._historySpritePointerValue; }
+  get lineCycleSpriteRowByteMask() { this._materializeRenderHistory(); return this._historySpriteRowByteMask; }
+  get lineCycleSpriteShiftReg() { this._materializeRenderHistory(); return this._historySpriteShiftReg; }
 
   get irqPending() {
     return (this.irqStatus & this.irqMask & 0x0F) !== 0;
@@ -990,6 +1025,11 @@ export class VIC2 {
       this._advanceHorizontalBorderState(this.cycleInLine, this.regs);
 
       this._captureCycleState(this.cycleInLine, vBorderBefore, hBorderBefore, externalBaLow);
+      if (this._fetchFeedLine && this._lineDeferred
+          && this.cycleInLine >= 16 && this.cycleInLine <= 55) {
+        this._recordGraphicsFetch(this.cycleInLine - 1);
+      }
+
 
       // Cycle-incremental render: as soon as a cycle's state is captured,
       // render that cycle's segment (graphics + sprite pixels). This
@@ -1020,6 +1060,9 @@ export class VIC2 {
             && this._cycleRenderActiveCanvasY >= 0
             && (this.irqMask & 0x06) === 0
             && !this.frameTraceEnabled;
+          this._fetchFeedLine = this.fetchFedRender && this._lineDeferred
+            && !!this.memory && this.memory.cartMode === 'none';
+          if (this._fetchFeedLine) this._fetchFeedValid.fill(0);
           if (this._lineDeferred) this._armDeferredFetchWatch();
           else if (this.memory) this.memory._vicFetchWatchOn = false;
         }
@@ -1238,7 +1281,7 @@ export class VIC2 {
       (this._isBadLine(this.raster, this.regs) ? 1 : 0) |
       (this.displayActive ? 2 : 0);
 
-    const cycle30Regs = this.lineCycleRegs[30];
+    const cycle30Regs = this._historyRegs[this._regCycle[30]];
     this.frameTraceLineD015[this.raster] = cycle30Regs[0x15];
     this.frameTraceLineD01C[this.raster] = cycle30Regs[0x1C];
     this.frameTraceLineD01D[this.raster] = cycle30Regs[0x1D];
@@ -1280,7 +1323,7 @@ export class VIC2 {
 
     let dmaMask = 0, dispMask = 0;
     for (let s = 0; s < 8; s++) {
-      if (this.lineCycleSpriteDisplayOn[30] && this.lineCycleSpriteDisplayOn[30][s]) dispMask |= (1 << s);
+      if (this._historySpriteDisplayOn[this._sprCycle[30]] && this._historySpriteDisplayOn[this._sprCycle[30]][s]) dispMask |= (1 << s);
       if (this.spriteDmaOn[s]) dmaMask |= (1 << s);
     }
     this.frameTraceLineSpriteDmaOn[this.raster] = dmaMask;
@@ -1543,6 +1586,10 @@ export class VIC2 {
     // the version that _captureCycleState's dedup compares. (Writes to non-
     // rendered regs like $D019/$D01A bump too — harmless, just forces a copy.)
     this._regSnapVersion = (this._regSnapVersion + 1) | 0;
+    if (reg === 0x11 || reg === 0x16 || reg === 0x18 || (reg >= 0x20 && reg <= 0x24)) {
+      this._graphicsVersion = (this._graphicsVersion + 1) >>> 0;
+    }
+
     // Sprite-X registers ($D000-$D00E even + $D010 MSBs): a CPU write at phi2
     // of a cycle catches the phi2-half pixels of that cycle's sprite
     // X-comparison (Bauer §3.6.1/§3.8.1; the spritex C64 column proves the
@@ -2156,6 +2203,7 @@ export class VIC2 {
 
   deserialize(s) {
     this._aecLowPhi2 = false; // Transient arbitration sample, refreshed by clock().
+    this._fetchFeedLine = false;
     this._lineDeferred = false;   // saved states are canonical (see serialize)
     this.regs.set(s.regs);
     this.raster = s.raster | 0; this.cycleInLine = s.cycleInLine | 0;

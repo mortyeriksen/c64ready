@@ -45,6 +45,22 @@ A skipping test exits 0, which on its own is indistinguishable from a pass, so i
 
 Both lists print the reason (from `missingNote(key)`, which names the manifest entry and its environment variable), so a green run still shows exactly which fixtures went missing. A test that skips without a directive is reported as a plain `PASS`: that is the bug the directive exists to prevent.
 
+## VIC render-path comparisons
+
+The default renderer uses compact payload histories and sprite interval
+scheduling. Keep the reference path available when changing either mechanism:
+
+```bash
+VIC_SPARSE_STATE=0 VIC_SPRITE_INTERVALS=0 node test/all-test.js
+VIC_FETCH_FEED=1 node test/all-test.js
+```
+
+`vic2-render-history-spec-test.js` compares cycle-visible collision/IRQ results
+and line-end pixels for both PAL variants with live and deferred rendering.
+`vic2-fetch-feed-spec-test.js` covers captured display bytes, bus isolation and
+fallbacks for RAM/DMA writes, bank/mode changes and collision observers. These
+comparisons supplement the hardware-rule tests; they do not replace them.
+
 ## Assembly64 integration checks
 
 The default suite includes the Assembly64 and media-browser tests. They use

@@ -630,13 +630,13 @@ export const spriteOps = {
     if (this._lineDeferred) {
       const K = this._thisCycleInLine - 1;
       if (K < 11 || K > 58 || this._cycleRenderActiveCanvasY < 0) return;
-      const lcr = this.lineCycleRegs[K];
+      const lcr = this._historyRegs[this._regCycle[K]];
       const regs = this.regs;
       let changed = false;
       for (let s = 0; s < 8 && !changed; s++) {
-        let active = this.lineCycleSpriteDisplayOn[K][s] !== 0;
+        let active = this._historySpriteDisplayOn[this._sprCycle[K]][s] !== 0;
         for (let c = 11; c < K && !active; c++) {
-          active = this.lineCycleSpriteDisplayOn[c][s] !== 0;
+          active = this._historySpriteDisplayOn[this._sprCycle[c]][s] !== 0;
         }
         if (!active) continue;
         const oldX = lcr[s * 2] | (((lcr[0x10] >> s) & 1) << 8);
@@ -664,7 +664,7 @@ export const spriteOps = {
 
     // Re-render only if an active sprite's effective X actually changed vs the
     // value segment K rendered with.
-    const lcr = this.lineCycleRegs[K];
+    const lcr = this._historyRegs[this._regCycle[K]];
     const regs = this.regs;
     const sprSeg = this._buildCycleSpriteSegment(K);
     let changed = false;
@@ -699,7 +699,7 @@ export const spriteOps = {
     // (B2) sprSeg was built from lineCycleRegs[K+regOffset] BEFORE the un-alias
     // above may have repointed that slot to a private buffer — refresh its reg
     // reference so the sprite re-render below reads the patched (post-write) X.
-    sprSeg.regs = this.lineCycleRegs[K + this._regOffset];
+    sprSeg.regs = this._historyRegs[this._regCycle[K + this._regOffset]];
 
     const x0 = sprSeg.start < 0 ? 0 : sprSeg.start;
     const x1 = sprSeg.end > CANVAS_W ? CANVAS_W : sprSeg.end;
@@ -759,7 +759,11 @@ export const spriteOps = {
       // sprites that are neither displaying-now nor started this line.
       for (let s = 0; s < 8; s++) {
         if (sprSeg.spriteDisplayOn[s] || this._spriteLineStarted[s]) {
-          this._renderSpriteSegmentForSprite(sprSeg, s, canvasY);
+          if (this.spriteIntervals && !live && !this.frameTraceEnabled) {
+            this._renderScheduledSprite(sprSeg, s, canvasY, renderCycle);
+          } else {
+            this._renderSpriteSegmentForSprite(sprSeg, s, canvasY);
+          }
         }
       }
     } else {
@@ -784,6 +788,33 @@ export const spriteOps = {
       this._offCanvasSpriteSpriteCollision(canvasY);
     }
     this._deferCollisionCommit = false;
+  },
+
+  // A stable shifter sleeps until its next horizontal interval. Snapshot
+  // changes wake it immediately; cycle 58 always runs the wrap/end passes.
+  // Live rendering retains per-cycle dispatch for phi2 rollback snapshots.
+  _renderScheduledSprite(seg, s, canvasY, cycle) {
+    if (cycle < this._spriteWakeCycle[s]
+        && seg.regs === this._spriteWakeRegs[s]
+        && seg.spriteShiftReg === this._spriteWakeData[s]) return;
+
+    this._renderSpriteSegmentForSprite(seg, s, canvasY);
+    this._spriteWakeCycle[s] = 0;
+    const state = this._spriteLineRenderState[s];
+    const display = !!seg.spriteDisplayOn[s];
+    const row = seg.spriteDataRow[s];
+    const sx = (seg.regs[s * 2] | (((seg.regs[0x10] >> s) & 1) << 8)) + 8;
+    if (!state || row < 0 || row >= 21
+        || (display && !this._spriteLinePrevSegDisplayOn[s])
+        || seg.spriteShiftReg[s] !== this._spriteLineLastShiftReg[s]
+        || seg.spriteRowByteMask[s] !== this._spriteLineLastRowByteMask[s]
+        || sx !== this._spriteLineLeft[s]
+        || this._spriteLinePendingWrapValid[s]) return;
+
+    this._spriteWakeRegs[s] = seg.regs;
+    this._spriteWakeData[s] = seg.spriteShiftReg;
+    this._spriteWakeCycle[s] = state.unitsRemaining === 0
+      ? 58 : Math.min(58, 11 + Math.floor(state.currentX / 8));
   },
 
   // Render one sprite (s) for one cycle's segment. Persists shifter
@@ -1054,7 +1085,7 @@ export const spriteOps = {
     let cx = Math.max(0, sx);
     while (cx < CANVAS_W && state.unitsRemaining > 0) {
       const cycle = (cx >> 3) + 11;
-      const cregs = this.lineCycleRegs[cycle + regOffset];
+      const cregs = this._historyRegs[this._regCycle[cycle + regOffset]];
       const sprMcol0 = PALETTE_RGBA[cregs[0x25] & 0x0F];
       const sprMcol1 = PALETTE_RGBA[cregs[0x26] & 0x0F];
       const sprColor = PALETTE_RGBA[cregs[0x27 + s] & 0x0F];
@@ -1122,7 +1153,7 @@ export const spriteOps = {
     // For a sprite whose X is stable across the line, the early sample equals
     // `sx`, so this is a no-op there (no regression to FAIRLIGHT/hvborder1-style
     // stable high-X wraps). Guarded on a valid early snapshot.
-    const earlyRegs = this.lineCycleRegs[11 + this._regOffset];
+    const earlyRegs = this._historyRegs[this._regCycle[11 + this._regOffset]];
     if (earlyRegs) {
       sx = (earlyRegs[s * 2] | (((earlyRegs[0x10] >> s) & 1) << 8)) + 8;
     }
@@ -1217,7 +1248,7 @@ export const spriteOps = {
     while (cx < CANVAS_W && unitsRemaining > 0) {
       // Canvas X → cycle: cx=0..7→11, 8..15→12, 16..23→13, ...
       const cycle = (cx >> 3) + 11;
-      const cycleRegs = this.lineCycleRegs[cycle + regOffset];
+      const cycleRegs = this._historyRegs[this._regCycle[cycle + regOffset]];
       const sprMcol0 = PALETTE_RGBA[cycleRegs[0x25] & 0x0F];
       const sprMcol1 = PALETTE_RGBA[cycleRegs[0x26] & 0x0F];
       const sprColor = PALETTE_RGBA[cycleRegs[0x27 + s] & 0x0F];
@@ -1267,7 +1298,7 @@ export const spriteOps = {
     const regOffset = this._regOffset;
     const BGX = this.constructor._SPRITE_BG_GARBAGE_RAW_X + 8;   // canvas X of the boundary
     const bcyc = (BGX >> 3) + 11;                    // boundary's cycle column
-    const bregs = this.lineCycleRegs[bcyc + regOffset];
+    const bregs = this._historyRegs[this._regCycle[bcyc + regOffset]];
     if (((bregs[0x15] >> s) & 1) === 0) return;      // MxE must be set
     const isMulti = (bregs[0x1C] >> s) & 1;
     const xExp = (bregs[0x1D] >> s) & 1;
@@ -1331,8 +1362,8 @@ export const spriteOps = {
     if (!this._offCanvasColl) this._offCanvasColl = new Uint8Array(WIDTH);
     const ov = this._offCanvasColl;
     ov.fill(0);
-    const probe = this.lineCycleRegs[58 + this._regOffset] || this.lineCycleRegs[58];
-    const probeDataRow = this.lineCycleSpriteDataRow[58 + this._regOffset] || this.lineCycleSpriteDataRow[58];
+    const probe = this._historyRegs[this._regCycle[58 + this._regOffset]] || this._historyRegs[this._regCycle[58]];
+    const probeDataRow = this._historySpriteDataRow[this._sprCycle[58 + this._regOffset]] || this._historySpriteDataRow[this._sprCycle[58]];
     for (let s = 0; s < 8; s++) {
       if (!this._spriteLineStarted[s]) continue;
       const rs = this._spriteLineRenderState[s];
