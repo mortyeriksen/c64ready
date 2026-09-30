@@ -273,6 +273,11 @@ For renderer comparisons, `VIC_SPARSE_STATE=0 VIC_SPRITE_INTERVALS=0` selects
 the dense-history, per-cycle sprite path. `VIC_FETCH_FEED=1` enables the
 experimental deferred fetch-data stream. It retains RAM-write catch-up and
 reference reads for unavailable sources; it is not enabled by default.
+`VIC_SEPARATE_COLOR=1` enables the separate foreground/color display decoder.
+Its closed-border path skips color expansion, but the complete split pipeline
+adds dispatch overhead to ordinary visible columns. It remains opt-in pending
+a net throughput benefit. This switch does not suppress rendering or skip
+collision processing on undisplayed frames.
 The disk-trap workload explicitly disables true-drive mode and rejects a run
 whose pending LOAD/RUN never completes.
 

@@ -445,7 +445,103 @@ export const renderOps = {
     return this._vicMemRead(address, bank);
   },
 
+  // Packed graphics sample: byte[7:0], matrix[15:8], color[19:16],
+  // output mode[22:20], valid[23]. No palette or background registers enter
+  // this stage; a closed border can consume its foreground mask alone.
+  _sampleGraphicsColumn(col, line, seg) {
+    const regs = seg.regs;
+    const gRegs = seg.nextRegs || regs;
+    const mRegs = seg.modeRegs || gRegs;
+    const writeCol = this.lineCycleCWriteCol[seg.cycle];
+    const src = col + (writeCol >= 0 ? writeCol - (seg.cycle - 15) : 0);
+    if (src < 0 || src >= 40 || !seg.rowFetchedCols[src]) return 0;
+    const matrix = seg.rowCodes[src];
+    const color = seg.rowColors[src];
+    const base = ((gRegs[0x11] | regs[0x11]) & 0x20) ? seg.liveVcBase : seg.rowVcBase;
+    const address = this._graphicsFetchAddr(gRegs[0x11], regs[0x11], gRegs[0x18],
+      matrix, (base + src) & 0x3ff, line, seg.bank);
+    const data = this._fetchFeedLine
+      ? this._graphicsSourceByte(col, seg, address, seg.bank)
+      : this._vicMemRead(address, seg.bank);
+    const mode = ((mRegs[0x11] >> 4) & 6) | ((mRegs[0x16] >> 4) & 1);
+    return 0x800000 | (mode << 20) | (color << 16) | (matrix << 8) | data;
+  },
+
+  // Bauer 3.7.3: hires bits classify directly; multicolor pairs 10/11
+  // classify as foreground, independently of the selected output colors.
+  _decodeGraphicsForeground(sample, out, o = 0) {
+    let bits = sample & 255;
+    const mode = (sample >> 20) & 7;
+    if ((mode & 1) && (mode !== 1 || (sample & 0x80000))) {
+      bits = (bits & 0xaa) | ((bits & 0xaa) >> 1);
+    }
+    out[o] = bits >> 7;
+    out[o + 1] = (bits >> 6) & 1;
+    out[o + 2] = (bits >> 5) & 1;
+    out[o + 3] = (bits >> 4) & 1;
+    out[o + 4] = (bits >> 3) & 1;
+    out[o + 5] = (bits >> 2) & 1;
+    out[o + 6] = (bits >> 1) & 1;
+    out[o + 7] = bits & 1;
+  },
+
+  // Color output consumes the sampled data but cannot change foreground or
+  // collision state. Background registers remain output-stage timed.
+  _presentGraphicsColumn(sample, bgRegs, out, o = 0) {
+    const bg = PALETTE_RGBA[bgRegs[0x21] & 15];
+    if (!(sample & 0x800000)) { out.fill(bg, o, o + 8); return; }
+    const data = sample & 255;
+    const matrix = (sample >> 8) & 255;
+    const color = (sample >> 16) & 15;
+    const mode = (sample >> 20) & 7;
+    if (mode >= 5) { out.fill(0xff000000, o, o + 8); return; }
+    let c0 = bg, c1, c2, c3;
+    if (mode === 3 || (mode === 1 && (color & 8))) {
+      if (mode === 3) {
+        c1 = PALETTE_RGBA[matrix >> 4];
+        c2 = PALETTE_RGBA[matrix & 15];
+        c3 = PALETTE_RGBA[color];
+      } else {
+        c1 = PALETTE_RGBA[bgRegs[0x22] & 15];
+        c2 = PALETTE_RGBA[bgRegs[0x23] & 15];
+        c3 = PALETTE_RGBA[color & 7];
+      }
+      for (let pair = 0; pair < 4; pair++) {
+        const value = (data >> (6 - pair * 2)) & 3;
+        const rgba = value === 0 ? c0 : value === 1 ? c1 : value === 2 ? c2 : c3;
+        out[o + pair * 2] = rgba;
+        out[o + pair * 2 + 1] = rgba;
+      }
+      return;
+    }
+    c1 = PALETTE_RGBA[mode === 1 ? color & 7 : color];
+    if (mode === 2) {
+      c0 = PALETTE_RGBA[matrix & 15];
+      c1 = PALETTE_RGBA[matrix >> 4];
+    } else if (mode === 4) {
+      c0 = PALETTE_RGBA[bgRegs[0x21 + (matrix >> 6)] & 15];
+    }
+    out[o] = (data & 128) ? c1 : c0;
+    out[o + 1] = (data & 64) ? c1 : c0;
+    out[o + 2] = (data & 32) ? c1 : c0;
+    out[o + 3] = (data & 16) ? c1 : c0;
+    out[o + 4] = (data & 8) ? c1 : c0;
+    out[o + 5] = (data & 4) ? c1 : c0;
+    out[o + 6] = (data & 2) ? c1 : c0;
+    out[o + 7] = (data & 1) ? c1 : c0;
+  },
+
   _renderSourceColumn(col, line, seg, outPixels, outFgMap, outOffset = 0) {
+    if (!this.separateColorOutput || this.frameTraceEnabled) {
+      this._renderSourceColumnReference(col, line, seg, outPixels, outFgMap, outOffset);
+      return;
+    }
+    const sample = this._sampleGraphicsColumn(col, line, seg);
+    this._decodeGraphicsForeground(sample, outFgMap, outOffset);
+    this._presentGraphicsColumn(sample, seg.bgRegs || seg.regs, outPixels, outOffset);
+  },
+
+  _renderSourceColumnReference(col, line, seg, outPixels, outFgMap, outOffset = 0) {
     // Bauer §3.7.3 defines the normal ECM/BMM/MCM g-access address
     // schemes and pixel colouring. $D018 CB / bitmap-base is sampled at the
     // g-access cycle (seg.nextRegs, = seg.cycle + 1): a CPU write at the
@@ -1251,7 +1347,7 @@ export const renderOps = {
 
   // Collision-only render of a display column covered by the CLOSED main
   // border. Produces the same per-column fg map the open-window path would
-  // (same _renderSourceColumn machinery, same xscroll/window mapping) but
+  // with the same source data and xscroll/window mapping, but
   // writes ONLY the collision/priority line buffers — the framebuffer keeps
   // the border fill and borderBuffer stays 1. Columns outside the graphics
   // window are left untouched (side zones shift an empty sequencer, and the
@@ -1277,7 +1373,11 @@ export const renderOps = {
     spanFgMap.fill(0, 0, (lastCol - firstCol + 1) * 8);
     let spanCols = 0;
     for (let col = firstCol; col <= lastCol; col++) {
-      this._renderSourceColumn(col, cell.line, seg, spanPixels, spanFgMap, spanCols * 8);
+      if (this.separateColorOutput && !this.frameTraceEnabled) {
+        this._decodeGraphicsForeground(this._sampleGraphicsColumn(col, cell.line, seg), spanFgMap, spanCols * 8);
+      } else {
+        this._renderSourceColumnReference(col, cell.line, seg, spanPixels, spanFgMap, spanCols * 8);
+      }
       spanCols++;
     }
     const spanBaseX = firstCol * 8;

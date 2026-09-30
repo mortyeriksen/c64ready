@@ -53,6 +53,7 @@ scheduling. Keep the reference path available when changing either mechanism:
 ```bash
 VIC_SPARSE_STATE=0 VIC_SPRITE_INTERVALS=0 node test/all-test.js
 VIC_FETCH_FEED=1 node test/all-test.js
+VIC_SEPARATE_COLOR=1 node test/all-test.js
 ```
 
 `vic2-render-history-spec-test.js` compares cycle-visible collision/IRQ results
@@ -60,6 +61,11 @@ and line-end pixels for both PAL variants with live and deferred rendering.
 `vic2-fetch-feed-spec-test.js` covers captured display bytes, bus isolation and
 fallbacks for RAM/DMA writes, bank/mode changes and collision observers. These
 comparisons supplement the hardware-rule tests; they do not replace them.
+
+`vic2-color-separation-spec-test.js` checks color-independent foreground bits,
+black invalid modes, collision-only processing beneath the main border, all
+byte/color/mode combinations against the combined decoder, and live/deferred
+pixel and collision-read equivalence on both VIC variants.
 
 ## Assembly64 integration checks
 

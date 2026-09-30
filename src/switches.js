@@ -60,6 +60,12 @@ const SWITCHES = {
     env: ['VIC_SPRITE_INTERVALS'],
   },
 
+  // Decode foreground independently of output colors.
+  separateColorOutput: {
+    default: false,
+    env: ['VIC_SEPARATE_COLOR'],
+  },
+
   // Fetch-fed deferred graphics retain the RAM-write observer fallback.
   fetchFedRender: {
     default: false,

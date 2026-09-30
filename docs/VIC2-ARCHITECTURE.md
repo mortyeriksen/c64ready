@@ -572,6 +572,28 @@ per-cycle processing. Cycle 58 always executes the wrap and off-canvas passes.
 Collision drains still run every virtual cycle in their original order. Live
 rendering and tracing retain per-cycle dispatch for phi2 rollback.
 
+### Foreground decoding and color presentation
+
+`VIC_SEPARATE_COLOR=1` selects a split display-column pipeline; the combined
+renderer remains the default and comparison path. `_sampleGraphicsColumn`
+captures the data byte, matrix byte, color nibble and output mode in one packed
+integer. It uses the existing g-access address and fetch-feed rules without
+driving the bus or allocating an object.
+
+`_decodeGraphicsForeground` classifies bits independently of palette and
+background-register values. Hires bits classify directly; multicolor pairs
+10/11 classify as foreground, with the text-mode color-bit exception. Invalid
+modes retain this classification even though their displayed color is black.
+`_presentGraphicsColumn` expands colors from the same sample and the separately
+timed background registers. It cannot write the collision or priority buffers.
+
+Display columns behind the main border use only foreground decoding in this
+path, avoiding color expansion for pixels that remain hidden. Vertical-border,
+idle, sprite, collision-pipeline and mode/background-correction timing retain
+their existing rules. Tracing uses the combined renderer. The split path is
+opt-in because its additional dispatch costs more at BASIC READY in Node;
+it is a data-model separation, not an established throughput improvement.
+
 ### Fetch-fed deferred graphics
 `VIC_FETCH_FEED` is an experimental comparison path, off by default. It records
 display bytes at the phase used by the incremental renderer, including the

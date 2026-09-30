@@ -538,6 +538,7 @@ export class VIC2 {
     this.sparseRenderState = switchOn('sparseRenderState');
     this.spriteIntervals = switchOn('spriteIntervals');
     this.fetchFedRender = switchOn('fetchFedRender');
+    this.separateColorOutput = switchOn('separateColorOutput');
     this._fetchFeedLine = false;
     this._fetchFeedValid = new Uint8Array(128);
     this._fetchFeedAddress = new Uint16Array(128);
