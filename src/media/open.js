@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 import { D64, d64Variant, prgOverflow } from './d64.js';
+import { G64 } from './g64.js';
 import { parseCRT } from './crt.js';
 import { createCartridgeFromCRT } from '../cartridges/registry.js';
 import { Datasette } from '../datasette.js';
@@ -18,6 +19,8 @@ export function validateMedia(bytes, type) {
   } else if (type === 'd64') {
     if (!d64Variant(bytes.length)) throw new Error('Unsupported D64 size.');
     return new D64(bytes);
+  } else if (type === 'g64') {
+    return new G64(bytes);   // parseG64 throws on a malformed header or table
   } else if (type === 'crt') {
     if (bytes.length < 64) throw new Error('Truncated CRT header.');
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -109,9 +112,9 @@ export function createOpenMedia(port) {
         if (reset && !['crt', 'reu'].includes(load.type) && port.reset && !port.reset()) {
           throw new Error('Could not reset the machine to load this.');
         }
-        if (['prg', 'd64', 'crt', 'tap'].includes(load.type)) port.configureSid?.(load.tune ?? null);
-        if (load.type === 'd64') {
-          await port.prepareDisk?.({ targetDrive, signal });
+        if (['prg', 'd64', 'g64', 'crt', 'tap'].includes(load.type)) port.configureSid?.(load.tune ?? null);
+        if (load.type === 'd64' || load.type === 'g64') {
+          await port.prepareDisk?.({ targetDrive, signal, rawGcr: load.type === 'g64' });
           signal?.throwIfAborted();
           disk._libName = load.name;
           disk.writeProtected = !!writeProtected;

@@ -385,7 +385,8 @@
 .lib-type-prg { background: #b362c4; }  /* VIC purple (4)  */
 .lib-type-cbm { background: #e6dd6b; }  /* VIC yellow (7) — the KERNAL's own */
 .lib-type-turbo { background: #9dd270; } /* VIC light green (13) — a turbo loader */
-.lib-type-d64 { background: #75cec8; }  /* VIC cyan   (3)  */
+.lib-type-d64,
+.lib-type-g64 { background: #75cec8; }  /* VIC cyan   (3)  */
 .lib-type-crt { background: #cf8a4f; }  /* VIC orange (8)  */
 .lib-type-tap { background: #e6dd6b; }  /* VIC yellow (7)  */
 .lib-type-t64 { background: #c46c71; }  /* VIC light red (10) — an archive, not a tape */

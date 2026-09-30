@@ -9,24 +9,20 @@
 import path from 'node:path';
 import { parentPort, workerData } from 'node:worker_threads';
 import { setQuiet } from '../report.mjs';
-import { D64, loadMachine } from '../core.mjs';
+import { D64, G64, loadMachine } from '../core.mjs';
 import { writePng, Apng } from '../png.mjs';
 import { hostName } from '../disk.mjs';
-import { runFrames, typeLoadAndRun } from '../run.mjs';
+import { runFrames, typeLoadAndRun, bootWithDisk } from '../run.mjs';
 
 setQuiet(true);
-const { bytes, roms, frames, anim, fps, speed, press, outDir, stem } = workerData;
+const { bytes, kind, roms, frames, anim, fps, speed, press, outDir, stem } = workerData;
 const { C64Machine, CANVAS_W, CANVAS_H } = await loadMachine();
-const disk = new D64(bytes);
+const disk = kind === 'g64' ? new G64(bytes) : new D64(bytes);
 
 parentPort.on('message', msg => {
   if (!msg) { parentPort.close(); return; }
   const name = msg.item;
-  const m = new C64Machine();
-  m.loadROMs(roms);
-  for (let i = 0; i < 150; i++) m.runFrame();
-  m.setTrueDrive(false);
-  m.setD64(disk);
+  const m = bootWithDisk(C64Machine, roms, kind, disk);
   typeLoadAndRun(m, name);
   const film = anim ? new Apng(CANVAS_W, CANVAS_H, fps * speed) : null;
   runFrames(m, frames, film, fps, { press });

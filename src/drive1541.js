@@ -107,6 +107,13 @@ export class Drive1541 {
     this.bitCycleAccum    = 0;
     this.trackDirty       = true;
     this.trackStream      = null;
+    this._streamZone      = -1;   // recorded zone of trackStream (G64), -1 = follow the density bits
+    this._streamMap       = null; // per-byte zone map of trackStream (G64), or null
+    this._sinceFlux8      = 0;    // eighth-cycles since the last flux transition under the head
+    this._noiseWait8      = 160;  // eighth-cycles until the amplifier's next random transition
+    // xorshift32 state for those, in a typed cell: a 32-bit value in a plain
+    // field leaves the small-integer range and would be boxed on every write.
+    this._noise           = new Uint32Array([0x2545F491]);
     this.trackBitPos      = 0;
     this._lastPortBOut    = 0x00;
     // Seed the phase consistently with the starting half-track so the DOS's
@@ -298,7 +305,10 @@ export class Drive1541 {
     // before its GCR cache is dropped, so eject / disk-swap / reset (which
     // re-attaches through here) never loses a save.
     if (this._writeEnabled && this.gcrDisk) this.gcrDisk.commitDirtyTracks();
-    this.gcrDisk = d64 ? new GCRDisk(d64) : null;
+    // The GCR source the head reads: a G64 is one already (raw streams per
+    // half-track); a D64 gets its tracks synthesised from its sectors.
+    this.disk = d64 || null;
+    this.gcrDisk = !d64 ? null : d64.isG64 ? d64 : new GCRDisk(d64);
     // No disk ⇒ not protected (nothing to protect). With a disk: honor its own
     // write-protect (a session attribute on the D64) when write support is on —
     // absent or true ⇒ protected, so only an explicit `writeProtected === false`
@@ -312,6 +322,7 @@ export class Drive1541 {
     // drive is live can desynchronise custom loaders.
     this.trackDirty = true;
     this.trackStream = null;
+    this._streamZone = -1;
     this.trackBitPos = 0;
     this._shiftReg = 0;
     this._shiftBits = 0;
@@ -322,16 +333,17 @@ export class Drive1541 {
   }
 
   /** Runtime write-protect toggle (UI unlock). Records the state on the mounted
-   *  D64 so it survives a re-attach (reset / state restore). No effect on the
+   *  disk image so it survives a re-attach (reset / state restore). No effect on the
    *  drive gate while global write support is switched off. */
   setWriteProtect(protectedOn) {
     const p = !!protectedOn;
-    if (this.gcrDisk) this.gcrDisk.d64.writeProtected = p;
+    if (this.disk) this.disk.writeProtected = p;
     this.writeProtected = (this._writeEnabled && this.gcrDisk) ? p : !!this.gcrDisk;
   }
 
-  /** Fold any pending head writes back into the D64 image (decode-on-demand).
-   *  Returns the number of sectors written. Safe to call anytime. */
+  /** Fold any pending head writes back into the disk image (decode-on-demand):
+   *  a D64's sectors, or a G64's decoded sector view (its GCR bytes are written
+   *  in place). Returns the number of sectors written. Safe to call anytime. */
   commitWrites() {
     return this.gcrDisk ? this.gcrDisk.commitDirtyTracks() : 0;
   }
@@ -454,6 +466,7 @@ export class Drive1541 {
     this.bitCycleAccum = 0;
     this.trackDirty = true;
     this.trackStream = null;
+    this._streamZone = -1;
     this.trackBitPos = 0;
     this._lastPortBOut = 0x00;
     // Phase consistent with the start half-track (see constructor note).
@@ -462,7 +475,7 @@ export class Drive1541 {
     // Honor the inserted disk's write-protect (a session attribute on the D64);
     // with write support off, fall back to the legacy always-protected behavior.
     this.writeProtected = !this.gcrDisk ? false
-      : this._writeEnabled ? (this.gcrDisk.d64.writeProtected !== false)
+      : this._writeEnabled ? (this.disk?.writeProtected !== false)
       : true;
     this.lastGCRByte = 0x55;
     this._shiftReg = 0;
@@ -557,7 +570,109 @@ export class Drive1541 {
     this._lastReportedDataOut = s._lastReportedDataOut; this._lastReportedClkOut = s._lastReportedClkOut;
     // Force a track-stream reload at the restored half-track; rotational
     // position resyncs on the next SYNC mark (as it does after a head step).
-    this.trackDirty = true; this.trackStream = null; this.trackBitPos = 0;
+    this.trackDirty = true; this.trackStream = null; this.trackBitPos = 0; this._streamZone = -1;
+  }
+
+  // ── Read circuit ──────────────────────────────────────────────────────────
+
+  /**
+   * One recorded bit cell under the read head: a 1 is a flux transition, a 0
+   * none. The read clock runs at the selected density and restarts at every
+   * transition, so at another density it counts its own cells between ones.
+   * After 18 µs without a transition the amplifier's noise yields random ones,
+   * with VICE's timing (drive/rotation.c, see NOTICE.txt): the first 18-20 µs
+   * after the last real transition, then every 2-25 µs until the next real one.
+   * @param {number} bit   the recorded bit
+   * @param {number} rec8  the recorded cell, in eighths of a cycle
+   */
+  _readCell(bit, rec8) {
+    const sel8 = CYCLES_PER_BYTE[this.currentSpeedZone & 3];
+    this._sinceFlux8 += rec8;
+    if (bit) {
+      this._flux(rec8, sel8);
+      this._noiseWait8 = 144 + this._random(16);    // 289-319 ticks of 16 MHz
+      return;
+    }
+    this._noiseWait8 -= rec8;
+    if (this._noiseWait8 <= 0) {
+      this._flux(rec8, sel8);
+      this._noiseWait8 += 17 + this._random(184);   // 33-399 ticks
+      return;
+    }
+    if (rec8 === sel8) this._shiftIn(0);
+  }
+
+  // A flux transition. At the recorded density the zeros before it went in as
+  // they came; at another, the read clock's own count of them goes in now.
+  _flux(rec8, sel8) {
+    if (rec8 !== sel8) {
+      for (let zeros = Math.round(this._sinceFlux8 / sel8) - 1; zeros > 0; zeros--) this._shiftIn(0);
+    }
+    this._sinceFlux8 = 0;
+    this._shiftIn(1);
+  }
+
+  _random(n) {
+    let x = this._noise[0];
+    x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
+    this._noise[0] = x;
+    return (this._noise[0] >>> 16) % n;
+  }
+
+  // One bit into the read chain: sync detection, the shift register, byte-ready.
+  _shiftIn(bit) {
+    if (bit) this._onesInRow++;
+    else this._onesInRow = 0;
+
+    // Sync is a run of 10+ one bits. While in sync there is no valid
+    // byte framing; the first following zero re-establishes byte alignment.
+    if (this._inSync) {
+      this._syncBit = 0x00;
+      if (bit === 1) return;
+      this._inSync = false;
+      this._syncBit = 0x80;
+      this._shiftReg = 0;
+      this._shiftBits = 0;
+      this._onesInRow = 0;
+    } else if (this._onesInRow >= 10) {
+      this._inSync = true;
+      this._syncBit = 0x00;
+      this._shiftReg = 0;
+      this._shiftBits = 0;
+      this._dbgSyncBytesSeen++;
+      return;
+    } else {
+      this._syncBit = 0x80;
+    }
+
+    this._shiftReg = ((this._shiftReg << 1) | bit) & 0xFF;
+    this._shiftBits++;
+    if (this._shiftBits === 8) {
+      this.lastGCRByte = this._shiftReg;
+      this._shiftBits = 0;
+      // BYTE-READY feeds VIA2 CA1 → latches IFR bit 1, INDEPENDENT of SOE
+      // ("Die Floppy 1571" §8.2: byte-ready is wired to both CA1 and the
+      // SO pin). The DOS read loop polls the SO pin (BVC), but the CA1
+      // flag exists for code that reads $1C0D. Reading $1C01 (VIA2 Port A)
+      // clears it (handshake). It only raises an IRQ if VIA2 IER bit 1 is enabled.
+      this.via2.triggerIrq(1);
+      // BYTE-READY reaches the 6502 SO pin only while SOE (Serial Output
+      // Enable = VIA2 CA2) is high. CA2 control = PCR bits 1-3; value 111
+      // (i.e. PCR & $0E === $0E) drives CA2 high. The 1541 DOS writes
+      // PCR=$EE during sector reads (CA2=111) so reads fire byte-ready;
+      // seek/gap phases with CA2≠111 suppress it. Per the 1541
+      // byte-ready wiring ("Die Floppy 1571" §8.2).
+      if ((this.via2.regs[0x0C] & 0x0E) === 0x0E) {
+        if (DRIVE_SO_DELAY_ENABLED) {
+          // 4 cy fixed: nudges tight fastloader read loops off the
+          // pre-delay byte boundary, well below the 18 cy threshold
+          // where the next bit-8 would overwrite lastGCRByte.
+          this._soPendingCycles = 4;
+        } else {
+          this.cpu.setOverflow();
+        }
+      }
+    }
   }
 
   // ── Spindle / GCR stream ──────────────────────────────────────────────────
@@ -599,7 +714,11 @@ export class Drive1541 {
     // and thus bit pacing, is identical. serialize()/deserialize() convert to and
     // from whole cycles so the save-state format is unchanged.
     this.bitCycleAccum += cycles * 8;
-    const cyclesPerBit8 = CYCLES_PER_BYTE[this.currentSpeedZone & 0x03];
+    // Bit rate: a recorded surface (G64) passes the head at the rate it was
+    // written, since the read clock resynchronises on every flux transition;
+    // the density bits only tune that clock. A D64's tracks are synthesised
+    // for whatever rate the density bits select, so they follow those.
+    let cyclesPerBit8 = CYCLES_PER_BYTE[(this._streamZone >= 0 ? this._streamZone : this.currentSpeedZone) & 0x03];
 
     while (this.bitCycleAccum >= cyclesPerBit8) {
       this.bitCycleAccum -= cyclesPerBit8;
@@ -616,7 +735,14 @@ export class Drive1541 {
       if (this.trackDirty) {
         const oldBits = this.trackStream ? this.trackStream.length * 8 : 0;
         const oldPos = this.trackBitPos;
-        this.trackStream = this.gcrDisk.getTrackStream(this.currentHalfTrack >> 1);
+        // Whole track and half-track both: a D64 source has only whole tracks,
+        // a G64 records every half-track the head can sit on.
+        this.trackStream = this.gcrDisk.getTrackStream(this.currentHalfTrack >> 1, this.currentHalfTrack);
+        this._streamZone = this.gcrDisk.speedZoneFor ? this.gcrDisk.speedZoneFor(this.currentHalfTrack) : -1;
+        this._streamMap = this.gcrDisk.speedMapFor ? this.gcrDisk.speedMapFor(this.currentHalfTrack) : null;
+        cyclesPerBit8 = CYCLES_PER_BYTE[(this._streamZone >= 0 ? this._streamZone : this.currentSpeedZone) & 0x03];
+        this._sinceFlux8 = 0;
+        this._noiseWait8 = 160;   // as if a transition just passed
         this.trackDirty = false;
         this._shiftReg = 0;
         this._shiftBits = 0;
@@ -659,8 +785,8 @@ export class Drive1541 {
             // Byte boundary: the surface changed; load the next byte the DOS
             // parked in Port A (it had a full byte-time to set it) and pulse
             // byte-ready (CA1 + SO, SOE-gated) just like a read.
-            this.gcrDisk.markTrackDirty(this.currentHalfTrack >> 1);
-            this.gcrDisk.d64.dirty = true;
+            this.gcrDisk.markTrackDirty(this.currentHalfTrack >> 1, this.currentHalfTrack);
+            this.disk.dirty = true;
             this._writeShiftReg = this._lastWrittenByte;
             this.via2.triggerIrq(1);
             if ((this.via2.regs[0x0C] & 0x0E) === 0x0E) {
@@ -676,6 +802,12 @@ export class Drive1541 {
         }
         this._wasWriting = false;
 
+        // A per-byte speed map (G64) sets the recorded bit rate byte by byte.
+        if (this._streamMap !== null && (bitPos & 7) === 0) {
+          const byteIdx = bitPos >> 3;
+          this._streamZone = (this._streamMap[byteIdx >> 2] >> (6 - ((byteIdx & 3) << 1))) & 3;
+          cyclesPerBit8 = CYCLES_PER_BYTE[this._streamZone];
+        }
         const byteVal = this.trackStream[bitPos >> 3];
         const bit = (byteVal >> (7 - (bitPos & 7))) & 1;
         this.trackBitPos = (bitPos + 1) % totalBits;
@@ -690,59 +822,19 @@ export class Drive1541 {
           this._shiftBits = 0;
           continue;
         }
-
-        if (bit) this._onesInRow++;
-        else this._onesInRow = 0;
-
-        // Sync is a run of 10+ one bits. While in sync there is no valid
-        // byte framing; the first following zero re-establishes byte alignment.
-        if (this._inSync) {
-          this._syncBit = 0x00;
-          if (bit === 1) continue;
-          this._inSync = false;
-          this._syncBit = 0x80;
-          this._shiftReg = 0;
-          this._shiftBits = 0;
-          this._onesInRow = 0;
-        } else if (this._onesInRow >= 10) {
-          this._inSync = true;
-          this._syncBit = 0x00;
-          this._shiftReg = 0;
-          this._shiftBits = 0;
-          this._dbgSyncBytesSeen++;
-          continue;
-        } else {
-          this._syncBit = 0x80;
-        }
-
-        this._shiftReg = ((this._shiftReg << 1) | bit) & 0xFF;
-        this._shiftBits++;
-        if (this._shiftBits === 8) {
-          this.lastGCRByte = this._shiftReg;
-          this._shiftBits = 0;
-          // BYTE-READY feeds VIA2 CA1 → latches IFR bit 1, INDEPENDENT of SOE
-          // ("Die Floppy 1571" §8.2: byte-ready is wired to both CA1 and the
-          // SO pin). The DOS read loop polls the SO pin (BVC), but the CA1
-          // flag exists for code that reads $1C0D. Reading $1C01 (VIA2 Port A)
-          // clears it (handshake). It only raises an IRQ if VIA2 IER bit 1 is enabled.
-          this.via2.triggerIrq(1);
-          // BYTE-READY reaches the 6502 SO pin only while SOE (Serial Output
-          // Enable = VIA2 CA2) is high. CA2 control = PCR bits 1-3; value 111
-          // (i.e. PCR & $0E === $0E) drives CA2 high. The 1541 DOS writes
-          // PCR=$EE during sector reads (CA2=111) so reads fire byte-ready;
-          // seek/gap phases with CA2≠111 suppress it. Per the 1541
-          // byte-ready wiring ("Die Floppy 1571" §8.2).
-          if ((this.via2.regs[0x0C] & 0x0E) === 0x0E) {
-            if (DRIVE_SO_DELAY_ENABLED) {
-              // 4 cy fixed: nudges tight fastloader read loops off the
-              // pre-delay byte boundary, well below the 18 cy threshold
-              // where the next bit-8 would overwrite lastGCRByte.
-              this._soPendingCycles = 4;
-            } else {
-              this.cpu.setOverflow();
-            }
-          }
-        }
+        this._readCell(bit, cyclesPerBit8);
+      } else if (readsSuppressed) {
+        this._syncBit = 0x80;
+        this._inSync = false;
+        this._onesInRow = 0;
+        this._shiftReg = 0;
+        this._shiftBits = 0;
+      } else {
+        // Nothing recorded under the head (an unrecorded G64 half-track, or a
+        // track past the end of a D64): no flux, so no SYNC, only the noise
+        // the read amplifier makes of an erased surface. The DOS's sync wait
+        // times out with error 21.
+        this._readCell(0, cyclesPerBit8);
       }
     }
   }

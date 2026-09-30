@@ -30,7 +30,7 @@ const DB_VERSION = 1;
 const META_STORE = 'lib-meta';
 const BLOB_STORE = 'lib-blobs';
 
-const VALID_TYPES = new Set(['prg', 'd64', 'crt', 'tap', 't64', 'sid', 'reu']);
+const VALID_TYPES = new Set(['prg', 'd64', 'g64', 'crt', 'tap', 't64', 'sid', 'reu']);
 
 // Tag stamped into export files so libImport can reject unrelated JSON.
 const EXPORT_FORMAT  = 'c64emu-library';

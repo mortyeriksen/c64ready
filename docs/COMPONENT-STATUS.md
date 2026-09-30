@@ -66,24 +66,11 @@ implementation is to documented hardware behavior for that component.
 | Serial bus | IEC bus (C64 ↔ 1541) | Implemented | High | Wired-AND signal reflection with correct open-collector polarity, driving real interrupts on the drive CPU. Drive→C64 edges land one master cycle later than the run order gives, modeling the input-latch margin of the two asynchronous clocks; that margin keeps 2-bit loaders' release-vs-sample race positive. See the [drive doc](DRIVE-ARCHITECTURE.md). |
 | Disk | 1541 drive CPU + DOS ROM | Implemented | High | A separate 6502 drive computer runs whenever a 1541 ROM is loaded (251968-03); true-drive emulation decides whether LOAD is trap-served or runs the real IEC protocol. Idle wait loops are skipped, and the drive runs at the true PAL clock ratio so the drive↔C64 phase sweeps as on hardware. See the [drive doc](DRIVE-ARCHITECTURE.md). |
 | Disk | 1541 VIA pair (6522) | Partial | Medium | The two 6522 VIAs cover the timer and port behavior the DOS ROM depends on. Tailored implementation rather than a generic 6522. |
-| Disk | GCR read/write channel / spindle / sync | Partial | Medium | The emulator synthesizes GCR track streams from `.d64` data, models speed zones, sync marks, and byte-ready signaling. A matching write channel shifts the drive's outgoing bytes back onto the track buffer. Mechanics simplified. |
-| Disk | `.d64` filesystem support | Implemented | Medium | Directory parsing, CBM DOS name matching (`*`, `?`, drive prefix, type suffix), directory listing generation, and file extraction, for all six image variants (35-, 40- and 42-track, with or without an error table). Tracks 36-40 are counted and written when the image carries a recognised BAM extension. |
-| Disk | `.d64` error table | Implemented | Medium | Recorded per-sector errors are put back on the track the head reads: 20 (no header), 21 (no sync), 22 (no data block), 23/27 (checksum) and 29 (wrong disk ID) fail as they did on the original, which is what a protection check expecting a failed read looks for. Writing a sector clears its error. |
-| Disk | Disk writing / save-back | Implemented | Medium | The write head is modeled end-to-end: the DOS selects write mode, outgoing GCR shifts onto the track, and a decoder folds it back into the `.d64`. `SAVE`, scratch, rename and `N:` format run through the real DOS; write-protect is honored. Modified disks auto-save to the Library and export. |
-| Storage | `.prg` loading | Implemented | N/A | With a 1541 ROM, wraps the program in a D64 and loads through drive 8 without resetting. Without the drive ROM, loads directly into RAM after resetting an already-used machine. Convenience feature, not original hardware. |
-| Storage | Auto-RUN after PRG load | Implemented | N/A | Toggleable in the UI. Disk-backed PRGs run BASIC or a BASIC SYS stub; stubless machine code stays at READY. The direct-RAM fallback uses RUN at $0801 or SYS at the load address. |
-| Storage | Save / load machine state | Implemented | N/A | Full-machine snapshot (RAM, every chip, the inserted media bytes and chip variants) in named, thumbnailed slots, restored through the same fresh-machine path POWER ON uses. Slots are self-contained and export/import as files. Convenience feature, not original hardware. |
-| Expansion | Cartridges | Implemented | Medium-high | `.crt` files supported through hardware-type devices: type 0 (generic 8K/16K/Ultimax), type 1 (Action Replay v4.x/v5/v6: ROM/RAM banking, IO1/IO2, RESET/FREEZE), type 3 (Final Cartridge III: four 16K banks, IO1/IO2 ROM mirror, `$DFFF` control, RESET/FREEZE), type 19 (Magic Desk / Domark / HES Australia), and type 32 (EasyFlash). Loadable while powered off. |
+| Disk | GCR read channel / spindle / sync | Partial | Medium | The head reads one raw GCR bitstream per half-track, synthesized from a sector image or taken as recorded from a raw one. Speed zones, sync marks and byte-ready signaling are modeled. The read clock restarts at every flux transition and counts cells at the density the DOS selects, so a track read at the wrong density garbles as on hardware; 18 µs without a transition reads as noise (weak bits); a raw image's per-byte speed map switches the bit rate byte by byte. A sector image's recorded errors are put back on the track: 20 (no header), 21 (no sync), 22 (no data block), 23/27 (checksum) and 29 (wrong disk ID) fail as on the original. Mechanics simplified: no head-settle or spin-up dynamics beyond the optional timers. |
+| Disk | 1541 write head | Implemented | Medium | Modeled end to end: the DOS selects write mode, outgoing GCR shifts onto the track under the head, and the image takes the bytes (a raw image in place, a sector image through a decoder). `SAVE`, scratch, rename and `N:` format run through the real DOS; the write-protect sensor is honored. |
+| Expansion | Cartridges | Implemented | Medium-high | Hardware types, by CRT id: type 0 (generic 8K/16K/Ultimax), type 1 (Action Replay v4.x/v5/v6: ROM/RAM banking, IO1/IO2, RESET/FREEZE), type 3 (Final Cartridge III: four 16K banks, IO1/IO2 ROM mirror, `$DFFF` control, RESET/FREEZE), type 19 (Magic Desk / Domark / HES Australia), and type 32 (EasyFlash). Loadable while powered off. |
 | Expansion | RAM Expansion Unit (8726 REC) | Implemented | Medium-high | 1700, 1764, 1750, 1750 XL and generic 1/4/8/16 MB units: full register file, all transfer types, autoload, fixed-address modes and the `$FF00` deferred trigger. Transfers run as a real second bus master (6510 halted, one bus access per byte, VIC DMA precedence). All 16 QuickReuTest programs pass, cycle-count checks included. |
 | Expansion | Other cartridge types / user port / printer / modem | Missing | Low | Not implemented. |
-
-## Online media catalog
-
-Assembly64 provides browsing and search for demos, intros, music, graphics
-and other scene productions, with details, favorites and saved searches.
-Loading compatible PRG/D64/CRT/TAP/REU media is implemented. ZIP extraction is bounded and lets the
-user choose supported media. Saved files use the existing offline Library.
-SID and non-D64 disks are download-only.
 
 ## Unmodelled quirks, for the record
 
@@ -100,9 +87,3 @@ exist for them:
   Toggle with `c64Vic.bankGlitch(true)` / `c64Vic.bankDelay(true)` in DevTools
   to A/B a demo that relies on one (the 8565 glitch only activates when
   `vicVariant === '8565'`).
-- **`.d64` parser gaps** (`src/media/d64.js`): REL side-sector pointers (`+$15/$16`)
-  and record length (`+$17`) aren't parsed; with TDE on, the drive's own DOS
-  handles relative files. GEOS per-entry info bytes (`+$18–$1D`) aren't parsed,
-  though GEOS names render and VLIR `USR` files aren't offered as loadable. The
-  40-track BAM extension is honoured only for the three known layouts
-  (DolphinDOS `$AC`, SpeedDOS `$C0`, PrologicDOS `$90`).

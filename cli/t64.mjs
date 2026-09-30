@@ -31,6 +31,7 @@ import { packPRGs, diskSeriesPath, hostName } from './disk.mjs';
 import {
   D64, diskNameFromFilename, prgOverflow, splitTap, tapDirectory, tapSeconds, tapeFacts,
   t64Files,
+  G64,
 } from './core.mjs';
 import { outFileFor, oneOutputOnly, writeOut } from './tape.mjs';
 import { diskListing, tapeListing, archiveListing, printable } from './listing.mjs';
@@ -267,7 +268,7 @@ function entryName(name, taken) {
   return out;
 }
 
-// ── d642t64 ──────────────────────────────────────────────────────────────────
+// ── d642t64 / g642t64 ────────────────────────────────────────────────────────
 
 /**
  * The programs on a disk, shaped for an archive entry: { name, start, payload }.
@@ -300,15 +301,21 @@ export function diskPrograms(d) {
   return { files, skipped };
 }
 
-export function d642t64(argv) {
+export function d642t64(argv) { return diskArchives(argv, 'd642t64', 'd64'); }
+
+/** The same off a .g64, whose programs come from the sectors decoded out of
+ *  its raw tracks. Its own command: the name says which image goes in. */
+export function g642t64(argv) { return diskArchives(argv, 'g642t64', 'g64'); }
+
+function diskArchives(argv, as, kind) {
   const { args, flags } = parseArgs(argv, { out: { value: true, alias: 'o' }, 'out-dir': { value: true } });
-  if (!args.length) throw new UsageError('Usage: c64rdy d642t64 <in.d64…> [-o out.t64]');
+  if (!args.length) throw new UsageError(`Usage: c64rdy ${as} <in.${kind}…> [-o out.t64]`);
   const disks = inputFiles(args);
   oneOutputOnly(flags, disks.length);
   let failed = false;
   for (const p of disks) {
     try {
-      if (writeDiskArchive(p, flags)) failed = true;
+      if (writeDiskArchive(p, flags, kind)) failed = true;
     } catch (e) {
       fail(`${p}: ${e.message}`);
       failed = true;
@@ -317,10 +324,10 @@ export function d642t64(argv) {
   return failed ? 1 : 0;
 }
 
-function writeDiskArchive(p, flags) {
+function writeDiskArchive(p, flags, kind) {
   const bytes = fs.readFileSync(p);
-  if (sniff(bytes, p) !== 'd64') throw new Error('this command takes a .d64 disk image');
-  const d = new D64(bytes);
+  if (sniff(bytes, p) !== kind) throw new Error(`this command takes a .${kind} disk image`);
+  const d = kind === 'g64' ? new G64(bytes) : new D64(bytes);
   const { files, skipped } = diskPrograms(d);
   // The archive is named what the disk is named; the filename only speaks for
   // a disk whose header holds no name at all.

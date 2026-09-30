@@ -15,7 +15,7 @@ import { t64Files } from './t64.mjs';
 import {
   splitTap, concatTaps, tapSeconds, importWavSync, importProgress,
   tapDirectory, tapeFacts, tapToPcm, pcmToWav, repairTape, dmpToTap,
-  D64, PAL_CPU_HZ, NTSC_CPU_HZ,
+  D64, G64, PAL_CPU_HZ, NTSC_CPU_HZ,
 } from './core.mjs';
 
 /**
@@ -87,7 +87,7 @@ export function dir(argv) {
   const { args, flags } = parseArgs(argv, {
     damaged: {}, seconds: {}, pulses: {},
   });
-  if (!args.length) throw new UsageError('Usage: c64rdy dir <tap|wav|dmp|d64|t64>…');
+  if (!args.length) throw new UsageError('Usage: c64rdy dir <tap|wav|dmp|d64|g64|t64>…');
   const files = inputFiles(args);
   let failed = false;
   for (const p of files) {
@@ -102,6 +102,7 @@ function dirOne(p, flags) {
   const name = path.basename(p);
 
   if (kind === 'd64') { diskListing(name, new D64(bytes)); return; }
+  if (kind === 'g64') { diskListing(name, new G64(bytes)); return; }
   if (kind === 't64') { archiveListing(name, t64Files(bytes)); return; }
 
   let data, version, files;

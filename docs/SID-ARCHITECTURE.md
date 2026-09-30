@@ -12,7 +12,7 @@ cycle-exact).
 | File | Role |
 |------|------|
 | `src/sid-voice.js` | One `SIDVoice`: oscillator, waveform generator, noise LFSR, ADSR envelope, OSC3 readback, reSID R-2R DAC tables. Pure DSP, no I/O; shared by the worklet and the shadow. |
-| `src/sid-wavetables.js` | reSID's measured combined-waveform tables (OSC3 chip samplings, embedded verbatim from the pinned upstream data; provenance in NOTICE.txt), checksum-pinned by `test/sid-wavetables-spec-test.js`. |
+| `src/sid-wavetables.js` | reSID's measured combined-waveform tables (OSC3 chip samplings, embedded verbatim from the pinned upstream data; provenance in NOTICE.txt), checksum-pinned by `test/sid/sid-wavetables-spec-test.js`. |
 | `src/sid-filter.js` | reSID transistor-level filter / mixer / nonlinear volume stage (`filter8580new` port) and the integer external RC filter: the JS engine's analog chain and, via its Rust translation, the WASM engine's. |
 | `src/sid-worklet.js` | `SIDChip` (3 voices + analog chain) and `SIDProcessor` (the `AudioWorkletProcessor`: SAB ring transport, SINC resampler, WASM block renderer). |
 | `src/sid-wasm-blob.js` | GENERATED: the WASM engine (whole chip + resampler compiled from `rust/sid/`), embedded base64 because worklets have no `fetch`/`atob`. Rebuild: `sh rust/sid/build.sh`. |
@@ -77,7 +77,7 @@ worklet would smear them across an audio block.
 | Engine | UI label | Implementation | Notes |
 |--------|----------|----------------|-------|
 | **`resid`** | reSID JS | `SIDVoice` + `sid-filter.js` + SINC in `SIDProcessor`; per SID cycle `clockRaw()` → Kaiser-sinc FIR | Reference reSID port; what the shadow's voice math matches |
-| **`wasm`** | reSID WASM (**default**) | Rust `rust/sid/` → `sid-wasm-blob.js`; `sid_render(n)` per 128-sample block; voices, filter, extfilt, SINC and event queue all inside the module | Bit-identical to `resid` (`test/sid-wasm-engine-spec-test.js`, which also fails if either side changes without the other: a stale-blob detector); ~6× less CPU. While the module instantiates, or if it fails, `resid` renders, so selecting WASM never drops audio |
+| **`wasm`** | reSID WASM (**default**) | Rust `rust/sid/` → `sid-wasm-blob.js`; `sid_render(n)` per 128-sample block; voices, filter, extfilt, SINC and event queue all inside the module | Bit-identical to `resid` (`test/sid/sid-wasm-engine-spec-test.js`, which also fails if either side changes without the other: a stale-blob detector); ~6× less CPU. While the module instantiates, or if it fails, `resid` renders, so selecting WASM never drops audio |
 
 Live engine switches replay the full `$D400-$D418` register file from a worklet-side shadow into the newly selected path.
 
@@ -113,7 +113,7 @@ The shared feedback runs in all three, so each lean variant is
 **byte-identical** to `outputStage()` on the product it keeps. The internal
 order `_outputPre → _osc3Read → _outputPost` is load-bearing: the OSC3 read must
 see the pre-writeback noise latch and the previous cycle's pulse rail. Locked by
-`test/sid-outputstage-skip-equiv-spec-test.js` (both models, 60k cycles, and it
+`test/sid/sid-outputstage-skip-equiv-spec-test.js` (both models, 60k cycles, and it
 asserts the skip genuinely happens); the savings are real on both sides, largest
 on the 8580 tri/saw path (which skips `_triSaw12()`).
 
@@ -607,7 +607,7 @@ engine's byte-identical WAV gate runs there), paired with headless VICE x64sc
 captures of the same scenes.
 
 What a contributor acts on: verify audio changes with
-`test/sid-*-spec-test.js`, and give cycle-sync / second-load / power-cycle
+`test/sid/sid-*-spec-test.js`, and give cycle-sync / second-load / power-cycle
 behaviour a browser ear-check after transport changes. The harness has no
 independent audio clock, so it can A/B the *mechanism* of a transport issue but
 not measure how *often* drift-induced bursting happens live; that needs the

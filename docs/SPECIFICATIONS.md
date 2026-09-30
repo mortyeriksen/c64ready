@@ -203,6 +203,25 @@ revisions:
   for the per-sector error table `src/gcr.js` turns back into read failures, and
   for the 40-track BAM extension locations.
   <https://ist.uwaterloo.ca/~schepers/formats/D64.TXT>
+- **G64 disk-image format**: Peter Schepers, _G64 (GCR-encoded 1541 disk image)_,
+  and the VICE manual's description of the same layout. `src/media/g64.js`
+  follows them for the header, the half-track offset and speed-zone tables,
+  per-track lengths and the per-byte speed maps; the sector view decodes each
+  whole track with the read-head rules of `src/gcr.js`, ignoring the two off
+  bytes after a data block's checksum as the DOS does.
+  <https://ist.uwaterloo.ca/~schepers/formats/G64.TXT>
+  <https://vice-emu.sourceforge.io/vice_17.html>
+- **NIB and NBZ nibbler dumps**: nibtools by Pete Rittwage and contributors
+  defines both (`.nib`: an 8 KB raw 1541 read per half-track; `.nbz`: the same
+  as one LZ77 stream), and its nibconv sets the conversion rules that
+  `src/media/nib.js` ports. The LZ77 stream is Marcus Geelnard's Basic
+  Compression Library format (`lz.c` in nibtools). Credits: `NOTICE.txt`.
+  <https://github.com/rittwage/nibtools>
+- **1541 read circuit**: VICE's `drive/rotation.c` for the transition-reset bit
+  clock and the weak-bit timing (random transitions from 18 µs after the last
+  real one, then every 2-25 µs) that `src/drive1541.js` (`_readCell`) follows.
+  Credits: `NOTICE.txt`.
+  <https://github.com/VICE-Team/svn-mirror/blob/main/vice/src/drive/rotation.c>
 - **KERNAL load-message entry points**: the TDE-off load trap calls the ROM's own
   `SEARCHING FOR` (`$F5AF`) and `LOADING` (`$F5D2`) routines instead of imitating
   them. Both addresses were identified from the shipped `901227-03` image, not
@@ -267,7 +286,7 @@ revisions:
   <https://ist.uwaterloo.ca/~schepers/formats/T64.TXT>
 - **Michael Steil (pagetable.com)**: _A Minimal C64 Datasette Program Loader_: the
   pulse trio in TAP units with the `$39`/`$4E` read thresholds, byte frame and
-  countdown, which `test/kernal-tape-save-test.js` decodes a recording against.
+  countdown, which `test/tape/kernal-tape-save-test.js` decodes a recording against.
   <https://www.pagetable.com/?p=964>
 - **Turbo Tape 64** (Stephan Senz, 64'er / Markt & Technik, 1983): the format
   `src/media/tap-turbo-formats.js` reads: the 211/324 µs pulse pair, `$02` lead-in and

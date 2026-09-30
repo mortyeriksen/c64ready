@@ -3,7 +3,7 @@
 //
 // GENERATED FILE — do not edit by hand (regenerated from the pinned
 // upstream sample data; content is pinned by FNV-1a checksums in
-// test/sid-wavetables-spec-test.js).
+// test/sid/sid-wavetables-spec-test.js).
 //
 // Data: reSID's OSC3 samplings of real 6581/8580 combined waveforms
 // (wave6581__ST / _P_T / _PS_ / _PST and 8580 counterparts, 4096 × 8-bit

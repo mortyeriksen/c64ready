@@ -466,7 +466,7 @@ each testprog's 6569 reference (one-row crop offset excluded).
 > One deliberate deviation: a DMA-start clears the sprite shift register, as a
 > bleed-avoidance shortcut. Bauer §3.8.1 says it should survive; it does for the
 > same-line X≥`$164` case `sb_sprite_fetch` exercises
-> (`test/vic2-sprite-sb-fetch-spec-test.js`), not for ordinary sprites.
+> (`test/vic2/vic2-sprite-sb-fetch-spec-test.js`), not for ordinary sprites.
 
 ---
 

@@ -50,6 +50,14 @@ installs as an app. For a step-by-step walkthrough see the
   that must fail to read still behaves like the original. GEOS disks show
   readable filenames. Loading a disk with TDE off offers to turn it on for
   compatibility when the 1541 ROM is available; either answer continues loading.
+- **`.g64` raw disk images**: the tracks exactly as the original floppy
+  recorded them, half-tracks and longer-than-standard tracks included, so copy
+  protections that check the disk surface load as on a real 1541. They need TDE,
+  so loading one turns it on for that drive. The directory listing,
+  click-to-load and export work as for a `.d64`, and the drive can write to an
+  unlocked `.g64`.
+- **`.nbz` nibbler dumps**: the C64 Preservation Project's raw dumps become a
+  `.g64` on the way in, one revolution per half-track, and load like one.
 - **`.crt` cartridges**: the supported families are listed under
   **Cartridges & expansions** below.
 - **`.tap` tapes**: datasette images (v0 / v1 / v2), played like real hardware.
@@ -89,8 +97,8 @@ of scene groups and creators.
   Source filters, and see ten results in the control. Demos is the default type.
 - **Explore**: start with the newest demos in the Assembly64 Browser, with advanced filters,
   sorting and pagination. Refine Search carries a quick search into the browser.
-- **Load or download**: PRG, D64, CRT, TAP and REU files use the emulator's media
-  controls. ZIP archives offer a choice of supported files. D64 loads are write
+- **Load or download**: PRG, D64, G64, CRT, TAP and REU files use the emulator's media
+  controls. ZIP archives offer a choice of supported files. Disk loads are write
   protected and can use drive 8 or 9, with autorun or mount only.
 - **Local collections**: favorites and named searches survive a reload. Save
   selected media to Library to reopen it offline, including REU images.
@@ -150,7 +158,7 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **Blank & format**: insert a fresh blank (unformatted) disk, then format it
   from the panel or with BASIC `N:name,id`, ready to save to.
 - **Export**: download the current disk, with your changes, as a `.d64` file
-  (enabled once there's something to save).
+  (or a `.g64`, for a disk that came in as one).
 - **Write-protect toggle**: lock a disk against writes (or unlock it) per drive;
   loaded disks start protected so nothing is changed by accident.
 - **Eject** control per drive.

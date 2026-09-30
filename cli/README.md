@@ -1,7 +1,7 @@
 # C64 READY. CLI — the command line for your cassettes, cartridges and disks
 
 You have a stack of C64 cassettes recorded as WAV files, or a folder of `.tap`,
-`.d64`, `.crt` and `.prg` files, and you want to convert, inspect, repair and
+`.d64`, `.g64`, `.nbz`, `.crt` and `.prg` files, and you want to convert, inspect, repair and
 run them in batches, without dragging each 285 MB recording through a browser.
 `c64rdy` is the [C64 Ready](https://c64ready.com) tape and disk engine with a
 terminal in front of it: the same decoder, the same repairs, the same listings,
@@ -37,7 +37,7 @@ where it couldn't; `dir` and `loadtest` tell you what survived. One quoted
 wildcard converts a whole shelf, and a damaged tape is a result, not a crash.
 
 **The player** has a folder of downloaded games and wants to see one run.
-`run` boots a `.prg`, `.tap`, `.d64`, `.crt` or `.t64` headless and saves a PNG
+`run` boots a `.prg`, `.tap`, `.d64`, `.g64`, `.crt` or `.t64` headless and saves a PNG
 of the screen, or with `--all` a PNG for every program on a side at once, so
 you can tell a working dump from a broken one without opening an emulator.
 
@@ -72,7 +72,8 @@ c64rdy --version
 | --- | --- |
 | **Recordings into tapes** | `wav2tap`, `dmp2tap`, `tapfix`, `tapcat` |
 | **Tapes into anything** | `tap2wav`, `tap2d64`, `tap2prg`, `tap2t64` |
-| **`.t64` archives** | `t642d64`, `t642prg`, `t642tap` out; `d642t64` in |
+| **`.t64` archives** | `t642d64`, `t642prg`, `t642tap` out; `d642t64`, `g642t64` in |
+| **Nibbler dumps into disks** | `nbz2g64` |
 | **Programs into containers** | `prg2d64`, `prg2crt`, `prg2tap`, `prg2turbo` |
 | **SID music into player or audio** | `sid2prg`, `sid2wav` |
 | **Questions about a file** | `dir`, `info`, `loadtest`, `loader` |
@@ -103,7 +104,7 @@ details the options and supported tunes.
 
 Commands that boot a machine need the C64's KERNAL, BASIC and character ROMs:
 `run`, `loadtest`, `tap2d64`, `tap2prg --via-machine`, `prg2tap`, `t642tap` and
-`loader`, plus `sid2wav`. `sid2prg` needs no ROMs. `prg2turbo` also needs them when using `--loader`, including the
+`loader`, plus `sid2wav`. `run` on a `.g64` also needs the 1541 ROM (`1541.bin`): a raw disk only boots through the emulated drive. `sid2prg` needs no ROMs. `prg2turbo` also needs them when using `--loader`, including the
 `--drive` mode. The ROMs are copyrighted and are not bundled. Tell it once
 where they are and it remembers:
 
@@ -140,6 +141,15 @@ rest) are credited in
 [NOTICE.txt](https://github.com/mortyeriksen/c64ready/blob/main/NOTICE.txt).
 
 ## Release notes
+
+### Next version
+
+- **G64 disk images.** `dir`, `info` and `disk extract` read `.g64` files,
+  `g642prg` and `g642t64` pull files and archives out of one, and `run` boots
+  one through the emulated 1541 (it needs the 1541 ROM). A `.g64` is read-only:
+  `disk add` and `disk rm` refuse it.
+- **Nibbler dumps.** `nbz2g64` turns a `.nbz` into a `.g64`, cut and aligned as
+  nibtools' nibconv does it. `info` reads `.nib` and `.nbz`.
 
 ### 0.9.3
 

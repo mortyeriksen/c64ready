@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 // cli/formats.mjs — what kind of file is this, read off the bytes so a user
-// never has to name a format. Magic strings first; a .d64 has none, so its
-// exact byte length is the test (d64Variant); a .prg has nothing at all, so it
-// is the fallback for anything small enough to fit a C64's memory.
+// never has to name a format. Magic strings first (a .g64 signs itself
+// GCR-1541); a .d64 has none, so its exact byte length is the test
+// (d64Variant); a .prg has nothing at all, so it is the fallback for anything
+// small enough to fit a C64's memory.
 
 import { d64Variant } from './core.mjs';
 
@@ -16,13 +17,18 @@ const ascii = (bytes, at, s) => {
  * @param {Uint8Array} bytes
  * @param {string} filename  only consulted for the extension, and only after
  *   every magic has failed — a renamed file should still be what it is
- * @returns {'tap'|'wav'|'dmp'|'crt'|'d64'|'t64'|'prg'|'unknown'}
+ * @returns {'tap'|'wav'|'dmp'|'crt'|'sid'|'d64'|'g64'|'nib'|'nbz'|'t64'|'prg'|'unknown'}
  */
 export function sniff(bytes, filename = '') {
   if (bytes.length >= 12 && ascii(bytes, 0, 'C64-TAPE-RAW')) return 'tap';
   if (bytes.length >= 12 && ascii(bytes, 0, 'RIFF') && ascii(bytes, 8, 'WAVE')) return 'wav';
   if (bytes.length >= 12 && ascii(bytes, 0, 'DC2N-TAP-RAW')) return 'dmp';
   if (bytes.length >= 16 && ascii(bytes, 0, 'C64 CARTRIDGE   ')) return 'crt';
+  if (bytes.length >= 12 && ascii(bytes, 0, 'GCR-1541')) return 'g64';
+  // A nibbler dump signs itself at 0; compressed, its LZ marker byte comes
+  // first and the signature follows as literals.
+  if (bytes.length >= 14 && ascii(bytes, 0, 'MNIB-1541-RAW')) return 'nib';
+  if (bytes.length >= 15 && ascii(bytes, 1, 'MNIB-1541-RAW')) return 'nbz';
   if (bytes.length >= 4 && (ascii(bytes, 0, 'PSID') || ascii(bytes, 0, 'RSID'))) return 'sid';
   // A .t64 signs itself in prose ("C64 tape image file", "C64S tape file", …)
   // and the wordings vary, so the prefix plus a directory that could hold at
@@ -45,6 +51,9 @@ export const KIND_NAMES = {
   dmp: 'DC2N tape dump',
   crt: 'cartridge image',
   d64: 'disk image',
+  g64: 'raw GCR disk image',
+  nib: 'nibbler disk dump',
+  nbz: 'compressed nibbler disk dump',
   t64: 'tape archive',
   prg: 'program file',
   sid: 'SID music',

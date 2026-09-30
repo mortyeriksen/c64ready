@@ -14,7 +14,8 @@ import * as runCmd from './run.mjs';
 import * as crt from './crt.mjs';
 import * as tapewrite from './tapewrite.mjs';
 import * as loader from './loader.mjs';
-import { d642t64, t642d64, t642tap, t642prg, tap2t64 } from './t64.mjs';
+import { d642t64, g642t64, t642d64, t642tap, t642prg, tap2t64 } from './t64.mjs';
+import { nbz2g64 } from './nib.mjs';
 import { prg2turbo } from './turbo.mjs';
 import { roms as romsCmd } from './roms.mjs';
 import { sid2prg, sid2wav } from './sid.mjs';
@@ -30,8 +31,11 @@ inputs, and a quoted wildcard works on any shell: c64rdy wav2tap "tapes/*.wav"
 
   FILE → FILE TRANSFORMS
     c64rdy d642prg  <in.d64>   [pattern]      Pull files out as .prg
+    c64rdy g642prg  <in.g64>   [pattern]      The same off a raw .g64
     c64rdy d642t64  <in.d64…>  [-o out.t64]   Pack a disk's programs into a .t64
+    c64rdy g642t64  <in.g64…>  [-o out.t64]   The same off a raw .g64
     c64rdy dmp2tap  <in.dmp…>  [-o out.tap]   DC2N dump  → .tap
+    c64rdy nbz2g64  <in.nbz…>  [-o out.g64]   Nibbler dump → .g64, one revolution a track
     c64rdy prg2crt  <in.prg…>  [-o out.crt]   Wrap a PRG in a cartridge
     c64rdy prg2d64  <in.prg…>  [-o out.d64]   Wrap a PRG in its own disk
     c64rdy prg2tap  <in.prg…>  [-o out.tap]   Save a PRG onto a tape, for real
@@ -50,25 +54,25 @@ inputs, and a quoted wildcard works on any shell: c64rdy wav2tap "tapes/*.wav"
     c64rdy prg2turbo <in.prg…> [-o out.tap]   Save PRGs onto a fast turbo tape
 
   INFO ABOUT A FILE
-    c64rdy dir      <tap|wav|dmp|d64|t64>…    What is on it, where, what state
+    c64rdy dir      <tap|wav|dmp|d64|g64|t64>… What is on it, where, what state
     c64rdy info     <file…>                   One line: what kind of file it is
 
   BOOT THE MACHINE
     c64rdy loadtest <in.tap…>                 Do the programs actually load?
     c64rdy loader   <in.tap>                  Take the tape's own loader out and read it
-    c64rdy run      <prg|tap|d64|t64|crt>     Boot it headless, save a PNG
+    c64rdy run      <prg|tap|d64|g64|t64|crt> Boot it headless, save a PNG
     c64rdy roms     [<dir>]                   Remember the C64 ROM folder
 
   EDITABLE CONTAINER
     c64rdy disk new     <out.d64> [f.prg…]    Format a blank disk (add PRGs too)
     c64rdy disk add     <d.d64> <f.prg…>      Write PRGs into it
-    c64rdy disk extract <d.d64> [pattern]     Pull files out as .prg (= d642prg)
+    c64rdy disk extract <d.d64|g64> [pattern] Pull files out as .prg (= d642prg)
     c64rdy disk rm      <d.d64> <pattern>     Scratch matching files, free blocks
 
   FLAGS
     --out-dir <dir>        Put outputs here instead of the directory you run from
-    (dmp2tap, tapfix, tapcat, prg2d64, prg2crt, d642t64, t642d64, info, disk add: no flags
-     of their own)
+    (dmp2tap, nbz2g64, tapfix, tapcat, prg2d64, prg2crt, d642t64, g642t64, t642d64, info,
+     disk add: no flags of their own)
 
     wav2tap:  --no-mend --no-repair --channel <n|mix|aligned>
               --pre-emphasis <n> --ntsc --cpu-hz <hz>
@@ -89,13 +93,13 @@ inputs, and a quoted wildcard works on any shell: c64rdy wav2tap "tapes/*.wav"
               --drive [--save-with '<cmd>'] write via the loader's own saver
               --trust skip the probe  --roms <dir>
     t642tap:  --roms <dir>   (the same SAVE, once per file, onto one tape)
-    d642prg:  -d <dir>   Pattern "GAME*" — quote it or the shell expands it
+    d642prg, g642prg:  -d <dir>   Pattern "GAME*" — quote it or the shell expands it
 
     dir:      --damaged --seconds --pulses
     loadtest: --file <NAME> --roms <dir>
     loader:   --dump <file> --seconds <n> --roms <dir>
-    run:      --frames <n> --roms <dir> --file <NAME> (off a .d64 or .tap)
-              --all  Every program on a .d64 or .tap, one PNG each
+    run:      --frames <n> --roms <dir> --file <NAME> (off a .d64, .g64 or .tap)
+              --all  Every program on a .d64, .g64 or .tap, one PNG each
               --collage  Tile a --all run into one sheet (animated if --anim)
               --anim [--fps <n>] [--speed <n>]  Film the run: an animated PNG
               --no-press  Leave a waiting screen alone (SPACE, then fire)
@@ -128,6 +132,7 @@ const COMMANDS = {
   prg2tap: tapewrite.prg2tap,
   prg2turbo,
   d642prg: diskCmd.d642prg,
+  g642prg: diskCmd.g642prg,
   disk: diskCmd.disk,
   info: info.run,
   run: runCmd.run,
@@ -135,10 +140,12 @@ const COMMANDS = {
   tap2d64: runCmd.tap2d64,
   tap2prg: runCmd.tap2prg,
   d642t64,
+  g642t64,
   t642d64,
   t642tap,
   t642prg,
   tap2t64,
+  nbz2g64,
   loader: loader.run,
   roms: romsCmd,
   sid2prg,

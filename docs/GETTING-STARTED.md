@@ -67,7 +67,8 @@ Drag any supported file onto the screen and it goes to the right place, or use
 | Format | What happens |
 |--------|--------------|
 | `.prg` | Normally written onto a disk of its own in drive 8. See [Loading a .prg](USER-GUIDE.md#loading-a-prg) for autorun and the fallback without a 1541 ROM. |
-| `.d64` | The emulator types `LOAD"*",8,1` and `RUN`. See [Disk drive 8](USER-GUIDE.md#disk-drive-8). |
+| `.d64` `.g64` | The emulator types `LOAD"*",8,1` and `RUN`. A `.g64` holds the raw tracks of a copy-protected original and turns TDE on. See [Disk drive 8](USER-GUIDE.md#disk-drive-8). |
+| `.nbz` | A nibbler dump. It becomes a `.g64` on the way in and loads like one. |
 | `.crt` | The [cartridge](USER-GUIDE.md#cartridge) takes over at once, or on the next power-on if inserted while off. |
 | `.tap` `.wav` `.dmp` | Becomes a tape in the [Datasette](USER-GUIDE.md#datasette): type `LOAD`, then press **▶ PLAY**. |
 | `.t64` | An archive of ready programs, not a tape: the program you pick loads as a `.prg` would. Almost every archive holds exactly one. |
@@ -81,7 +82,9 @@ without such a stub stays at `READY.` for you to start. Turn AUTORUN off in
 
 Loading a `.d64` with **TDE off** offers to turn True Drive Emulation on when
 the 1541 ROM is available. Choose **Turn TDE on** for disk-loader compatibility,
-or **Keep TDE off** to continue with the current setting.
+or **Keep TDE off** to continue with the current setting. A `.g64` needs the
+real drive, since its loader and protection live in the raw tracks, so loading
+one turns TDE on without asking.
 
 The drive card lists the disk's directory: click any program to load just that
 one, or press **🔍** to see the filename artwork many demos hide there.

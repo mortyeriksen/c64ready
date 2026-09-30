@@ -18,6 +18,8 @@ export {
   D64, createBlankD64, createPRGDisk, d64Variant, diskNameFromFilename,
   prgOverflow,
 } from '../src/media/d64.js';
+export { G64, isG64, parseG64 } from '../src/media/g64.js';
+export { isNib, isNbz, lzUncompress, parseNib, nibToG64, nibFileToG64 } from '../src/media/nib.js';
 export { parseCRT } from '../src/media/crt.js';
 export { t64Files, isT64 } from '../src/media/t64.js';
 export { TURBO_FORMATS } from '../src/media/tap-turbo-formats.js';

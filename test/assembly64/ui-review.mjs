@@ -45,7 +45,7 @@ export async function reviewUI(page) {
     });
     const long = page.locator('.mb-details');
     assert.equal(await long.evaluate(node => node.scrollWidth > node.clientWidth), false, 'Long release titles and filenames fit the details dialog');
-    assert.equal(await long.getByLabel('D64 target drive').count(), 0, 'PRG-only releases hide disk-specific settings');
+    assert.equal(await long.getByLabel('Disk target drive').count(), 0, 'PRG-only releases hide disk-specific settings');
     const boxes = await long.evaluate(node => ({ title: node.querySelector('h2').getBoundingClientRect().toJSON(), close: node.querySelector('.mb-close').getBoundingClientRect().toJSON() }));
     assert.ok(boxes.title.x + boxes.title.width <= boxes.close.x || await long.locator('h2').evaluate(node => parseFloat(getComputedStyle(node).paddingRight) >= 48), 'Long headings reserve space for the close button');
     if (width === 768) await long.locator('fieldset').screenshot({ path: 'investigation/assembly64/review-media-alignment.png' });

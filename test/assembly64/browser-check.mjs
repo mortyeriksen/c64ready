@@ -155,7 +155,7 @@ try {
   assert.equal(library.entries[0].source, 'assembly64', 'Library stores source metadata');
   assert.equal(library.exported.entries.find(entry => entry.type === 'prg').provenance.fileId, 'prg', 'Library export preserves file provenance');
   await details.getByLabel('Autorun', { exact: true }).selectOption('off');
-  await details.getByLabel('D64 target drive').selectOption('9');
+  await details.getByLabel('Disk target drive').selectOption('9');
   assert.equal(await details.getByLabel('D64 write protected').count(), 0, 'Release details omit the write-protection setting');
   const disk = details.locator('.mb-file').filter({ has: page.getByText('browser-sample.d64', { exact: true }) });
   await disk.getByRole('button', { name: 'MOUNT ONLY' }).click();
@@ -164,7 +164,7 @@ try {
     const media = await import('/src/media.js'), state = await import('/src/state.js');
     return [state.running, media.drive9Enabled, media.currentD64Drive9.writeProtected];
   }), [true, true, true], 'Opening D64 powers on and enables write-protected drive 9');
-  await details.getByLabel('D64 target drive').selectOption('8');
+  await details.getByLabel('Disk target drive').selectOption('8');
   await disk.getByRole('button', { name: 'MOUNT ONLY' }).click();
   await details.getByText('Mounted in drive 8', { exact: true }).waitFor();
   assert.equal(await page.evaluate(async () => (await import('/src/media.js')).currentD64.writeProtected), true, 'Drive 8 uses write protection');

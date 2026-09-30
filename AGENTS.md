@@ -56,7 +56,8 @@ is git-ignored and excluded from the PWA precache for that reason).
 
 ## Code And Docs
 
-- Add tests for new features. Register every `test/*-test.js` in `test/all-test.js`.
+- Add tests for new features. Register every `test/*-test.js` in `test/all-test.js`;
+  a CLI spec goes in `test/cli/` and registers in `test/cli/all-test.js`.
 - Env switches go in `src/switches.js`, read via `switchOn('name')` — no inline
   `process?.env`.
 - Don't create new `*.md` docs without an explicit request.
@@ -106,7 +107,7 @@ is git-ignored and excluded from the PWA precache for that reason).
   `src/drive1541.js` before touching bus polarity.
 - Don't derive expectations from demo binaries (`nine.prg`, `orbituntold.prg`);
   synthesize state and clock the machine.
-- `softAssert(cond, msg)` (`test/_vic2-helpers.js`) warns without failing — only
+- `softAssert(cond, msg)` (`test/vic2/_vic2-helpers.js`) warns without failing — only
   for known, intentionally shipped deviations.
 
 ## Screenshot And Demo Tools

@@ -674,7 +674,7 @@ export class SIDVoice {
   // noise LFSR, waveform-byte synthesis, the OSC latch/bit-fade and the
   // combined-NOISE writeback, all of which are dead work for an unread voice.
   // This reproduces the phase portion of clock() exactly, so v3's readback is
-  // byte-identical (locked by test/sid-shadow-phaseonly-spec-test.js over 60k
+  // byte-identical (locked by test/sid/sid-shadow-phaseonly-spec-test.js over 60k
   // random cycles on both models).
   // NOT for the worklet (it mixes all three voices) or for voice 3.
   clockPhaseOnly() {

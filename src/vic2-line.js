@@ -380,7 +380,7 @@ export const lineOps = {
     // line. Clearing it here corrupts the c-3 lookback across line
     // boundaries — AEC then glitches HIGH for cycles 1..3 of every raster
     // line while BA is still low (verified by
-    // test/ba-contour-3ad-spec-test.js).
+    // test/vic2/ba-contour-3ad-spec-test.js).
     this.lineCycleVBorderBefore.fill(1);
     this.lineCycleVBorder.fill(1);
     this.lineCycleHBorderBefore.fill(1);

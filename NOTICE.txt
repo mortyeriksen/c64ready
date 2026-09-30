@@ -141,6 +141,41 @@ VIC-II color palettes — "Pepto" and "Colodore"
     The two selectable VIC-II palettes embedded in src/vic2-tables.js
     reproduce pepto's published palette values.
 
+nibtools — nibbler dumps (.nib, .nbz) and their conversion to G64
+    Copyright © Pete Rittwage and the nibtools contributors
+    GNU General Public License, version 3 or later
+    https://github.com/rittwage/nibtools  ·  https://rittwage.com/c64pp/
+    src/media/nib.js is a JavaScript port of nibconv's default path: the
+    NIB header and G64 writer (fileio.c), the track-cycle search, gap and
+    sector 0 alignment, sync reduction and bad-GCR handling (gcr.c), and
+    the fat-track search and auto-gap alignment (prot.c).
+
+Basic Compression Library — LZ77 decoder (lz.c, as carried in nibtools)
+    Copyright (c) 2003-2006 Marcus Geelnard
+    https://github.com/rittwage/nibtools/blob/master/lz.c
+    lzUncompress in src/media/nib.js is a JavaScript rewrite of
+    LZ_Uncompress and its variable-size integer reader: an altered
+    version, not the original. Its license notice, reproduced:
+
+    This software is provided 'as-is', without any express or implied
+    warranty. In no event will the authors be held liable for any damages
+    arising from the use of this software.
+
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+
+    1. The origin of this software must not be misrepresented; you must not
+       claim that you wrote the original software. If you use this software
+       in a product, an acknowledgment in the product documentation would
+       be appreciated but is not required.
+
+    2. Altered source versions must be plainly marked as such, and must not
+       be misrepresented as being the original software.
+
+    3. This notice may not be removed or altered from any source
+       distribution.
+
 ================================================================================
 Reference implementations and calibration sources  (not redistributed)
 ================================================================================
@@ -157,8 +192,14 @@ VICE
     does not reproduce VICE's per-track skew rotation.) The power-on RAM
     pattern in src/memory.js (an 8-byte 00 00 FF FF FF FF 00 00 cycle) is
     VICE's default RAM initialisation, taken from a boot dump so demos that
-    read uninitialised memory behave alike. This project does not distribute
-    VICE binaries. For the PORTED code taken from VICE's
+    read uninitialised memory behave alike. The 1541 read-circuit model in
+    src/drive1541.js (_readCell) takes its weak-bit timing from VICE's
+    drive/rotation.c: random flux transitions begin 18 µs (289-319 ticks of
+    16 MHz) after the last real one and recur every 33-399 ticks, drawn from
+    an xorshift32 generator; the read clock that restarts on every
+    transition and counts cells at the selected density follows the same
+    file's UE7/UF4 counter model. This project does not distribute VICE
+    binaries. For the PORTED code taken from VICE's
     modified src/resid tree and the wrapper conventions it follows, see the
     "VICE — src/resid modifications" entry in the SID section above.
 

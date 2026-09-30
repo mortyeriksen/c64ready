@@ -1,13 +1,13 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
 
-# 1541 Disk Drive (`src/drive1541.js` + `src/gcr.js` + `src/media/d64.js` + `src/6522.js`): Architecture Overview
+# 1541 Disk Drive (`src/drive1541.js` + `src/gcr.js` + `src/media/d64.js` + `src/media/g64.js` + `src/6522.js`): Architecture Overview
 
 A high-level map of the Commodore 1541 floppy-drive emulation: the drive as a
 self-contained computer (6502 + two 6522 VIAs + DOS ROM), the spindle/GCR
 read+write engine, the IEC serial bus, the stepper motor, the D64↔GCR encode/decode
-pipeline, and the two ways the host talks to it (KERNAL load trap vs. True Drive
-Emulation).
+pipeline, the raw G64 track source, and the two ways the host talks to it (KERNAL
+load trap vs. True Drive Emulation).
 
 This document describes *the implementation* and points at the real method and
 field names so it can be used as a guide into the four source files. The 1541 is
@@ -247,12 +247,29 @@ step optionally arms a head-settle window (§11).
 This is the heart of the read path. Per cycle (while the motor is on):
 
 1. **Bit clock**: `bitCycleAccum` accumulates cycles; one bit is shifted every
-   `CYCLES_PER_BYTE[speedZone] / 8` cycles. The four speed zones
-   (`[32,30,28,26]` cycles/byte, indexed by the VIA2 PB5-6 density bits) model
-   the constant-angular-velocity zones; outer tracks pack more bits.
+   `CYCLES_PER_BYTE[zone] / 8` cycles. The four speed zones (`[32,30,28,26]`
+   cycles/byte) model the constant-angular-velocity zones; outer tracks pack
+   more bits. Which zone applies depends on the disk source: a D64 track is
+   synthesized for whatever the VIA2 PB5-6 density bits select
+   (`currentSpeedZone`), while a G64 track is clocked at the zone it was
+   recorded in (`_streamZone`, from the image's speed table): the disk turns at
+   300 rpm whatever the drive selects, so recorded bits pass the head at the
+   rate they were written. `_readCell` is the read circuit: its clock runs at
+   the selected density and restarts at every transition, so a track read at
+   another density yields a different count of zeros between ones (the elapsed
+   time in selected cells, rounded, less one). 18 µs without a transition
+   starts random ones every 2-25 µs, VICE's weak-bit rule (`drive/rotation.c`),
+   until the next real one. A G64 per-byte speed map (`_streamMap`) moves `_streamZone` byte by
+   byte.
 2. **Track fetch**: on a head move (`trackDirty`), pull the GCR stream for the
-   current track from `GCRDisk` and rescale the bit position so rotation phase is
-   preserved across the step.
+   current position from the disk source, `getTrackStream(track, halfTrack)`,
+   and rescale the bit position so rotation phase is preserved across the step.
+   A D64 source (`GCRDisk`) has whole tracks only; a G64 records every
+   half-track separately, so a head parked on an odd half-track reads that entry.
+   A position with nothing recorded (an empty G64 entry, or past the last track
+   of a D64) yields no stream: no SYNC, no bytes, the read side held reset, so
+   the DOS's sync wait times out (error 21) rather than seeing the previous
+   track's SYNC linger.
 3. **Bit shift**: read the next bit from the track bitstream (which loops; the
    disk spins continuously), shift it into `_shiftReg`.
 4. **SYNC detection**: a run of **10+ consecutive 1-bits** is a sync mark; drives
@@ -311,7 +328,9 @@ into the image:
   `GCR_DECODE` (the exact inverse of `GCR_ENCODE`). Each `$08` header supplies the
   (track, sector) for the `$07` data block that follows it; both checksums are
   verified and any bad/invalid block is **skipped, never written**, so a
-  half-written or garbage track can't corrupt already-good sectors.
+  half-written or garbage track can't corrupt already-good sectors. The two off
+  bytes after a data block's checksum are not decoded: the DOS discards them,
+  and mastered disks (G64) carry non-GCR bit patterns there.
 - `markTrackDirty()` flags a track the write head mutated; `commitDirtyTracks()`
   decodes each dirty track and writes its sectors into the D64 via
   `d64.writeSector()`. The encode↔decode round-trip is lossless (683/683 sectors),
@@ -364,6 +383,57 @@ variants:
   program written into it: how a `.prg` arrives through the ordinary
   `LOAD"*",8,1` path; the loading policy around it (`prgAutostart()`) belongs to
   the [machine orchestrator](MACHINE-ARCHITECTURE.md) (§8).
+
+### The G64 image (`media/g64.js`)
+
+A `.g64` stores what the read head sees rather than sectors: one raw GCR
+bitstream per half-track, at its recorded length, plus the speed zone each was
+written in. `Drive1541.setDisk()` takes either kind of image and keeps two
+references: `disk` (the image, for `dirty` and `writeProtected`) and `gcrDisk`
+(the GCR source: the `G64` itself, or a `GCRDisk` wrapping a `D64`). Both
+sources offer the same interface: `getTrackStream(track, halfTrack)`,
+`markTrackDirty(track, halfTrack)`, `hasDirtyTracks()`, `commitDirtyTracks()`
+and, on a G64, `speedZoneFor(halfTrack)`.
+
+- **`parseG64(bytes)`** checks the `GCR-1541` header, version 0, the half-track
+  count (1-84) and maximum track size, and refuses any track offset, length or
+  speed map that leaves the file. Track data are **views into the file bytes**,
+  so the head's writes land in the image in place and `img` is always the disk
+  as it now stands; nothing is re-serialized. A speed entry of 0-3 is the zone
+  of the whole track; a larger value points at a per-byte map, of which the
+  first byte's zone is used throughout.
+- **Half-track addressing**: entry *i* is drive half-track *i + 2* (entry 0 =
+  track 1), so `getTrackStream` ignores the whole-track argument and indexes by
+  the half-track. An entry with offset 0 or length 0 is unrecorded (`null`).
+- **Sector view**: everything that wants sectors (the directory panel,
+  click-to-load, the TDE-off load trap, `buildDirectoryPRG`) reads a `D64` built
+  by running `decodeTrackStream` over each whole track once at mount. A block
+  whose header names a different track is dropped (a protection's decoy must not
+  overwrite the real sector), and the first readable copy of a sector wins.
+  After head writes, `commitDirtyTracks()` re-decodes only the written tracks
+  into that view; the GCR bytes themselves need no folding back. Some dumps
+  hold every track one slot late (track 1 in the slot for track 2, the first
+  slot empty): when all recorded tracks' headers agree on one such offset,
+  `headerShift()` records it and the view reads each track from the slot the
+  headers point at (`_entryFor`). The drive keeps reading the slots as
+  recorded; the DOS finds a track by its headers, so it lands on the right one
+  anyway.
+- **What the view cannot show** is exactly what the raw stream is for: custom
+  sector layouts, extra sectors, half-track data and bad checksums are all
+  invisible to the view and all read by the drive as recorded.
+
+### Nibbler dumps (`media/nib.js`)
+
+A `.nib` holds 8 KB straight off the read head per half-track, more than one
+revolution, begun anywhere; a `.nbz` is the same file as one LZ77 stream.
+`nibFileToG64()` inflates it and, per half-track, `extractTrackCycle()` finds
+where the data comes round (matching what follows each sync, else any
+repeating 7 bytes, within the zone's capacity range), starts the revolution at
+the tail gap, else at sector 0, else at the longest run, and `nibToG64()`
+spreads a fat track to the half-track between, zeroes the inside of bad-GCR
+runs and shortens sync runs on any track a real disk could not hold. The
+rules and constants are nibconv's at its defaults (see `NOTICE.txt`); the
+output is an ordinary G64 for `G64` and the drive.
 
 ---
 

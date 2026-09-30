@@ -86,6 +86,15 @@
    "paths": [
     "investigation"
    ]
+  },
+  "c64pp": {
+   "description": "C64 Preservation Project nibbler dumps (.nbz), the real inputs for the nbz2g64 conversion tests",
+   "env": "C64PP_DIR",
+   "paths": [
+    "~/Downloads/c64pp"
+   ],
+   "link": "https://rittwage.com/c64pp/",
+   "note": "Each dump remains under its own copyright; none is distributed with this repository"
   }
  },
  "tools": {

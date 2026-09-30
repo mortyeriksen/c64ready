@@ -13,6 +13,7 @@ import { diskListing } from './listing.mjs';
 import { outFileFor, oneOutputOnly, writeOut } from './tape.mjs';
 import {
   D64, createBlankD64, createPRGDisk, d64Variant, diskNameFromFilename, prgOverflow,
+  G64, isG64,
 } from './core.mjs';
 
 export function disk(argv) {
@@ -20,7 +21,7 @@ export function disk(argv) {
   const rest = argv.slice(1);
   if (sub === 'new') return diskNew(rest);
   if (sub === 'add') return diskAdd(rest);
-  if (sub === 'extract') return diskExtract(rest, 'disk extract');
+  if (sub === 'extract') return diskExtract(rest, 'disk extract', ['d64', 'g64']);
   if (sub === 'rm') return diskRm(rest);
   throw new UsageError('Usage: c64rdy disk <new|add|extract|rm> …');
 }
@@ -43,9 +44,20 @@ function diskRm(argv) {
   return 0;
 }
 
-function openDisk(p) {
+/** Open a disk image of one of `kinds` ('d64', 'g64'). A .g64 is the disk's
+ *  raw tracks: files come out of the sectors decoded from them, but nothing
+ *  here writes into it, since that would mean re-mastering GCR around whatever
+ *  the tracks hold, which is the app's drive's job. */
+function openDisk(p, { write = true, kinds = ['d64', 'g64'] } = {}) {
   const bytes = fs.readFileSync(p);
-  if (!d64Variant(bytes.length)) throw new Error('not a .d64 disk image (no D64 variant has this byte length)');
+  const wanted = kinds.length === 1 ? `a .${kinds[0]} disk image` : 'a .d64 or .g64 disk image';
+  if (isG64(bytes)) {
+    if (!kinds.includes('g64')) throw new Error(`this command takes ${wanted}`);
+    if (write) throw new Error('a .g64 holds raw GCR tracks and is read-only here — extract from it, or build a .d64');
+    return new G64(bytes);
+  }
+  if (!d64Variant(bytes.length)) throw new Error(`not ${wanted} (no D64 variant has this byte length)`);
+  if (!kinds.includes('d64')) throw new Error(`this command takes ${wanted}`);
   return new D64(bytes);
 }
 
@@ -120,14 +132,14 @@ function addPRGs(d, prgs) {
  * search for — `prg2d64` has an inverse and `d642prg` is what they type. One
  * implementation, two doors, and the usage line names whichever was used.
  */
-function diskExtract(argv, as = 'd642prg') {
+function diskExtract(argv, as, kinds) {
   const { args, flags } = parseArgs(argv, {
     'out-dir': { value: true, alias: 'd' },
   });
   if (args.length < 1 || args.length > 2) {
-    throw new UsageError(`Usage: c64rdy ${as} <disk.d64> [pattern] [-d <dir>]`);
+    throw new UsageError(`Usage: c64rdy ${as} <disk.${kinds.join('|')}> [pattern] [-d <dir>]`);
   }
-  const d = openDisk(args[0]);
+  const d = openDisk(args[0], { write: false, kinds });
   const pattern = args[1];
   const dir = flags['out-dir'] ?? '.';
   fs.mkdirSync(dir, { recursive: true });
@@ -250,7 +262,10 @@ export function packPRGs(items, diskName) {
 // ── prg2d64 ──────────────────────────────────────────────────────────────────
 
 /** The same extraction, under the name that pairs with prg2d64. */
-export function d642prg(argv) { return diskExtract(argv, 'd642prg'); }
+export function d642prg(argv) { return diskExtract(argv, 'd642prg', ['d64']); }
+/** The same off a .g64, whose files come from the sectors decoded out of its
+ *  raw tracks. Its own command: the name says which image goes in. */
+export function g642prg(argv) { return diskExtract(argv, 'g642prg', ['g64']); }
 
 export function prg2d64(argv) {
   const { args, flags } = parseArgs(argv, {

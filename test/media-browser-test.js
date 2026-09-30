@@ -71,7 +71,8 @@ test('Malformed file collections are errors', () => assert.throws(() => normaliz
 test('A full page advances by the number received', () => assert.equal(normalizePage([{ id: 'x', category: 0 }], { offset: 20, limit: 1 }).nextOffset, 21));
 test('A short page ends pagination', () => assert.equal(normalizePage([], { offset: 20, limit: 10 }).hasMore, false));
 test('D64 actions include mount and run', () => assert.deepEqual(allowedActions('d64'), ['mount', 'run', 'save', 'download']));
-for (const type of ['g64', 'd71', 'd81', 'p00']) {
+test('G64 actions include mount and run', () => assert.deepEqual(allowedActions('g64'), ['mount', 'run', 'save', 'download']));
+for (const type of ['d71', 'd81', 'p00']) {
   test(`${type} cannot be sent to the emulator`, () => assert.deepEqual(allowedActions(type), ['download']));
 }
 test('Direct run requires exactly one file', () => assert.equal(directRunFile({ files: [{ mediaType: 'prg' }, { mediaType: 'sid' }] }), null));

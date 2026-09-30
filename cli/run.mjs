@@ -19,7 +19,7 @@ import { tapeListing, diskListing } from './listing.mjs';
 import { outFileFor, oneOutputOnly, writeOut } from './tape.mjs';
 import { packPRGs, hostName, diskSeriesPath } from './disk.mjs';
 import { t64Files } from './t64.mjs';
-import { tapSeconds, tapeFacts, D64, diskNameFromFilename, loadMachine } from './core.mjs';
+import { tapSeconds, tapeFacts, D64, diskNameFromFilename, loadMachine, G64 } from './core.mjs';
 import { resolveRoms } from './roms.mjs';
 import { writePng, Apng } from './png.mjs';
 import { writeCollage } from './collage.mjs';
@@ -58,7 +58,9 @@ const speedSaid = speed => (speed === 1 ? 'real time' : `${+speed.toFixed(2)}× 
 // Frames to run after the program is started. A PRG needs its raster tricks to
 // settle; a disk needs its LOAD"*",8,1 to finish first; a tape program often
 // decrunches or plays an intro before it shows anything, so it gets longest.
-const RUN_FRAMES = { prg: 200, crt: 250, d64: 500, tap: 1500 };
+// A .g64 loads through the emulated 1541 at the real drive's speed, and a
+// protected original's loader takes its time, so it gets a full minute.
+const RUN_FRAMES = { prg: 200, crt: 250, d64: 500, g64: 3000, tap: 1500 };
 
 export async function run(argv) {
   const { args, flags } = parseArgs(argv, {
@@ -81,9 +83,10 @@ export async function run(argv) {
     bytes = disks[0].img;
     kind = 'd64';
   }
-  if (!RUN_FRAMES[kind]) throw new Error(`run boots a .prg, .tap, .d64, .t64 or .crt — this is a ${kind}`);
-  if (flags.all && kind !== 'd64' && kind !== 'tap') throw new UsageError('--all runs every program on a .d64 or a .tap; this input boots as itself');
-  if (flags.file && kind !== 'd64' && kind !== 'tap') throw new UsageError('--file picks a program off a .d64 or a .tap; this input boots as itself');
+  if (!RUN_FRAMES[kind]) throw new Error(`run boots a .prg, .tap, .d64, .g64, .t64 or .crt — this is a ${kind}`);
+  const isDisk = kind === 'd64' || kind === 'g64';
+  if (flags.all && !isDisk && kind !== 'tap') throw new UsageError('--all runs every program on a .d64, a .g64 or a .tap; this input boots as itself');
+  if (flags.file && !isDisk && kind !== 'tap') throw new UsageError('--file picks a program off a .d64, a .g64 or a .tap; this input boots as itself');
   if (flags.file && flags.all) throw new UsageError('--file names one program, --all runs every one; pick one');
   if (flags.all && flags.out) throw new UsageError('--all writes one PNG per program; use --out-dir, not -o');
   if (flags.collage && !flags.all) throw new UsageError('--collage gathers a --all run into one sheet; add --all');
@@ -102,8 +105,8 @@ export async function run(argv) {
   // photograph of ?FILE NOT FOUND ERROR. Resolved with DOS's own matching,
   // wildcards included, so what passes this check is what the KERNAL finds.
   let disk = null, loadName = null;
-  if (kind === 'd64') {
-    disk = new D64(bytes);
+  if (isDisk) {
+    disk = kind === 'g64' ? new G64(bytes) : new D64(bytes);
     if (flags.file) {
       loadName = flags.file.replace(/"/g, '');
       if (!disk.loadFile(loadName)) {
@@ -114,7 +117,8 @@ export async function run(argv) {
   }
 
   const { C64Machine, CANVAS_W, CANVAS_H } = await loadMachine();
-  const roms = resolveRoms({ dir: flags.roms });
+  // A raw disk only boots through the emulated drive, so it wants the 1541 ROM too.
+  const roms = resolveRoms({ dir: flags.roms, need1541: kind === 'g64' });
 
   // Every program on the disk, each on a fresh machine, one PNG per program —
   // the quick way to see what a tap2d64 set actually contains.
@@ -132,7 +136,7 @@ export async function run(argv) {
       say(`Running ${entries.length} programs on ${jobs} threads.`);
       const shot = await inParallel({
         url: new URL('./workers/diskrun.mjs', import.meta.url),
-        data: { bytes, roms, frames, anim, fps, speed, press, outDir, stem },
+        data: { bytes, kind, roms, frames, anim, fps, speed, press, outDir, stem },
         items: entries.map(e => e.name),
         jobs,
         onDone: (n, total) => progress(`${n} of ${total} run`, n / total),
@@ -141,11 +145,7 @@ export async function run(argv) {
       for (const s of shot) say(`${s.name}  → ${s.out}`);
     } else {
       for (const e of entries) {
-        const m = new C64Machine();
-        m.loadROMs(roms);
-        for (let i = 0; i < 150; i++) m.runFrame();
-        m.setTrueDrive(false);
-        m.setD64(disk);
+        const m = bootWithDisk(C64Machine, roms, kind, disk);
         typeLoadAndRun(m, e.name);
         const film = anim ? new Apng(CANVAS_W, CANVAS_H, fps * speed) : null;
         runFrames(m, frames, film, fps, { label: e.name.trim(), press });
@@ -189,15 +189,25 @@ export async function run(argv) {
     // READY prompt. Keying on a $0801 load address instead only asks where the
     // program sits, which is a guess about the stub rather than a look at it.
     if (sysTarget(bytes) !== null) m.injectRun(); else m.injectSys(at);
-  } else if (kind === 'd64') {
-    bootToReady(m);
-    m.setTrueDrive(false);                       // the KERNAL load trap serves the disk
+  } else if (isDisk) {
+    if (kind === 'g64') {
+      // A raw disk boots through the emulated 1541, the only thing that can
+      // read its tracks: the drive is on the bus before the machine starts.
+      m.attachDrive(roms.drive1541);
+      m.setTrueDrive(true);
+      bootToReady(m);
+    } else {
+      bootToReady(m);
+      m.setTrueDrive(false);                     // the KERNAL load trap serves the disk
+    }
     m.setD64(disk);
-    if (loadName) {
+    if (loadName || kind === 'g64') {
       // A named program instead of the first one. LOAD"NAME",8,1 is longer than
       // the 10-byte keyboard buffer, so it is typed the way a person types —
-      // fed in as the KERNAL drains it — with RUN queued behind the load.
-      type(m, `LOAD"${loadName}",8,1\rRUN\r`);
+      // fed in as the KERNAL drains it — with RUN queued behind the load. A
+      // .g64's LOAD"*" goes the same way: the deferred RUN of injectLoadAndRun
+      // hangs off the load trap, and the real drive never reaches it.
+      type(m, `LOAD"${loadName ?? '*'}",8,1\rRUN\r`);
     } else {
       m.injectLoadAndRun();
     }
@@ -340,6 +350,26 @@ export function shoot(m, f, { frames, anim, fps, speed, press = true, outDir, st
  */
 export function firstProgram(files) {
   return programFiles(files)[0] ?? files[0];
+}
+
+/**
+ * A machine at its prompt with `disk` in drive 8: a .d64 is served by the
+ * KERNAL load trap, a .g64 by the emulated 1541, since only the drive can read
+ * raw tracks. Shared by `--all` here and by its worker.
+ */
+export function bootWithDisk(C64Machine, roms, kind, disk) {
+  const m = new C64Machine();
+  m.loadROMs(roms);
+  if (kind === 'g64') {
+    m.attachDrive(roms.drive1541);
+    m.setTrueDrive(true);
+    bootToReady(m);
+  } else {
+    for (let i = 0; i < 150; i++) m.runFrame();
+    m.setTrueDrive(false);
+  }
+  m.setD64(disk);
+  return m;
 }
 
 /** The one way a program is started off a disk, typed as a person types it. */

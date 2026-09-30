@@ -111,7 +111,8 @@
 .mb-result-summary { min-width: 0; }
 .mb-result-summary .mb-meta { font-size: 11px; margin-top: 4px; }
 .mb-format-icon { display: flex; align-items: center; justify-content: center; width: 44px; height: 48px; color: #bcbaff; background: #24254b; border: 1px solid #494c85; border-radius: 6px; font-family: monospace; font-size: 11px; letter-spacing: 1px; }
-.mb-format-d64 { color: #99daca; background: #193735; border-color: #375b57; }
+.mb-format-d64,
+.mb-format-g64 { color: #99daca; background: #193735; border-color: #375b57; }
 .mb-format-crt { color: #dfb2e7; background: #35223f; border-color: #61466b; }
 .mb-format-tap { color: #e0ce9f; background: #373022; border-color: #605339; }
 .mb-format-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }

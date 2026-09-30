@@ -6,7 +6,7 @@
      node tools/cli-guide-shots.mjs  regenerates them all. -->
 
 You have Commodore 64 tapes recorded as WAV files, or real `.tap`, `.d64`,
-`.crt`, `.prg` and `.sid` files, and you want to convert, inspect and test them in
+`.g64`, `.nbz`, `.crt`, `.prg` and `.sid` files, and you want to convert, inspect and test them in
 batches — without dragging each 285 MB recording through a browser dialog.
 `c64rdy` is the C64 Ready tape and disk engine with a terminal in front of it:
 the same decoder, the same repairs, the same listings.
@@ -15,12 +15,13 @@ the same decoder, the same repairs, the same listings.
 | --- | --- |
 | **Recordings → tapes** | `wav2tap`, `dmp2tap`, `tapfix`, `tapcat` |
 | **Tapes → anything** | `tap2wav`, `tap2d64`, `tap2prg`, `tap2t64` |
-| **.t64 archives** | `t642d64`, `t642prg` and `t642tap` out, `d642t64` in |
+| **.t64 archives** | `t642d64`, `t642prg` and `t642tap` out, `d642t64` and `g642t64` in |
+| **Nibbler dumps → disks** | `nbz2g64` |
 | **Programs → containers** | `prg2d64`, `prg2crt`, `prg2tap`, `prg2turbo` |
 | **SID music → player or audio** | `sid2prg`, `sid2wav` |
 | **Questions** | `dir`, `info`, `loadtest`, `loader` |
 | **The machine** | `run` |
-| **A disk's interior** | `disk new`, `disk add`, `disk rm`, `disk extract` (= `d642prg`) |
+| **A disk's interior** | `disk new`, `disk add`, `disk rm`, `disk extract` (= `d642prg`, or `g642prg` off a `.g64`) |
 
 ## Who it's for
 
@@ -30,7 +31,7 @@ where it couldn't; `dir` and `loadtest` tell you what survived. One quoted
 wildcard converts a whole shelf, and a damaged tape is a result, not a crash.
 
 **The player** has a folder of downloaded games and wants to see one run.
-`run` boots a `.prg`, `.tap`, `.d64`, `.crt` or `.t64` headless and saves a PNG
+`run` boots a `.prg`, `.tap`, `.d64`, `.g64`, `.crt` or `.t64` headless and saves a PNG
 of the screen, or with `--all` a PNG for every program on a side at once, so
 you can tell a working dump from a broken one without opening an emulator.
 
@@ -156,7 +157,7 @@ not guessed), and — when part of the tape holds a signal no known loader could
 read — how much, so "it only found 3 files" becomes "…and twelve minutes
 belong to a loader this does not know".
 
-`dir` works on `.tap`, `.d64`, `.t64` archives, DC2N `.dmp` dumps, and
+`dir` works on `.tap`, `.d64`, `.g64`, `.t64` archives, DC2N `.dmp` dumps, and
 directly on a `.wav` recording (at the cost of the full decode). Flags: `--damaged` shows only the
 broken rows, `--seconds` prints raw seconds instead of `m:ss`, `--pulses` adds
 pulse indexes for diagnosis. Times are PAL; on an NTSC recording they read
@@ -494,7 +495,8 @@ The other direction packs one. `d642t64` puts a disk's programs into an
 archive under their own names, labelled what the disk is labelled — and
 `tap2t64` decodes a tape's programs into one, which is the instantly LOADable
 form of a turbo tape, kept under the names and addresses the tape itself
-claims:
+claims. `g642t64` does the same for a `.g64`, off the sectors decoded from its
+raw tracks:
 
 <!-- shot: c64rdy d642t64 disk.d64 -->
 ```
@@ -611,6 +613,7 @@ Extraction answers to a second name, since `prg2d64` invites its inverse:
 c64rdy d642prg mydisk.d64                    # every file on the disk
 c64rdy d642prg mydisk.d64 "GAME*" -d out/    # the same command, other door
 c64rdy d642prg mydisk.d64 "?ELLO"            # ? is one character
+c64rdy g642prg original.g64                  # the same off a raw .g64
 ```
 
 **Quote the pattern.** A bare `*` never reaches the tool — the shell expands
@@ -618,6 +621,32 @@ it into your local filenames first, and the command sees a dozen arguments
 instead of a pattern. It fails loudly rather than quietly, but the fix is
 quotes, or simply leaving the pattern out: no pattern already means every
 file. A pattern that matches nothing says so and exits 1.
+
+## Nibbler dumps
+
+A `.nbz` from the C64 Preservation Project is a compressed `.nib`: 8 KB
+straight off a 1541's read head per half-track, more than one revolution,
+begun anywhere. `nbz2g64` cuts one revolution per half-track, starts it at the
+track's tail gap (or sector 0), spreads a fat track to the half-track between,
+and shortens syncs on any track a real disk could not hold, as nibtools'
+nibconv does at its defaults:
+
+```
+$ c64rdy nbz2g64 buggy_boy.nbz
+buggy_boy.nbz → buggy_boy.g64  (NIB v3, 281916 bytes)
+
+  TRACK  ZONE  BYTES  START        NOTES
+    1.0     3   7805  gap          weak 42
+    2.0     3   7798  gap          weak 42
+   ...
+   36.0     1      -  unformatted
+   40.0     2   7135  gap          weak 1
+
+36 tracks, 5 unformatted recorded; longest 7810 bytes.
+```
+
+The `.g64` runs with `run`, lists with `dir`, and loads in the app. `info` on
+a `.nbz` or `.nib` reads its track table.
 
 ## Wrap a program in a cartridge
 
@@ -736,6 +765,7 @@ c64rdy run game.prg                # → game.png
 c64rdy run game.prg --anim         # → game.png, moving
 c64rdy run mydisk.d64 --frames 900
 c64rdy run mydisk.d64 --file "GAME 2"
+c64rdy run original.g64            # through the emulated 1541
 c64rdy run side-a.tap --file "BR TR CHINA"
 c64rdy run side-a.tap --all --out-dir shots/
 c64rdy run cart.crt -o shot.png
@@ -747,7 +777,9 @@ through `LOAD"*",8,1` and RUN, a tape through the loader the tape itself
 carries, a cartridge through its own reset — runs the requested frames, and
 saves a PNG of the screen. A `.t64` holds no signal to boot, so it runs as the
 disk its programs pack onto: `--file` and `--all` then work as they do for any
-disk.
+disk. A `.g64` holds the raw tracks of an original, so it boots through the
+emulated 1541 rather than the built-in load: it needs `1541.bin` beside the
+other ROMs, loads at real drive speed, and gets 3000 frames by default.
 
 On a disk, `--file NAME` loads that program instead of the first one, typed
 the way a person types it (`LOAD"NAME",8,1` then RUN), DOS wildcards included:
@@ -963,6 +995,8 @@ unpacker unpacks, and never into the input's own folder.
 | `t642prg` | `-d <dir>` where the files land (`--out-dir` too) |
 | `t642tap` | `--roms <dir>` |
 | `d642t64` | — |
+| `g642t64` | — |
+| `nbz2g64` | — (writes `<name>.g64`) |
 | `dmp2tap` | — |
 | `tapfix` | — (writes `<name>-mended.tap`) |
 | `tapcat` | — (writes `<first>-joined.tap`) |
@@ -976,11 +1010,11 @@ unpacker unpacks, and never into the input's own folder.
 | `loadtest` | `--file NAME` one program only · `--jobs <n>` threads · `--roms <dir>` |
 | `loader` | `--dump <file>` write all 64 KB of memory · `--seconds <n>` how long to let it run (60) · `--roms <dir>` |
 | `roms` | — (a folder to remember; run it bare at a terminal and it asks) |
-| `run` | `--no-press` leave a screen that stopped moving alone · `--frames <n>` how long after the start · `--file NAME` a program off a `.d64` or `.tap` · `--all` every program on a `.d64` or `.tap` · `--collage` tile a `--all` run into one sheet (animated with `--anim`) · `--jobs <n>` threads, with `--all` · `--anim` film it · `--fps <n>` how often to film (5, at most 50) · `--speed <n>` how fast it plays against the machine · `--roms <dir>` |
+| `run` | `--no-press` leave a screen that stopped moving alone · `--frames <n>` how long after the start · `--file NAME` a program off a `.d64`, `.g64` or `.tap` · `--all` every program on a `.d64`, `.g64` or `.tap` · `--collage` tile a `--all` run into one sheet (animated with `--anim`) · `--jobs <n>` threads, with `--all` · `--anim` film it · `--fps <n>` how often to film (5, at most 50) · `--speed <n>` how fast it plays against the machine · `--roms <dir>` |
 | `disk new` | `--name NAME` the disk's header name · `--id ID` its two-character id · PRGs named on the line are written straight in · `--force` reformats an existing image |
 | `disk add` | — |
 | `disk rm` | — (takes a DOS `"GAME*"` pattern; scratches every match) |
-| `disk extract` / `d642prg` | `-d <dir>` where the files land (`--out-dir` too). A quoted `"GAME*"` pattern narrows it; no pattern means every file |
+| `disk extract` / `d642prg` / `g642prg` | `-d <dir>` where the files land (`--out-dir` too). A quoted `"GAME*"` pattern narrows it; no pattern means every file |
 
 ## What it won't do (yet)
 

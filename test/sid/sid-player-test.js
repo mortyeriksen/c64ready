@@ -1,0 +1,214 @@
+// The SID player, run on the machine it was written for.
+//
+// Everything else about a .sid can be checked by reading bytes; this cannot. The
+// only proof that the wrapper works is that the C64 boots the .prg, the driver's
+// init and play actually run on the 6510, and the SID ends up with what the
+// driver wrote. So this builds a tune whose init and play leave a signature,
+// wraps it, runs the machine, and reads the result off the chip and the screen.
+import { readFileSync } from 'fs';
+import { C64Machine } from '../../src/machine.js';
+import { sidToPrg, parseSid } from '../../src/media/sid.js';
+
+let failures = 0;
+function assert(cond, msg) { if (!cond) { console.error(`FAIL: ${msg}`); failures++; } }
+function eq(actual, expected, msg) {
+  if (actual !== expected) { console.error(`FAIL: ${msg} — expected ${expected}, got ${actual}`); failures++; }
+}
+
+// A driver small enough to read: init records the song it was handed, play
+// counts frames in RAM and puts the count on a SID register.
+const DRIVER = [
+  0x8D, 0x00, 0xD4,             // $1000 init: sta $d400   (the song number)
+  0x60,                         // $1003      rts
+  0xEE, 0x40, 0x03,             // $1004 play: inc $0340
+  0xAD, 0x40, 0x03,             //             lda $0340
+  0x8D, 0x01, 0xD4,             //             sta $d401
+  0x60,                         //             rts
+];
+
+function makeSid({ format = 'PSID', songs = 3, startSong = 1, flags = (1 << 2) | (2 << 4), load = 0x1000 } = {}) {
+  const bytes = new Uint8Array(0x7C + 2 + DRIVER.length);
+  bytes.set([...format].map(c => c.charCodeAt(0)));
+  bytes[5] = 2;                               // version 2
+  bytes[7] = 0x7C;                            // data offset
+  // The header's addresses are big-endian; the load address inside the data is
+  // not. The driver only writes to fixed addresses, so it runs wherever it lands.
+  bytes[10] = load >> 8; bytes[11] = load & 0xFF;
+  bytes[12] = (load + 4) >> 8; bytes[13] = (load + 4) & 0xFF;
+  bytes[15] = songs;
+  bytes[17] = startSong;
+  for (const [at, text] of [[0x16, 'TEST TUNE'], [0x36, 'A COMPOSER'], [0x56, '1988 SOMEONE']]) {
+    bytes.set([...text].map(c => c.charCodeAt(0)), at);
+  }
+  bytes[0x76] = flags >> 8; bytes[0x77] = flags & 0xFF;
+  bytes[0x7C] = load & 0xFF; bytes[0x7D] = load >> 8;   // the tune's own load address
+  bytes.set(DRIVER, 0x7E);
+  return bytes;
+}
+
+function run(prg, frames, configure = () => {}) {
+  const machine = new C64Machine();
+  machine.loadROMs({
+    kernal: new Uint8Array(readFileSync('roms/kernal.bin')),
+    basic: new Uint8Array(readFileSync('roms/basic.bin')),
+    charRom: new Uint8Array(readFileSync('roms/chargen.bin')),
+  });
+  configure(machine);
+  machine.reset();
+  for (let i = 0; i < 200; i++) machine.runFrame();     // boot to READY
+  machine.loadPRG(prg);
+  machine.injectRun();
+  for (let i = 0; i < frames; i++) machine.runFrame();
+  return machine;
+}
+
+const screenText = (machine, row, col, length) => {
+  const codes = [];
+  for (let i = 0; i < length; i++) codes.push(machine.mem.ram[0x0400 + row * 40 + col + i]);
+  return codes.map(code => {
+    if (code >= 1 && code <= 26) return String.fromCharCode(code + 64);
+    if (code >= 0x30 && code <= 0x39) return String.fromCharCode(code);
+    return { 0x20: ' ', 0x2F: '/', 0x3A: ':', 0x2E: '.', 0x2D: '-', 0x24: '$', 0xA0: '#', 0x40: '=' }[code] ?? '?';
+  }).join('');
+};
+
+// ── the file, read ───────────────────────────────────────────────────────────
+{
+  const tune = parseSid(makeSid());
+  eq(tune.format, 'PSID', 'the magic is read');
+  eq(tune.loadAddress, 0x1000, 'a zero load address comes from the first two data bytes');
+  eq(tune.initAddress, 0x1000, 'init address');
+  eq(tune.playAddress, 0x1004, 'play address');
+  eq(tune.songs, 3, 'song count');
+  eq(tune.clock, 1, 'PAL');
+  eq(tune.chip, 2, '8580');
+  eq(tune.title, 'TEST TUNE', 'title');
+  eq(tune.author, 'A COMPOSER', 'author');
+  eq(tune.payload.length, DRIVER.length, 'the payload is the tune alone, load address stripped');
+}
+
+// ── the machine, run ─────────────────────────────────────────────────────────
+{
+  const { data } = sidToPrg(makeSid());
+  const machine = run(data, 120);
+  const regs = machine.mem.sid.regs;
+
+  assert(regs[1] > 0, 'play ran and reached the SID');
+  eq(machine.mem.ram[0x0340] > 50, true, 'play ran once per frame, not once');
+  eq(regs[0], 0, 'init was handed song 1 as a zero-based number');
+
+  eq(screenText(machine, 3, 2, 9), 'TEST TUNE', 'the title is on screen');
+  eq(screenText(machine, 4, 2, 10), 'A COMPOSER', 'the author is on screen');
+  eq(screenText(machine, 7, 2, 4), 'SONG', 'the song label is on screen');
+  eq(screenText(machine, 7, 7, 5), '01/03', 'song one of three');
+  eq(screenText(machine, 7, 25, 4), '8580', 'the chip the header asks for');
+  eq(screenText(machine, 7, 31, 4), 'PAL ', 'and the clock');
+  assert(screenText(machine, 7, 16, 5) !== '00:00', 'the clock is running');
+}
+
+// ── the tune keeps playing, and the counter keeps up ─────────────────────────
+{
+  const { data } = sidToPrg(makeSid());
+  const machine = run(data, 60);
+  const early = machine.mem.ram[0x0340];
+  for (let i = 0; i < 60; i++) machine.runFrame();
+  assert(machine.mem.ram[0x0340] > early, 'play is still being called sixty frames later');
+}
+
+// ── an RSID opens on the safe view, where nothing is intercepted ─────────────
+{
+  const { data } = sidToPrg(makeSid({ format: 'RSID' }));
+  const machine = run(data, 120);
+  assert(machine.mem.sid.regs[1] > 0, 'the driver reaches the SID directly');
+  eq(screenText(machine, 22, 2, 9), 'F1 VOICES', 'and F1 offers the other view');
+}
+
+// Two chips share the six-row Safe scope area equally. Idle OSC3 inputs
+// produce one centred trace in each three-row half.
+{
+  const bytes = makeSid();
+  bytes[5] = 3; bytes[0x7A] = 0x50;
+  let primaryReads = 0, secondReads = 0;
+  const machine = run(sidToPrg(bytes).data, 120, machine => {
+    machine.configureSecondSid({ enabled: true, address: 0xD500 });
+    for (const [proxy, count] of [[machine.mem.sid, () => primaryReads++],
+      [machine.sid2.proxy, () => secondReads++]]) {
+      const read = proxy.read.bind(proxy);
+      proxy.read = reg => { if ((reg & 31) === 27) count(); return read(reg); };
+    }
+  });
+  for (let frame = 0; frame < 60 && [11, 14].some(row => screenText(machine, row, 2, 36) !== '='.repeat(36)); frame++) machine.runFrame();
+  assert(primaryReads >= 36, 'top scope samples primary OSC3');
+  assert(secondReads >= 36, 'bottom scope samples OSC3 at the tune second address');
+  for (const row of [11, 14]) {
+    eq(screenText(machine, row, 2, 36), '='.repeat(36), 'idle chip has a centred half-height scope');
+  }
+  for (const row of [10, 12, 13, 15]) {
+    eq(screenText(machine, row, 2, 36), ' '.repeat(36), 'idle half-height scopes leave other rows clear');
+  }
+}
+// ENV3 readback belongs to each chip and has an independent sixteen-cell bar.
+for (const dual of [false, true]) {
+  const bytes = makeSid({ format: 'RSID' });
+  if (dual) { bytes[5] = 3; bytes[0x7A] = 0x50; }
+  const machine = run(sidToPrg(bytes).data, 180, machine => {
+    if (dual) machine.configureSecondSid({ enabled: true, address: 0xD500 });
+    for (const [proxy, level] of [[machine.mem.sid, 0xF0], [machine.sid2?.proxy, 0x80]]) {
+      if (!proxy) continue;
+      const read = proxy.read.bind(proxy);
+      proxy.read = reg => (reg & 31) === 28 ? level : read(reg);
+    }
+  });
+  eq(screenText(machine, 17, dual ? 14 : 9, 16), '#'.repeat(15) + ' ', 'primary ENV3 bar reflects primary readback');
+  if (dual) {
+    eq(screenText(machine, 18, 14, 16), '#'.repeat(8) + ' '.repeat(8), 'second ENV3 bar reflects second readback independently');
+    eq(screenText(machine, 17, 2, 10), 'SID1 ENV 3', 'primary envelope label identifies its chip');
+    eq(screenText(machine, 18, 2, 10), 'SID2 ENV 3', 'second envelope label identifies its chip');
+  }
+}
+// ── starting song, and what the wrapper refuses ──────────────────────────────
+{
+  const { data } = sidToPrg(makeSid({ songs: 9, startSong: 4 }));
+  const machine = run(data, 90);
+  eq(screenText(machine, 7, 7, 5), '04/09', 'the file names which song starts');
+  eq(machine.mem.sid.regs[0], 3, 'and init is handed it zero-based');
+}
+// ── the player gets out of the way of the tune ───────────────────────────────
+// A good many game rips load at $A000-$BFFF and run straight through $C000,
+// where the player would rather sit. It moves instead of refusing them — and
+// that is RAM under the BASIC ROM, so the ROM has to go for the tune's sake as
+// much as the player's.
+{
+  const underBasic = makeSid({ load: 0xB550 });
+  const machine = run(sidToPrg(underBasic).data, 150);
+  assert(machine.mem.sid.regs[1] > 0, 'a tune in the RAM under BASIC plays');
+  eq(machine.mem.sid.regs[0], 0, 'and its init was called where it landed');
+  eq(screenText(machine, 3, 2, 9), 'TEST TUNE', 'with the player drawing from wherever it went');
+}
+// A tune under the KERNAL ROM plays: the driver, and only the driver, runs with
+// the ROM banked out. $E000 is where a good many game tunes live.
+{
+  const underKernal = makeSid({ load: 0xE000 });
+  const machine = run(sidToPrg(underKernal).data, 150);
+  assert(machine.mem.sid.regs[1] > 0, 'a tune in the RAM under the KERNAL plays');
+  eq(screenText(machine, 3, 2, 9), 'TEST TUNE', 'and the player, which still needs the KERNAL, keeps drawing');
+}
+{
+  const onIo = makeSid({ load: 0xD000 });
+  let threw = null;
+  try { sidToPrg(onIo); } catch (error) { threw = error.message; }
+  assert(/I\/O registers/.test(threw || ''), `a tune over the I/O registers is refused, said: ${threw}`);
+
+  const onScreen = makeSid();
+  onScreen[0x7C] = 0x00; onScreen[0x7D] = 0x05;
+  threw = null;
+  try { sidToPrg(onScreen); } catch (error) { threw = error.message; }
+  assert(/screen/.test(threw || ''), `a tune over screen memory is refused, said: ${threw}`);
+
+  threw = null;
+  try { sidToPrg(new Uint8Array([...'MUS!'].map(c => c.charCodeAt(0)), 200)); } catch (error) { threw = error.message; }
+  assert(threw !== null, 'a file that is not a .sid is refused');
+}
+
+console.log(failures ? `${failures} failure(s)` : 'sid-player-test: all checks passed');
+process.exit(failures ? 1 : 0);

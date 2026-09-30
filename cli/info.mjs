@@ -9,7 +9,7 @@ import { parseArgs, inputFiles, UsageError } from './args.mjs';
 import { sniff, KIND_NAMES } from './formats.mjs';
 import { t64Files } from './t64.mjs';
 import { say, fail, mss } from './report.mjs';
-import { splitTap, tapSeconds, wavReader, D64, d64Variant, parseCRT, parseSid } from './core.mjs';
+import { splitTap, tapSeconds, wavReader, D64, d64Variant, parseCRT, parseSid, G64, parseG64, parseNib, lzUncompress } from './core.mjs';
 
 export function run(argv) {
   const { args } = parseArgs(argv);
@@ -60,6 +60,30 @@ function describe(bytes, filename) {
       const files = disk.entries.filter(e => !e.deleted).length;
       return `${name} (.d64, ${v.tracks} tracks${v.errorInfo ? ' + error table' : ''}), ` +
         `"${disk.diskName}", ${files} ${files === 1 ? 'file' : 'files'}, ${disk.freeBlocks} blocks free`;
+    }
+    case 'g64': {
+      // The raw tracks say what the dump covers; the files come off the sectors
+      // decoded from them, which is all a directory can show of a raw disk.
+      const { halfTrackCount, tracks } = parseG64(bytes);
+      const whole = tracks.filter((t, i) => t && !(i & 1)).length;
+      const halves = tracks.filter((t, i) => t && (i & 1)).length;
+      const lens = tracks.filter(Boolean).map(t => t.length);
+      const span = lens.length ? `, ${Math.min(...lens)}-${Math.max(...lens)} bytes a track` : '';
+      const disk = new G64(bytes);
+      const files = disk.entries.filter(e => !e.deleted).length;
+      return `${name} (.g64, ${whole} of ${halfTrackCount >> 1} tracks recorded` +
+        `${halves ? ` + ${halves} half-${halves === 1 ? 'track' : 'tracks'}` : ''}${span}), ` +
+        `"${disk.diskName}", ${files} ${files === 1 ? 'file' : 'files'}, ${disk.freeBlocks} blocks free`;
+    }
+    case 'nib':
+    case 'nbz': {
+      // The table says what the dump covers; the tracks are raw reads, so
+      // what is on them is only known once nbz2g64 has cut them.
+      const nib = parseNib(kind === 'nbz' ? lzUncompress(bytes) : bytes);
+      const whole = [...nib.tracks.keys()].filter(h => !(h & 1)).length;
+      const halves = nib.tracks.size - whole;
+      return `${name} (.${kind}, NIB v${nib.version}), ${whole} ${whole === 1 ? 'track' : 'tracks'}` +
+        `${halves ? ` + ${halves} half-${halves === 1 ? 'track' : 'tracks'}` : ''} of 8 KB raw GCR each`;
     }
     case 'prg': {
       const addr = bytes[0] | (bytes[1] << 8);

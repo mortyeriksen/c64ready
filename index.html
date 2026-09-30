@@ -162,7 +162,7 @@
             <img src="/guide/drive8-loaded.webp" width="638" height="632" loading="lazy"
               alt="The Disk Drive 8 panel: LOAD, BLANK, FORMAT and .D64 export controls above a directory whose filenames form PETSCII artwork">
             <h2>Real disks, real saves</h2>
-            <p>LOAD, SAVE, format and export .d64s through a true 1541. Save states resume anytime.</p>
+            <p>LOAD, SAVE, format and export .d64s through a true 1541, and run copy-protected .g64s. Save states resume anytime.</p>
           </li>
           <li class="card-phone">
             <div class="splash-phone">
@@ -261,7 +261,7 @@
            get the tap-to-keyboard hint; everything else keeps the drop-files
            hint (drag-drop only works with a pointer). One is hidden via CSS. -->
       <div class="drop-hint hint-pointer">Drop <span class="drop-hint-types"
-          title="Supported: .PRG, .D64, .CRT, .TAP, .T64, .SID and .REU">files</span> onto the screen.<span id="keyboard-focus-hint" hidden> Click screen to capture keyboard.</span></div>
+          title="Supported: .PRG, .D64, .G64, .NBZ, .CRT, .TAP, .T64, .SID, .WAV, .DMP and .REU">files</span> onto the screen.<span id="keyboard-focus-hint" hidden> Click screen to capture keyboard.</span></div>
       <div class="drop-hint hint-touch">Tap the screen to open the native keyboard</div>
     </div>
 
@@ -290,21 +290,21 @@
             </div>
             <div class="btn-group u-mb-8">
               <button class="btn btn-power" id="btn-power"
-                title="Switch the C64 on or off. Powering on is a cold boot: memory is cleared, exactly like the real switch. Until the ROMs are loaded it opens Setup instead."><svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg> POWER</button>
+                title="Switch the C64 on or off. Powering on is a cold boot. Opens Setup until ROMs are loaded."><svg class="btn-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg> POWER</button>
               <button class="btn btn-reset" id="btn-reset"
-                title="Hard reset — rebuilds the machine and reboots to the READY. prompt. Inserted disks, tapes and cartridges stay put." disabled>↺ RESET</button>
+                title="Hard reset to READY. Inserted media stays." disabled>↺ RESET</button>
               <button class="btn btn-pause" id="btn-pause"
-                title="Freeze emulation where it stands; audio stops and the picture holds. Press again to carry on." disabled>⏸ PAUSE</button>
+                title="Freeze emulation and audio; press again to continue." disabled>⏸ PAUSE</button>
             </div>
             <div class="btn-group btn-group-toggles u-mb-8">
-              <button class="btn btn-vibes" id="btn-vibes" title="Retro Vibes — open a full-screen 3D scene of the C64. Cmd+Shift+X / Ctrl+Shift+X opens it in Studio mode: just the scene and the logo."><svg class="btn-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><defs><linearGradient id="vibesSun" x1="0" y1="7" x2="0" y2="17" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffd36b"/><stop offset=".55" stop-color="#ff6ad5"/><stop offset="1" stop-color="#b362c4"/></linearGradient><mask id="vibesSunMask"><rect width="24" height="24" fill="#fff"/><rect y="12.4" width="24" height="0.9" fill="#000"/><rect y="14.4" width="24" height="0.9" fill="#000"/><rect y="16.4" width="24" height="0.9" fill="#000"/></mask></defs><g stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5V4.5A1.5 1.5 0 0 1 4.5 3h4"/><path d="M15.5 3h4A1.5 1.5 0 0 1 21 4.5v4"/><path d="M21 15.5v4a1.5 1.5 0 0 1-1.5 1.5h-4"/><path d="M8.5 21h-4A1.5 1.5 0 0 1 3 19.5v-4"/></g><circle cx="12" cy="12" r="5" fill="url(#vibesSun)" mask="url(#vibesSunMask)"/></svg> VIBES</button>
-              <button class="btn" id="btn-size" title="Picture size: whole multiples of the C64's own 384x272 screen — 1X, 2X (default), 2.5X, 3X — plus MAX, which fills the width. Never stretched. A multiple too big for the window is skipped, since it would only be clamped to the same size as MAX.">SIZE: 1X</button>
+              <button class="btn btn-vibes" id="btn-vibes" title="Retro Vibes: a full-screen 3D scene of the C64. Cmd/Ctrl+Shift+X opens Studio mode."><svg class="btn-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><defs><linearGradient id="vibesSun" x1="0" y1="7" x2="0" y2="17" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffd36b"/><stop offset=".55" stop-color="#ff6ad5"/><stop offset="1" stop-color="#b362c4"/></linearGradient><mask id="vibesSunMask"><rect width="24" height="24" fill="#fff"/><rect y="12.4" width="24" height="0.9" fill="#000"/><rect y="14.4" width="24" height="0.9" fill="#000"/><rect y="16.4" width="24" height="0.9" fill="#000"/></mask></defs><g stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5V4.5A1.5 1.5 0 0 1 4.5 3h4"/><path d="M15.5 3h4A1.5 1.5 0 0 1 21 4.5v4"/><path d="M21 15.5v4a1.5 1.5 0 0 1-1.5 1.5h-4"/><path d="M8.5 21h-4A1.5 1.5 0 0 1 3 19.5v-4"/></g><circle cx="12" cy="12" r="5" fill="url(#vibesSun)" mask="url(#vibesSunMask)"/></svg> VIBES</button>
+              <button class="btn" id="btn-size" title="Picture size: 1X, 2X, 2.5X, 3X (whole multiples of 384x272) or MAX to fill the width. Never stretched.">SIZE: 1X</button>
               <button class="btn btn-fullscreen" id="btn-fullscreen" title="Enter fullscreen">⛶ FULL</button>
             </div>
             <div class="btn-group u-mb-8">
               <button class="btn" id="btn-keymap" title="Show full keyboard mapping">KEY MAP</button>
               <button class="btn" id="btn-paste"
-                title="Type the clipboard into the C64 as keystrokes. Cmd+Shift+V (Ctrl+Shift+V on Windows and Linux) does the same." disabled>📋 PASTE</button>
+                title="Type the clipboard into the C64 (Cmd/Ctrl+Shift+V)." disabled>📋 PASTE</button>
             </div>
             <div class="btn-group">
               <button class="btn btn-settings" id="btn-settings"
@@ -318,7 +318,7 @@
             <div class="panel-card-header controlports-header">
               <h2>Control Ports</h2>
               <button class="btn" id="btn-swap-ports"
-                title="Swap the devices on control ports 1 and 2 — for games that expect the joystick in the other port."
+                title="Swap the devices on ports 1 and 2."
                 >SWAP PORTS</button>
             </div>
 
@@ -326,7 +326,7 @@
               <div class="cp-row-head">
                 <span class="cp-port-name">Port 1</span>
                 <select class="cp-device-select" id="cp-device-p1"
-                title="What is plugged into control port 1 — joystick, gamepad, mouse, paddle or a keyboard-driven stick. Most one-player games expect port 2.">
+                title="Device on control port 1: joystick, gamepad, mouse, paddle or keyboard stick. Most games use port 2.">
                   <option value="none">None</option>
                   <option value="joystick">Joystick (gamepad)</option>
                   <option value="mouse1351">Mouse (1351)</option>
@@ -355,7 +355,7 @@
               <div class="cp-row-head">
                 <span class="cp-port-name">Port 2</span>
                 <select class="cp-device-select" id="cp-device-p2"
-                title="What is plugged into control port 2 — joystick, gamepad, mouse, paddle or a keyboard-driven stick. This is the usual port for one-player games.">
+                title="Device on control port 2: joystick, gamepad, mouse, paddle or keyboard stick. The usual one-player port.">
                   <option value="none">None</option>
                   <option value="joystick">Joystick (gamepad)</option>
                   <option value="mouse1351">Mouse (1351)</option>
@@ -388,18 +388,18 @@
             </div>
             <div class="btn-group u-mb-8">
               <button class="btn" id="btn-load-state"
-                title="Restore a saved machine state. Opens a picker of your saved states; also imports / exports state files.">📂 LOAD
+                title="Restore a saved state; import and export state files.">📂 LOAD
                 STATE</button>
               <button class="btn" id="btn-save-state" disabled
-                title="Freeze the full machine — RAM, all chip registers, and whatever disk / tape / cartridge is inserted — into a named slot stored in this browser.">💾 SAVE
+                title="Freeze the whole machine, media included, into a named slot in this browser.">💾 SAVE
                 STATE</button>
             </div>
             <div class="btn-group">
               <button class="btn" id="btn-library"
-                title="Browse files you've loaded before. Every .PRG / .D64 / .CRT / .TAP / .T64 / .SID / .WAV / .DMP you open is cached in this browser so you can re-load it without picking it from disk again.">📂 LOAD LIB</button>
+                title="Files you have loaded before, cached in this browser.">📂 LOAD LIB</button>
               <button class="btn btn-prg" id="btn-prg"
-                title="Load any C64 file — .prg, .d64, .crt, .tap, .t64, .sid, .wav, .dmp or .reu — and the right thing happens." disabled>▶ LOAD ANY</button>
-              <input type="file" id="prg-input" accept=".prg,.d64,.crt,.tap,.t64,.sid,.wav,.dmp,.reu">
+                title="Load any C64 file: .prg, .d64, .g64, .nbz, .crt, .tap, .t64, .sid, .wav, .dmp or .reu." disabled>▶ LOAD ANY</button>
+              <input type="file" id="prg-input" accept=".prg,.d64,.g64,.nbz,.crt,.tap,.t64,.sid,.wav,.dmp,.reu">
             </div>
           </div>
 
@@ -424,13 +424,13 @@
               <div class="drive-deck">
                 <div class="drive-transport">
                   <button class="btn btn-d64" id="btn-d64"
-                title="Insert a .d64 disk image into drive 8. A .prg works too — it gets a disk of its own." disabled>💾 LOAD</button>
-                  <input type="file" id="d64-input" accept=".d64,.prg">
+                title="Insert a .d64, .g64 or .nbz into drive 8; a .prg gets its own disk." disabled>💾 LOAD</button>
+                  <input type="file" id="d64-input" accept=".d64,.g64,.nbz,.prg">
                   <button class="btn btn-eject" id="btn-d64-eject"
                 title="Eject the disk in drive 8." disabled>⏏ EJECT</button>
                   <div class="drive-cell">
                     <button class="btn btn-tde" id="btn-tde-toggle"
-                title="True Drive Emulation for device 8: run a real 1541 CPU on the IEC bus (needed for fastloaders). When off, LOAD&quot;…&quot;,8 is served directly from the disk image." disabled>TDE: OFF</button>
+                title="True Drive Emulation for device 8: a real 1541 CPU on the bus, needed by fastloaders. Off: loads come straight from the image." disabled>TDE: OFF</button>
                     <span class="drive-led" id="drive-led" title="1541 drive LED"></span>
                   </div>
                   <button class="btn btn-d64-new" id="btn-d64-new" disabled title="Insert a blank unformatted disk in drive 8 — then FORMAT it"><span class="disk-emoji">💾</span> BLANK</button>
@@ -441,7 +441,7 @@
                   </div>
                 </div>
                 <div class="drive-dropzone" id="drive-dropzone">
-                  <span id="drive-empty-hint">click LOAD or drop a .d64 onto the screen</span>
+                  <span id="drive-empty-hint">click LOAD or drop a .d64, .g64 or .nbz onto the screen</span>
                   <div id="drive-loaded" hidden>
                     <div class="drive-disk-info">
                       <span class="drive-disk-name" id="drive-disk-name"></span>
@@ -472,13 +472,13 @@
               <div class="drive-deck" id="drive9-deck" hidden>
                 <div class="drive-transport">
                   <button class="btn btn-d64" id="btn-d64-9"
-                title="Insert a .d64 disk image into drive 9. A .prg works too — it gets a disk of its own."  disabled>💾 LOAD</button>
-                  <input type="file" id="d64-input-9" accept=".d64,.prg">
+                title="Insert a .d64, .g64 or .nbz into drive 9; a .prg gets its own disk."  disabled>💾 LOAD</button>
+                  <input type="file" id="d64-input-9" accept=".d64,.g64,.nbz,.prg">
                   <button class="btn btn-eject" id="btn-d64-eject-9"
                 title="Eject the disk in drive 9." disabled>⏏ EJECT</button>
                   <div class="drive-cell">
                     <button class="btn btn-tde" id="btn-tde-toggle-9" disabled
-                      title="True Drive Emulation for device 9: run a real second 1541 CPU on the IEC bus (needed for fastloaders). When off, LOAD&quot;…&quot;,9 is served directly from the disk image.">TDE: OFF</button>
+                      title="True Drive Emulation for device 9: a real 1541 CPU on the bus, needed by fastloaders. Off: loads come straight from the image.">TDE: OFF</button>
                     <span class="drive-led" id="drive-led-9" title="Drive 9 LED"></span>
                   </div>
                   <button class="btn btn-d64-new" id="btn-d64-new-9" disabled title="Insert a blank unformatted disk in drive 9 — then FORMAT it"><span class="disk-emoji">💾</span> BLANK</button>
@@ -489,7 +489,7 @@
                   </div>
                 </div>
                 <div class="drive-dropzone" id="drive9-dropzone">
-                  <span id="drive9-empty-hint">click LOAD to insert a .d64 as device 9</span>
+                  <span id="drive9-empty-hint">click LOAD to insert a .d64, .g64 or .nbz as device 9</span>
                   <div id="drive9-loaded" hidden>
                     <div class="drive-disk-info">
                       <span class="drive-disk-name" id="drive9-disk-name"></span>
@@ -522,7 +522,7 @@
                 <button class="btn" id="btn-crt-reset"
                 title="Reset with the cartridge still inserted — boots back into it." hidden disabled>↻ RESET</button>
                 <button class="btn" id="btn-crt-freeze"
-                title="Press the cartridge's FREEZE button (Final Cartridge 3 and friends) to break into the running program." aria-pressed="false" hidden disabled>❄ FREEZE</button>
+                title="Cartridge FREEZE: break into the running program." aria-pressed="false" hidden disabled>❄ FREEZE</button>
               </div>
               <div class="crt-dropzone" id="crt-dropzone">
                 <span id="crt-empty-hint">click LOAD or drop a .crt onto the screen</span>
@@ -537,10 +537,10 @@
               <h2>Datasette</h2>
               <button class="btn-icon tape-scope" id="btn-tape-scope"
                 aria-label="Show the tape signal"
-                title="Watch the tape signal — the square wave passing under the head, drawn as it goes. Independent of the speaker: the scope shows the signal whether or not you are listening to it."></button>
+                title="Show the tape signal as it passes the head, sound on or off."></button>
               <button class="btn-icon tape-listen" id="btn-tape-listen" aria-pressed="false"
                 aria-label="Listen to the tape"
-                title="Listen to the tape. A C64 tape stores its data as audible square-wave pulses, so this is the real signal — the loader's warble, the way it sounded from a cassette deck."></button>
+                title="Hear the tape: the real signal, as from a cassette deck."></button>
               <button class="expand-btn" title="Expand" aria-label="Toggle Datasette">▼</button>
             </div>
             <div class="panel-body">
@@ -559,20 +559,20 @@
                     <button class="btn btn-tap-export" id="btn-tap-export" disabled
                   title="Download this tape as a .tap file"><span class="dl-ico">⤓</span>.TAP</button>
                     <button class="btn btn-tap-export" id="btn-tap-export-wav" disabled
-                  title="Download this tape as a .wav — the actual cassette audio. Play it into a real C64 and it loads, or compare it against the recording you imported."><span class="dl-ico">⤓</span>.WAV</button>
+                  title="Download the tape as .wav, the real cassette audio. It loads on a real C64."><span class="dl-ico">⤓</span>.WAV</button>
                   </div>
                   <button class="btn btn-tap-new" id="btn-tap-new" disabled
                 title="Insert a blank tape — then press RECORD and SAVE to it"><span class="tape-emoji">📼</span> BLANK</button>
                   <button class="btn btn-tap-stop" id="btn-tap-stop"
                 title="Press STOP on the datasette." disabled><span class="key-ico">⏹</span> STOP</button>
                   <button class="btn btn-tap-start" id="btn-tap-start" disabled
-                title="Jump straight back to the start of the tape (no winding — the one thing a real 1530 can't do)">⏮ START</button>
+                title="Back to the start of the tape.">⏮ START</button>
                 </div>
                 <div class="tape-transport">
                   <button class="btn btn-tap-play" id="btn-tap-play"
                 title="Press PLAY on the datasette. The C64 only reads tape while the motor runs." disabled>▶ PLAY</button>
                   <button class="btn btn-tap-rec" id="btn-tap-rec"
-                title="Press RECORD on the datasette. SAVE from the C64 then writes to the tape. Blocked on a write-protected tape, exactly like the real key." disabled>⏺ REC</button>
+                title="Press RECORD: SAVE then writes to the tape. Blocked when the tape is write-protected." disabled>⏺ REC</button>
                   <button class="btn btn-tap-rew" id="btn-tap-rew" disabled
                 title="Press REWIND. Like the real deck, the tape only winds while the C64 has the motor line on.">⏪ REW</button>
                   <button class="btn btn-tap-ff" id="btn-tap-ff" disabled
@@ -592,7 +592,7 @@
                     <span class="tape-counter" id="tape-counter" title="Tape counter">000</span>
                     <span id="tape-time">—</span>
                     <button class="drive-dir-zoom tape-dir-zoom" id="tape-dir-zoom" hidden
-                      title="List the programs on this tape. A .tap has no directory, so this reads the tape the way the C64 does and picks out what it finds."
+                      title="List the programs on this tape, read the way the C64 reads it."
                       aria-label="List the programs on this tape">🔍</button>
                   </div>
                 </div>
@@ -617,7 +617,7 @@
                   <div class="cp-row-head">
                     <span class="cp-port-name">Unit</span>
                     <select class="cp-device-select" id="reu-unit"
-                      title="Which RAM Expansion Unit is fitted. The 1700, 1764 and 1750 are the Commodore units; the generic sizes are the larger third-party expansions modern demos ask for.">
+                      title="Which REU is fitted: Commodore 1700, 1764, 1750, or a larger generic unit for modern demos.">
                       <option value="1700">1700 — 128 KB</option>
                       <option value="1764">1764 — 256 KB</option>
                       <option value="1750">1750 — 512 KB</option>
@@ -685,17 +685,17 @@
         <h3>Display</h3>
         <div class="btn-group btn-group-toggles btn-group-2col">
           <button class="btn" id="btn-crt-effect"
-            title="Cycle the CRT look (or press Cmd+Shift+F / Ctrl+Shift+F): ON (scanlines, default), TUBE (phosphor mask, vignette, glow), B&amp;W (mono tube), ARCADE (bright, tight scanlines), HUM (tube plus a rolling mains bar), OFF (flat).">🖥 CRT: ON</button>
+            title="CRT look (Cmd/Ctrl+Shift+F): ON, TUBE, B&amp;W, ARCADE, HUM, OFF.">🖥 CRT: ON</button>
           <button class="btn" id="btn-attract-toggle"
-            title="Play the animated attract demo while the machine is powered off. When off, the screen just shows a PRESS POWER hint. The demo also stands down on its own under reduced-motion settings, or on a GPU that cannot keep up.">ATTRACT MODE: ON</button>
+            title="Animated demo while powered off; off shows a PRESS POWER hint. Stands down under reduced motion or on a slow GPU.">ATTRACT MODE: ON</button>
           <button class="btn" id="btn-vibes-model"
-            title="3D model VIBES loads. SMALL (default) is light on memory; AUTO picks by device; LARGE forces the 4K model. Applies on next open.">3D MODEL SIZE: SMALL</button>
+            title="3D model size: SMALL (default), AUTO by device, LARGE (4K). Applies on next open.">3D MODEL SIZE: SMALL</button>
           <button class="btn" id="btn-wakelock-toggle"
-            title="Keep the screen awake while a demo runs, so the device doesn't dim or lock (which pauses the emulator).">STAY AWAKE: ON</button>
+            title="Keep the screen awake while a demo runs.">STAY AWAKE: ON</button>
           <button class="btn" id="btn-vibes-fx"
-            title="Run the small pixel demo inside the VIBES button — a field of dots morphing through ten sine patterns. Turn it off for a plain button.">VIBES BUTTON FX: ON</button>
+            title="Animate the VIBES button with its pixel demo. Off for a plain button.">VIBES BUTTON FX: ON</button>
           <button class="btn" id="btn-panel-order-reset"
-            title="Put the side-panel cards back in their original order and bring back any you dropped on the hide circle.">RESET PANELS</button>
+            title="Restore the original card order and bring back hidden cards.">RESET PANELS</button>
         </div>
       </div>
 
@@ -703,10 +703,10 @@
         <h3>Video</h3>
         <div class="btn-group btn-group-toggles">
           <button class="btn" id="btn-vic-toggle"
-            title="VIC-II variant. 6569 = original PAL (breadbin); 8565 = late PAL (C64C), one extra pixel-pipeline cycle some demos rely on.">VIC:
+            title="VIC-II variant: 6569 (breadbin) or 8565 (C64C, one extra pipeline cycle).">VIC:
             6569</button>
           <button class="btn" id="btn-palette-toggle"
-            title="Colour palette. Colodore is the modern VICE default; Pepto is the classic 2001 measured palette. Applies live.">PAL:
+            title="Palette: Colodore (VICE default) or Pepto (classic). Applies live.">PAL:
             Colodore</button>
         </div>
       </div>
@@ -715,19 +715,19 @@
         <h3>Sound</h3>
         <div class="volume-control">
           <button class="btn btn-icon" id="btn-mute-toggle" aria-label="Mute" aria-pressed="false"
-            title="Silence all audio (SID + drive sounds). Playback keeps running, so toggling off (or raising the volume) restores the sound instantly."></button>
+            title="Silence all audio. Playback continues, so unmuting restores sound instantly."></button>
           <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" step="1" value="70"
             aria-label="Master volume"
-            title="Master output volume. Sets how loud everything (SID + drive sounds) plays. Lower this if the emulator is louder than your other apps.">
+            title="Master volume for SID and drive sounds.">
           <span class="volume-value" id="volume-value">70%</span>
         </div>
         <div class="btn-group btn-group-toggles">
           <button class="btn" id="btn-sid-toggle"
-            title="SID chip revision. 6581 = original breadbin; 8580 = later C64C, cleaner filter. Some tunes are written for one or the other.">SID: 6581</button>
+            title="SID revision: 6581 (breadbin) or 8580 (C64C, cleaner filter).">SID: 6581</button>
           <button class="btn" id="btn-sidengine-toggle"
-            title="SID sound engine. reSID WASM (default) and reSID JS sound identical — WASM uses far less CPU.">ENGINE: reSID WASM</button>
+            title="SID engine: reSID WASM (default, less CPU) or reSID JS. Identical sound.">ENGINE: reSID WASM</button>
           <button class="btn" id="btn-drivesound-toggle"
-            title="Play synthesized 1541 disk-drive sounds (motor hum, head-stepper clicks, fast-load chatter) while the drive is active.">DRIVE SOUND: OFF</button>
+            title="Synthesized 1541 sounds: motor, head steps, fast-load chatter.">DRIVE SOUND: OFF</button>
         </div>
         <div class="btn-group sid2-controls" role="group" aria-label="Second SID">
           <button class="btn" id="btn-sid2-toggle" aria-pressed="false"
@@ -735,7 +735,7 @@
           <button class="btn" id="btn-sid-mix" disabled aria-label="SID output mix"
             title="Stereo sends SID 1 left and SID 2 right. Mono mixes both equally.">STEREO</button>
           <button id="sid2-address" class="btn" disabled aria-label="Second SID address"
-            title="Cycle the second SID address: $D420, $D500, $DE00, $DF00. Conflicting expansion addresses are skipped while enabled.">ADRESS: $D420</button>
+            title="Second SID address: $D420, $D500, $DE00 or $DF00. Addresses an expansion uses are skipped.">ADRESS: $D420</button>
         </div>
       </div>
 
@@ -743,7 +743,7 @@
         <h3>Media</h3>
         <div class="btn-group btn-group-toggles btn-group-2col">
           <button class="btn" id="btn-autorun"
-            title="When ON, RUN or SYS is injected automatically after a PRG loads. When OFF you are left at the READY. prompt to type it yourself.">AUTORUN:
+            title="ON: RUN or SYS after a PRG loads. OFF: stay at READY.">AUTORUN:
             ON</button>
         </div>
       </div>
@@ -752,10 +752,10 @@
         <h3>Other</h3>
         <div class="btn-group btn-group-toggles btn-group-2col">
           <button class="btn" id="btn-recres-toggle"
-            title="Largest frame RECORD captures. Bigger surfaces scale down to fit; NATIVE records as-is and makes large files. Applies to the next take.">RECORDER:
+            title="Largest frame RECORD captures; bigger scales down, NATIVE records as-is (large files). Applies to the next take.">RECORDER:
             1080p (default)</button>
           <button class="btn" id="btn-run-background"
-            title="When ON the machine keeps running and playing while another window has focus or this tab is hidden. When OFF it pauses the moment the app leaves the foreground. A hidden tab is only allowed to run at full speed while it is audible, so keep the sound on.">RUN IN BACKGROUND:
+            title="Keep running while the tab is hidden or another window has focus. Needs sound on: a hidden tab runs at full speed only while audible.">RUN IN BACKGROUND:
             OFF</button>
         </div>
       </div>
@@ -787,7 +787,7 @@
           <div class="rom-row rom-row-full">
             <div><span>Clear cached ROMs</span><br><small>remove uploads from browser storage</small></div>
             <button class="rom-file-btn" id="rom-clear-cache"
-            title="Remove ROM images cached in browser storage. The running machine keeps the ROMs it booted with.">CLEAR</button>
+            title="Remove cached ROM images. The running machine keeps its ROMs.">CLEAR</button>
           </div>
         </div>
       </div>

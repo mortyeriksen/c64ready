@@ -8,6 +8,17 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
+## Next release
+
+- **G64 disk images.** Load `.g64` raw disk images into drive 8 or 9: the disk
+  as the original recorded it, so copy-protected games load as on a real 1541.
+  Loading one turns True Drive Emulation on.
+- **Nibbler dumps.** A `.nbz` from the C64 Preservation Project loads too; it
+  becomes a `.g64` on the way in.
+- **Shorter tooltips** on the controls.
+
+---
+
 ## 2026.9.3 — September 28, 2026
 
 Play two-SID tunes in stereo with separate scopes and envelope bars. This

@@ -218,12 +218,15 @@ function decodeGCRBytes(bitAt, startBit, nBytes) {
 
 /** Decode one block beginning at `startBit` (the first GCR bit after a sync).
  *  Sizes the block from its ID byte: $08 header (8 bytes) or $07 data (260).
- *  Returns {type, bytes} or null if the ID/codes are invalid. */
+ *  Returns {type, bytes} or null if the ID/codes are invalid. A data block's
+ *  last two bytes are the off bytes after the checksum: the DOS decodes them
+ *  and throws them away, and mastered disks put anything there, so those two
+ *  need not be valid GCR. */
 function decodeBlockAt(bitAt, startBit) {
   const head = decodeGCRBytes(bitAt, startBit, 1);
   if (!head.ok) return null;
   const type = head.bytes[0];
-  const n = type === 0x08 ? 8 : type === 0x07 ? 260 : 0;
+  const n = type === 0x08 ? 8 : type === 0x07 ? 258 : 0;
   if (n === 0) return null;
   const blk = decodeGCRBytes(bitAt, startBit, n);
   if (!blk.ok) return null;
@@ -265,7 +268,7 @@ export function decodeTrackStream(stream) {
         if (chk === blk.bytes[1]) { pendTrack = blk.bytes[3]; pendSector = blk.bytes[2]; }
         else { pendTrack = -1; pendSector = -1; }
       } else if (blk && blk.type === 0x07 && pendSector >= 0) {
-        // Data: [07, 256 data, xor-checksum, pad, pad].
+        // Data: [07, 256 data, xor-checksum] (the two off bytes are not decoded).
         let chk = 0;
         for (let k = 0; k < 256; k++) chk ^= blk.bytes[1 + k];
         if (chk === blk.bytes[257]) {
