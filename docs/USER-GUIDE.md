@@ -443,7 +443,7 @@ The primary 1541 floppy drive (IEC device 8).
 | **💾 BLANK** | Inserts a **blank, unformatted** disk (shows 0 blocks free). Format it (with **FORMAT**, or from BASIC with `N:name,id`) before you can save to it. |
 | **⏏ EJECT** | Removes the disk. |
 | **🔒 / 🔓** | Write-protect toggle. Loaded disks start **protected** (🔒); click to allow the drive to write (🔓). A freshly inserted blank disk starts writable. |
-| **🧹 FORMAT** | Erases the inserted disk to an empty format (asks for a name). Disabled while the disk is write-protected (🔒). |
+| **🧹 FORMAT** | Erases the inserted disk to an empty format (asks for a name). Disabled while the disk is write-protected (🔒). Formatting a `.g64` replaces it with a standard blank `.d64`. |
 | **⤓ .D64** | Downloads the disk, with your changes, as a `.d64` file; for a `.g64` the button reads **.G64** and downloads one. **Enabled once the disk has changes** to save; disables again after you export. |
 | **TDE: OFF / ON** | With **True Drive Emulation** on, the real 1541 handles `LOAD` over the IEC bus, needed for custom fastloaders. With it off, `LOAD` is served directly from the disk image (faster, but some loaders won't work). With a 1541 ROM loaded, drive 8 still handles other bus operations in either mode. Remembered between sessions. |
 | **Drive LED** | Lights while the drive is active. |

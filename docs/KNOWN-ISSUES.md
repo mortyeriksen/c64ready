@@ -55,8 +55,6 @@ software:
 
 ## G64 disk images
 
-- **Formatting a `.g64`**: the panel's FORMAT replaces it with a standard blank
-  `.d64`.
 - **Writing where nothing was recorded**: a half-track the image never
   recorded has no bytes to write into, so what the DOS writes there is lost. A
   `N:` format of an image with gaps leaves the gaps empty. Every track of a
