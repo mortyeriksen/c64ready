@@ -40,11 +40,6 @@ function makeMem() {
   // DDR into the post-KERNAL state ($2F: bits 0-3,5 output) so bits 0,1,2
   // actually drive LORAM/HIRAM/CHAREN from the latch.
   m.cpuDDR = 0x2F;
-  // This test pins PLA address-decoding only; with the shared external bus
-  // model active, an unwired I/O read samples the latch (which holds the
-  // last RAM byte read), defeating the legacy 0xFF check. Disable open-bus
-  // locally so unwired I/O reads return 0xFF as the table expects.
-  m.openBusMode = 'disabled';
   return m;
 }
 
@@ -66,7 +61,7 @@ function probeRam(page) { return 0x40 + page; }
 
 // What does the spec say should be visible at this page after CPU read?
 // Encoded as one of: 'ram' | 'basic' | 'kernal' | 'charrom' | 'io' |
-// 'roml' | 'romh' | 'open'. 'open' = unmapped (0xFF approximation).
+// 'roml' | 'romh' | 'open'. 'open' = Ultimax unmapped region (0xFF approximation).
 function expectedRead(map, page) { return map[page]; }
 
 function actualReadStamp(m, page) {
@@ -78,6 +73,7 @@ function actualReadStamp(m, page) {
 function checkTable(label, m, map, charenLabel) {
   for (let page = 0; page < 16; page++) {
     const want = expectedRead(map, page);
+    const busBefore = m.externalDataBus8;
     const got  = actualReadStamp(m, page);
     let expected;
     switch (want) {
@@ -87,7 +83,7 @@ function checkTable(label, m, map, charenLabel) {
       case 'charrom': expected = CHAR_FILL;      break;
       case 'roml':    expected = ROML_FILL;      break;
       case 'romh':    expected = ROMH_FILL;      break;
-      case 'io':      expected = 0xFF;           break; // no I/O attached → 0xFF
+      case 'io':      expected = busBefore;      break; // No device drives the bus.
       case 'open':    expected = 0xFF;           break;
       default: throw new Error(`bad expectation ${want}`);
     }

@@ -170,7 +170,7 @@ delay (visible to the next cycle's fetches). Two opt-in quirks, both default off
   transitions.
 
 **Refresh** (`_advanceRefreshAccess`, cycles 11-15): five DRAM-refresh accesses
-walk `refreshCounter` down from `$FF`; with `vicRefreshDrivesBus` set they drive
+walk `refreshCounter` down from `$FF` and drive
 the bus (open-I/O torture tests).
 
 ---
@@ -283,7 +283,7 @@ and state restore clear the transient sample, and the next `clock()` refreshes
 it before CPU arbitration. With DMA **off**, the three buffer bytes
 come from three distinct half-cycles (VIC-Addendum "sprite idle fetch"): byte 0
 = p-cycle phi2 bus, byte 1 = `$3FFF` ghost access, byte 2 = s-cycle phi2 bus
-(`_spritePCyclePhi2Bus`, `_spriteSCyclePhi1Ghost`, `spriteIdleFetchLeakEnabled`).
+(`_spritePCyclePhi2Bus`, `_spriteSCyclePhi1Ghost`).
 
 ### Sprite rendering
 The pre-canvas X-match guard applies to the current fetched row. An early
@@ -309,7 +309,7 @@ that actually reached output, so the column fixup (§8) doesn't pull a backgroun
 color through a visible sprite that happens to match the gfx RGBA.
 
 Edge/variant passes: `_paintSpriteBoundaryGarbage` (the X=`$163/$164`
-re-trigger garbage, `spriteBoundaryGarbage`, default on for VICE-6569 parity),
+re-trigger garbage, matching the 6569 behavior),
 `_renderSpriteSameLineHighX` / `_renderSpriteEndOfLineWrap` (high-X / wrap).
 
 ---
@@ -330,8 +330,12 @@ Hardware history (BA samples, idle-bus accesses, border flags and counters)
 continues to advance every cycle. Renderer payloads use three independent
 histories: registers, matrix/color data and sprite fetch/display data. A changed
 payload is copied into its preallocated snapshot slot; unchanged cycles store a
-one-byte index of the existing snapshot. `VIC_SPARSE_STATE=0` retains dense
-per-cycle reference recording for comparison.
+one-byte index of the existing snapshot. Tracing and diagnostic access retain
+dense per-cycle recording.
+
+Sprite fields retain their typed views over one 96-byte buffer per snapshot.
+Compact recording copies that buffer once; dense recording retains individual
+field copies. Live state and each historical slot own separate buffers.
 
 The cycle-indexed `lineCycleRegs`, row and sprite arrays remain diagnostic views.
 Inspecting a view materializes the compact history and selects dense recording
@@ -536,35 +540,30 @@ shifts every segment-builder snapshot read by one cycle: that is the entire
 each master cycle, driven by VIC RAM/char-ROM fetches and CPU `$D000-$D3FF`
 accesses. It sources the **sprite idle fetch** leak and open-I/O behaviour. The
 idle-fetch sample point is in `phi2()` (after the CPU step), so a same-cycle
-`STA $D0xx` leaks before the next cycle's reset. Scope is `vic-registers-only`
-by default; a full "every CPU bus cycle" model would need extra wiring in
-`memory.js`.
+`STA $D0xx` leaks before the next cycle's reset. CPU accesses outside the VIC register range do not drive this internal latch.
 
 ---
 
-## 14. Performance gates
+## 14. Renderer optimizations
 
-Optimisations sit behind boolean gates, each proven byte-identical (orbit
-framebuffer hash + the full spec suite + a dedicated equivalence test) and kept
-flippable for A/B bisection:
+The renderer permanently enables selective fixups, versioned capture and
+sprite idle skipping. Test-only reference implementations provide equivalence
+coverage without shipping alternate implementations.
 
-- **`batchRender`**: `_fixupColumns` re-renders only the columns whose +2 mode /
-  +3 bg-color window changed, not all 48 cycles twice.
-- **`captureDedup`**: `_captureCycleState` aliases the previous cycle's
-  row/sprite snapshot buffers (`_rowSnapVersion`/`_sprSnapVersion`) when the
-  source is unchanged instead of re-copying ~10 typed arrays per visible cycle;
-  `_home*` buffers decouple the slot pointer from the owned write buffer so
-  aliasing is safe. `captureDedupVerify` adds a runtime cross-check.
-- **`spriteSkipIdle`**: skips `_renderSpriteSegmentForSprite` for sprites
-  neither displaying nor started this line (a provable no-op).
+- **Selective fixups**: `_fixupColumns` re-renders only the columns whose
+  mode, scroll or background-color sampling windows changed.
+- **Versioned capture**: `_captureCycleState` shares unchanged register,
+  matrix/color and sprite snapshots. Owned buffers preserve historical values.
+  `captureDedupVerify` adds a runtime cross-check.
+- **Sprite idle skipping**: sprites with no visible work retain their required
+  bookkeeping and skip pixel processing.
 - **Scratch objects**: `_scratchRasterSeg`, `_scratchSpriteSeg`, split parts and
   per-pixel/cell return objects are reused in place.
-- **`lineBatchRender`**: the Tier-3 line-batch renderer (below). Default
-  **on**; `?LINE_BATCH=0` (browser) / `LINE_BATCH=0` (node) forces the per-cycle
-  live path for A/B or triage.
+- **Automatic line batching**: eligible lines defer output until line end
+  or a CPU observer requires it. Tracing and armed collision IRQs render live.
 
 ### Sprite interval scheduling
-`VIC_SPRITE_INTERVALS` defaults on. During deferred replay, an unchanged sprite
+During deferred replay, an unchanged sprite
 waits until the segment containing its next horizontal output position, or
 cycle 58 when its shifter is exhausted. Register or sprite-payload changes wake
 it immediately. Pending wrap, invalid rows and uninitialized shifters retain
@@ -572,44 +571,23 @@ per-cycle processing. Cycle 58 always executes the wrap and off-canvas passes.
 Collision drains still run every virtual cycle in their original order. Live
 rendering and tracing retain per-cycle dispatch for phi2 rollback.
 
-### Foreground decoding and color presentation
+### Fetch-fed graphics
+The renderer records 40 packed graphics/matrix/color samples per line.
+Live rendering, deferred replay and correction passes consume them through the
+same combined color/foreground decoder as the RAM-reading path; mode and
+background colors keep their output-stage timing.
+Captured bytes survive RAM/DMA, bank and register writes, including XSCROLL tails.
 
-`VIC_SEPARATE_COLOR=1` selects a split display-column pipeline; the combined
-renderer remains the default and comparison path. `_sampleGraphicsColumn`
-captures the data byte, matrix byte, color nibble and output mode in one packed
-integer. It uses the existing g-access address and fetch-feed rules without
-driving the bus or allocating an object.
+Fetch-fed lines skip RAM-write watches and fetch-configuration catch-ups, but
+retain collision/IRQ observer drains. Save states preserve captured samples;
+older states use the reference path until line wrap. The 8565 span guard covers
+its earlier register snapshots.
 
-`_decodeGraphicsForeground` classifies bits independently of palette and
-background-register values. Hires bits classify directly; multicolor pairs
-10/11 classify as foreground, with the text-mode color-bit exception. Invalid
-modes retain this classification even though their displayed color is black.
-`_presentGraphicsColumn` expands colors from the same sample and the separately
-timed background registers. It cannot write the collision or priority buffers.
+Cartridge and tracing lines use the reference renderer;
+hardware bus behavior is unchanged. Write-boundary tests use hardware fetch rules
+because the reference renderer can reread memory after the original fetch.
 
-Display columns behind the main border use only foreground decoding in this
-path, avoiding color expansion for pixels that remain hidden. Vertical-border,
-idle, sprite, collision-pipeline and mode/background-correction timing retain
-their existing rules. Tracing uses the combined renderer. The split path is
-opt-in because its additional dispatch costs more at BASIC READY in Node;
-it is a data-model separation, not an established throughput improvement.
-
-### Fetch-fed deferred graphics
-`VIC_FETCH_FEED` is an experimental comparison path, off by default. It records
-display bytes at the phase used by the incremental renderer, including the
-preceding column when XSCROLL needs it. Deferred graphics consume those bytes
-when the recorded address matches the requested source. Unavailable or different
-sources use the reference memory read. The stream does not drive the bus;
-hardware bus accesses remain independent.
-
-The stream is restricted to deferred lines without a cartridge. RAM/DMA writes,
-fetch-configuration changes and CPU observers retain the existing catch-up
-barriers. Catch-up consumes the available stream, then returns subsequent live
-rendering to current memory. Reset and restore discard the stream. This is a
-bounded data-feed stage, not a replacement for the mode/background correction
-passes or the RAM-write observer contract.
-
-### Line-batch rendering (Tier-3, `lineBatchRender`)
+### Automatic line batching
 
 The per-cycle render pays a fixed dispatch/build/split tax on every cycle
 regardless of content (~28% of frame time, content-independent to within ~6%
@@ -631,26 +609,25 @@ in one burst through the *same* incremental machinery (`_catchUpDeferredLine`):
   graphics never feeds the pipe; sprite paints are segment-bounded).
 - **Immediately on a mid-line observer**, i.e. anything that would let the CPU
   see render-derived state: a `$D019/$D01E/$D01F` read, a `$D01A` write arming
-  the collision IRQs (armed lines render live outright), a fetch-config change
-  (`$D018` base bits, `$D011` BMM, VIC bank), a CPU write into the line's
-  g-access RAM window, or `serialize()` (save-states stay canonical). The RAM
-  case is a fetch watch armed in `memory.js`: the renderer re-reads glyph/bitmap
+  the collision IRQs (armed lines render live outright), or `serialize()`.
+  The reference path also drains on a fetch-config change
+  (`$D018` base bits, `$D011` BMM, VIC bank) or a CPU write into the line's
+  g-access RAM window. The RAM case is a fetch watch armed in `memory.js`: the renderer re-reads glyph/bitmap
   bytes at paint time, and beam-racing charset animation would otherwise reach
   the replay ~40 cycles later than the live paints saw it.
 
 **Contract:** byte-identical to the live path at every *CPU-observable* point
 (register read values, IRQ timing, line-end framebuffer rows). Mid-line
 framebuffer state is not part of the contract (no C64 program can read pixels
-back); spec tests that assert per-cycle render internals pin
-`lineBatchRender = false` and say why. `vic2-line-batch-spec-test.js` locksteps
+back). Tests that inspect per-cycle rendering use the test-only
+`forceLiveRendering()` helper. `vic2-line-batch-spec-test.js` locksteps
 live vs deferred machines through collision reads at the detection cycle,
 same-cycle sprite-X writes, rasterbars, armed IRQs and mid-line serialize.
 
-Both modes run the full suite green, with the orbit framebuffer hash, the
-reference screenshots and the demo-status board byte-identical between them.
-The win scales with how quiet the content's lines are: a line with a mid-line
-write or observer simply renders live, so FLI-class content keeps the per-cycle
-cost.
+The lockstep tests compare live and deferred output. The default renderer also
+passes the full suite, screenshot comparisons and demo-status checks. Frequent
+CPU observers reduce batching gains; fetch-fed memory writes alone do not force
+early rendering.
 
 ---
 

@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // VIC-II color-register routing spec tests.
 //
 // Verify each color register routes the correct palette index into the

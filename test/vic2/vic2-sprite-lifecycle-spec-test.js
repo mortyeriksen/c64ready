@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Sprite display lifecycle spec audit. 15 tests derived from Bauer
 // §3.8.1 (sprite DMA rules 1..8) and §3.11 (collision detection). Covers
 // the full DMA-on/DMA-off lifecycle, MC/MCBASE counter cadence, Y-expand

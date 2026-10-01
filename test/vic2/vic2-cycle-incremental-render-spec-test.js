@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Cycle-incremental render spec audit. Verifies the post-refactor
 // rendering architecture where _renderRasterLine's work is split
 // across each cycle of the line as it executes (instead of batched at
@@ -49,14 +50,6 @@ function ok(label) {
     for (const m of currentFailures) console.log(`     - ${m}`);
     currentFailures = [];
   }
-}
-
-// ── 1: cycle-incremental render flag is ON by default ────────────────
-{
-  const vic = makeVic();
-  expect(vic._cycleIncrementalRender === true,
-    `_cycleIncrementalRender default: true, got ${vic._cycleIncrementalRender}`);
-  ok('cycle-incremental render: default ON');
 }
 
 // ── 2: per-cycle methods exist and are wired up ──────────────────────
@@ -279,29 +272,6 @@ function setupDisplayLineState(vic, canvasY) {
     `cycle-incremental: _renderRasterLine NOT called from clock(), got ${renderRasterCalls} calls`);
   ok('cycle-incremental: end-of-line batch render is skipped when flag is ON');
 }
-
-// ── 9: cycle-incremental OFF reverts to batch mode ──────────────────
-// Toggle the flag off; verify clock() now calls _renderRasterLine at
-// end of each line. This preserves the legacy code path for tests.
-{
-  const vic = makeVic();
-  vic._cycleIncrementalRender = false;
-  driveTo(vic, 1, 0);
-  // Hook only AFTER driveTo so we count post-driveTo calls only.
-  let renderRasterCalls = 0;
-  const orig = vic._renderRasterLine.bind(vic);
-  vic._renderRasterLine = function (raster) {
-    renderRasterCalls++;
-    return orig(raster);
-  };
-  // Drive across one full line wrap (from L1 c0 to L2 c0).
-  for (let i = 0; i < 63; i++) vic.clock(1);
-  expect(renderRasterCalls === 1,
-    `cycle-incremental OFF: _renderRasterLine called once per line, got ${renderRasterCalls}`);
-  ok('cycle-incremental: flag=false restores end-of-line batch mode');
-}
-
-// Restore default for subsequent tests if any.
 
 // ── 10: per-cycle graphics segment fills exactly the cycle's X range
 // Each cycle's segment covers X = (cycle - 12) * 8 + 8 = (cycle-11)*8.

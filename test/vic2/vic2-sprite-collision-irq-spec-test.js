@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Sprite collision IRQ propagation spec audit. 10 tests derived from
 // Bauer §3.11 (collision detection) and §3.12 (raster IRQ).
 //

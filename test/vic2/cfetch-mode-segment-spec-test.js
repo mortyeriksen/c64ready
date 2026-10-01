@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // C-fetch buffer + per-segment mode-routing spec audit. 10 tests
 // targeting the rendering-path interactions the user's snapshot
 // scenario exercises: stale c-data carrying into top zone, mid-line

@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Sprite color $D025/$D026/$D027-$D02E mid-line live-sample spec test.
 //
 // Bauer §3.8.2: sprite colors are sampled LIVE per pixel for sprite

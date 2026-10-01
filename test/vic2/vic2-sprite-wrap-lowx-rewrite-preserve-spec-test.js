@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Sprite-X horizontal wrap — register survival across a mid-line X rewrite to a
 // LOW (beam-passed) coordinate (Bauer §3.8.1).
 //

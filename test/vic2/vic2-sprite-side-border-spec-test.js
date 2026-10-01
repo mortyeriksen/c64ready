@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // VIC-II: Sprite rendering in opened side border (Tests 5s-5u)
 // Extracted from vic2-test.js.
 

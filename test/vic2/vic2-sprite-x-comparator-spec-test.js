@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Sprite-X comparator / shifter-start cycle precision spec audit. 10
 // tests targeting the exact moment a sprite's shifter starts emitting
 // pixels — the boundary case behind nine.prg's right-border 2-pixel

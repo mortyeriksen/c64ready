@@ -123,7 +123,7 @@ function buildEmptyD64() {
   m.cia2.portADir = 0x3F;
   m.cia2.portA    = 0x08;             // PA3=1 → ATN bus low (asserted)
   m._syncIecBus();
-  if (m.iecEdgeLatency) m._iecClock(); // C64 edge reaches the drive next cycle
+  m._iecClock(); // C64 edge reaches the drive next cycle
 
   assert(drv.atnIn === 0, 'drive sees ATN asserted');
   assert((drv.via1.ifr & 0x02) !== 0, 'CA1 IFR latched on ATN edge');
@@ -147,7 +147,7 @@ function buildEmptyD64() {
   const drv = m.drive1541;
 
   // Cycle the ATN line repeatedly; the drive's atnIn pin must follow. With
-  // iecEdgeLatency the edge lands after the next master cycle's pipeline
+  // IEC read-side propagation the edge lands after the next master cycle's pipeline
   // step, so sample AFTER stepping (the drive's own next sample).
   let mismatch = 0;
   for (let i = 0; i < 50; i++) {

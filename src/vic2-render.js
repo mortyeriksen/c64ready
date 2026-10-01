@@ -408,140 +408,30 @@ export const renderOps = {
     return PALETTE_RGBA[regs[reg] & 0x0F];
   },
 
-  // Latch the source bytes at the same phase as cycle-incremental emission.
-  // XSCROLL may consume the previous column as well as the current column.
-  // The stream contains data only: bus ownership and latches run separately.
+  // One immutable display sample per g-access. The matrix/color payload is
+  // from the preceding c-access; address registers are sampled at this phi1.
+  // Output mode and background colors are applied later by the decoder.
   _recordGraphicsFetch(cycle) {
+    const col = cycle - 15;
     if (!this.lineCycleDisplayColumnActive[cycle]) return;
-    const seg = this._buildCycleRasterSegment(cycle);
-    const line = seg.rc & 7;
-    const currentCol = cycle - 15;
-    const firstCol = (seg.regs[0x16] & 7) ? currentCol - 1 : currentCol;
-    const writeCol = this.lineCycleCWriteCol[cycle];
-    const shift = writeCol >= 0 ? writeCol - currentCol : 0;
-    for (let col = firstCol; col <= currentCol; col++) {
-      const src = col + shift;
-      if (col < 0 || src < 0 || src >= 40 || !seg.rowFetchedCols[src]) continue;
-      const d011 = seg.nextRegs[0x11], prev = seg.regs[0x11];
-      const base = ((d011 | prev) & 0x20) ? seg.liveVcBase : seg.rowVcBase;
-      const address = this._graphicsFetchAddr(d011, prev, seg.nextRegs[0x18],
-        seg.rowCodes[src], (base + src) & 0x3ff, line, seg.bank);
-      const slot = cycle * 2 + (col === currentCol ? 1 : 0);
-      this._fetchFeedAddress[slot] = seg.bank + address;
-      this._fetchFeedBytes[slot] = this._vicMemRead(address, seg.bank);
-      this._fetchFeedValid[slot] = 1;
-    }
-  },
-
-  _graphicsSourceByte(col, seg, address, bank) {
-    if (this._fetchFeedLine) {
-      const cycle = Math.max(seg.cycle, col + 15);
-      const slot = cycle * 2 + (col === cycle - 15 ? 1 : 0);
-      if (this._fetchFeedValid[slot]
-          && this._fetchFeedAddress[slot] === bank + address) {
-        return this._fetchFeedBytes[slot];
-      }
-    }
-    return this._vicMemRead(address, bank);
-  },
-
-  // Packed graphics sample: byte[7:0], matrix[15:8], color[19:16],
-  // output mode[22:20], valid[23]. No palette or background registers enter
-  // this stage; a closed border can consume its foreground mask alone.
-  _sampleGraphicsColumn(col, line, seg) {
-    const regs = seg.regs;
-    const gRegs = seg.nextRegs || regs;
-    const mRegs = seg.modeRegs || gRegs;
-    const writeCol = this.lineCycleCWriteCol[seg.cycle];
-    const src = col + (writeCol >= 0 ? writeCol - (seg.cycle - 15) : 0);
-    if (src < 0 || src >= 40 || !seg.rowFetchedCols[src]) return 0;
-    const matrix = seg.rowCodes[src];
-    const color = seg.rowColors[src];
-    const base = ((gRegs[0x11] | regs[0x11]) & 0x20) ? seg.liveVcBase : seg.rowVcBase;
-    const address = this._graphicsFetchAddr(gRegs[0x11], regs[0x11], gRegs[0x18],
-      matrix, (base + src) & 0x3ff, line, seg.bank);
-    const data = this._fetchFeedLine
-      ? this._graphicsSourceByte(col, seg, address, seg.bank)
-      : this._vicMemRead(address, seg.bank);
-    const mode = ((mRegs[0x11] >> 4) & 6) | ((mRegs[0x16] >> 4) & 1);
-    return 0x800000 | (mode << 20) | (color << 16) | (matrix << 8) | data;
-  },
-
-  // Bauer 3.7.3: hires bits classify directly; multicolor pairs 10/11
-  // classify as foreground, independently of the selected output colors.
-  _decodeGraphicsForeground(sample, out, o = 0) {
-    let bits = sample & 255;
-    const mode = (sample >> 20) & 7;
-    if ((mode & 1) && (mode !== 1 || (sample & 0x80000))) {
-      bits = (bits & 0xaa) | ((bits & 0xaa) >> 1);
-    }
-    out[o] = bits >> 7;
-    out[o + 1] = (bits >> 6) & 1;
-    out[o + 2] = (bits >> 5) & 1;
-    out[o + 3] = (bits >> 4) & 1;
-    out[o + 4] = (bits >> 3) & 1;
-    out[o + 5] = (bits >> 2) & 1;
-    out[o + 6] = (bits >> 1) & 1;
-    out[o + 7] = bits & 1;
-  },
-
-  // Color output consumes the sampled data but cannot change foreground or
-  // collision state. Background registers remain output-stage timed.
-  _presentGraphicsColumn(sample, bgRegs, out, o = 0) {
-    const bg = PALETTE_RGBA[bgRegs[0x21] & 15];
-    if (!(sample & 0x800000)) { out.fill(bg, o, o + 8); return; }
-    const data = sample & 255;
-    const matrix = (sample >> 8) & 255;
-    const color = (sample >> 16) & 15;
-    const mode = (sample >> 20) & 7;
-    if (mode >= 5) { out.fill(0xff000000, o, o + 8); return; }
-    let c0 = bg, c1, c2, c3;
-    if (mode === 3 || (mode === 1 && (color & 8))) {
-      if (mode === 3) {
-        c1 = PALETTE_RGBA[matrix >> 4];
-        c2 = PALETTE_RGBA[matrix & 15];
-        c3 = PALETTE_RGBA[color];
-      } else {
-        c1 = PALETTE_RGBA[bgRegs[0x22] & 15];
-        c2 = PALETTE_RGBA[bgRegs[0x23] & 15];
-        c3 = PALETTE_RGBA[color & 7];
-      }
-      for (let pair = 0; pair < 4; pair++) {
-        const value = (data >> (6 - pair * 2)) & 3;
-        const rgba = value === 0 ? c0 : value === 1 ? c1 : value === 2 ? c2 : c3;
-        out[o + pair * 2] = rgba;
-        out[o + pair * 2 + 1] = rgba;
-      }
-      return;
-    }
-    c1 = PALETTE_RGBA[mode === 1 ? color & 7 : color];
-    if (mode === 2) {
-      c0 = PALETTE_RGBA[matrix & 15];
-      c1 = PALETTE_RGBA[matrix >> 4];
-    } else if (mode === 4) {
-      c0 = PALETTE_RGBA[bgRegs[0x21 + (matrix >> 6)] & 15];
-    }
-    out[o] = (data & 128) ? c1 : c0;
-    out[o + 1] = (data & 64) ? c1 : c0;
-    out[o + 2] = (data & 32) ? c1 : c0;
-    out[o + 3] = (data & 16) ? c1 : c0;
-    out[o + 4] = (data & 8) ? c1 : c0;
-    out[o + 5] = (data & 4) ? c1 : c0;
-    out[o + 6] = (data & 2) ? c1 : c0;
-    out[o + 7] = (data & 1) ? c1 : c0;
+    const row = this._rowCycle[cycle];
+    const written = this.lineCycleCWriteCol[cycle];
+    const src = written >= 0 ? written : col;
+    if (src < 0 || src >= 40 || !this._historyRowFetchedCols[row][src]) return;
+    const matrix = this._historyRowCodes[row][src];
+    const color = this._historyRowColors[row][src];
+    const prev = this._historyRegs[this._regCycle[cycle]];
+    const regs = this.regs;
+    const bank = this.currentVicBank;
+    const base = ((regs[0x11] | prev[0x11]) & 0x20)
+      ? this.lineCycleRowLiveVcBase[cycle] : this.lineCycleRowVcBase[cycle];
+    const address = this._graphicsFetchAddr(regs[0x11], prev[0x11], regs[0x18],
+      matrix, (base + src) & 0x3ff, this.lineCycleRc[cycle] & 7, bank);
+    const data = this._vicMemRead(address, bank);
+    this._fetchFeedSamples[col] = 0x800000 | (color << 16) | (matrix << 8) | data;
   },
 
   _renderSourceColumn(col, line, seg, outPixels, outFgMap, outOffset = 0) {
-    if (!this.separateColorOutput || this.frameTraceEnabled) {
-      this._renderSourceColumnReference(col, line, seg, outPixels, outFgMap, outOffset);
-      return;
-    }
-    const sample = this._sampleGraphicsColumn(col, line, seg);
-    this._decodeGraphicsForeground(sample, outFgMap, outOffset);
-    this._presentGraphicsColumn(sample, seg.bgRegs || seg.regs, outPixels, outOffset);
-  },
-
-  _renderSourceColumnReference(col, line, seg, outPixels, outFgMap, outOffset = 0) {
     // Bauer §3.7.3 defines the normal ECM/BMM/MCM g-access address
     // schemes and pixel colouring. $D018 CB / bitmap-base is sampled at the
     // g-access cycle (seg.nextRegs, = seg.cycle + 1): a CPU write at the
@@ -593,65 +483,72 @@ export const renderOps = {
       }
     }
 
-    // Map the on-screen column to the line-buffer index the g-access actually
-    // displays. Real silicon shares one counter (VMLI): the c-access at cycle K
-    // writes buffer[VMLI] and the g-access at cycle K outputs buffer[VMLI]. Our
-    // buffer write is VMLI-correct, but reading buffer[screen-column] only
-    // matches when VMLI tracks the beam. On a LATE idle→display transition
-    // (FLI / line-crunch) VMLI lags the beam by the idle gap, so the fetched
-    // columns appear shifted right. lineCycleCWriteCol[K] is the buffer index
-    // this segment's c-access wrote; subtracting the screen column it would
-    // occupy at the canonical (cycle-15) mapping yields that shift (0 on every
-    // normal bad line, where writeCol == cycle-15). See the colorfetchbug
-    // testprog (Bauer §3.14.6): rasterline $30 then shows the retained
-    // mid-grey $d800 colours instead of stale high-VC garbage.
-    const cWriteCol = this.lineCycleCWriteCol[seg.cycle];
-    const colShift = cWriteCol >= 0 ? (cWriteCol - (seg.cycle - 15)) : 0;
-    const srcCol = col + colShift;
-
-    // Direct row-data lookup (was via _getFetchedMatrixCell — that fn
-    // returns null when a cell isn't fetched yet, in which case this
-    // column fills with bg0+0). Inlining saves a function call per col.
-    if (srcCol < 0 || srcCol >= 40 || !seg.rowFetchedCols[srcCol]) {
-      for (let bit = 0; bit < 8; bit++) {
-        outPixels[outOffset + bit] = bg0;
-        outFgMap[outOffset + bit] = 0;
+    let rawCode, colorNib, graphicsByte;
+    if (this._fetchFeedLine) {
+      const sample = this._fetchFeedSamples[col];
+      if (!(sample & 0x800000)) {
+        outPixels.fill(bg0, outOffset, outOffset + 8);
+        outFgMap.fill(0, outOffset, outOffset + 8);
+        return;
       }
-      return;
+      rawCode = (sample >> 8) & 255;
+      colorNib = (sample >> 16) & 15;
+      graphicsByte = sample & 255;
+    } else {
+      // Map the on-screen column to the line-buffer index the g-access actually
+      // displays. Real silicon shares one counter (VMLI): the c-access at cycle K
+      // writes buffer[VMLI] and the g-access at cycle K outputs buffer[VMLI]. Our
+      // buffer write is VMLI-correct, but reading buffer[screen-column] only
+      // matches when VMLI tracks the beam. On a LATE idle→display transition
+      // (FLI / line-crunch) VMLI lags the beam by the idle gap, so the fetched
+      // columns appear shifted right. lineCycleCWriteCol[K] is the buffer index
+      // this segment's c-access wrote; subtracting the screen column it would
+      // occupy at the canonical (cycle-15) mapping yields that shift (0 on every
+      // normal bad line, where writeCol == cycle-15). See the colorfetchbug
+      // testprog (Bauer §3.14.6): rasterline $30 then shows the retained
+      // mid-grey $d800 colours instead of stale high-VC garbage.
+      const cWriteCol = this.lineCycleCWriteCol[seg.cycle];
+      const colShift = cWriteCol >= 0 ? (cWriteCol - (seg.cycle - 15)) : 0;
+      const srcCol = col + colShift;
+
+      // Unfetched matrix cells output background with no foreground bits.
+      if (srcCol < 0 || srcCol >= 40 || !seg.rowFetchedCols[srcCol]) {
+        for (let bit = 0; bit < 8; bit++) {
+          outPixels[outOffset + bit] = bg0;
+          outFgMap[outOffset + bit] = 0;
+        }
+        return;
+      }
+      rawCode = seg.rowCodes[srcCol];
+      colorNib = seg.rowColors[srcCol];
+      // VC is a 10-bit counter; (rowVcBase + col) can exceed $3FF when
+      // rowVcBase is high (linecrunch / VSP). Mirror _fetchScreenRowColumn.
+      const vc = (seg.rowVcBase + srcCol) & 0x03FF;
+      // The g-byte address is decided at the g-access cycle (+1), while the
+      // visible mode split is output-stage-retimed via modeRegs (+2).
+      const fetchD011 = gRegs[0x11];
+      const prevFetchD011 = regs[0x11];
+      // Bauer §3.7.2/§3.14.6: in BITMAP mode the g-access ADDRESS is decided by
+      // the live VC (CB + VC*8 + RC) — VC is the chip's video counter at the
+      // g-access cycle, which equals (current line's VCBASE + column). In TEXT
+      // mode the g-access address is the matrix char code, and VC only selects
+      // the matrix cell (already retained in the line buffer). So bitmap uses
+      // the LIVE base (seg.liveVcBase, = VCBASE this line) while text uses the
+      // retained-buffer base (seg.rowVcBase). These are identical on every
+      // normal/FLI line (a bad line refreshes the buffer at VCBASE), and only
+      // diverge under the late-bad-line trick (display kept alive past cy54 so
+      // VCBASE advances with no c-access to refresh rowVcBase — Lunatico's moon
+      // overlay). There the bitmap must follow the advancing VCBASE.
+      const bitmapVc = (seg.liveVcBase + srcCol) & 0x03FF;
+      const gvc = ((fetchD011 | prevFetchD011) & 0x20) ? bitmapVc : vc;
+      const fetchAddr = this._graphicsFetchAddr(fetchD011, prevFetchD011, d018ForCB, rawCode, gvc, line, bank);
+      graphicsByte = this._vicMemRead(fetchAddr, bank);
     }
-    const rawCode = seg.rowCodes[srcCol];
-    const colorNib = seg.rowColors[srcCol];
-    // VC is a 10-bit counter; (rowVcBase + col) can exceed $3FF when
-    // rowVcBase is high (linecrunch / VSP). Mirror _fetchScreenRowColumn.
-    const vc = (seg.rowVcBase + srcCol) & 0x03FF;
-    // The g-byte address is decided at the g-access cycle (+1), while the
-    // visible mode split is output-stage-retimed via modeRegs (+2).
-    const fetchD011 = gRegs[0x11];
-    const prevFetchD011 = regs[0x11];
-    // Bauer §3.7.2/§3.14.6: in BITMAP mode the g-access ADDRESS is decided by
-    // the live VC (CB + VC*8 + RC) — VC is the chip's video counter at the
-    // g-access cycle, which equals (current line's VCBASE + column). In TEXT
-    // mode the g-access address is the matrix char code, and VC only selects
-    // the matrix cell (already retained in the line buffer). So bitmap uses
-    // the LIVE base (seg.liveVcBase, = VCBASE this line) while text uses the
-    // retained-buffer base (seg.rowVcBase). These are identical on every
-    // normal/FLI line (a bad line refreshes the buffer at VCBASE), and only
-    // diverge under the late-bad-line trick (display kept alive past cy54 so
-    // VCBASE advances with no c-access to refresh rowVcBase — Lunatico's moon
-    // overlay). There the bitmap must follow the advancing VCBASE.
-    const bitmapVc = (seg.liveVcBase + srcCol) & 0x03FF;
-    const gvc = ((fetchD011 | prevFetchD011) & 0x20) ? bitmapVc : vc;
-    const fetchAddr = this._graphicsFetchAddr(fetchD011, prevFetchD011, d018ForCB, rawCode, gvc, line, bank);
     const black = 0xFF000000 | 0;   // signed, so it shares PALETTE_RGBA's Smi representation
     const o = outOffset;
 
     if (!bmm && !ecm && !mcm) {
-      // Renderer reads use the non-bus-driving peek — real silicon
-      // already drove the bus at g-access time and latched the byte;
-      // re-fetching at render time is an emulator-side convenience.
-      const charByte = this._fetchFeedLine
-        ? this._graphicsSourceByte(col, seg, fetchAddr, bank)
-        : this._vicMemRead(fetchAddr, bank);
+      const charByte = graphicsByte;
       const fgRGBA = PALETTE_RGBA[colorNib];
       outPixels[o + 0] = (charByte & 0x80) ? fgRGBA : bg0; outFgMap[o + 0] = (charByte >> 7) & 1;
       outPixels[o + 1] = (charByte & 0x40) ? fgRGBA : bg0; outFgMap[o + 1] = (charByte >> 6) & 1;
@@ -663,9 +560,7 @@ export const renderOps = {
       outPixels[o + 7] = (charByte & 0x01) ? fgRGBA : bg0; outFgMap[o + 7] = charByte & 1;
     } else if (ecm && !bmm && !mcm) {
       const bgSel = (rawCode >> 6) & 0x03;
-      const charByte = this._fetchFeedLine
-        ? this._graphicsSourceByte(col, seg, fetchAddr, bank)
-        : this._vicMemRead(fetchAddr, bank);
+      const charByte = graphicsByte;
       const fgRGBA = PALETTE_RGBA[colorNib];
       // Pre-resolve bg by bgSel without allocating a 4-element lookup array.
       const bgRGBA = bgSel === 0 ? bg0 :
@@ -678,9 +573,7 @@ export const renderOps = {
         outFgMap[o + bit] = px;
       }
     } else if (mcm && !bmm && !ecm) {
-      const charByte = this._fetchFeedLine
-        ? this._graphicsSourceByte(col, seg, fetchAddr, bank)
-        : this._vicMemRead(fetchAddr, bank);
+      const charByte = graphicsByte;
       const isMulti = (colorNib & 0x08) !== 0;
       if (!isMulti) {
         const fgRGBA = PALETTE_RGBA[colorNib & 0x07];
@@ -705,18 +598,14 @@ export const renderOps = {
     } else if (bmm && !mcm && !ecm) {
       const fg = PALETTE_RGBA[(rawCode >> 4) & 0x0F];
       const bg = PALETTE_RGBA[rawCode & 0x0F];
-      const bitmapByte = this._fetchFeedLine
-        ? this._graphicsSourceByte(col, seg, fetchAddr, bank)
-        : this._vicMemRead(fetchAddr, bank);
+      const bitmapByte = graphicsByte;
       for (let bit = 0; bit < 8; bit++) {
         const px = (bitmapByte >> (7 - bit)) & 1;
         outPixels[o + bit] = px ? fg : bg;
         outFgMap[o + bit] = px;
       }
     } else if (bmm && mcm && !ecm) {
-      const bitmapByte = this._fetchFeedLine
-        ? this._graphicsSourceByte(col, seg, fetchAddr, bank)
-        : this._vicMemRead(fetchAddr, bank);
+      const bitmapByte = graphicsByte;
       const c1 = PALETTE_RGBA[(rawCode >> 4) & 0x0F];
       const c2 = PALETTE_RGBA[rawCode & 0x0F];
       const c3 = PALETTE_RGBA[colorNib];
@@ -732,9 +621,7 @@ export const renderOps = {
         outFgMap[idx] = fg; outFgMap[idx + 1] = fg;
       }
     } else if (!bmm && mcm && ecm) {
-      const charByte = this._fetchFeedLine
-        ? this._graphicsSourceByte(col, seg, fetchAddr, bank)
-        : this._vicMemRead(fetchAddr, bank);
+      const charByte = graphicsByte;
       for (let pair = 0; pair < 4; pair++) {
         const twoBit = (charByte >> (6 - pair * 2)) & 0x03;
         const fg = (twoBit >= 2) ? 1 : 0;
@@ -745,9 +632,7 @@ export const renderOps = {
     } else if (bmm && !mcm && ecm) {
       // Bauer §3.7.3.7: g-access addr 13=CB13, 12=VC9, 11=VC8, 10-9=0,
       // 8-3=VC5..VC0. VC6 and VC7 are dropped — i.e. mask = $33F.
-      const bitmapByte = this._fetchFeedLine
-        ? this._graphicsSourceByte(col, seg, fetchAddr, bank)
-        : this._vicMemRead(fetchAddr, bank);
+      const bitmapByte = graphicsByte;
       for (let bit = 0; bit < 8; bit++) {
         const px = (bitmapByte >> (7 - bit)) & 1;
         outPixels[o + bit] = black;
@@ -755,9 +640,7 @@ export const renderOps = {
       }
     } else if (bmm && mcm && ecm) {
       // Bauer §3.7.3.8: same address scheme as invalid bitmap mode 1.
-      const bitmapByte = this._fetchFeedLine
-        ? this._graphicsSourceByte(col, seg, fetchAddr, bank)
-        : this._vicMemRead(fetchAddr, bank);
+      const bitmapByte = graphicsByte;
       for (let pair = 0; pair < 4; pair++) {
         const twoBit = (bitmapByte >> (6 - pair * 2)) & 0x03;
         const fg = (twoBit >= 2) ? 1 : 0;
@@ -844,6 +727,7 @@ export const renderOps = {
   _armDeferredFetchWatch() {
     const mem = this.memory;
     if (!mem) return;   // bare-VIC tests: no CPU exists to race the fetch
+    if (this._fetchFeedLine) { mem._vicFetchWatchOn = false; return; }
     const bmm = (this.regs[0x11] & 0x20) !== 0;
     let lo, hi;
     if (bmm) {
@@ -863,7 +747,7 @@ export const renderOps = {
   // CHAIN against seg c-1 (induction keeps the whole span uniform). The regs
   // and idle-byte checks extend one slot past c (c+2) so both VIC variants'
   // sampling offsets (regs at +0/+1, modeRegs/next at +1/+2, idle at +1/+2)
-  // stay inside the proven-equal run; captureDedup's snapshot aliasing makes
+  // stay inside the proven-equal run; snapshot aliasing makes
   // the pointer compares hit on any stretch with no CPU write in between.
   _spanExtends(c) {
     const p = c - 1;
@@ -881,6 +765,11 @@ export const renderOps = {
           || lcr[regCycles[c + 1]] !== lcr[regCycles[c]]
           || lcr[regCycles[c + 2]] !== lcr[regCycles[c + 1]]) return false;
     }
+    // The 8565 output stage also consumes the two earlier register snapshots.
+    // A fetched span may merge only when its first-pixel color rule is stable.
+    if (this._fetchFeedLine && this._is8565
+        && (lcr[regCycles[c - 2]] !== lcr[regCycles[p]]
+          || lcr[regCycles[c - 3]] !== lcr[regCycles[c - 2]])) return false;
     const idle = this.lineCycleIdleByte;
     if (idle[c + 1] !== idle[c] || idle[c + 2] !== idle[c + 1]) return false;
     return this.lineCycleBanks[c] === this.lineCycleBanks[p]
@@ -909,69 +798,39 @@ export const renderOps = {
     const canvasY = this._cycleRenderActiveCanvasY;
     if (canvasY < 0) return;
     const upto = this.cycleInLine;
-    if (this._replayCoalesce) {
-      // Graphics first, in maximal uniform spans (one wide seg per span —
-      // _renderCycleSegmentGraphics derives its columns from seg geometry,
-      // so widening seg.end is exact when _spanExtends holds). Pipe-neutral
-      // reorder: graphics never feeds the collision pipe, sprite pixels are
-      // seg-bounded, and each seg's graphics still lands before its sprites.
-      // Segs 15, 53 and 54 stay solo: the CSEL border edges (x 39/343 — and
-      // 32/352 as WIDE-span interiors) must stay single-edge per segment for
-      // _splitRasterSegmentAtBorderEdges, which splits at most once.
-      const lastSeg = Math.min(upto - 1, 58);
-      let s = 11;
-      while (s <= lastSeg) {
-        let e = s;
-        if (s !== 15 && s !== 53 && s !== 54) {
-          while (e < lastSeg
-                 && e + 1 !== 15 && e + 1 !== 53 && e + 1 !== 54
-                 && this._spanExtends(e + 1)) {
-            e++;
-          }
+
+    // Graphics first, in maximal uniform spans (one wide seg per span —
+    // _renderCycleSegmentGraphics derives its columns from seg geometry,
+    // so widening seg.end is exact when _spanExtends holds). Pipe-neutral
+    // reorder: graphics never feeds the collision pipe, sprite pixels are
+    // seg-bounded, and each seg's graphics still lands before its sprites.
+    // Segs 15, 53 and 54 stay solo: the CSEL border edges (x 39/343 — and
+    // 32/352 as WIDE-span interiors) must stay single-edge per segment for
+    // _splitRasterSegmentAtBorderEdges, which splits at most once.
+    const lastSeg = Math.min(upto - 1, 58);
+    let s = 11;
+    while (s <= lastSeg) {
+      let e = s;
+      if (s !== 15 && s !== 53 && s !== 54) {
+        while (e < lastSeg
+               && e + 1 !== 15 && e + 1 !== 53 && e + 1 !== 54
+               && this._spanExtends(e + 1)) {
+          e++;
         }
-        const seg = this._buildCycleRasterSegment(s);
-        if (e > s) seg.end = this._getCycleEndX(e) + 8;
-        this._renderCycleSegmentGraphics(seg, canvasY);
-        s = e + 1;
       }
-      // Sprites + collision-pipe drains per virtual cycle, order-exact.
-      for (let n = 12; n <= upto; n++) {
-        this._drainSpriteCollisionCommit();
-        if (n <= 59) this._renderSegSpritesIncremental(n - 1, canvasY, /*live=*/ false);
-      }
-    } else {
-      for (let n = 12; n <= upto; n++) {
-        this._drainSpriteCollisionCommit();
-        if (n <= 59) this._renderCycleIncremental(n - 1, canvasY, /*live=*/ false);
-      }
+      const seg = this._buildCycleRasterSegment(s);
+      if (e > s) seg.end = this._getCycleEndX(e) + 8;
+      this._renderCycleSegmentGraphics(seg, canvasY);
+      s = e + 1;
     }
-    this._fetchFeedLine = false;
+    // Sprites + collision-pipe drains per virtual cycle, order-exact.
+    for (let n = 12; n <= upto; n++) {
+      this._drainSpriteCollisionCommit();
+      if (n <= 59) this._renderSegSpritesIncremental(n - 1, canvasY, /*live=*/ false);
+    }
+
   },
 
-  _renderRasterLine(raster) {
-    if (!this.ram || !this.colorRam) return;
-    const canvasY = raster - 15;
-    if (canvasY < 0 || canvasY >= CANVAS_H) return;
-
-    // Phase 1 refactor: split end-of-line batch render into per-cycle
-    // methods. The orchestrator runs init → graphics-per-segment →
-    // sprites-per-segment → final. Tests that call _renderRasterLine
-    // directly continue to work; the per-cycle methods are also
-    // available individually for the cycle-incremental dispatch path.
-    this._initRenderRasterLine(raster, canvasY);
-
-    const cycleSegments = this._buildCycleRasterSegments();
-    const spriteSegments = this._buildCycleSpriteSegments();
-    for (let i = 0; i < cycleSegments.length; i++) {
-      this._renderCycleSegmentGraphics(cycleSegments[i], canvasY);
-    }
-    for (let s = 0; s < 8; s++) {
-      for (let i = 0; i < spriteSegments.length; i++) {   // (A2) indexed, not for-of
-        this._renderSpriteSegmentForSprite(spriteSegments[i], s, canvasY);
-      }
-    }
-    this._recolorBorderRow(canvasY);
-  },
 
   // Per-line setup — clears row buffers, resets sprite line state.
   _initRenderRasterLine(raster, canvasY) {
@@ -1210,7 +1069,6 @@ export const renderOps = {
         continue;
       }
 
-
       // Standard bitmap mode (BMM=1, MCM=0, ECM=0) has NO $D021 background —
       // a 0-bit's colour is the matrix byte's low nibble (handled per-pixel in
       // _renderSourceColumn). The XSCROLL edge-filler pixels (srcX outside the
@@ -1239,11 +1097,17 @@ export const renderOps = {
       if (isInvalidMode) {
         fillerLeft = fillerRight = 0xFF000000 | 0;
       } else if (isStdBitmap) {
-        const cWriteCol = this.lineCycleCWriteCol[seg.cycle];
-        const colShift = cWriteCol >= 0 ? (cWriteCol - (seg.cycle - 15)) : 0;
-        const sl = firstCol + colShift, sr = lastCol + colShift;
-        if (sl >= 0 && sl < 40 && seg.rowFetchedCols[sl]) fillerLeft = PALETTE_RGBA[seg.rowCodes[sl] & 0x0F];
-        if (sr >= 0 && sr < 40 && seg.rowFetchedCols[sr]) fillerRight = PALETTE_RGBA[seg.rowCodes[sr] & 0x0F];
+        if (this._fetchFeedLine) {
+          const left = this._fetchFeedSamples[firstCol], right = this._fetchFeedSamples[lastCol];
+          if (left & 0x800000) fillerLeft = PALETTE_RGBA[(left >> 8) & 15];
+          if (right & 0x800000) fillerRight = PALETTE_RGBA[(right >> 8) & 15];
+        } else {
+          const cWriteCol = this.lineCycleCWriteCol[seg.cycle];
+          const colShift = cWriteCol >= 0 ? (cWriteCol - (seg.cycle - 15)) : 0;
+          const sl = firstCol + colShift, sr = lastCol + colShift;
+          if (sl >= 0 && sl < 40 && seg.rowFetchedCols[sl]) fillerLeft = PALETTE_RGBA[seg.rowCodes[sl] & 0x0F];
+          if (sr >= 0 && sr < 40 && seg.rowFetchedCols[sr]) fillerRight = PALETTE_RGBA[seg.rowCodes[sr] & 0x0F];
+        }
       }
       const fillerActive = isStdBitmap || isInvalidMode;
 
@@ -1373,11 +1237,7 @@ export const renderOps = {
     spanFgMap.fill(0, 0, (lastCol - firstCol + 1) * 8);
     let spanCols = 0;
     for (let col = firstCol; col <= lastCol; col++) {
-      if (this.separateColorOutput && !this.frameTraceEnabled) {
-        this._decodeGraphicsForeground(this._sampleGraphicsColumn(col, cell.line, seg), spanFgMap, spanCols * 8);
-      } else {
-        this._renderSourceColumnReference(col, cell.line, seg, spanPixels, spanFgMap, spanCols * 8);
-      }
+      this._renderSourceColumn(col, cell.line, seg, spanPixels, spanFgMap, spanCols * 8);
       spanCols++;
     }
     const spanBaseX = firstCol * 8;
@@ -1498,7 +1358,7 @@ export const renderOps = {
     let needed = false;
     for (let c = 15; c <= 54; c++) {
       const a = lcr[regCycles[c + 1]], b = at(c + 2);
-      // Alias fast path: captureDedup shares ONE regs array across cycles with
+      // Alias fast path: versioned capture shares one register array across cycles with
       // no CPU write between them, so pointer-equal snapshots prove every
       // masked xor below is zero without reading a byte.
       if (a === b && lcr[regCycles[c]] === a) continue;
@@ -1545,123 +1405,77 @@ export const renderOps = {
     // display columns). Each cycle owns a disjoint 8px span [seg.start, seg.end),
     // so the per-cycle save/Pass1/Pass2/merge is equivalent to the batched
     // whole-row version.
-    if (this.batchRender) {
-      const ro = this._regOffset;
-      for (let c = 11; c <= 58; c++) {
-        const rc = c + ro;
-        const rcRegs = lcr[regCycles[rc]];
-        const nx = lcr[regCycles[(rc + 1 <= CYCLES_PER_LINE) ? rc + 1 : rc]];
-        const s2 = at(c + 2);
-        const s3 = at(c + 3);
-        // Alias fast paths (both windows): captureDedup shares ONE regs array
-        // across cycles with no CPU write between them, so pointer-equal
-        // snapshots prove every byte compare below is equal without reading.
-        let needFix = !(nx === s2 && rcRegs === s2 && s2 === s3)
-                  && (((nx[0x11] ^ s2[0x11]) & 0x60) !== 0
-                   || ((nx[0x16] ^ s2[0x16]) & 0x10) !== 0
-                   || ((rcRegs[0x16] ^ s2[0x16]) & 0x07) !== 0
-                   // Sub-column mode split needs the +2 -> +3 transition column too.
-                   || ((s2[0x11] ^ s3[0x11]) & 0x60) !== 0
-                   || ((s2[0x16] ^ s3[0x16]) & 0x10) !== 0);
-        const cShowsBg = showsBg(c);
-        if (cShowsBg && !needFix) {
-          const h = lcr[regCycles[c - 2]];             // c >= 11 ⇒ c-2 >= 9, always a valid index
-          const bt = bgTargetCycle(c);
-          if (!(at(c - 1) === h && at(c) === h && at(c + 1) === h &&
-                at(c + 2) === h && at(bt) === h)) {
-            for (let r = 0x21; r <= 0x24 && !needFix; r++) {
-              const v = h[r];
-              for (let k = c - 1; k <= bt; k++) {
-                if (at(k)[r] !== v) { needFix = true; break; }
-              }
+
+    const ro = this._regOffset;
+    for (let c = 11; c <= 58; c++) {
+      const rc = c + ro;
+      const rcRegs = lcr[regCycles[rc]];
+      const nx = lcr[regCycles[(rc + 1 <= CYCLES_PER_LINE) ? rc + 1 : rc]];
+      const s2 = at(c + 2);
+      const s3 = at(c + 3);
+      // Alias fast paths (both windows): versioned capture shares one register array
+      // across cycles with no CPU write between them, so pointer-equal
+      // snapshots prove every byte compare below is equal without reading.
+      let needFix = !(nx === s2 && rcRegs === s2 && s2 === s3)
+                && (((nx[0x11] ^ s2[0x11]) & 0x60) !== 0
+                 || ((nx[0x16] ^ s2[0x16]) & 0x10) !== 0
+                 || ((rcRegs[0x16] ^ s2[0x16]) & 0x07) !== 0
+                 // Sub-column mode split needs the +2 -> +3 transition column too.
+                 || ((s2[0x11] ^ s3[0x11]) & 0x60) !== 0
+                 || ((s2[0x16] ^ s3[0x16]) & 0x10) !== 0);
+      const cShowsBg = showsBg(c);
+      if (cShowsBg && !needFix) {
+        const h = lcr[regCycles[c - 2]];             // c >= 11 ⇒ c-2 >= 9, always a valid index
+        const bt = bgTargetCycle(c);
+        if (!(at(c - 1) === h && at(c) === h && at(c + 1) === h &&
+              at(c + 2) === h && at(bt) === h)) {
+          for (let r = 0x21; r <= 0x24 && !needFix; r++) {
+            const v = h[r];
+            for (let k = c - 1; k <= bt; k++) {
+              if (at(k)[r] !== v) { needFix = true; break; }
             }
           }
         }
-        if (!needFix) continue;
-        const seg0 = this._buildCycleRasterSegment(c);
-        const xs = seg0.start < 0 ? 0 : seg0.start;
-        const xe = seg0.end > CANVAS_W ? CANVAS_W : seg0.end;
-        if (xe <= xs) continue;
-        // Indexed copy, not .set(fb32.subarray(...)): subarray allocates a
-        // view object, and this runs per triggered cycle — hot-path churn.
-        for (let x = xs; x < xe; x++) saved[x] = fb32[rowOffset + x];
-        // Pass 1 (spec-correct): seg0 is the shared scratch seg for cycle c.
-        {
-          const dc = Math.min(c + 2, CYCLES_PER_LINE);
-          seg0.modeRegs = at(dc);
-          seg0.xscrollRegs = at(dc);
-          seg0.rowFetchedCols = this._historyRowFetchedCols[this._rowCycle[dc]];
-          seg0.rowCodes = this._historyRowCodes[this._rowCycle[dc]];
-          seg0.rowColors = this._historyRowColors[this._rowCycle[dc]];
-        }
-        if (cShowsBg) {
-          const bt = bgTargetCycle(c);
-          seg0.bgRegs = at(bt);
-          seg0.bgPrevRegs = at(bgPrevCycle(c, bt));
-        }
-        this._renderCycleSegmentGraphics(seg0, canvasY);
-        this._fixupModeSplitRightHalf(seg0, c, canvasY, xs, xe);
-        for (let x = xs; x < xe; x++) {
-          gfx2[x] = fb32[rowOffset + x];
-          gfx2Fg[x] = priorityBuf[x];   // line buffer (#1)
-        }
-        // Pass 2 (reproduce incremental): rebuild resets modeRegs/xscrollRegs/
-        // bgRegs/bgPrevRegs to their defaults, so this paints the incremental output.
-        this._renderCycleSegmentGraphics(this._buildCycleRasterSegment(c), canvasY);
-        for (let x = xs; x < xe; x++) {
-          const g1 = fb32[rowOffset + x];
-          const pIdx = rowOffset + x;
-          fb32[pIdx] = spriteHiddenBySpecFg(pIdx, x)
-            ? gfx2[x]
-            : ((spriteVisible[x] || saved[x] !== g1) ? saved[x] : gfx2[x]);   // line buffers (#1)
-          priorityBuf[x] = gfx2Fg[x];
-        }
       }
-      return;
-    }
-
-    for (let x = 0; x < CANVAS_W; x++) saved[x] = fb32[rowOffset + x];
-
-    // Pass 1: re-render with the spec-correct +2 mode/XSCROLL shifter-reload
-    // samples, and with border-timed bg only for active display columns.
-    // Opened idle inner-zone background uses the live-cycle sample already
-    // produced by the incremental render.
-    for (let c = 11; c <= 58; c++) {
-      const seg = this._buildCycleRasterSegment(c);
-      const dc = Math.min(c + 2, CYCLES_PER_LINE);
-      seg.modeRegs = at(dc);
-      seg.xscrollRegs = at(dc);
-      seg.rowFetchedCols = this._historyRowFetchedCols[this._rowCycle[dc]];
-      seg.rowCodes = this._historyRowCodes[this._rowCycle[dc]];
-      seg.rowColors = this._historyRowColors[this._rowCycle[dc]];
-      if (showsBg(c)) {
+      if (!needFix) continue;
+      const seg0 = this._buildCycleRasterSegment(c);
+      const xs = seg0.start < 0 ? 0 : seg0.start;
+      const xe = seg0.end > CANVAS_W ? CANVAS_W : seg0.end;
+      if (xe <= xs) continue;
+      // Indexed copy, not .set(fb32.subarray(...)): subarray allocates a
+      // view object, and this runs per triggered cycle — hot-path churn.
+      for (let x = xs; x < xe; x++) saved[x] = fb32[rowOffset + x];
+      // Pass 1 (spec-correct): seg0 is the shared scratch seg for cycle c.
+      {
+        const dc = Math.min(c + 2, CYCLES_PER_LINE);
+        seg0.modeRegs = at(dc);
+        seg0.xscrollRegs = at(dc);
+        seg0.rowFetchedCols = this._historyRowFetchedCols[this._rowCycle[dc]];
+        seg0.rowCodes = this._historyRowCodes[this._rowCycle[dc]];
+        seg0.rowColors = this._historyRowColors[this._rowCycle[dc]];
+      }
+      if (cShowsBg) {
         const bt = bgTargetCycle(c);
-        seg.bgRegs = at(bt);
-        seg.bgPrevRegs = at(bgPrevCycle(c, bt));
+        seg0.bgRegs = at(bt);
+        seg0.bgPrevRegs = at(bgPrevCycle(c, bt));
       }
-      this._renderCycleSegmentGraphics(seg, canvasY);
-      const xs = seg.start < 0 ? 0 : seg.start;
-      const xe = seg.end > CANVAS_W ? CANVAS_W : seg.end;
-      if (xe > xs) this._fixupModeSplitRightHalf(seg, c, canvasY, xs, xe);
-    }
-    for (let x = 0; x < CANVAS_W; x++) gfx2[x] = fb32[rowOffset + x];
-    gfx2Fg.set(priorityBuf);   // line buffer (#1) — whole row
-
-    // Pass 2: re-render with the defaults (+1 mode, live-bg). This exactly
-    // reproduces what the incremental render wrote (deterministic), so a
-    // pixel still equal to it in `saved` is graphics-owned and safe to swap.
-    for (let c = 11; c <= 58; c++) {
-      const seg = this._buildCycleRasterSegment(c);
-      this._renderCycleSegmentGraphics(seg, canvasY);
-    }
-
-    for (let x = 0; x < CANVAS_W; x++) {
-      const gfx1 = fb32[rowOffset + x];
-      const pIdx = rowOffset + x;
-      fb32[pIdx] = spriteHiddenBySpecFg(pIdx, x)
-        ? gfx2[x]
-        : ((spriteVisible[x] || saved[x] !== gfx1) ? saved[x] : gfx2[x]);   // line buffers (#1)
-      priorityBuf[x] = gfx2Fg[x];
+      this._renderCycleSegmentGraphics(seg0, canvasY);
+      this._fixupModeSplitRightHalf(seg0, c, canvasY, xs, xe);
+      for (let x = xs; x < xe; x++) {
+        gfx2[x] = fb32[rowOffset + x];
+        gfx2Fg[x] = priorityBuf[x];   // line buffer (#1)
+      }
+      // Pass 2 (reproduce incremental): rebuild resets modeRegs/xscrollRegs/
+      // bgRegs/bgPrevRegs to their defaults, so this paints the incremental output.
+      this._renderCycleSegmentGraphics(this._buildCycleRasterSegment(c), canvasY);
+      for (let x = xs; x < xe; x++) {
+        const g1 = fb32[rowOffset + x];
+        const pIdx = rowOffset + x;
+        fb32[pIdx] = spriteHiddenBySpecFg(pIdx, x)
+          ? gfx2[x]
+          : ((spriteVisible[x] || saved[x] !== g1) ? saved[x] : gfx2[x]);   // line buffers (#1)
+        priorityBuf[x] = gfx2Fg[x];
+      }
     }
   },
 };

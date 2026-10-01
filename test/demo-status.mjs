@@ -7,6 +7,7 @@
 //     (an interrupt-driven demo legitimately spins its main thread at one PC),
 //     so liveness uses the FRAMEBUFFER: a frozen display is flagged
 //     "DISPLAY FROZEN" as the only honest "possible silent hang" hint.
+// Prints each verdict as its worker finishes, then a combined summary.
 // Compares to the known/expected status (✓ / ✗ CHANGED — a regression detector)
 // and writes a screenshot per demo to the demo-status-shots dir (test/external-assets.json).
 //
@@ -153,12 +154,6 @@ function runOne(demo) {
   });
 }
 
-// simple concurrency pool
-const results = []; let idx = 0;
-async function worker() { while (idx < list.length) { const d = list[idx++]; process.stderr.write(`  running ${d.name}…\n`); results.push(await runOne(d)); } }
-await Promise.all(Array.from({ length: Math.min(CAP, list.length) }, worker));
-results.sort((a, b) => list.indexOf(a.demo) - list.indexOf(b.demo));
-
 // render
 const fmt = (r) => {
   const v = r.result.verdict;
@@ -177,6 +172,21 @@ const matches = (r) => {
   return false;
 };
 const pad = (s, n) => (s + ' '.repeat(n)).slice(0, n);
+
+// Print each completed case before scheduling the next one in its worker slot.
+const results = []; let idx = 0;
+async function worker() {
+  while (idx < list.length) {
+    const d = list[idx++];
+    process.stderr.write(`  running ${d.name} (disc ${d.disc})…\n`);
+    const r = await runOne(d);
+    results.push(r);
+    console.log(`  ${r.demo.name} (disc ${r.demo.disc}): ${fmt(r)}; expected ${r.demo.expect}; ${matches(r) ? '✓' : '✗ CHANGED'} [${r.sec}s wall]`);
+  }
+}
+await Promise.all(Array.from({ length: Math.min(CAP, list.length) }, worker));
+results.sort((a, b) => list.indexOf(a.demo) - list.indexOf(b.demo));
+
 console.log('\n' + pad('DEMO', 15) + pad('DISC', 5) + pad('RESULT', 34) + pad('EXPECTED', 14) + 'MATCH');
 console.log('-'.repeat(78));
 let bad = 0;

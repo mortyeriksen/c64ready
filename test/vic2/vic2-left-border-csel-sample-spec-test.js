@@ -1,3 +1,4 @@
+import { forceLiveRendering } from './_vic2-equivalence.js';
 // Bauer §3.9: CSEL chooses the left comparator at X=24 or X=31.
 // PAL comparator timing: VICE viciisc/vicii-cycle.c check_hborder,
 // wide compare at cycle 17, narrow compare at cycle 18.
@@ -8,7 +9,7 @@ import { makeVic, paletteRgba, CANVAS_W } from './_vic2-helpers.js';
 
 function render({ deferred, writeCycle, sprite = false, alreadyOpen = false, vertical = false }) {
   const v = makeVic();
-  v.lineBatchRender = deferred;
+  if (!(deferred)) forceLiveRendering(v);
   v.regs[0x11] = 0x1b;
   v.regs[0x16] = 0x08;
   v.regs[0x18] = 0x14;

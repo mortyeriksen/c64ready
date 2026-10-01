@@ -88,9 +88,9 @@ special-cased at the top of `read`/`write` before the table dispatch:
   this: it writes `$01` before raising DDR to `$2F`.
 - **Datasette MOTOR** (bit 5, output) is driven from the latch on write; the
   cassette **SENSE** (bit 4, input) feeds the `$01` read.
-- A 6510-specific open-bus quirk (gated by `openBusWritesToZeroOneEnabled`): a
+- A 6510-specific open-bus quirk: a
   write to `$00`/`$01` keeps the CPU's data drivers tri-stated, so the byte the
-  VIC drove during phi1 can land in the underlying RAM. Off by default.
+  VIC drove during phi1 lands in the underlying RAM.
 
 **Banking** (`_rebuildMemoryMap`) reads the port **pins** (`(cpuPort & cpuDDR) |
 (0x07 & ~cpuDDR)`) to extract LORAM/HIRAM/CHAREN, then maps each page per the PLA
@@ -218,7 +218,7 @@ write fast path is untouched whenever no transfer is waiting.
 Color RAM (`$D800-$DBFF`, 1 KB) is only **4 bits wide**; the upper nibble is
 open bus. On read, `_readIO` composes `(externalDataBus8 & 0xF0) | (colorRam &
 0x0F)` (the upper nibble is typically the byte the VIC fetched in phi1 of this
-cycle), and, if `colorRamReadDrivesComposedByte`, re-drives the latch with that
+cycle), and re-drives the latch with that
 composed value. Writes store only the low nibble. This is byte-faithful to how
 demos read color RAM during open side borders.
 
@@ -227,17 +227,11 @@ demos read color RAM during open side borders.
 ## 8. Open bus & the shared data-bus latch
 
 `externalDataBus8` models the C64 data bus (D0-D7) when no device is actively
-driving it. It is updated by **every CPU read, every CPU write** (in `read`/
-`write`), **and every VIC chip-bus fetch** (the VIC holds a `mem` back-reference
+driving it. CPU reads, CPU writes other than `$00/$01`, and VIC chip-bus fetches
+update it (the VIC holds a `mem` back-reference
 so its g-/c-/sprite-accesses re-drive the latch). An **open-bus read**
 (`$DE00-$DFFF` with no cart device, or the high nibble of color RAM) samples this
-latch instead of returning a fixed value. `_openBusRead` has three modes
-(`openBusMode`):
-
-- **`vice-compatible`** (default): return the latch (matches VICE / real
-  hardware, Bauer §3.12 + VIC-Addendum).
-- **`disabled`**: return `$FF` (simplified model, for bisecting).
-- **`random`**: fuzz byte (to catch code assuming a fixed value).
+latch instead of returning a fixed value. `_openBusRead` returns the latch.
 
 The CIA1 joystick integration also lives here: `_readCIA1` ANDs `joyPort2` into
 `$DC00` and `joyPort1` into `$DC01` (both ports also carry the keyboard matrix,
@@ -265,16 +259,10 @@ Two layers, matching the hardware:
 
 ---
 
-## 10. Profile flags (bisection knobs)
+## 10. Bus diagnostics
 
-Defaults preserve current demo behaviour; each can be toggled at runtime to A/B a
-regression:
-
-| Flag | Default | Effect |
-|------|---------|--------|
-| `openBusMode` | `'vice-compatible'` | open-bus read source (latch / `$FF` / random) |
-| `colorRamReadDrivesComposedByte` | `true` | a color-RAM read re-drives the latch with the composed byte |
-| `openBusWritesToZeroOneEnabled` | `false` | the 6510 RAM-under-port quirk (VIC phi1 byte lands in RAM[$00/$01]) |
+`c64Bus.status()` reports the live latches and trace state. See
+[Testing](TESTING.md#per-cycle-bus-trace) for per-cycle capture.
 
 ---
 

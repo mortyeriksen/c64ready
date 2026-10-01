@@ -16,7 +16,6 @@ import { REU, REU_DEFAULT_MODEL } from './reu.js';
 import { parseCRT } from './media/crt.js';
 import { createCartridgeFromCRT } from './cartridges/registry.js';
 import { makeVoiceTrio, computeSyncPulses } from './sid-voice.js';
-import { switchOn } from './switches.js';
 
 // SharedArrayBuffer ring buffer layout:
 // SharedArrayBuffer layout (Int32-indexed):
@@ -64,7 +63,6 @@ const KERNAL_ILOAD_DEFAULT_AT = 0xFD4C;
 // ratio = drive 1 MHz (16 MHz crystal / 16) against C64 phi2 985248 Hz;
 // the constant is floor(65536 * 1e6 / 985248).
 const DRIVE_CLOCK_FACTOR_TRUE = Math.floor(65536 * 1000000 / 985248); // 66517
-const DRIVE_CLOCK_FACTOR_1TO1 = 65536; // legacy lockstep: exactly 1 per cycle
 
 // Master cycles the IEC bus must stay quiet before drive idle-skip may ENGAGE
 // (waking stays instant). Spindle command bits arrive every ~26-40 cycles, so
@@ -231,14 +229,13 @@ export class C64Machine {
     this._reuBusHold = false;
     this._reuIrqPending = false;
     this.driveCycleAccum = 0;
-    this.driveClockFactor = switchOn('driveTrueClockRatio')
-      ? DRIVE_CLOCK_FACTOR_TRUE : DRIVE_CLOCK_FACTOR_1TO1;
+    this.driveClockFactor = DRIVE_CLOCK_FACTOR_TRUE;
     this.sidCycleCounter = 0;
 
     // CIA2 Port A IEC bus wiring
     // Lines are Active Low on the bus (0V = Asserted, 1 = Released/High)
     //
-    // Edge-propagation latency ('iecEdgeLatency' in switches.js): drive
+    // IEC read-side propagation: drive
     // output pins reach the C64's CIA one master cycle later than the run
     // order already gives (_iecDrvVis*, one stage behind _iecDrvPrev*) —
     // the C64's $DD00 read at cycle S sees drive writes from ≤ S−2. The
@@ -250,7 +247,6 @@ export class C64Machine {
     // before the sample → received bytes get bit 7/6 read HIGH (GnG /
     // Commando CHECKING corruption). Real hardware's asynchronous-clock
     // input latching carries this margin.
-    this.iecEdgeLatency = switchOn('iecEdgeLatency');
     this._iecDrvPrevClk = 1; this._iecDrvPrevData = 1;
     this._iecDrvPrevClk9 = 1; this._iecDrvPrevData9 = 1;
     this._iecDrvVisClk = 1; this._iecDrvVisData = 1;
@@ -305,20 +301,19 @@ export class C64Machine {
       if (this.drive1541b) this.drive1541b.setIecLines(busAtn, busClk, busData);
 
       // C64-facing view for readPortA: own pulls live, drive pins through
-      // the one-cycle delay stage when the latency switch is on.
-      if (this.iecEdgeLatency) {
-        let rClk = (c64clk === 0 || this._iecDrvVisClk === 0) ? 0 : 1;
-        let rData = (c64Data === 0 || this._iecDrvVisData === 0) ? 0 : 1;
-        if (this.drive1541b) {
-          if (this._iecDrvVisClk9 === 0) rClk = 0;
-          if (this._iecDrvVisData9 === 0) rData = 0;
-        }
-        return (busAtn << 2) | (rClk << 1) | rData;
+      // the one-cycle read-side delay stage.
+
+      let rClk = (c64clk === 0 || this._iecDrvVisClk === 0) ? 0 : 1;
+      let rData = (c64Data === 0 || this._iecDrvVisData === 0) ? 0 : 1;
+      if (this.drive1541b) {
+        if (this._iecDrvVisClk9 === 0) rClk = 0;
+        if (this._iecDrvVisData9 === 0) rData = 0;
       }
-      return (busAtn << 2) | (busClk << 1) | busData;
+      return (busAtn << 2) | (rClk << 1) | rData;
+
     };
 
-    // Per-master-cycle IEC pipeline step (latency switch ON only): advance
+    // Per-master-cycle IEC pipeline step: advance
     // the drive-pin delay line the C64's $DD00 reads sample from. The
     // drive-facing bus is untouched — the drive sees C64 edges instantly
     // (legacy semantics) and its own pins instantly.
@@ -1802,10 +1797,10 @@ export class C64Machine {
       this.potYSampled = this.paddleY & 0xFF;
     }
 
-    // IEC edge-propagation pipeline step (see 'iecEdgeLatency'): make last
+    // IEC edge-propagation pipeline step: make last
     // cycle's C64 output edges visible to the drive and advance the
     // drive-pin delay line the C64's $DD00 reads sample from.
-    if (this.iecEdgeLatency && this.drive1541) this._iecClock();
+    if (this.drive1541) this._iecClock();
 
     // Apply the PREVIOUS cycle's pending IRQ/NMI state to the CPU before
     // cpu.clock runs this cycle (the per-source delay pipeline). This reads
@@ -1964,7 +1959,7 @@ export class C64Machine {
     // still needs a live drive CPU/VIA/spindle state.
     //
     // Drive clock: driveCycleAccum carries the 16.16 drive:C64 ratio
-    // (driveClockFactor — see 'driveTrueClockRatio' in switches.js). At the
+    // (driveClockFactor). At the
     // true PAL factor 66517 this pops 1 drive cycle per master cycle plus a
     // 2nd every ~66th, sweeping the drive↔C64 phase like real hardware; at
     // 65536 it is exactly the old 1:1 lockstep. steps is always 1 or 2

@@ -1,22 +1,4 @@
-// IEC edge-latency spec — locks the propagation model behind the
-// 'iecEdgeLatency' switch (src/switches.js):
-//
-//  • drive→C64: drive output-pin changes reach the C64's $DD00 read view one
-//    master cycle later than the run order inherently gives — a read at
-//    cycle S sees drive writes from ≤ S−2. This is the NOSDOS reception fix:
-//    the loader's drive-release-to-last-sample margin is designed against
-//    real hardware's asynchronous CIA input latching; without the stage the
-//    true drive-clock ratio's phase sweep periodically lands the release one
-//    cycle before the sample and the received byte reads bit 7/6 HIGH.
-//  • C64→drive: INSTANT. Delaying this direction was tried and corrupts the
-//    NOSDOS install stage — locked here so it can't quietly come back.
-//  • Own pulls: each side sees its own line contribution live.
-//  • IEC_EDGE_LATENCY=0: the legacy instant wiring, both directions.
-//
-// Register bit map: C64 $DD00 PA3/4/5 = ATN/CLK/DATA out (set = pull),
-// PA6/PA7 = CLK/DATA in (read 0 = line pulled). Drive VIA1 $1800 PB1 = DATA
-// out, PB3 = CLK out (set = pull), PB4 = ATNA.
-
+// IEC propagation: delayed drive inputs and immediate own-pin visibility.
 import fs from 'fs';
 
 const ROOT = new URL('../../roms/', import.meta.url).pathname;
@@ -38,9 +20,7 @@ function ok(label) {
   }
 }
 
-// The switch resolves at machine construction — set the env per leg.
-async function makeMachine(latencyEnv) {
-  process.env.IEC_EDGE_LATENCY = latencyEnv;
+async function makeMachine() {
   const { C64Machine } = await import('../../src/machine.js');
   const m = new C64Machine();
   m.loadROMs({ kernal, basic, charRom: chargen });
@@ -68,7 +48,7 @@ const clkIn = (m) => (m.cia2.readPortA() & 0x40) ? 1 : 0;
 
 // ── 1: drive→C64 assert direction — pin pull visible at +2, not before ──────
 {
-  const m = await makeMachine('1');
+  const m = await makeMachine();
   const drv = m.drive1541;
   expect(dataIn(m) === 1, `baseline: DATA released, C64 reads high`);
   drv.write(0x1800, 0x02);                    // PB1=1 → drive pulls DATA
@@ -87,7 +67,7 @@ const clkIn = (m) => (m.cia2.readPortA() & 0x40) ? 1 : 0;
 // release-vs-last-sample race: without the stage, a release landing one
 // cycle before the sample makes received bytes read bit 7/6 HIGH.
 {
-  const m = await makeMachine('1');
+  const m = await makeMachine();
   const drv = m.drive1541;
   drv.write(0x1800, 0x02);                    // pull DATA (the "held pair")
   step(m); step(m);
@@ -102,10 +82,10 @@ const clkIn = (m) => (m.cia2.readPortA() & 0x40) ? 1 : 0;
 
 // ── 3: C64→drive stays INSTANT — the install-stage constraint ───────────────
 // A symmetric delay on this direction corrupts the NOSDOS install stage
-// (measured; see switches.js). Locked: the drive sees C64 edges without any
+// Hardware invariant: the drive sees C64 edges without any
 // master-cycle stepping.
 {
-  const m = await makeMachine('1');
+  const m = await makeMachine();
   const drv = m.drive1541;
   m.cia2.write(0, 0x08);                      // PA3=1 → ATN asserted
   expect(drv.atnIn === 0, 'drive sees ATN asserted with NO master cycle in between');
@@ -120,7 +100,7 @@ const clkIn = (m) => (m.cia2.readPortA() & 0x40) ? 1 : 0;
 
 // ── 4: the C64 sees its OWN pulls live through the pipelined read view ──────
 {
-  const m = await makeMachine('1');
+  const m = await makeMachine();
   m.cia2.write(0, 0x10);                      // C64 pulls CLK
   expect(clkIn(m) === 0, 'own CLK pull reads back low with no pipeline delay');
   m.cia2.write(0, 0x00);
@@ -128,19 +108,5 @@ const clkIn = (m) => (m.cia2.readPortA() & 0x40) ? 1 : 0;
   ok('own line contributions bypass the drive-pin delay stage');
 }
 
-// ── 5: legacy wiring (IEC_EDGE_LATENCY=0) — instant both ways ────────────────
-{
-  const m = await makeMachine('0');
-  const drv = m.drive1541;
-  drv.write(0x1800, 0x02);                    // drive pulls DATA
-  expect(dataIn(m) === 0, 'legacy: drive pull visible to the C64 immediately');
-  drv.write(0x1800, 0x00);                    // release
-  expect(dataIn(m) === 1, 'legacy: drive release visible to the C64 immediately');
-  m.cia2.write(0, 0x08);
-  expect(drv.atnIn === 0, 'legacy: C64 ATN visible to the drive immediately');
-  ok('IEC_EDGE_LATENCY=0 restores the instant wiring bit-exactly');
-}
-
-delete process.env.IEC_EDGE_LATENCY;
 console.log(`\n${testNo} IEC edge-latency spec tests; ${testsFailing} fail`);
 if (testsFailing) process.exit(1);

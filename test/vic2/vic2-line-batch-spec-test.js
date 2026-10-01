@@ -1,6 +1,7 @@
-// Tier-3 line-batch render (lineBatchRender) — CPU-observable equivalence.
+import { forceLiveRendering } from './_vic2-equivalence.js';
+// Tier-3 line-batch render (deferredRendering) — CPU-observable equivalence.
 //
-// Contract: with lineBatchRender ON, a raster line's pixel emission is
+// Contract: with deferredRendering ON, a raster line's pixel emission is
 // deferred and replayed through the SAME incremental machinery — at line
 // end, or immediately when the CPU observes render-derived state mid-line
 // ($D019/$D01E/$D01F reads, $D01A collision-IRQ arming writes). At every
@@ -8,7 +9,7 @@
 // final framebuffer rows) the deferred mode must be byte-identical to the
 // live path. Mid-line fb32/pipe internals are deliberately NOT part of the
 // contract (no C64 program can observe them) — tests that assert those pin
-// lineBatchRender=false instead.
+// deferredRendering=false instead.
 //
 // Method: drive a LIVE vic and a DEFERRED vic in lockstep; apply identical
 // scripted writes/reads at identical cycles; assert equal read returns,
@@ -34,7 +35,7 @@ function makeVic(deferred) {
   v.colorRam = new Uint8Array(0x0400);
   v.charRom = new Uint8Array(0x1000);
   v.currentVicBank = 0;
-  v.lineBatchRender = deferred;
+  if (!(deferred)) forceLiveRendering(v);
   return v;
 }
 

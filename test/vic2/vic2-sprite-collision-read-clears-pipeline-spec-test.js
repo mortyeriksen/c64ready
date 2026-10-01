@@ -1,3 +1,4 @@
+import { forceLiveRendering } from './_vic2-equivalence.js';
 // Sprite-collision register read clears the in-flight collision, phi-resolved.
 //
 // Spec source: VICII/spritevssprite (real-6569 reference table). It reads
@@ -40,8 +41,8 @@ function makeVic() {
   // state), which only the live incremental path exhibits — under the
   // Tier-3 line-batch mode pixels/commits land at line end or on a CPU
   // observer event, both byte-identical at every CPU-observable point.
-  // Pin the live path so a LINE_BATCH=1 suite run still tests this contract.
-  vic.lineBatchRender = false;
+  // Exercise the per-cycle rendering contract.
+  if (!(false)) forceLiveRendering(vic);
   vic.ram = new Uint8Array(0x10000);
   vic.colorRam = new Uint8Array(0x0400);
   vic.charRom = new Uint8Array(0x1000);

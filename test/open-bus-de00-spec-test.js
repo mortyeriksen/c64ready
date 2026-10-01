@@ -34,7 +34,7 @@ function makeMem() {
   return mem;
 }
 
-// 1. After CPU read of a RAM location, an open-bus read at $DE00 returns the
+// After CPU read of a RAM location, an open-bus read at $DE00 returns the
 //    same byte.
 {
   const mem = makeMem();
@@ -46,7 +46,7 @@ function makeMem() {
   ok('$DE00 returns last CPU-read byte');
 }
 
-// 2. After CPU write, open-bus read at $DF12 returns the written byte.
+// After CPU write, open-bus read at $DF12 returns the written byte.
 {
   const mem = makeMem();
   mem.write(0x2000, 0x6E);
@@ -55,7 +55,7 @@ function makeMem() {
   ok('$DF12 returns last CPU-write byte');
 }
 
-// 3. Simulated VIC chip-bus fetch (set latch directly) leaks into $DE5C.
+// Simulated VIC chip-bus fetch (set latch directly) leaks into $DE5C.
 {
   const mem = makeMem();
   mem.externalDataBus8 = 0xC3;
@@ -64,17 +64,7 @@ function makeMem() {
   ok('$DE5C returns prior VIC-fetched byte');
 }
 
-// 4. openBusMode='disabled' restores legacy 0xFF behavior.
-{
-  const mem = makeMem();
-  mem.openBusMode = 'disabled';
-  mem.externalDataBus8 = 0x42;
-  const open = mem.read(0xDE00);
-  expect(open === 0xFF, `disabled mode should return 0xFF, got 0x${open.toString(16)}`);
-  ok('openBusMode=disabled returns 0xFF');
-}
-
-// 5. The open-bus read itself updates the latch (the read drives the bus).
+// The open-bus read itself updates the latch (the read drives the bus).
 {
   const mem = makeMem();
   mem.externalDataBus8 = 0x77;

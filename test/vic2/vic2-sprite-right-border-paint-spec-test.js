@@ -1,3 +1,4 @@
+import { forceLiveRendering } from './_vic2-equivalence.js';
 // Sprite paint coverage across an opened right border (§3.14.1 hyperscreen).
 //
 // Bauer §3.14.1 cycle-56 trick: writing CSEL=1→0 at PHI2 of cycle 56
@@ -41,8 +42,8 @@ function makeVic() {
   // which only the live incremental path exhibits — under the Tier-3
   // line-batch mode pixels land at line end or on a CPU observer event,
   // both byte-identical at every CPU-observable point. Pin the live path
-  // so a LINE_BATCH=1 suite run still tests this contract.
-  v.lineBatchRender = false;
+  // to exercise the per-cycle rendering contract.
+  if (!(false)) forceLiveRendering(v);
   v.ram = new Uint8Array(0x10000);
   v.colorRam = new Uint8Array(0x0400);
   v.charRom = new Uint8Array(0x1000);

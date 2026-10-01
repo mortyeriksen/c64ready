@@ -18,7 +18,7 @@
 // frames the per-line YSCROLL write lands at cy58 instead of cy59. The OLD
 // phi2-live sample wrongly counted the cy58 write as a bad line, incrementing
 // RC → the row counter started cycling → 2 extra display lines + a garbled
-// bottom line. The fix (cycle58BadLinePhi1, default on) restores the phi1
+// bottom line. The renderer uses the phi1
 // sample so RC stays frozen.
 //
 // Paired control: identical drive but the write lands at cy59 (the non-jitter
@@ -110,20 +110,7 @@ function arriveAtCy57Idle(v) {
   ok('cy59 $D011 YSCROLL write (control): RC frozen at 7 + display reactivated');
 }
 
-// ── Test 3: legacy phi2-live model (flag off) DOES trip the spurious bad line
-// Documents the bug the fix removes: with cycle58BadLinePhi1=false the cy58
-// write is counted as a bad line and RC increments 7→0.
-{
-  const v = makeVic();
-  v.cycle58BadLinePhi1 = false;
-  arriveAtCy57Idle(v);
-  v.clock(1);                          // → cy58
-  v.write(0x11, 0x1C);                 // cy58 write
-  v.phi2();                            // legacy: live (post-write) sample sees the BL
-  expect(v.rc === 0,
-    `legacy phi2-live: cy58 write trips bad line, RC 7→0 (got rc=${v.rc})`);
-  ok('legacy model (flag off) reproduces the spurious cy58 bad line — RC 7→0');
-}
+
 
 console.log(`\n${testNo - failing}/${testNo} passed${failing ? `, ${failing} FAILED` : ''}`);
 if (failing) process.exit(1);

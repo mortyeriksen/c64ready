@@ -22,6 +22,12 @@ hardware, see [Component status](COMPONENT-STATUS.md).
 Found something broken? Note the demo and where it breaks, and
 [open an issue on GitHub](https://github.com/mortyeriksen/c64ready/issues).
 
+## Graphics boundaries with cartridges or tracing
+
+With a cartridge attached or tracing enabled, mid-line memory or video-bank
+changes can affect the wrong pixels. Normal rendering passes these boundary
+tests. See the [VIC-II architecture](VIC2-ARCHITECTURE.md#fetch-fed-graphics).
+
 ## Hardware not emulated
 
 - **NTSC machines**: only the PAL C64 is modelled. NTSC raster geometry and

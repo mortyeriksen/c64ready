@@ -119,10 +119,10 @@ export const lineOps = {
     // Tracing force-copies payloads. Hardware scalar history stays cycle-indexed;
     // compact recording replaces repeated payload references with byte indices.
     if (cycle === 1) {
-      this._sparseCaptureLine = this.sparseRenderState && this.captureDedup && !this.frameTraceEnabled;
+      this._sparseCaptureLine = !this.frameTraceEnabled;
       this._rowSnapLastVer = this._sprSnapLastVer = this._regSnapLastVer = -1;
     }
-    const dedup = this.captureDedup && !this.frameTraceEnabled;
+    const dedup = !this.frameTraceEnabled;
 
     const sparse = this._sparseCaptureLine;
     this._graphicsCycleVersion[cycle] = this._graphicsVersion;
@@ -177,19 +177,23 @@ export const lineOps = {
       }
       if (this.captureDedupVerify) this._verifySpriteAlias(cycle);
     } else {
-      this._homeSpriteDisplayOn[cycle].set(this.spriteDisplayOn);
+      if (sparse) {
+        this._homeSpriteCapture[cycle].set(this._spriteCaptureBytes);
+      } else {
+        this._homeSpriteDisplayOn[cycle].set(this.spriteDisplayOn);
+        this._homeSpriteDataRow[cycle].set(this.spriteLineDataRow);
+        this._homeSpriteDataBase[cycle].set(this.spriteDataBase);
+        this._homeSpriteDataBank[cycle].set(this.spriteDataBank);
+        this._homeSpritePointerValue[cycle].set(this.spritePointerValue);
+        this._homeSpriteRowByteMask[cycle].set(this.spriteRowByteMask);
+        this._homeSpriteShiftReg[cycle].set(this.spriteShiftReg);
+      }
       this._historySpriteDisplayOn[cycle] = this._sprDisplayOnRef = this._homeSpriteDisplayOn[cycle];
-      this._homeSpriteDataRow[cycle].set(this.spriteLineDataRow);
       this._historySpriteDataRow[cycle] = this._sprDataRowRef = this._homeSpriteDataRow[cycle];
-      this._homeSpriteDataBase[cycle].set(this.spriteDataBase);
       this._historySpriteDataBase[cycle] = this._sprDataBaseRef = this._homeSpriteDataBase[cycle];
-      this._homeSpriteDataBank[cycle].set(this.spriteDataBank);
       this._historySpriteDataBank[cycle] = this._sprDataBankRef = this._homeSpriteDataBank[cycle];
-      this._homeSpritePointerValue[cycle].set(this.spritePointerValue);
       this._historySpritePointerValue[cycle] = this._sprPointerRef = this._homeSpritePointerValue[cycle];
-      this._homeSpriteRowByteMask[cycle].set(this.spriteRowByteMask);
       this._historySpriteRowByteMask[cycle] = this._sprByteMaskRef = this._homeSpriteRowByteMask[cycle];
-      this._homeSpriteShiftReg[cycle].set(this.spriteShiftReg);
       this._historySpriteShiftReg[cycle] = this._sprShiftRef = this._homeSpriteShiftReg[cycle];
       this._sprSnapLastVer = this._sprSnapVersion;
       this._sprCycle[cycle] = this._sprSnapCycle = cycle;
@@ -239,7 +243,6 @@ export const lineOps = {
     this._historyRegs[cycle] = patch;
     return patch;
   },
-
 
   // Diagnostic array access expands sparse history and selects dense recording
   // for the remainder of the line. Rendering itself uses the compact indices.
@@ -449,18 +452,6 @@ export const lineOps = {
     // ~10 KB of redundant typed-array work per line.
   },
 
-  _buildCycleRasterSegments() {
-    // Batch path (legacy / tests). Snapshot the scratch into fresh
-    // objects per cycle so the array can be held across calls — the
-    // single-cycle path mutates _scratchRasterSeg.
-    const segments = [];
-    for (let cycle = 11; cycle <= 58; cycle++) {
-      this._buildCycleRasterSegment(cycle);
-      segments.push(this._cloneRasterSeg(this._scratchRasterSeg));
-    }
-    return segments;
-  },
-
   // Build the cycle raster-segment object for a single cycle. Used by
   // both the batch-build (above) and the cycle-incremental dispatch
   // path which needs to build a segment ONLY for the current cycle.
@@ -590,20 +581,7 @@ export const lineOps = {
     dst.rowFetchD018 = src.rowFetchD018;
   },
 
-  _cloneRasterSeg(src) {
-    const dst = this._makeEmptyRasterSeg();
-    this._copyRasterSeg(src, dst);
-    return dst;
-  },
 
-  _buildCycleSpriteSegments() {
-    const segments = [];
-    for (let cycle = 11; cycle <= 58; cycle++) {
-      this._buildCycleSpriteSegment(cycle);
-      segments.push(this._cloneSpriteSeg(this._scratchSpriteSeg));
-    }
-    return segments;
-  },
 
   _buildCycleSpriteSegment(cycle) {
     // 8565 pipeline delay applies to sprite-segment regs too — sprite
@@ -625,21 +603,6 @@ export const lineOps = {
     return seg;
   },
 
-  _cloneSpriteSeg(src) {
-    const dst = this._makeEmptySpriteSeg();
-    dst.start = src.start;
-    dst.end = src.end;
-    dst.regs = src.regs;
-    dst.bank = src.bank;
-    dst.spriteDisplayOn = src.spriteDisplayOn;
-    dst.spriteDataRow = src.spriteDataRow;
-    dst.spriteDataBase = src.spriteDataBase;
-    dst.spriteDataBank = src.spriteDataBank;
-    dst.spritePointerValue = src.spritePointerValue;
-    dst.spriteRowByteMask = src.spriteRowByteMask;
-    dst.spriteShiftReg = src.spriteShiftReg;
-    return dst;
-  },
 
   _beginRasterLine(raster) {
     const d011 = this.regs[0x11];
@@ -832,15 +795,9 @@ export const lineOps = {
     // (L52), exactly where a real 6569/VICE shows it. The old `if
     // (!this.displayActive) return` guard suppressed that, pushing the first
     // row 8 rasters down to the first *natural* bad line.
-    // Bad-line condition for the cy58 transition. Sampled at PHI1 of cycle 58
-    // (in clock(), before this cycle's CPU write) when cycle58BadLinePhi1 is
-    // set — so a cy57 write counts but a cy58 write does not (real-HW / VICE).
-    // The legacy phi2-live read (which incorrectly let a cy58 $D011 write trip
-    // a spurious bad line — raster_time_gp bottom-border garbage) is retained
-    // behind the flag for A/B.
-    const badLine = this.cycle58BadLinePhi1
-      ? this._cycle58BadLineSample
-      : this._isBadLine(raster, this.regs);
+    // Bauer 3.7.2: phi1 precedes the cycle-58 CPU write, so only writes
+    // from earlier cycles affect this row-counter transition.
+    const badLine = this._cycle58BadLineSample;
 
     if (this.rc === 7) {
       this.vcBase = this.vc & 0x03FF;
@@ -864,8 +821,7 @@ export const lineOps = {
     // whose per-line write lands at cy58: display momentarily idles at cy58
     // phi1 (so RC is NOT incremented → no spurious bad line) then re-enters
     // display state on the same-cycle write (so the next line still draws).
-    // Only under the phi1 model; the legacy path already used the live value.
-    if (this.cycle58BadLinePhi1 && !badLine && this._isBadLine(raster, this.regs)) {
+    if (!badLine && this._isBadLine(raster, this.regs)) {
       this.displayActive = true;
     }
   },
@@ -1136,7 +1092,7 @@ export const lineOps = {
     this.refreshCounter = (this.refreshCounter - 1) & 0xFF;
     // r-access is a real DRAM read on hardware — it drives both the VIC
     // internal bus and the shared external bus. _vicBusRead handles both.
-    if (this.vicRefreshDrivesBus) this._vicBusRead(refAddr, this.currentVicBank);
+    this._vicBusRead(refAddr, this.currentVicBank);
   },
 
   // Read the idle g-access source ($3FFF, or $39FF when ECM is set).
@@ -1258,7 +1214,7 @@ export const lineOps = {
       this.lineCycleHBorderBefore[15] = 1;
       this.lineCycleHBorder[16] = 1;
       this.lineCycleHBorderBefore[16] = 1;
-      if (this._cycleIncrementalRender && this._cycleRenderActiveCanvasY >= 0
+      if (this._cycleRenderActiveCanvasY >= 0
           && !this._lineDeferred) {   // deferred line: replay reads the corrected arrays
         this._renderCycleSegmentGraphics(
           this._buildCycleRasterSegment(15), this._cycleRenderActiveCanvasY);
@@ -1584,7 +1540,7 @@ export const lineOps = {
     // A RESET cannot close a border that was already open before the compare.
     if (!this.lineCycleHBorderBefore[c]) return;
     this.lineCycleCselComparator[c] = 0;
-    if (!this._cycleIncrementalRender || this._cycleRenderActiveCanvasY < 0 ||
+    if (this._cycleRenderActiveCanvasY < 0 ||
         this._lineDeferred) return;
 
     // Only the newly covered seven pixels need repainting. Preserve sprites
@@ -1606,7 +1562,7 @@ export const lineOps = {
   // and detect-2 (split at the CSEL=0 X). Only re-renders already-painted
   // pixels — no FF/state change beyond the per-cycle border capture.
   _narrowRightClose(p) {
-    if (!(this._cycleIncrementalRender && this._cycleRenderActiveCanvasY >= 0)) return;
+    if (!(this._cycleRenderActiveCanvasY >= 0)) return;
     const canvasY = this._cycleRenderActiveCanvasY;
     const wideSeg = p.detectCycle - 1;    // render-seg 54: fully border now
     const narrowSeg = p.detectCycle - 2;  // render-seg 53: split at CSEL=0 X
@@ -1658,7 +1614,7 @@ export const lineOps = {
     // happened (and the sprite line-state is still pristine, so the rollback
     // above is a no-op) — the lineCycle* rewrites above are all the replay
     // needs. Skip the re-render.
-    if (this._cycleIncrementalRender && this._cycleRenderActiveCanvasY >= 0
+    if (this._cycleRenderActiveCanvasY >= 0
         && !this._lineDeferred) {
       const canvasY = this._cycleRenderActiveCanvasY;
       // Defer-by-1 interaction: the deferred cycle-incremental render

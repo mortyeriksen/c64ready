@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // vBorder supremacy / vertical-border-rendering spec audit. 10 tests
 // targeting the rule that when vBorder is closed (top/bottom border
 // zones), the entire scanline must render as border color $D020 —

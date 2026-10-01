@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Mid-line $D011 mode-flip rendering spec audit. 5 tests verifying the
 // spec rule that the VIC reads $D011 LIVE per pixel for mode decisions
 // in the text/bitmap rendering path (Bauer §3.7.3).

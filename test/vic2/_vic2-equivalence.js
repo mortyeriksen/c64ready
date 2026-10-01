@@ -79,3 +79,13 @@ export function distinctColors(fb) {
   for (let i = 0; i < fb.length; i++) { s.add(fb[i]); if (s.size > 8) break; }
   return s.size;
 }
+
+/** Force per-cycle output in fixtures without changing tracing or IRQ state. */
+export function forceLiveRendering(vic) {
+  // This hook runs after each eligible line is selected for deferred output,
+  // before any segment is rendered. Disable deferral instead of arming a watch.
+  vic._armDeferredFetchWatch = function () {
+    this._lineDeferred = false;
+    if (this.memory) this.memory._vicFetchWatchOn = false;
+  };
+}

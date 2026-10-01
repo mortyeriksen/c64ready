@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // VIC-II: Sprite spec coverage (Bauer §3.8)
 // Extracted from vic2-test.js.
 

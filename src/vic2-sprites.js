@@ -242,20 +242,13 @@ export const spriteOps = {
     if (s < 0) return;
     if (this.spriteDmaOn[s]) return;        // real-fetch path handled in clock()
     const data = this.spriteRowData[s];
-    if (this.spriteIdleFetchLeakEnabled) {
-      data[0] = this._spritePCyclePhi2BusValid[s]
-        ? this._spritePCyclePhi2Bus[s]
-        : 0xFF;
-      data[1] = this._spriteSCyclePhi1GhostValid[s]
-        ? this._spriteSCyclePhi1Ghost[s]
-        : this._vicMemRead(0x3FFF, this.currentVicBank);
-      data[2] = this.vicInternalBus & 0xFF;
-    } else {
-      // Flag off: no bus leak, all bytes 0xFF (compare/bisect mode).
-      data[0] = 0xFF;
-      data[1] = 0xFF;
-      data[2] = 0xFF;
-    }
+    data[0] = this._spritePCyclePhi2BusValid[s]
+      ? this._spritePCyclePhi2Bus[s]
+      : 0xFF;
+    data[1] = this._spriteSCyclePhi1GhostValid[s]
+      ? this._spriteSCyclePhi1Ghost[s]
+      : this._vicMemRead(0x3FFF, this.currentVicBank);
+    data[2] = this.vicInternalBus & 0xFF;
     this.spriteRowByteMask[s] = 0x07;
     this._updateSpriteShiftReg(s);
     this._spritePCyclePhi2BusValid[s] = 0;
@@ -617,7 +610,6 @@ export const spriteOps = {
   _applySpriteXSameCycleFixup() {
     if (!this._spriteXWriteThisCycle) return;
     this._spriteXWriteThisCycle = false;
-    if (!this._cycleIncrementalRender) return;
     // Tier-3 line-batch: on a deferred line nothing is painted yet, so the
     // re-render below is moot — but the CAPTURE-PATCHING contract must still
     // run: a write at this cycle's phi2 is only captured from [K+2] on, so
@@ -753,24 +745,20 @@ export const spriteOps = {
     // cycles later via the pipeline above. _deferCollisionCommit
     // routes the register update there without changing the pixels.
     this._deferCollisionCommit = true;
-    if (this.spriteSkipIdle) {
-      // Equivalent to the internal early-out (segDisplayOn sets
-      // _spriteLineStarted[s]; never-started ⇒ return): skip the call for
-      // sprites that are neither displaying-now nor started this line.
-      for (let s = 0; s < 8; s++) {
-        if (sprSeg.spriteDisplayOn[s] || this._spriteLineStarted[s]) {
-          if (this.spriteIntervals && !live && !this.frameTraceEnabled) {
-            this._renderScheduledSprite(sprSeg, s, canvasY, renderCycle);
-          } else {
-            this._renderSpriteSegmentForSprite(sprSeg, s, canvasY);
-          }
+
+    // Equivalent to the internal early-out (segDisplayOn sets
+    // _spriteLineStarted[s]; never-started ⇒ return): skip the call for
+    // sprites that are neither displaying-now nor started this line.
+    for (let s = 0; s < 8; s++) {
+      if (sprSeg.spriteDisplayOn[s] || this._spriteLineStarted[s]) {
+        if (!live && !this.frameTraceEnabled) {
+          this._renderScheduledSprite(sprSeg, s, canvasY, renderCycle);
+        } else {
+          this._renderSpriteSegmentForSprite(sprSeg, s, canvasY);
         }
       }
-    } else {
-      for (let s = 0; s < 8; s++) {
-        this._renderSpriteSegmentForSprite(sprSeg, s, canvasY);
-      }
     }
+
     // After the last rendered cycle's normal sprite paint, emit the
     // $163/$164 boundary garbage (Bauer §3.8.1 rule 4 re-trigger). Runs
     // once per line as a separate pass — not inside the per-sprite path
@@ -778,7 +766,7 @@ export const spriteOps = {
     // In sprite order so sprite N's garbage sees sprite <N's in the
     // collision buffer; still inside the deferred-commit window so the
     // resulting $D01E/$D01F bits follow the 2-cycle visibility pipeline.
-    if (this.spriteBoundaryGarbage && renderCycle === 58) {
+    if (renderCycle === 58) {
       for (let s = 0; s < 8; s++) {
         this._paintSpriteBoundaryGarbage(s, canvasY);
       }
@@ -921,8 +909,7 @@ export const spriteOps = {
     // window, so within the window steady state is the common case (~74% of
     // calls on sprite-heavy demos). We replicate only the body's two surviving
     // side effects (the dataRow tracker + prevSegDisplayOn) and return.
-    if (this.spriteSkipIdle
-        && renderState !== null
+    if (renderState !== null
         && !(segDisplayOn && !prevSegDisplayOn)
         && shiftReg === this._spriteLineLastShiftReg[s]
         && rowByteMask === this._spriteLineLastRowByteMask[s]
@@ -1431,16 +1418,6 @@ export const spriteOps = {
     }
   },
 
-  // Backward-compat wrapper — equivalent to running the orchestrator's
-  // sprite phase. Some legacy tests may call this directly.
-  _renderSpriteLine(raster, canvasY) {
-    const spriteSegments = this._buildCycleSpriteSegments();
-    for (let s = 0; s < 8; s++) {
-      for (let i = 0; i < spriteSegments.length; i++) {   // (A2) indexed, not for-of
-        this._renderSpriteSegmentForSprite(spriteSegments[i], s, canvasY);
-      }
-    }
-  },
 
   _spriteValidMask(rowByteMask) {
     let mask = 0;

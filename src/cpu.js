@@ -126,13 +126,6 @@ export class CPU {
     // the next instruction's _beginMicroInstruction interrupt check.
     this._branchIrqNoCrossDelay = false;
     this._branchNmiNoCrossDelay = false;
-    // Real 6510 performs a bus access every cycle, even internal ones.
-    // When true, clock() synthesizes a discarded read at PC after any
-    // KIND_INTERNAL microop so the external/internal bus latches reflect
-    // the real chip behavior.
-    // A/B gate: false skips the extra reads.
-    this.cpuInternalCycleDrivesBus = true;
-
     // Branch extra-cycle micro-ops, pre-created ONCE (the taken cycle + the
     // page-cross cycle). A taken branch fires ~once per idle KERNAL-loop
     // iteration, so building these closures fresh each time was the dominant
@@ -570,9 +563,8 @@ export class CPU {
       // The 6510 performs a real bus access every cycle. KIND_INTERNAL
       // microops (reset settle, HALT spin) do no bus work logically, so
       // synthesize a discarded read at PC so the external/internal bus
-      // latches stay correct. Gated so it can be bisected if it ever
-      // interacts badly with a future test.
-      if (kindByte === KIND_INTERNAL && this.cpuInternalCycleDrivesBus !== false) {
+      // latches stay correct.
+      if (kindByte === KIND_INTERNAL) {
         this.r(this.pc);
       }
       if (this.microOpHead >= this.microOpLen) {
@@ -581,7 +573,7 @@ export class CPU {
       }
     } else {
       this.currentMicroOpKindByte = KIND_INTERNAL;
-      if (this.cpuInternalCycleDrivesBus !== false) this.r(this.pc);
+      this.r(this.pc);
     }
     this.instructionCyclesRemaining = Math.max(0, this.instructionCyclesRemaining - 1);
     return 1;

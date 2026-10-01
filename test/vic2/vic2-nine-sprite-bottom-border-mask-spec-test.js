@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Sprite pixel masking at vertical-border boundaries — Nine "moving up"
 // regression coverage.
 //

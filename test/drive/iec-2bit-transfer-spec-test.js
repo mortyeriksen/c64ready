@@ -75,7 +75,7 @@ function buildHarness() {
 // back through the C64-facing delay line) so the assertions below stay
 // steady-state wired-AND checks; the 1-cycle edge latency itself is
 // spec-locked in fastloader-test.
-const settle = (m) => { if (m.iecEdgeLatency) { m._iecClock(); m._iecClock(); m._iecClock(); } };
+const settle = (m) => { { m._iecClock(); m._iecClock(); m._iecClock(); } };
 const cia = {
   ddr(m, v) { m.cia2.write(2, v); settle(m); },
   pra(m, v) { m.cia2.write(0, v); settle(m); },

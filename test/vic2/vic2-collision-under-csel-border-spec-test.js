@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Sprite-data collisions under the CLOSED main (CSEL side) border.
 //
 // Bauer §3.9: the main border flip-flop only selects the border colour at

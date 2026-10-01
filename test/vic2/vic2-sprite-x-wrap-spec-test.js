@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Sprite-X horizontal wrap (Bauer §3.8) — spec audit.
 //
 // Sprite-X is a 9-bit register (0..511 via $D000+2N + bit N of $D010).

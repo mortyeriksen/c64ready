@@ -1,3 +1,4 @@
+import { referencePaths } from './_vic2-reference-paths.js';
 // Background-colour registers ($D021-$D024) are OUTPUT-STAGE timing spec.
 //
 // Bauer §3.6.1: only the graphics DATA is delayed 12px before display. The
@@ -175,7 +176,7 @@ const cycleCanvasX = (c) => (c - 12) * 8 + 8;
 // path — since the retiming fix touches both and the wall hits the batch path.
 function idleRetimeCheck(batchRender) {
   const vic = makeVic();
-  vic.batchRender = batchRender;
+  if (!(batchRender)) vic._fixupColumns = referencePaths._fixupColumns;
   const raster = 100;
   const canvasY = raster - 15;
   const ro = canvasY * CANVAS_W;
@@ -242,7 +243,7 @@ ok('opened idle inner-zone $D021 IS output-stage retimed — non-batch whole-lin
 // timing: a cycle-14 pull-up reaches the framebuffer at x9, not x0 or x32.
 function displaySideZoneRetimeCheck(batchRender) {
   const vic = makeVic();
-  vic.batchRender = batchRender;
+  if (!(batchRender)) vic._fixupColumns = referencePaths._fixupColumns;
   const raster = 100;
   const canvasY = raster - 15;
   const ro = canvasY * CANVAS_W;
@@ -302,7 +303,7 @@ ok('opened display side-zone $D021 uses normal output-stage timing — non-batch
 // same normal output-stage timing as the active-display side-zone above.
 function idleSideZoneRetimeCheck(batchRender) {
   const vic = makeVic();
-  vic.batchRender = batchRender;
+  if (!(batchRender)) vic._fixupColumns = referencePaths._fixupColumns;
   const raster = 100;
   const canvasY = raster - 15;
   const ro = canvasY * CANVAS_W;
@@ -362,7 +363,7 @@ ok('opened idle side-zone $D021 uses normal output-stage timing — non-batch wh
 // above.
 function idleStartupCheck(batchRender) {
   const vic = makeVic();
-  vic.batchRender = batchRender;
+  if (!(batchRender)) vic._fixupColumns = referencePaths._fixupColumns;
   const raster = 100;
   const canvasY = raster - 15;
   const ro = canvasY * CANVAS_W;
@@ -421,7 +422,7 @@ ok('opened idle left-edge startup is not retimed — non-batch whole-line path')
 // graphics pass would otherwise pull the next $D021 colour through the sprite.
 function visibleSpriteMergeCheck(batchRender) {
   const vic = makeVic();
-  vic.batchRender = batchRender;
+  if (!(batchRender)) vic._fixupColumns = referencePaths._fixupColumns;
   const raster = 100;
   const canvasY = raster - 15;
   const ro = canvasY * CANVAS_W;

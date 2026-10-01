@@ -1,20 +1,6 @@
-// Batch-render equivalence spec test.
-//
-// vic2.batchRender gates a fast path in _fixupColumns: instead of re-rendering
-// all 48 cycles of a line twice and merging, it re-renders ONLY the cycles
-// whose +1/+2 mode (ECM/BMM/MCM) or c-2..c+3 background-colour lookahead window
-// actually changed. It is meant to be a pure performance optimisation —
-// BYTE-IDENTICAL to the default whole-line path.
-//
-// This test drives a full frame with a dense, deterministic schedule of mid-
-// line register writes that triggers _fixupColumns on (almost) every line —
-// $D021/$D022 bg changes swept across cycles 12..57 (covering the window edges),
-// plus $D011 BMM/ECM and $D016 MCM toggles — over a band of rasters that
-// includes both displayed (bad-line/character) rows and idle rows. It renders
-// the frame once with batchRender=false and once with =true and asserts the
-// ENTIRE framebuffer is bit-for-bit equal. The writes guarantee the `needed`
-// gate fires, so the scoped path is genuinely exercised, not skipped.
-
+import { referencePaths } from './_vic2-reference-paths.js';
+// Compare selective graphics fixups with a test-only whole-line reference.
+// Dense mode/background writes exercise both text and bitmap output.
 import { CANVAS_W, CANVAS_H } from '../../src/vic2.js';
 import { newVic, runFrame, standardWrites, compareFrames, distinctColors } from './_vic2-equivalence.js';
 
@@ -40,7 +26,7 @@ function makeVic(startBmm) {
 // mode-fixup path sees every combination.
 function renderFrame(batch, startBmm) {
   const vic = makeVic(startBmm);
-  vic.batchRender = batch;
+  if (!(batch)) vic._fixupColumns = referencePaths._fixupColumns;
   return runFrame(vic, (v, r, c) => {
     standardWrites(v, r, c);
     if (r >= 50 && r <= 250 && c === 30 && (r % 7) === 0) v.write(0x11, v.regs[0x11] ^ 0x40); // toggle ECM

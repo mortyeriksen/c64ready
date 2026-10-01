@@ -92,22 +92,8 @@ function runDemo(d) {
     charRom: Buffer.from(roms.charRom),
   });
   m.reset();
-  // Opt-in A/B of the gated render optimisations for visual review (env so the
-  // default stays untouched): CS_DEDUP=1 → capture-state dedup, CS_VERIFY=1 →
-  // assert each aliased snapshot still matches the live source.
-  // Symmetric (=1 force on, =0 force off) so an A/B run can disable the three
-  // gated render optimisations (batchRender, captureDedup, spriteSkipIdle) and
-  // confirm they're transparent vs the per-cycle/no-skip path.
-  if (process.env.CS_DEDUP === '1') m.vic2.captureDedup = true;
-  if (process.env.CS_DEDUP === '0') m.vic2.captureDedup = false;
+  // Verify that aliased capture snapshots match the live source.
   if (process.env.CS_VERIFY === '1') m.vic2.captureDedupVerify = true;
-  if (process.env.CS_SPRSKIP === '1') m.vic2.spriteSkipIdle = true;
-  if (process.env.CS_SPRSKIP === '0') m.vic2.spriteSkipIdle = false;
-  if (process.env.CS_BATCH === '1') m.vic2.batchRender = true;
-  if (process.env.CS_BATCH === '0') m.vic2.batchRender = false;
-  // CS_NOGARBAGE=1 → disable the $163/$164 sprite boundary garbage (pre-fix
-  // baseline) so a diff isolates exactly what that feature changed.
-  if (process.env.CS_NOGARBAGE === '1') m.vic2.spriteBoundaryGarbage = false;
   if (d.type === 'd64') {
     m.setTrueDrive(false);
     m.setD64(new D64(new Uint8Array(fs.readFileSync(d.file))));

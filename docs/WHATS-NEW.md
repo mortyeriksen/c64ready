@@ -10,6 +10,11 @@ The version you are running is shown at the bottom of the About dialog.
 
 ## Next release
 
+- **Cleanup.** Removed unused switches and obsolete code paths.
+
+- **More accurate mid-line graphics changes.** Pixels already fetched for display
+  stay intact when a program changes graphics memory or switches video banks.
+
 - **Less CPU work to draw the screen.** The video renderer spends less time
   recording unchanged state and processing sprites between their visible pixels.
 

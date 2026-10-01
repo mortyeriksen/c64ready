@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // VIC-II "Nine" demo dependency tests.
 //
 // Reference: https://www.linusakesson.net/scene/nine/explanation.php

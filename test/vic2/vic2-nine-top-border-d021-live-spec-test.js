@@ -1,3 +1,4 @@
+import { referencePaths } from './_vic2-reference-paths.js';
 // nine.prg top-border ghost-byte trick — opened-idle $D021 stays live.
 //
 // Nine starts each top-border digit raster in invalid $70, then flips $D011
@@ -39,7 +40,7 @@ function makeVic() {
 
 function paintNineModeFlipLine({ idleByte = 0x00, batchRender = true } = {}) {
   const vic = makeVic();
-  vic.batchRender = batchRender;
+  if (!(batchRender)) vic._fixupColumns = referencePaths._fixupColumns;
   const invalidMode = 0x70;    // ECM=1, BMM=1, MCM=0: invalid, black pixels
   const textMode = 0x10;       // text mode, DEN set
   vic.regs[0x11] = invalidMode;

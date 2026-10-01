@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // VIC-II sprite collision spec tests.
 //
 // Reference: Christian Bauer's VIC Article + C64 Programmer's Reference

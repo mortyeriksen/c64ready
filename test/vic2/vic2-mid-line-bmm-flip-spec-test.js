@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Mid-line $D011 BMM (bitmap-mode) flip PIXEL spec test.
 //
 // Bauer §3.7.3: ECM/BMM/MCM mode bits in $D011/$D016 are sampled LIVE

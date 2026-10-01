@@ -1,18 +1,4 @@
-// 1541 drive ↔ C64 clock ratio spec test.
-//
-// PAL real hardware: C64 phi2 = 985248 Hz; the 1541's CPU runs at 1 MHz
-// (16 MHz crystal / 16) — the drive is ~1.5% FASTER than the C64. TDE now
-// models that with a 16.16 fixed-point accumulator (driveClockFactor =
-// floor(65536 * 1e6 / 985248) = 66517, VICE drivesync.c parity) behind the
-// 'driveTrueClockRatio' switch (default ON). The switch's OFF position pins
-// the legacy 1:1 lockstep (factor 65536), which must stay a bit-exact no-op:
-// 1:1 freezes the drive↔C64 phase at load start, and several fastloader
-// behaviors were validated against it before the true ratio landed.
-//
-// This pins: (1) the OFF path is exactly 1:1 with a dormant accumulator,
-// (2) the ON path advances the drive by exactly (N*66517)>>16 cycles over
-// any window, i.e. the true ratio with no float jitter or drift.
-
+// PAL 1541 clock ratio and save-state phase continuity.
 import fs from 'fs';
 
 let testNo = 0, testsFailing = 0, currentFailures = [];
@@ -29,10 +15,7 @@ const ROMS = { kernal: fs.readFileSync('roms/kernal.bin'), basic: fs.readFileSyn
 if (!fs.existsSync('roms/1541.bin')) { console.log('# SKIP 1541 ROM not available'); process.exit(0); }
 const DRIVE = fs.readFileSync('roms/1541.bin');
 
-// The switch resolves at machine construction, so set the env per leg and
-// import the machine after the first assignment.
-async function makeMachine(ratioEnv) {
-  process.env.DRIVE_TRUE_CLOCK_RATIO = ratioEnv;
+async function makeMachine() {
   const { C64Machine } = await import('../../src/machine.js');
   const m = new C64Machine();
   m.loadROMs(ROMS); m.attachDrive(DRIVE); m.setTrueDrive(true); m.reset();
@@ -54,22 +37,9 @@ function measure(m, frames) {
   return { c64, accum0, drive: m.drive1541.totalCycles - d0 };
 }
 
-// ── 1: OFF path — exact legacy 1:1 lockstep, dormant accumulator ─────────────
-{
-  const m = await makeMachine('0');
-  expect(m.driveClockFactor === 65536, `factor is 65536 (1:1); got ${m.driveClockFactor}`);
-  const { c64, drive } = measure(m, 30);
-  expect(c64 > 500000, `precondition: ran a meaningful window (${c64} master cycles)`);
-  expect(drive === c64,
-    `1:1 lockstep: drive=${drive} vs C64=${c64} (ratio ${(drive / c64).toFixed(5)})`);
-  expect(m.driveCycleAccum === 0,
-    `driveCycleAccum stays 0 on the 1:1 path; got ${m.driveCycleAccum}`);
-  ok('1541 TDE, driveTrueClockRatio OFF: bit-exact legacy 1:1 lockstep');
-}
-
 // ── 2: ON path — exact 16.16 true ratio, VICE drivesync.c parity ─────────────
 {
-  const m = await makeMachine('1');
+  const m = await makeMachine();
   expect(m.driveClockFactor === 66517,
     `factor is floor(65536*1e6/985248) = 66517; got ${m.driveClockFactor}`);
   const { c64, accum0, drive } = measure(m, 30);
@@ -89,7 +59,7 @@ function measure(m, frames) {
 // mid-fraction must restore it exactly and keep advancing the drive on the
 // same integer-exact schedule (no phase step at a save/restore boundary).
 {
-  const m = await makeMachine('1');
+  const m = await makeMachine();
   const proto = Object.getPrototypeOf(m);
   for (let i = 0; i < 33; i++) proto._runMasterCycle.call(m);
   // serializeState() quiesces to an instruction boundary (may run a few more
@@ -97,7 +67,6 @@ function measure(m, frames) {
   const state = m.serializeState();
   const accum = m.driveCycleAccum;
   expect(accum > 0 && accum <= 0xffff, `accumulator holds a nonzero fraction (got ${accum})`);
-  process.env.DRIVE_TRUE_CLOCK_RATIO = '1';
   const { C64Machine } = await import('../../src/machine.js');
   const m2 = new C64Machine();
   m2.loadROMs(ROMS); m2.attachDrive(DRIVE); m2.setTrueDrive(true); m2.reset();
@@ -114,6 +83,5 @@ function measure(m, frames) {
   ok('16.16 accumulator phase survives save/restore with no step');
 }
 
-delete process.env.DRIVE_TRUE_CLOCK_RATIO;
 console.log(`\n${testNo} 1541 drive clock-ratio spec tests; ${testsFailing} fail`);
 if (testsFailing) process.exit(1);

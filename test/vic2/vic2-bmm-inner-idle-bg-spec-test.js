@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Bitmap-mode inner-zone idle-span colour spec test.
 //
 // In bitmap mode (BMM=1), when the segment is in the horizontal inner

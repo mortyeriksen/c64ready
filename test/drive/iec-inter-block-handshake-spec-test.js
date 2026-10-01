@@ -81,7 +81,7 @@ function ciaPaForOuts(atn, clk, data) {
 // reaction → drive pins back through the C64-facing delay line) before
 // observing either side. The 1-cycle edge latency itself is spec-locked in
 // fastloader-test.
-function settle(m) { if (m.iecEdgeLatency) { m._iecClock(); m._iecClock(); m._iecClock(); } }
+function settle(m) { { m._iecClock(); m._iecClock(); m._iecClock(); } }
 function readDD00BitDI(m) { settle(m); return (m.cia2.readPortA() & 0x80) ? 1 : 0; } // PA7 = DATA IN
 function readDD00BitCI(m) { settle(m); return (m.cia2.readPortA() & 0x40) ? 1 : 0; } // PA6 = CLK IN
 

@@ -58,19 +58,6 @@ export class Memory {
     this._vicFetchWatchLo = 0;
     this._vicFetchWatchHi = 0;
 
-    // Profile flags — toggle individually to bisect.
-    //
-    // openBusWritesToZeroOneEnabled models what the CPU port actually does to
-    // the RAM beneath it: the 6510's data drivers stay tri-stated on a write to
-    // $00/$01 (the port is internal), so the byte the VIC drove during phi1
-    // lands in the DRAM instead of the written value. The VICE testprogs'
-    // REU/cpuport check depends on it — "writing to addresses 0/1 will always
-    // write into RAM whatever was on the bus before" — and reads it back
-    // through an REU transfer, which is the only way software can see it.
-    this.openBusMode = 'vice-compatible';        // 'vice-compatible' | 'disabled' | 'random'
-    this.colorRamReadDrivesComposedByte = true;  // composed value re-drives latch
-    this.openBusWritesToZeroOneEnabled = true;   // RAM-under-port quirk
-
     // Cartridge mapping cache. Cartridge-specific registers and lifecycle
     // live in the attached device; these fields keep the page-table hot path
     // free of polymorphic calls.
@@ -469,7 +456,7 @@ export class Memory {
       // up in underlying RAM. Do NOT overwrite externalDataBus8 here.
       if (addr === 0) {
         this.cpuDDR = val;
-        if (this.openBusWritesToZeroOneEnabled) this.ram[0x00] = this.externalDataBus8;
+        this.ram[0x00] = this.externalDataBus8;
         // A DDR write can hand a pin to the latch that was floating a moment
         // ago, so the cassette lines have to be re-evaluated here too — the
         // KERNAL writes $01 first and raises the DDR afterwards.
@@ -482,13 +469,8 @@ export class Memory {
       // The KERNAL relies on this: it writes $01 before raising DDR to $2F,
       // so the latched value must survive to drive the bits once DDR flips.
       this.cpuPort = val;
-      // RAM under the port: legacy path mirrors the latch; quirk path stores
-      // the VIC phi1 byte instead.
-      if (this.openBusWritesToZeroOneEnabled) {
-        this.ram[0x01] = this.externalDataBus8;
-      } else {
-        this.ram[0x01] = this.cpuPort;
-      }
+      // The tri-stated CPU leaves the VIC phi1 byte in underlying RAM.
+      this.ram[0x01] = this.externalDataBus8;
       this._syncCassetteLines();
       this._rebuildMemoryMap();
       return;
@@ -554,12 +536,12 @@ export class Memory {
     if (addr >= 0xD400 && addr <= 0xD7FF) return this.sid ? this.sid.read(addr & 0x1F) : this._openBusRead();
     if (addr >= 0xD800 && addr <= 0xDBFF) {
       // Color RAM is connected to the lower 4 data bits; upper 4 are open
-      // bus. In vice-compatible mode, sample the latch for the upper nybble
+      // bus. Sample the latch for the upper nybble
       // (typically the byte the VIC fetched in phi1 of this cycle).
       const lo = this.colorRam[addr - 0xD800] & 0x0F;
-      const hi = (this.openBusMode === 'disabled') ? 0xF0 : (this.externalDataBus8 & 0xF0);
+      const hi = (this.externalDataBus8 & 0xF0);
       const composed = hi | lo;
-      if (this.colorRamReadDrivesComposedByte) this.externalDataBus8 = composed;
+      this.externalDataBus8 = composed;
       return composed;
     }
     if (addr >= 0xDC00 && addr <= 0xDCFF) return this._readCIA1(addr & 0x0F);
@@ -579,7 +561,7 @@ export class Memory {
     if (addr >= 0xD400 && addr <= 0xD7FF) return this.sid?.peek?.(addr & 0x1F) ?? this.externalDataBus8;
     if (addr >= 0xD800 && addr <= 0xDBFF) {
       const lo = this.colorRam[addr - 0xD800] & 0x0F;
-      const hi = (this.openBusMode === 'disabled') ? 0xF0 : (this.externalDataBus8 & 0xF0);
+      const hi = (this.externalDataBus8 & 0xF0);
       return hi | lo;
     }
     if (addr >= 0xDC00 && addr <= 0xDCFF) return this._peekCIA1(addr & 0x0F);
@@ -593,14 +575,8 @@ export class Memory {
     return this.externalDataBus8;
   }
 
-  // Open-bus read: with no device driving D0-D7, the CPU samples whatever
-  // was last on the bus. In vice-compatible mode this is the
-  // externalDataBus8 latch. 'disabled' returns the historical 0xFF for
-  // debugging; 'random' returns a fuzz byte for tracking down code that
-  // assumes a fixed value.
+  // With no device driving D0-D7, sample the last byte on the shared bus.
   _openBusRead() {
-    if (this.openBusMode === 'disabled') return 0xFF;
-    if (this.openBusMode === 'random') return (Math.random() * 256) | 0;
     return this.externalDataBus8;
   }
 

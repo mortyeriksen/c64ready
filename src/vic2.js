@@ -16,7 +16,6 @@
 // bank ($D000-$D03F read/write), VIC bus fetches + banking, IRQ line,
 // lightpen, frame trace, reset, and save-state.
 
-import { switchOn } from './switches.js';
 import {
   CANVAS_H, CANVAS_W, CYCLES_PER_LINE, GRAPHICS_WINDOW_END, GRAPHICS_WINDOW_START,
   LINES_PER_FRAME, VIC_VARIANT,
@@ -84,41 +83,10 @@ export class VIC2 {
     // expect this delay.
     this.vicVariant = VIC_VARIANT.V6569;
 
-    // Open-bus profile flags.
-    //  vicRefreshDrivesBus: r-access actually fetches and updates latches
-    //    (otherwise refresh is address-only, the historical cheap model).
-    //  spriteIdleFetchLeakEnabled: idle sprite fetch byte 2 samples
-    //    vicInternalBus (VIC-Addendum.txt behavior). Off forces 0xFF.
-    //  vicInternalBusCpuScope: which CPU bus events feed vicInternalBus.
-    //    'vic-registers-only' (default — matches current code: only CPU
-    //    accesses through vic.read/write at $D000-$D3FF update it).
-    //    'all-cpu-bus' would also update on every CPU memory access; needs
-    //    extra wiring in memory.js (not implemented yet — flag reserved).
-    this.vicRefreshDrivesBus = true;
-    this.spriteIdleFetchLeakEnabled = true;
-    this.vicInternalBusCpuScope = 'vic-registers-only';
-
-    // Sprite right-edge boundary garbage. Bauer §3.8.1 rule 4: the sprite
-    // shifters are (re)triggered at sprite X-coordinate $164 (cycle 58, the
-    // display turn-on point); per the VIC-Addendum.txt "sprite idle fetch", the
-    // bus contents ($ff / contents of $3fff / $ff) are then emitted. For an
-    // enabled sprite whose 24px display window reaches that boundary, this
-    // appends a garbage block at raw X $163/$164 (canvas SPRITE_BG_GARBAGE_X)
-    // which can collide with an overlapping sprite — the VICII/spritex
-    // demusinterruptus.prg behaviour (VICE-6569 emits it). Default on for
-    // VICE-6569 parity; gate-off available for bisection.
-    this.spriteBoundaryGarbage = true;
-
-    // Cycle-incremental rendering: when true, _renderRasterLine's work
-    // is split across each cycle of the line as it executes, instead
-    // of batched at end-of-line. This makes mid-line CPU reads of
-    // $D01E / $D01F see cycle-accurate collision state (essential for
-    // demos that poll collisions to detect VIC variant or pixel-
-    // pipeline timing). Default ON.
-    this._cycleIncrementalRender = true;
+    // Per-cycle rendering preserves CPU-visible collision timing.
     this._cycleRenderActiveCanvasY = -1;
 
-    // Tier-3 line-batch mode ('lineBatchRender' switch, Phase 1). When a
+    // Automatic line batching. When a
     // line is deferred, the per-cycle paints are skipped and the whole
     // line's segments are replayed in one burst through the SAME
     // incremental machinery (_catchUpDeferredLine) — at line end, or
@@ -128,57 +96,11 @@ export class VIC2 {
     // and the collision-pipe FEED are time-shifted. Lines with collision
     // IRQs armed (IMMC/IMBC, $D01A bits 1-2) or the frame trace active
     // render live.
-    this.lineBatchRender = switchOn('lineBatchRender');
     this._lineDeferred = false;
-    // Phase 2: coalesce the replay's graphics into wide spans (see
-    // _catchUpDeferredLine). Internal A/B toggle, not a user switch —
-    // false replays strictly cycle-by-cycle (the Phase-1 shape).
-    this._replayCoalesce = true;
-
-    // Batch-render optimisation. When true, _fixupColumns re-renders ONLY the
-    // cycles whose +1/+2 mode (ECM/BMM/MCM) or c-2..c+3 background-colour
-    // lookahead window actually changed, instead of re-rendering all 48 cycles
-    // of the line twice. Byte-identical to the whole-line pass (same `needed`
-    // gate; the per-cycle predicate is an exact superset of the cycles the
-    // whole-line merge would touch). Proven byte-identical (orbit fb hash +
-    // full spec suite + vic2-fixup-batch-equivalence-spec-test); kept as an
-    // A/B gate.
-    this.batchRender = true;
-
-    // Capture-state snapshot dedup: when true, _captureCycleState aliases the
-    // previous cycle's row/sprite snapshot buffers when the source is unchanged
-    // (tracked by version counters) instead of re-copying 9 typed arrays every
-    // visible cycle. Proven byte-identical (orbit fb hash across flag combos +
-    // full spec suite + vic2-capture-dedup-equivalence-spec-test + a
-    // captureDedupVerify soak across all reference demos); kept as an A/B gate.
-    this.captureDedup = true;
-    // Debug: when true, the alias branch also does a fresh copy into scratch and
-    // asserts it equals the aliased buffer — turns "did we bump every writer?"
-    // into a runtime check. Off in the hot path.
+    // Diagnostic assertion: aliased snapshots must equal the live source.
     this.captureDedupVerify = false;
 
-    // Sprite idle-cycle skip: when true, _renderSpriteSegmentForSprite returns
-    // early on cycles where a started sprite's state is steady and it neither
-    // overlaps the current segment nor needs the end-of-line wrap — a provable
-    // no-op (sprite shiftReg/rowByteMask only change at s-access cycles outside
-    // the 12-58 display window). Also gates a never-started loop-level skip at
-    // the clock() call site. Byte-identical (provable no-op under the gate);
-    // kept as an A/B gate.
-    this.spriteSkipIdle = true;
-
-    // Cycle-58 bad-line sample phase. Bauer §3.7.2 rule 5's "first phase of
-    // cycle 58" is phi1 — the VIC samples the bad-line condition BEFORE the
-    // CPU's phi2 write of the SAME cycle (bumbershootsoft "VIC acts before CPU
-    // on cycle 58"; see machine.js master-cycle ordering). A cycle-57 CPU write
-    // is from the prior master cycle and is therefore already visible at phi1
-    // (this is what the FLI demos / vic2-cycle58-live-badline-sampling test
-    // need), but a cycle-58 write must NOT be. We capture the BL condition at
-    // phi1 (in clock()) into _cycle58BadLineSample and feed it to the phi2
-    // transition. Flag kept so the old phi2-live behaviour can be A/B'd.
-    // Default true fixes raster_time_gp's periodic bottom-border garbage (a
-    // jitter-frame per-line $D011 YSCROLL write lands at cy58 and otherwise
-    // trips a spurious bad line).
-    this.cycle58BadLinePhi1 = true;
+    // Bauer 3.7.2: cycle 58 samples bad-line state at phi1, before CPU writes.
     this._cycle58BadLineSample = false;
 
     this.irqStatus = 0;       // $D019
@@ -501,11 +423,14 @@ export class VIC2 {
     // bad-line fetch. The renderer reads the scalar via `seg.rowFetchD0xx`
     // populated in `_buildCycleSegments`. Storing one per cycle was 3
     // typed-array writes per master cycle (~120 KB/s of redundant copy).
-    this._historySpriteDisplayOn = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(8));
-    this._historySpriteDataRow = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Int8Array(8));
-    this._historySpriteDataBase = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint16Array(8));
-    this._historySpriteDataBank = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint16Array(8));
-    this._historySpritePointerValue = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(8));
+    // Seven sprite fields share a 96-byte snapshot while retaining typed views.
+    this._spriteCaptureBytes = new Uint8Array(96);
+    this._homeSpriteCapture = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(96));
+    this._historySpriteDisplayOn = this._homeSpriteCapture.map(bytes => new Uint8Array(bytes.buffer, 0, 8));
+    this._historySpriteDataRow = this._homeSpriteCapture.map(bytes => new Int8Array(bytes.buffer, 8, 8));
+    this._historySpriteDataBase = this._homeSpriteCapture.map(bytes => new Uint16Array(bytes.buffer, 16, 8));
+    this._historySpriteDataBank = this._homeSpriteCapture.map(bytes => new Uint16Array(bytes.buffer, 32, 8));
+    this._historySpritePointerValue = this._homeSpriteCapture.map(bytes => new Uint8Array(bytes.buffer, 48, 8));
     // lineCycleSpriteRowData is preserved (some tests populate it) but is
     // no longer captured per cycle by the runtime — the renderer never
     // reads seg.spriteRowData (only seg.spriteShiftReg, which IS captured
@@ -513,10 +438,10 @@ export class VIC2 {
     // the per-cycle hot path. The live `this.spriteRowData` is still
     // used by _updateSpriteShiftReg.
     this.lineCycleSpriteRowData = Array.from({ length: CYCLES_PER_LINE + 1 }, () => Array.from({ length: 8 }, () => new Uint8Array(3)));
-    this._historySpriteRowByteMask = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint8Array(8));
-    this._historySpriteShiftReg = Array.from({ length: CYCLES_PER_LINE + 1 }, () => new Uint32Array(8));
+    this._historySpriteRowByteMask = this._homeSpriteCapture.map(bytes => new Uint8Array(bytes.buffer, 56, 8));
+    this._historySpriteShiftReg = this._homeSpriteCapture.map(bytes => new Uint32Array(bytes.buffer, 64, 8));
 
-    // Capture-state snapshot dedup (gated by `captureDedup`, see _captureCycleState).
+    // Versioned capture-state snapshots.
     // The row + sprite source arrays change only at discrete events within a
     // line, so most cycles re-copy identical bytes. When the source is unchanged
     // since the last captured cycle we ALIAS the previous snapshot buffer instead
@@ -535,14 +460,8 @@ export class VIC2 {
     this._homeSpriteRowByteMask = this._historySpriteRowByteMask.slice();
     this._homeSpriteShiftReg = this._historySpriteShiftReg.slice();
     this._homeRegs = this._historyRegs.slice();   // (B2) reg-snapshot home buffers
-    this.sparseRenderState = switchOn('sparseRenderState');
-    this.spriteIntervals = switchOn('spriteIntervals');
-    this.fetchFedRender = switchOn('fetchFedRender');
-    this.separateColorOutput = switchOn('separateColorOutput');
     this._fetchFeedLine = false;
-    this._fetchFeedValid = new Uint8Array(128);
-    this._fetchFeedAddress = new Uint16Array(128);
-    this._fetchFeedBytes = new Uint8Array(128);
+    this._fetchFeedSamples = new Uint32Array(40);
     this._spriteWakeCycle = new Uint8Array(8);
     this._spriteWakeRegs = new Array(8).fill(null);
     this._spriteWakeData = new Array(8).fill(null);
@@ -572,7 +491,7 @@ export class VIC2 {
     this._sprDataBankRef = null; this._sprPointerRef = null; this._sprByteMaskRef = null;
     this._sprShiftRef = null;
 
-    this.spritePointerValue = new Uint8Array(8);
+    this.spritePointerValue = new Uint8Array(this._spriteCaptureBytes.buffer, 48, 8);
     this.spritePointerFresh = new Uint8Array(8);
     // Set when a sprite's s-access this line was an IDLE fetch (DMA off) that
     // loaded the "ghost"/bus bytes into the buffer. The X>=$164 same-line
@@ -636,8 +555,8 @@ export class VIC2 {
     this._spritePreSegSnapBuf = this._allocSpriteLineSnapshot();
     this._spritePreSegCycle = -1;
     this.spriteRowData = Array.from({ length: 8 }, () => new Uint8Array(3));
-    this.spriteRowByteMask = new Uint8Array(8);
-    this.spriteShiftReg = new Uint32Array(8);
+    this.spriteRowByteMask = new Uint8Array(this._spriteCaptureBytes.buffer, 56, 8);
+    this.spriteShiftReg = new Uint32Array(this._spriteCaptureBytes.buffer, 64, 8);
     // Per-sprite p-cycle phi2 bus snapshot. The VIC-Addendum.txt
     // "Sprite idle fetch" rule: an idle fetch shows whatever is on the
     // VIC-II internal bus, or $FF if no access. We realize that as 3
@@ -653,10 +572,10 @@ export class VIC2 {
     // writes $DD00 at s-cycle phi2.
     this._spriteSCyclePhi1Ghost = new Uint8Array(8).fill(0xFF);
     this._spriteSCyclePhi1GhostValid = new Uint8Array(8);
-    this.spriteDataBase = new Uint16Array(8);
-    this.spriteDataBank = new Uint16Array(8);
+    this.spriteDataBase = new Uint16Array(this._spriteCaptureBytes.buffer, 16, 8);
+    this.spriteDataBank = new Uint16Array(this._spriteCaptureBytes.buffer, 32, 8);
     this.spriteDmaOn = new Uint8Array(8);
-    this.spriteDisplayOn = new Uint8Array(8);
+    this.spriteDisplayOn = new Uint8Array(this._spriteCaptureBytes.buffer, 0, 8);
     this.spriteStartPending = new Uint8Array(8);
     this.spriteStopPending = new Uint8Array(8);
     this.spriteMC = new Uint8Array(8);
@@ -671,7 +590,7 @@ export class VIC2 {
     // Snapshot of $D017 captured during cycle 56 phi1 — phi2() compares
     // against the live mask and applies a delta toggle if CPU phi2 wrote.
     this._c56MxYESnapshot = 0;
-    this.spriteLineDataRow = new Int8Array(8);
+    this.spriteLineDataRow = new Int8Array(this._spriteCaptureBytes.buffer, 8, 8);
     this.lastSpriteEndRaster = new Int16Array(8).fill(-1);
     this.lastSpriteEndPtr = new Uint8Array(8);
     this.lastSpriteEndRow = new Int8Array(8).fill(-1);
@@ -1026,11 +945,10 @@ export class VIC2 {
       this._advanceHorizontalBorderState(this.cycleInLine, this.regs);
 
       this._captureCycleState(this.cycleInLine, vBorderBefore, hBorderBefore, externalBaLow);
-      if (this._fetchFeedLine && this._lineDeferred
+      if (this._fetchFeedLine
           && this.cycleInLine >= 16 && this.cycleInLine <= 55) {
         this._recordGraphicsFetch(this.cycleInLine - 1);
       }
-
 
       // Cycle-incremental render: as soon as a cycle's state is captured,
       // render that cycle's segment (graphics + sprite pixels). This
@@ -1039,53 +957,53 @@ export class VIC2 {
       // batched value. Required for nine.prg's runtime VIC-variant
       // detection (LDA $D01F at L51 c17) and similar timing-critical
       // collision polls.
-      if (this._cycleIncrementalRender) {
-        if (this.cycleInLine === 1) {
-          this._greyDotCount = 0;   // per-line 8565 grey-dot scratch (write())
-          this._d020WrittenThisLine = false;   // per-line border-recolor gate (write())
-          const canvasY = this.raster - 15;
-          if (canvasY >= 0 && canvasY < CANVAS_H) {
-            this._initRenderRasterLine(this.raster, canvasY);
-            this._cycleRenderActiveCanvasY = canvasY;
-          } else {
-            this._cycleRenderActiveCanvasY = -1;
-          }
-          // Tier-3 line-batch: defer this line's paints unless something
-          // armed can observe render-derived state without a register read.
-          // Collision IRQs (IMMC/IMBC unmasked) reach the CPU through the
-          // IRQ line at commit time, so such lines render live; the frame
-          // trace stays live conservatively. Mid-line observers ($D019 /
-          // $D01E / $D01F reads, $D01A arming writes) trigger an immediate
-          // catch-up replay instead — see _catchUpDeferredLine.
-          this._lineDeferred = this.lineBatchRender
-            && this._cycleRenderActiveCanvasY >= 0
-            && (this.irqMask & 0x06) === 0
-            && !this.frameTraceEnabled;
-          this._fetchFeedLine = this.fetchFedRender && this._lineDeferred
-            && !!this.memory && this.memory.cartMode === 'none';
-          if (this._fetchFeedLine) this._fetchFeedValid.fill(0);
-          if (this._lineDeferred) this._armDeferredFetchWatch();
-          else if (this.memory) this.memory._vicFetchWatchOn = false;
+
+      if (this.cycleInLine === 1) {
+        this._greyDotCount = 0;   // per-line 8565 grey-dot scratch (write())
+        this._d020WrittenThisLine = false;   // per-line border-recolor gate (write())
+        const canvasY = this.raster - 15;
+        if (canvasY >= 0 && canvasY < CANVAS_H) {
+          this._initRenderRasterLine(this.raster, canvasY);
+          this._cycleRenderActiveCanvasY = canvasY;
+        } else {
+          this._cycleRenderActiveCanvasY = -1;
         }
-        // Advance the sprite-collision visibility pipeline every cycle,
-        // BEFORE the CPU step, so a mid-line $D01E/$D01F read sees bits
-        // detected 2 cycles ago (the 6569 surfaces sprite collisions to
-        // the CPU ~2 cycles after the pixel is emitted). Runs every cycle
-        // — bits detected at cy 58/59 commit at cy 60/61, past the render
-        // window — and persists across the line boundary.
-        this._drainSpriteCollisionCommit();
-        // Render seg K at machine cy K+1 (deferred by 1). This lets the
-        // renderer read lineCycleRegs[K+1] (just captured at the start of
-        // THIS cycle) for $D018 CB / bitmap-base and the ECM/BMM/MCM mode
-        // bits, which spec-correctly are sampled at the g-access cycle
-        // (= K+1) per Bauer §3.7.2 + §3.6.3 visibility rule. Without the
-        // defer, lineCycleRegs[K+1] would be stale (last frame's value).
-        if (this._cycleRenderActiveCanvasY >= 0
-            && this.cycleInLine >= 12 && this.cycleInLine <= 59
-            && !this._lineDeferred) {
-          this._renderCycleIncremental(
-            this.cycleInLine - 1, this._cycleRenderActiveCanvasY, /*live=*/ true);
+        // Tier-3 line-batch: defer this line's paints unless something
+        // armed can observe render-derived state without a register read.
+        // Collision IRQs (IMMC/IMBC unmasked) reach the CPU through the
+        // IRQ line at commit time, so such lines render live; the frame
+        // trace stays live conservatively. Mid-line observers ($D019 /
+        // $D01E / $D01F reads, $D01A arming writes) trigger an immediate
+        // catch-up replay instead — see _catchUpDeferredLine.
+        this._lineDeferred = this._cycleRenderActiveCanvasY >= 0
+          && (this.irqMask & 0x06) === 0
+          && !this.frameTraceEnabled;
+        this._fetchFeedLine = this._cycleRenderActiveCanvasY >= 0
+          && !this.frameTraceEnabled && (!this.memory || this.memory.cartMode === 'none');
+        if (this._fetchFeedLine) {
+          this._fetchFeedSamples.fill(0);
         }
+        if (this._lineDeferred) this._armDeferredFetchWatch();
+        else if (this.memory) this.memory._vicFetchWatchOn = false;
+      }
+      // Advance the sprite-collision visibility pipeline every cycle,
+      // BEFORE the CPU step, so a mid-line $D01E/$D01F read sees bits
+      // detected 2 cycles ago (the 6569 surfaces sprite collisions to
+      // the CPU ~2 cycles after the pixel is emitted). Runs every cycle
+      // — bits detected at cy 58/59 commit at cy 60/61, past the render
+      // window — and persists across the line boundary.
+      this._drainSpriteCollisionCommit();
+      // Render seg K at machine cy K+1 (deferred by 1). This lets the
+      // renderer read lineCycleRegs[K+1] (just captured at the start of
+      // THIS cycle) for $D018 CB / bitmap-base and the ECM/BMM/MCM mode
+      // bits, which spec-correctly are sampled at the g-access cycle
+      // (= K+1) per Bauer §3.7.2 + §3.6.3 visibility rule. Without the
+      // defer, lineCycleRegs[K+1] would be stale (last frame's value).
+      if (this._cycleRenderActiveCanvasY >= 0
+          && this.cycleInLine >= 12 && this.cycleInLine <= 59
+          && !this._lineDeferred) {
+        this._renderCycleIncremental(
+          this.cycleInLine - 1, this._cycleRenderActiveCanvasY, /*live=*/ true);
       }
 
       if (this.cycleInLine === CYCLES_PER_LINE) {
@@ -1103,12 +1021,11 @@ export class VIC2 {
       // pixels and collision latches were already updated each cycle —
       // the per-cycle dispatch above did the work. Skip the batch.
       if (this.cycleInLine >= CYCLES_PER_LINE) {
-        if (!this._cycleIncrementalRender) this._renderRasterLine(this.raster);
         // Incremental path: graphics/sprites were painted per-cycle; now that
         // the whole line's $D020 history is captured, repaint border pixels
         // on the X-coordinate timeline (Bauer §3.6.1/§3.9 — see
         // _recolorBorderRow). The batch path does this inside _renderRasterLine.
-        else if (this._cycleRenderActiveCanvasY >= 0) {
+        if (this._cycleRenderActiveCanvasY >= 0) {
           // Tier-3 line-batch: a still-deferred line replays in one burst
           // here, then the normal line-end passes below run unchanged.
           if (this._lineDeferred) this._catchUpDeferredLine();
@@ -1567,15 +1484,13 @@ export class VIC2 {
     // Latched even for ignored registers ($D01E/$D01F/$D02F-$D03F) because
     // the bus byte is independent of whether the destination latches it.
     this.vicInternalBus = val;
-    // Tier-3 line-batch mid-line observers/invalidators: arming a collision
-    // IRQ (IMMC/IMBC) makes the IRQ line an observer of render timing, and a
-    // change to the g-access fetch config ($D018 base bits, $D011 BMM)
-    // invalidates the armed RAM fetch watch — replay the deferred line now;
-    // the rest of the line renders live.
+    // Arming a collision IRQ makes the IRQ line an observer of render timing.
+    // The reference path also drains before a fetch-configuration change;
+    // immutable fetch-fed samples need no such RAM-watch invalidation.
     if (this._lineDeferred) {
       if (reg === 0x1A && (val & 0x06) !== 0) this._catchUpDeferredLine();
-      else if (reg === 0x18 && (((this.regs[0x18] ^ val) & 0x0E) !== 0)) this._catchUpDeferredLine();
-      else if (reg === 0x11 && (((this.regs[0x11] ^ val) & 0x20) !== 0)) this._catchUpDeferredLine();
+      else if (!this._fetchFeedLine && reg === 0x18 && (((this.regs[0x18] ^ val) & 0x0E) !== 0)) this._catchUpDeferredLine();
+      else if (!this._fetchFeedLine && reg === 0x11 && (((this.regs[0x11] ^ val) & 0x20) !== 0)) this._catchUpDeferredLine();
     }
     // Bauer §3.2: $D01E/$D01F (M-M and M-D collision) and $D02F-$D03F
     // (unconnected) are not CPU-writable. Return after updating the bus
@@ -1906,9 +1821,9 @@ export class VIC2 {
 
   noteBankChange(bank, delay = 0) {
     bank &= 0xC000;
-    // Tier-3 line-batch: a mid-line VIC bank change moves the g-access fetch
-    // window — replay the deferred line now (see _armDeferredFetchWatch).
-    if (this._lineDeferred && bank !== this.currentVicBank) {
+    // The reference renderer rereads graphics RAM, so bank changes must
+    // drain its pending work. Fetch-fed samples already retain their data.
+    if (this._lineDeferred && !this._fetchFeedLine && bank !== this.currentVicBank) {
       this._catchUpDeferredLine();
     }
     if (delay === 0) {
@@ -2011,7 +1926,6 @@ export class VIC2 {
   // demusinterruptus) the emitted garbage byte begins one pixel earlier, at
   // raw X $163. Canvas X = raw X + 8.
   static get _SPRITE_BG_GARBAGE_RAW_X() { return 0x163; }
-
 
   // Blit frame buffer to canvas context. The ImageData WRAPS frameBuffer's
   // backing store (frameBuffer is allocated once in the constructor and never
@@ -2197,6 +2111,9 @@ export class VIC2 {
       rowScreenCodes: cp(this.rowScreenCodes), rowColorNibbles: cp(this.rowColorNibbles),
       rowFetchedCols: cp(this.rowFetchedCols), rowVcBase: this.rowVcBase,
       rowFetchD011: this.rowFetchD011, rowFetchD016: this.rowFetchD016, rowFetchD018: this.rowFetchD018,
+      // Retain immutable display samples when saving within a fetch-fed line.
+      // Older snapshots omit this field and use the reference path until wrap.
+      fetchFeedSamples: this._fetchFeedLine ? cp(this._fetchFeedSamples) : null,
       // framebuffer (Uint32Array copy)
       fb32: this.fb32.slice(),
     };
@@ -2247,6 +2164,11 @@ export class VIC2 {
     this.rowFetchedCols.set(s.rowFetchedCols); this.rowVcBase = s.rowVcBase | 0;
     this.rowFetchD011 = s.rowFetchD011 | 0; this.rowFetchD016 = s.rowFetchD016 | 0; this.rowFetchD018 = s.rowFetchD018 | 0;
     if (s.fb32) this.fb32.set(s.fb32);
+    this._fetchFeedSamples.fill(0);
+    if (s.fetchFeedSamples?.length === 40) {
+      this._fetchFeedSamples.set(s.fetchFeedSamples);
+      this._fetchFeedLine = true;
+    }
   }
 }
 

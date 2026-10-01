@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // VIC-II: Text-mode rendering (Tests 5b-5r)
 // Extracted from vic2-test.js.
 

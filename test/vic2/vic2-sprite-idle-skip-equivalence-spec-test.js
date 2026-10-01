@@ -1,20 +1,6 @@
-// Sprite idle-cycle skip equivalence spec test.
-//
-// vic2.spriteSkipIdle makes _renderSpriteSegmentForSprite return early on cycles
-// where a started sprite is steady (no reseed, no X-rewrite) and paints nothing
-// (no segment overlap, not the end-of-line wrap), plus a never-started loop-level
-// skip at the clock() call site. It is meant to be a pure performance win —
-// BYTE-IDENTICAL framebuffer AND identical $D01E/$D01F collision behaviour.
-//
-// This drives a full frame with 8 enabled sprites (varied X incl. the right/
-// wrap edge, varied Y so they DMA/display/end on different lines, mixed
-// multicolor + X-expand + priority), bad-line character display, and mid-line
-// $D021/$D011/$D016 writes. It renders once with spriteSkipIdle=false and once
-// with =true and asserts (a) the whole framebuffer is bit-for-bit equal and
-// (b) the per-line $D01E (sprite-sprite) and $D01F (sprite-bg) collision history
-// — sampled via clearing reads, exercising the 2-cycle commit pipeline — is
-// identical.
-
+import { referencePaths } from './_vic2-reference-paths.js';
+// Compare sprite idle skipping with a test-only sequencer that never skips.
+// Pixels and CPU-visible collision histories must agree.
 import { CYCLES_PER_LINE, CANVAS_W, CANVAS_H } from '../../src/vic2.js';
 import { newVic, placeSprites, distinctColors } from './_vic2-equivalence.js';
 
@@ -43,7 +29,7 @@ function makeVic() {
 
 function renderFrame(skip) {
   const vic = makeVic();
-  vic.spriteSkipIdle = skip;
+  if (!(skip)) vic._renderSpriteSegmentForSprite = referencePaths._renderSpriteSegmentForSprite;
   const coll = [];
   const maxSteps = 314 * CYCLES_PER_LINE;
   let lastRaster = -1;

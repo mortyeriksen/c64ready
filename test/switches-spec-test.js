@@ -8,7 +8,7 @@ function expect(cond, msg) {
   if (!cond) throw new Error(msg);
 }
 
-const name = 'lineBatchRender';
+const name = 'webglPresenter';
 const env = SWITCHES[name].env[0];
 const saved = process.env[env];
 delete process.env[env];

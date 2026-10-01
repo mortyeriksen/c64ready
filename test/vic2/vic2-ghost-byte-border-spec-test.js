@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Ghost-byte rendering spec audit — focused on the regression of
 // "Commando cartridge shows ghost bytes in top/bottom border".
 //

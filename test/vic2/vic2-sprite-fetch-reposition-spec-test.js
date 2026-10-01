@@ -1,3 +1,5 @@
+import { forceLiveRendering } from './_vic2-equivalence.js';
+import { referencePaths } from './_vic2-reference-paths.js';
 // Bauer §3.8.1 rules 5 and 6: a completed offscreen emission does not
 // consume bytes fetched afterwards. A later X match may emit that new row.
 // PAL fetch slots come from §3.6.3. First s-access: p-cycle phi2.
@@ -5,13 +7,13 @@ import assert from 'node:assert/strict';
 import { VIC2, CANVAS_W } from '../../src/vic2.js';
 
 function render({ sprite, earlyX, expanded = false, multi = false, lateX = 240,
-  lineBatchRender, vicVariant = '6569', captureDedup = true }) {
+  deferredRendering, vicVariant = '6569', captureDedup = true }) {
   const v = new VIC2();
   v.ram = new Uint8Array(65536);
   v.colorRam = new Uint8Array(1024);
   v.charRom = new Uint8Array(4096);
-  v.lineBatchRender = lineBatchRender;
-  v.captureDedup = captureDedup;
+  if (!(deferredRendering)) forceLiveRendering(v);
+  if (!(captureDedup)) v._captureCycleState = referencePaths._captureCycleState;
   v.vicVariant = vicVariant;
   v.regs[0x11] = 0x1b;
   v.regs[0x16] = 8;
@@ -53,11 +55,11 @@ const cases = [
 ];
 for (const vicVariant of ['6569', '8565']) {
   for (const c of cases) {
-    for (const lineBatchRender of [false, true]) {
+    for (const deferredRendering of [false, true]) {
       for (const captureDedup of [false, true]) {
-        const row = render({ ...c, lineBatchRender, vicVariant, captureDedup });
+        const row = render({ ...c, deferredRendering, vicVariant, captureDedup });
         const pixels = row.slice(248, 248 + (c.expanded ? 48 : 24));
-        const label = JSON.stringify({ ...c, lineBatchRender, vicVariant, captureDedup });
+        const label = JSON.stringify({ ...c, deferredRendering, vicVariant, captureDedup });
         assert.ok(pixels.every(p => ((p & 0xffffff) !== 0) === c.visible),
           `Bauer 3.8.1 rules 5/6: only data fetched after completed emission can display at a later X match: ${label}`);
       }

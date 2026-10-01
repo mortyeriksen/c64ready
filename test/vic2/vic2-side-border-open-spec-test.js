@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Side-border-open ("hyperscreen") spec audit — tests cover BAUER §3.14.1
 // and the interaction of exact-cycle CSEL writes with rules 1/6 of §3.9.
 //

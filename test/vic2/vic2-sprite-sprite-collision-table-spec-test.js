@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Sprite-sprite collision across edge X-coordinates — synthesized from
 // the VICE test-suite program `sprite-sprite.prg` (VICII/spritecollisions),
 // without loading the PRG (per AGENTS.md: synthesize VIC state directly).

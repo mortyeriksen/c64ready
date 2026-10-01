@@ -1,3 +1,4 @@
+import { forceLiveRendering } from './_vic2-equivalence.js';
 // CSEL hyperscreen-veto + sprite-collision idempotency integration test.
 //
 // `_vetoFFTransition()` rolls back the right-SET decision and re-renders
@@ -37,8 +38,8 @@ function makeVic() {
   // state), which only the live incremental path exhibits — under the
   // Tier-3 line-batch mode pixels/commits land at line end or on a CPU
   // observer event, both byte-identical at every CPU-observable point.
-  // Pin the live path so a LINE_BATCH=1 suite run still tests this contract.
-  v.lineBatchRender = false;
+  // Exercise the per-cycle rendering contract.
+  if (!(false)) forceLiveRendering(v);
   v.currentVicBank = 0;
   return v;
 }

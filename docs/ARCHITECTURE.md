@@ -167,22 +167,17 @@ The VIC renders each cycle's ~8-pixel slice as the beam passes, so mid-line CPU
 reads of the collision registers see cycle-accurate state. See
 the [VIC-II](VIC2-ARCHITECTURE.md).
 
-#### Rendering pipeline & performance switches
+#### Rendering pipeline
 
-The VIC-II records the machine state it needs **every cycle** (the correctness
-foundation), but pixel emission is **line-batched by default**: a raster line's
-paints are replayed in one burst at line end, with an immediate catch-up replay
-whenever the CPU could observe mid-line state, so the result is byte-identical
-to per-cycle rendering at every CPU-observable point (verified by a lockstep
-equivalence suite, framebuffer hashes, ≈200 reference screenshots and the demo
-status board), and measurably faster on sprite- and graphics-heavy demos. The
-finished framebuffer reaches the canvas through a WebGL presenter, with an
-automatic 2D `putImageData` fallback. Under a CRT preset the presenter backs
-the canvas at device resolution and draws the preset in its shader
-(`src/crt-params.js` holds the numbers); with CRT off or no usable WebGL the
-canvas stays 1:1 and CSS overlays take over. Both pipelines, and the runtime
-switches that A/B them, are detailed in the [VIC-II](VIC2-ARCHITECTURE.md) §8
-and §14.
+The VIC-II records cycle state with compact history, schedules stable sprites by
+output interval, and renders graphics from captured fetch bytes. Eligible lines
+batch output until line end; CPU observers trigger immediate catch-up. Tracing
+and armed collision IRQs select live rendering. Cartridge and tracing lines use
+the RAM-reading graphics path. See the [VIC-II](VIC2-ARCHITECTURE.md) §8 and §14.
+
+The finished framebuffer uses a WebGL presenter with an automatic 2D fallback.
+CRT presets use a shader when supported and CSS overlays otherwise. Presentation
+switches remain available for diagnostics; see [Performance](PERFORMANCE-ANALYSIS.md).
 
 ### Audio  (CPU → SID → speakers): crosses the thread boundary
 ```

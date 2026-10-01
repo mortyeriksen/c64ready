@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // VIC-II: Sprite rendering edge cases (Tests 10b-10l)
 // Extracted from vic2-test.js.
 

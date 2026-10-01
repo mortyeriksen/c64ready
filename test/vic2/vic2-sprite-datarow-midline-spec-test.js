@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Sprite renderer must NOT reseed the shifter when only `dataRow` advances
 // mid-line (Y-expand MC counter prep for the NEXT raster). The current
 // raster's shifter still holds row N's data — reseeding clobbers the shift

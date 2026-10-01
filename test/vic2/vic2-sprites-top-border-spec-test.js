@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // "Sprites in top border" + mid-line mode flip spec audit. 15 tests
 // targeting the exact behaviors a multi-mode multiplexer demo (per the
 // 2026-05-02 snapshot at L44..L67) relies on:

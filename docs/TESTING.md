@@ -12,14 +12,14 @@ then, from "Debug console (DevTools)" on, the **DevTools debug and inspection
 surface**: console helpers and live model toggles for triaging behaviour in
 the browser.
 
-The suite is around 390 spec files, registered in the `TESTS` array of
+The suite files are registered in the `TESTS` array of
 `test/all-test.js` and run by `npm test`. Between them they hold a few thousand
 labelled tests, plus some unlabelled internal assertions.
 
 ## Running the suite
 
 ```bash
-# Full default suite (around 390 files, 6-way parallel)
+# Full default suite (6-way parallel)
 npm test                         # alias for: node test/all-test.js
 node test/all-test.js
 
@@ -45,27 +45,23 @@ A skipping test exits 0, which on its own is indistinguishable from a pass, so i
 
 Both lists print the reason (from `missingNote(key)`, which names the manifest entry and its environment variable), so a green run still shows exactly which fixtures went missing. A test that skips without a directive is reported as a plain `PASS`: that is the bug the directive exists to prevent.
 
-## VIC render-path comparisons
+## VIC renderer tests
 
-The default renderer uses compact payload histories and sprite interval
-scheduling. Keep the reference path available when changing either mechanism:
+Compact history, sprite scheduling and fetch-fed graphics have no runtime switches.
+Tracing uses dense history and RAM-based graphics; cartridges also use RAM-based
+graphics. Batching is automatic; tracing and armed collision IRQs select live rendering.
+Test-only reference implementations live in `test/vic2/_vic2-reference-*.js` and are excluded from
+the application build.
 
-```bash
-VIC_SPARSE_STATE=0 VIC_SPRITE_INTERVALS=0 node test/all-test.js
-VIC_FETCH_FEED=1 node test/all-test.js
-VIC_SEPARATE_COLOR=1 node test/all-test.js
-```
+- `vic2-render-history-spec-test.js`: snapshot isolation, pixels and collision/IRQ
+  timing on both PAL variants.
+- `vic2-fetch-feed-spec-test.js`: fetch boundaries, XSCROLL, memory/bank changes,
+  save states, and live/deferred/tracing comparisons.
+- `vic2-graphics-foreground-spec-test.js`: colors and foreground classification
+  across all graphics modes, including collisions beneath borders.
 
-`vic2-render-history-spec-test.js` compares cycle-visible collision/IRQ results
-and line-end pixels for both PAL variants with live and deferred rendering.
-`vic2-fetch-feed-spec-test.js` covers captured display bytes, bus isolation and
-fallbacks for RAM/DMA writes, bank/mode changes and collision observers. These
-comparisons supplement the hardware-rule tests; they do not replace them.
-
-`vic2-color-separation-spec-test.js` checks color-independent foreground bits,
-black invalid modes, collision-only processing beneath the main border, all
-byte/color/mode combinations against the combined decoder, and live/deferred
-pixel and collision-read equivalence on both VIC variants.
+Expected hardware behavior follows the VIC-II specification, not reference-path
+output alone.
 
 ## Assembly64 integration checks
 
@@ -131,7 +127,7 @@ The **reference-demo screenshot pass** (`test/commit-screenshots.mjs`) runs the 
 node test/commit-screenshots.mjs
 ```
 
-The **demo crash/hang status board** (`test/demo-status.mjs`) boots each tracked demo (disc 1) headless and classifies the outcome as `CRASH` (JAM/KIL opcode, PC and time), `runs clean`, or `DISPLAY FROZEN` (a possible silent hang; it is framebuffer-based, since PC sampling cannot tell a silent hang from a healthy interrupt-driven spin). Each outcome is compared to its expected status (`✓` / `✗ CHANGED`); most entries expect `RUNS`, so the board is first a regression detector over demos that must keep running clean. Each demo loads via the chunked keyboard buffer (the UI path) and runs its per-demo frame budget (around eight minutes of demo time), saving a screenshot **every 10 s** plus the end frame (`<demo>-<YYYYMMDD-HHMMSS>[-sNNN].png`, to a git-ignored output directory created on demand), so a demo's progression, and exactly where it visually breaks, is visible. The demo disk images resolve through the collection roots in `test/external-assets.json`. SID defaults to 8580 to match the UI. Multi-disc demos boot their crash disc directly (for example Mojo disc 4). It is a `*.mjs` tool, so the `all-test.js` runner skips it, like `commit-screenshots.mjs`.
+The **demo crash/hang status board** (`test/demo-status.mjs`) boots each tracked demo (disc 1) headless and classifies the outcome as `CRASH` (JAM/KIL opcode, PC and time), `runs clean`, or `DISPLAY FROZEN` (a possible silent hang; it is framebuffer-based, since PC sampling cannot tell a silent hang from a healthy interrupt-driven spin). Each verdict prints immediately when its worker finishes, including the disc and elapsed wall time; the final table keeps the complete overview. Each outcome is compared to its expected status (`✓` / `✗ CHANGED`); most entries expect `RUNS`, so the board is first a regression detector over demos that must keep running clean. Each demo loads via the chunked keyboard buffer (the UI path) and runs its per-demo frame budget (around eight minutes of demo time), saving a screenshot **every 10 s** plus the end frame (`<demo>-<YYYYMMDD-HHMMSS>[-sNNN].png`, to a git-ignored output directory created on demand), so a demo's progression, and exactly where it visually breaks, is visible. The demo disk images resolve through the collection roots in `test/external-assets.json`. SID defaults to 8580 to match the UI. Multi-disc demos boot their crash disc directly (for example Mojo disc 4). It is a `*.mjs` tool, so the `all-test.js` runner skips it, like `commit-screenshots.mjs`.
 
 ```bash
 # Crash/hang status board over the tracked demos (screenshots + ✓/✗ vs expected)
@@ -344,41 +340,11 @@ c64Vic.bankGlitch(true|false)   // C64C / 8565: VIC-bank 10↔01 transitions bli
                                 // through bank 3 for one cycle. Only active when
                                 // vicVariant='8565'.
 
-// Render performance toggles (ON by default, byte-identical optimisations)
-c64Vic.batchRender(true|false)  // _fixupColumns fast path: re-render ONLY the
-                                // cycles whose mid-line mode (ECM/BMM/MCM) or bg
-                                // ($D021-$D024) lookahead window changed, instead
-                                // of re-rendering the whole line twice. Proven
-                                // pixel-identical (orbit fb hash + spec suite +
-                                // the fixup-batch equivalence spec); biggest
-                                // win on heavy mid-line-write demos like Orbit
-                                // Untold (~54→65 fps). Flip OFF to A/B if a render
-                                // regression is ever suspected.
-c64Vic.captureDedup(true|false) // _captureCycleState fast path: alias the previous
-                                // cycle's row + sprite + register snapshot buffers
-                                // when the source is unchanged (version-counter
-                                // tracked; the register snapshot's version bumps on
-                                // every CPU $D0xx write) instead of re-copying ~10
-                                // typed arrays every visible cycle. With batchRender,
-                                // Orbit ~65→77 fps.
-                                // c64Vic.captureDedupVerify(true) adds a per-cycle
-                                // assert that the alias still matches the live source
-                                // (catches a missed version bump). Flip OFF to A/B.
-c64Vic.spriteSkipIdle(true|false) // _renderSpriteSegmentForSprite fast path: return
-                                // early on cycles where a started sprite is steady
-                                // and paints nothing (no segment overlap, no
-                                // end-of-line wrap), plus a never-started loop-level
-                                // skip. On sprite-heavy demos ~74% of per-cycle
-                                // sprite calls paint nothing. Flip OFF to A/B.
+// Capture diagnostic: check aliased snapshots against live state
+c64Vic.captureDedupVerify(true|false)
 
-// Shared external-data-bus model (see the next section for the full table)
-c64Bus.status()                 // dump every flag + the live latch bytes
-c64Bus.openBus('disabled')      // 'vice-compatible' (default) | 'disabled' | 'random'
-c64Bus.colorRam(true|false)     // composed Color-RAM read re-drives the latch
-c64Bus.portZeroOne(true|false)  // $00/$01 RAM-under-port quirk (default off)
-c64Bus.refresh(true|false)      // VIC r-access drives the bus
-c64Bus.spriteIdle(true|false)   // sprite idle fetch leaks vs all-$FF
-c64Bus.cpuInternal(true|false)  // KIND_INTERNAL cycles fire a discarded read
+// Shared external-data-bus diagnostics
+c64Bus.status()                 // live latch bytes and trace state
 c64Bus.traceStart(1024)         // enable per-cycle bus trace ring
 c64Bus.traceStop()              // disable + free
 c64Bus.traceDump(64)            // print + return last N entries (oldest first)
@@ -478,25 +444,22 @@ c64Trace.disable()   // stop, restore the fast path
 c64Trace.status()    // check whether it's currently capturing
 ```
 
-**Performance.** Leaving the trace **off costs nothing measurable**. The off-path is a single boolean check per raster, and it is in fact the *optimized* path: the line-batch renderer, capture-state dedup, and sprite-idle skip (the `c64Vic.*` toggles above) are all active only while `frameTraceEnabled` is false. Turning the trace **on deliberately disables those optimizations** (the renderer then runs live per-cycle on every line and re-copies the capture snapshots every visible cycle) and adds about 5 extra per-cycle field computations plus whole-frame map accumulation. Expect a visible frame-rate drop on heavy demos while it is on, which is why it is a flip-on-then-off tool, not a default. `c64Trace.disable()` restores full speed immediately.
+**Performance.** Tracing selects live per-cycle rendering, dense capture and
+RAM-based graphics, and accumulates whole-frame diagnostic maps. Sprite idle
+skipping and selective fixups remain active. Expect a frame-rate drop with
+tracing enabled. `c64Trace.disable()` restores the normal rendering path.
+
 
 ### Shared external-data-bus model
 
-The emulator models a shared 8-bit external data bus (`memory.externalDataBus8`) that is updated by every CPU read/write and every VIC chip-bus fetch. Open-bus CPU reads (`$DE00–$DFFF` without a cartridge, plus the upper nybble of Color RAM at `$D800–$DBFF`) sample the latch instead of returning a fixed `$FF`. The VIC's `vicInternalBus` is a separate latch that feeds sprite idle fetch (VIC-Addendum §"Sprite idle fetch"); both latches are driven by `_vicBusRead` simultaneously.
+The shared 8-bit bus latch is updated by CPU reads, CPU writes except `$00/$01`,
+and VIC fetches including refresh. Unmapped IO1/IO2 reads sample this latch.
+Color RAM reads combine its upper nibble with the stored low nibble and re-drive
+the latch. Writes to `$00/$01` leave the VIC phi1 byte in underlying RAM.
 
-Each behaviour is gated by a flag, so you can bisect a suspected regression or fall back to the legacy model:
-
-| Field | Default | Behaviour when on (default) | When off |
-| --- | --- | --- | --- |
-| `machine.mem.openBusMode` | `'vice-compatible'` | Open IO1/IO2 and Color RAM upper nybble return the latch | `'disabled'` returns `$FF` (simplified model); `'random'` returns a fuzz byte |
-| `machine.mem.colorRamReadDrivesComposedByte` | `true` | The composed Color-RAM read re-drives the latch | Latch is not updated by the compose step (the outer `Memory.read` epilogue still latches the returned byte) |
-| `machine.mem.openBusWritesToZeroOneEnabled` | `false` | _Opt-in._ Writes to `$00/$01` leave the VIC phi1 byte in `ram[0]/ram[1]` (6510 tri-stated drivers) | Standard: `ram[$01]` mirrors the masked port |
-| `machine.vic2.vicRefreshDrivesBus` | `true` | DRAM refresh cycles perform a real fetch, updating both latches | Refresh is address-only (simplified model) |
-| `machine.vic2.spriteIdleFetchLeakEnabled` | `true` | Sprite idle fetch byte 2 samples `vicInternalBus` (Addendum behaviour) | All three idle-fetch bytes are `$FF` |
-| `machine.vic2.vicInternalBusCpuScope` | `'vic-registers-only'` | Only CPU accesses to `$D000–$D3FF` feed `vicInternalBus`, matching the documented `sb_sprite_fetch` behaviour | `'all-cpu-bus'` (feed **every** CPU bus access) is **not implemented by design**: the VIC-Addendum and the `sb_sprite_fetch` testprog show the idle-fetch latch defaults to `$FF` and changes only on VIC-register / VIC-bus accesses, so a wider scope would diverge from silicon (and it is demo-neutral: 0 px change across the tracked demos) |
-| `machine.cpu.cpuInternalCycleDrivesBus` | `true` | KIND_INTERNAL microops (reset settle, HALT spin) perform a discarded `read(pc)` so every cycle touches the bus | KIND_INTERNAL cycles are silent (simplified model) |
-
-All of these can be set live from the DevTools console, for example `machine.mem.openBusMode = 'disabled'`. They take effect on the next master cycle; no restart needed.
+Sprite idle fetches sample the separate VIC internal latch. CPU internal cycles
+perform discarded reads. These behaviours are always enabled; `c64Bus.status()`
+and bus tracing expose their state.
 
 #### Per-cycle bus trace
 

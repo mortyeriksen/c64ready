@@ -1,3 +1,4 @@
+import { forceLiveRendering } from './_vic2-equivalence.js';
 // csel-veto-sprite-rollback-spec-test.js
 //
 // Spec-derived test for the §3.14.1 cycle-56 hyperscreen veto path —
@@ -71,8 +72,8 @@ function makeVic() {
   // state), which only the live incremental path exhibits — under the
   // Tier-3 line-batch mode pixels/commits land at line end or on a CPU
   // observer event, both byte-identical at every CPU-observable point.
-  // Pin the live path so a LINE_BATCH=1 suite run still tests this contract.
-  v.lineBatchRender = false;
+  // Exercise the per-cycle rendering contract.
+  if (!(false)) forceLiveRendering(v);
   v.ram = new Uint8Array(0x10000);
   v.colorRam = new Uint8Array(0x0400);
   v.charRom = new Uint8Array(0x1000);

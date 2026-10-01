@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // $D01B sprite-vs-bg priority mid-line PIXEL spec test.
 //
 // Bauer §3.8 + §3.11: $D01B (sprite priority) bit N controls whether

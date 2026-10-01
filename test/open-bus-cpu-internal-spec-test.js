@@ -2,8 +2,7 @@
 //
 // Per Bauer + the spec, the 6510 performs a real bus access every clock
 // cycle, including KIND_INTERNAL microops (reset settle, HALT spin). Our
-// CPU dispatcher synthesizes a discarded read at PC for such cycles when
-// `cpuInternalCycleDrivesBus` is true (default).
+// CPU dispatcher synthesizes a discarded read at PC for such cycles.
 //
 // This test counts memory reads across a HALT cycle and across the reset
 // settle to confirm internal cycles actually touch the bus.
@@ -58,42 +57,23 @@ class CountingMemory {
   ok('reset settle: 7 internal cycles each bus-read');
 }
 
-// 2. With cpuInternalCycleDrivesBus=false, internal cycles are silent.
+// A two-cycle NOP performs exactly two reads.
 {
-  const mem = new CountingMemory();
-  mem.ram[0xFFFC] = 0x00; mem.ram[0xFFFD] = 0x10;
-  for (let i = 0; i < 0x100; i++) mem.ram[0x1000 + i] = 0xEA;
-  const cpu = new CPU(mem);
-  cpu.reset();
-  cpu.cpuInternalCycleDrivesBus = false;
-  const baseReads = mem.reads;
-  for (let i = 0; i < 7; i++) cpu.clock();
-  const settleReads = mem.reads - baseReads;
-  expect(settleReads === 0, `expected 0 internal-cycle reads (flag off), got ${settleReads}`);
-  ok('flag off: internal cycles are silent');
-}
-
-// 3. NOPs have no KIND_INTERNAL microops, so toggling the flag does not
-//    change their read count — the synthetic internal read fires only for
-//    actual internal cycles (reset settle, HALT).
-{
-  function countNopReads(flagOn) {
+  function countNopReads() {
     const mem = new CountingMemory();
     mem.ram[0xFFFC] = 0x00; mem.ram[0xFFFD] = 0x10;
     for (let i = 0; i < 0x100; i++) mem.ram[0x1000 + i] = 0xEA;
     const cpu = new CPU(mem);
     cpu.reset();
-    cpu.cpuInternalCycleDrivesBus = flagOn;
     for (let i = 0; i < 7; i++) cpu.clock();
     cpu.I = 0;
     const base = mem.reads;
     cpu.clock(); cpu.clock();
     return mem.reads - base;
   }
-  const onReads = countNopReads(true);
-  const offReads = countNopReads(false);
-  expect(onReads === offReads, `NOP reads should be flag-independent: on=${onReads} off=${offReads}`);
-  ok('NOP read count is flag-independent (no KIND_INTERNAL microops)');
+  const reads = countNopReads();
+  expect(reads === 2, `6502 NOP takes two read cycles, got ${reads}`);
+  ok('NOP performs its two bus reads without an extra internal read');
 }
 
 if (testsFailing === 0) console.log(`\nAll ${testNo} tests passed.`);

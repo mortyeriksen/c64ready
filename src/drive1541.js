@@ -3,7 +3,6 @@
 import { CPU } from './cpu.js';
 import { VIA6522 } from './6522.js';
 import { GCRDisk, CYCLES_PER_BYTE } from './gcr.js';
-import { switchOn } from './switches.js';
 
 // "No wake scheduled" sentinel for the idle-skip countdown. A large SMI, NOT
 // Infinity: Infinity is a double and poisons the idle-wake fields into tagged
@@ -131,7 +130,6 @@ export class Drive1541 {
     // VIA2 Port A whenever the drive CPU stores $1C01; `_writeShiftReg` shifts it
     // onto the surface MSB-first; `_writeBits` counts the 8-bit byte boundary;
     // `_wasWriting` primes the shifter on each read→write transition.
-    this._writeEnabled    = switchOn('driveWrite');
     this._lastWrittenByte = 0x55;
     this._writeShiftReg   = 0;
     this._writeBits       = 0;
@@ -258,7 +256,7 @@ export class Drive1541 {
     const hi = this.read(0xFFFD);
     this.cpu.pc = (hi << 8) | lo;
     this.cpu.sp = 0xFF;
-    this.cpu.I  = 1; 
+    this.cpu.I  = 1;
   }
 
   _getActiveJobIndex() {
@@ -308,19 +306,14 @@ export class Drive1541 {
     // Fold any pending head writes on the OUTGOING disk back into its image
     // before its GCR cache is dropped, so eject / disk-swap / reset (which
     // re-attaches through here) never loses a save.
-    if (this._writeEnabled && this.gcrDisk) this.gcrDisk.commitDirtyTracks();
+    if (this.gcrDisk) this.gcrDisk.commitDirtyTracks();
     // The GCR source the head reads: a G64 is one already (raw streams per
     // half-track); a D64 gets its tracks synthesised from its sectors.
     this.disk = d64 || null;
     this.gcrDisk = !d64 ? null : d64.isG64 ? d64 : new GCRDisk(d64);
-    // No disk ⇒ not protected (nothing to protect). With a disk: honor its own
-    // write-protect (a session attribute on the D64) when write support is on —
-    // absent or true ⇒ protected, so only an explicit `writeProtected === false`
-    // (createBlankD64 / the UI unlock) opens it, and disk-like mocks stay
-    // protected; legacy always-protected when write support is switched off.
+    // With no disk, write protection is inactive. Mounted media need an unlock.
     this.writeProtected = !d64 ? false
-      : this._writeEnabled ? (d64.writeProtected !== false)
-      : true;
+      : (d64.writeProtected !== false);
     // Disk insertion is a hardware media change, not a DOS RAM patch. The
     // ROM and fastloader code own zero page state; clobbering it while the
     // drive is live can desynchronise custom loaders.
@@ -337,12 +330,11 @@ export class Drive1541 {
   }
 
   /** Runtime write-protect toggle (UI unlock). Records the state on the mounted
-   *  disk image so it survives a re-attach (reset / state restore). No effect on the
-   *  drive gate while global write support is switched off. */
+   *  disk image so it survives a re-attach (reset / state restore). */
   setWriteProtect(protectedOn) {
     const p = !!protectedOn;
     if (this.disk) this.disk.writeProtected = p;
-    this.writeProtected = (this._writeEnabled && this.gcrDisk) ? p : !!this.gcrDisk;
+    this.writeProtected = (this.gcrDisk) ? p : !!this.gcrDisk;
   }
 
   /** Fold any pending head writes back into the disk image (decode-on-demand):
@@ -370,8 +362,8 @@ export class Drive1541 {
   // ── IEC bus (host pushes line state) ──────────────────────────────────────
   // Lines are Active Low (0 = Asserted/0V, 1 = Released/High)
   setIecLines(atn, clk, data) {
-    const atnEdge = (atn === 0 && this.atnIn !== 0); 
-    
+    const atnEdge = (atn === 0 && this.atnIn !== 0);
+
     this.atnIn  = atn;
     this.clkIn  = clk;
     this.dataIn = data;
@@ -476,11 +468,9 @@ export class Drive1541 {
     // Phase consistent with the start half-track (see constructor note).
     this._lastStepperPhase = (this.currentHalfTrack - 2) & 0x03;
     this._syncBit = 0x80;
-    // Honor the inserted disk's write-protect (a session attribute on the D64);
-    // with write support off, fall back to the legacy always-protected behavior.
+    // Honor the inserted disk's write-protect (a session attribute on the D64).
     this.writeProtected = !this.gcrDisk ? false
-      : this._writeEnabled ? (this.disk?.writeProtected !== false)
-      : true;
+      : (this.disk?.writeProtected !== false);
     this.lastGCRByte = 0x55;
     this._shiftReg = 0;
     this._shiftBits = 0;
@@ -498,7 +488,7 @@ export class Drive1541 {
     // PB5-6 bits for the start track (track 18 → 2 = 28 cy/byte), not zoneForTrack.
     this.currentSpeedZone = speedZoneBitsForTrack(this.currentHalfTrack >> 1);
     this._readyLogged = false;
-    
+
     // Clear IEC bus trackers to prevent stale states across resets
     this.atnIn = 1;
     this.clkIn = 1;
@@ -735,7 +725,7 @@ export class Drive1541 {
         this._shiftBits = 0;
         continue;
       }
-      
+
       if (this.trackDirty) {
         const oldBits = this.trackStream ? this.trackStream.length * 8 : 0;
         const oldPos = this.trackBitPos;
@@ -771,7 +761,7 @@ export class Drive1541 {
         // mirror of the read handshake below. Sync ($FF) and header/data blocks
         // are just the bytes the DOS emits; commitDirtyTracks() later decodes the
         // mutated buffer back into the D64 image.
-        if (this._writeEnabled && this._isWriteMode()) {
+        if (this._isWriteMode()) {
           if (!this._wasWriting) {
             // Read→write transition: prime the shifter from the latched Port A byte.
             this._wasWriting = true;

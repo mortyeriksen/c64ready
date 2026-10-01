@@ -89,7 +89,7 @@ each step (read by the VIC IRQ handler's late-tag and the bus trace).
    `potXSampled/Y` (the real SID's 8-bit SAR ADC cadence). Whether the latch is
    what `$D419/$D41A` actually return depends on two gates in front of it:
    `potConnected` and `potXOverride`; see SID-ARCHITECTURE.md.
-3. **`_iecClock()`**: only when a drive is attached and `iecEdgeLatency` is on
+3. **`_iecClock()`**: when a drive is attached
    (the default). Advances the drive→C64 pin delay line so the C64's `$DD00`
    reads sample the drive's CLK/DATA pins one master cycle late; the drive-facing
    bus is untouched (the drive sees C64 edges instantly). See §6.
@@ -116,7 +116,7 @@ each step (read by the VIC IRQ handler's late-tag and the bus trace).
 11. **`cia*.endMasterCycle()`** closes the per-cycle read window; optional bus
     trace record.
 12. **`drive1541.clock(steps)`**: `steps` is 1 or 2, carried by the 16.16
-    drive:C64 ratio accumulator (true PAL 66517/65536; 65536 = exact 1:1), or
+    drive:C64 ratio accumulator (true PAL 66517/65536), or
     idle-skip (see §6). A second drive (device 9) clocks in lockstep here. The
     C64 CPU runs *before* the drive each cycle so a `STA $DD00` lands in the
     drive's input latches before its next `$1800` read.
@@ -214,8 +214,7 @@ trap-load and TDE modes: TDE only decides whether `$FFD5` LOAD is intercepted or
 left to the real IEC protocol. Enabling TDE first runs the drive forward (up to
 3M cycles) until its DOS ROM reaches the idle scheduler, so the first LOAD
 doesn't race the boot. The drive clock uses the true PAL 1 MHz / 985248 Hz ratio
-by default via a 16.16 accumulator, with an exact 1:1 lockstep switch for
-investigations. To save CPU, a safely idle drive is **skipped** (`canIdleSkip` →
+via a 16.16 accumulator. To save CPU, a safely idle drive is **skipped** (`canIdleSkip` →
 `_skipDriveIdleCycle`) and the deferred cycles are settled (`settleIdleCycles`)
 when a bus change or timed wake (`_driveIdleWakeInCycles`) arrives. See
 the [1541 drive](DRIVE-ARCHITECTURE.md) for the deeper drive mechanics.

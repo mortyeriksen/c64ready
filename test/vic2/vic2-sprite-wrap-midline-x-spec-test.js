@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Sprite-X horizontal wrap — mid-line X rewrite positioning (Bauer §3.8).
 //
 // A high-X sprite that WRAPS around the line end (rawX near 504) paints its

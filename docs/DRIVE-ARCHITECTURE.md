@@ -60,7 +60,7 @@ bit-bang the bus / count cycles) behave correctly.
 - **Trap-served drive** (TDE off): the machine intercepts the KERNAL LOAD
   entry (`$FFD5`, or the routine behind the ILOAD vector) and reads the file
   straight from the disk image, a D64 or a D81, and answers the KERNAL's serial
-  primitives with the [virtual drive](#the-virtual-drive-srcvirtual-drivejs),
+  primitives with the [virtual drive](#the-virtual-drive-src-virtual-drive-js),
   so OPEN, CHKIN, CHRIN, CLOSE, SAVE and channel 15 reach the image too. Fast,
   and without the drive ROM, but loaders that bit-bang the bus still find the
   real 1541 or nothing. The load trap is not silent: it runs the ROM's own
@@ -132,8 +132,7 @@ Peripherals tick first so a GCR byte-ready V-flag latch or a VIA timer IRQ
 raised *this* cycle is visible to the CPU's micro-op when it samples them; with
 the order reversed, the DOS's `BVS`/IRQ-poll loops see events a cycle late and
 reads fail. The machine clocks an attached drive through a
-16.16 drive:C64 accumulator: default true PAL ratio is 1 MHz / 985248 Hz
-(`driveTrueClockRatio`), while the lockstep switch pins it to exact 1:1.
+16.16 drive:C64 accumulator at the true PAL ratio of 1 MHz / 985248 Hz.
 
 The attached drive is not always full-clocked. `machine._runMasterCycle()`
 can enter idle-skip once the IEC bus has been quiet long enough and
@@ -522,8 +521,7 @@ idle scheduler before the first LOAD, so the C64 doesn't time out racing the boo
 ## 13. Key invariants & gotchas (quick reference)
 
 - **Peripherals clock before the CPU** each cycle, and an attached drive uses the
-  true PAL drive:C64 ratio by default, with an exact 1:1 lockstep switch for
-  investigations.
+  true PAL drive:C64 ratio.
 - **VIA1 PB uses 7406 inverters**: register bit 1 ⇒ bus line LOW. The drive must
   re-sync the bus on every PB read or the wired-AND can deadlock.
 - **Byte-ready drives both CA1 and the SO pin**; the SO path is gated by SOE

@@ -436,41 +436,6 @@ window.c64Vic = {
     console.log(`vic.c64cBankGlitch = ${machine.vic2.c64cBankGlitch} (variant=${machine.vic2.vicVariant})`);
     return machine.vic2.c64cBankGlitch;
   },
-  // Batch-render fast path for _fixupColumns — re-renders only the cycles whose
-  // mode/bg lookahead window changed instead of the whole line twice. Meant to
-  // be byte-identical to the default path (a perf optimisation); toggle here to
-  // A/B compare. See vic2-render.js _fixupColumns.
-  //   c64Vic.batchRender(true)   — enable
-  //   c64Vic.batchRender(false)  — disable
-  //   c64Vic.batchRender()       — read current state
-  batchRender(on) {
-    if (!machine) { console.warn('machine not ready'); return; }
-    if (on === undefined) {
-      const cur = !!machine.vic2.batchRender;
-      console.log(`vic.batchRender = ${cur}`);
-      return cur;
-    }
-    machine.vic2.batchRender = !!on;
-    console.log(`vic.batchRender = ${machine.vic2.batchRender}`);
-    return machine.vic2.batchRender;
-  },
-  // Capture-state snapshot dedup (ON by default) — aliases the previous cycle's
-  // row/sprite snapshots when unchanged instead of re-copying 9 typed arrays per
-  // visible cycle. Byte-identical; toggle to A/B. captureDedupVerify(true) adds a
-  // per-cycle assertion that the alias still matches the live source.
-  //   c64Vic.captureDedup(true|false)        — enable/disable
-  //   c64Vic.captureDedup()                  — read current state
-  captureDedup(on) {
-    if (!machine) { console.warn('machine not ready'); return; }
-    if (on === undefined) {
-      const cur = !!machine.vic2.captureDedup;
-      console.log(`vic.captureDedup = ${cur}`);
-      return cur;
-    }
-    machine.vic2.captureDedup = !!on;
-    console.log(`vic.captureDedup = ${machine.vic2.captureDedup}`);
-    return machine.vic2.captureDedup;
-  },
   captureDedupVerify(on) {
     if (!machine) { console.warn('machine not ready'); return; }
     if (on === undefined) return !!machine.vic2.captureDedupVerify;
@@ -478,45 +443,14 @@ window.c64Vic = {
     console.log(`vic.captureDedupVerify = ${machine.vic2.captureDedupVerify}`);
     return machine.vic2.captureDedupVerify;
   },
-  // Sprite idle-cycle skip (ON by default) — _renderSpriteSegmentForSprite
-  // returns early on cycles where a started sprite is steady and paints nothing
-  // (no segment overlap / no end-of-line wrap), plus a never-started loop skip.
-  // Byte-identical; toggle to A/B.
-  //   c64Vic.spriteSkipIdle(true|false) / c64Vic.spriteSkipIdle()
-  spriteSkipIdle(on) {
-    if (!machine) { console.warn('machine not ready'); return; }
-    if (on === undefined) { const cur = !!machine.vic2.spriteSkipIdle; console.log(`vic.spriteSkipIdle = ${cur}`); return cur; }
-    machine.vic2.spriteSkipIdle = !!on;
-    console.log(`vic.spriteSkipIdle = ${machine.vic2.spriteSkipIdle}`);
-    return machine.vic2.spriteSkipIdle;
-  },
+
 };
 
-// Shared external-data-bus model toggles + per-cycle bus trace. See README
-// "Shared external-data-bus model" for the full description of each flag.
-// Every getter/setter follows c64Vic's pattern: no arg reads, one arg sets.
-//
-//   c64Bus.status()                     dump all flags
-//   c64Bus.openBus()                    read mode; c64Bus.openBus('disabled')
-//   c64Bus.colorRam(true|false)         compose re-drive
-//   c64Bus.portZeroOne(true|false)      $00/$01 RAM-under-port quirk
-//   c64Bus.refresh(true|false)          VIC r-access drives bus
-//   c64Bus.spriteIdle(true|false)       sprite-idle leak vs all-$FF
-//   c64Bus.cpuInternal(true|false)      KIND_INTERNAL synth read
-//   c64Bus.traceStart(1024)             enable per-cycle ring
-//   c64Bus.traceStop()                  disable + free
-//   c64Bus.traceDump(n)                 oldest-first slice
+// Shared-bus latch inspection and per-cycle tracing.
 window.c64Bus = {
   status() {
     if (!machine) { console.warn('machine not ready'); return; }
     const s = {
-      'mem.openBusMode':                       machine.mem.openBusMode,
-      'mem.colorRamReadDrivesComposedByte':    !!machine.mem.colorRamReadDrivesComposedByte,
-      'mem.openBusWritesToZeroOneEnabled':     !!machine.mem.openBusWritesToZeroOneEnabled,
-      'vic2.vicRefreshDrivesBus':              !!machine.vic2.vicRefreshDrivesBus,
-      'vic2.spriteIdleFetchLeakEnabled':       !!machine.vic2.spriteIdleFetchLeakEnabled,
-      'vic2.vicInternalBusCpuScope':           machine.vic2.vicInternalBusCpuScope,
-      'cpu.cpuInternalCycleDrivesBus':         !!machine.cpu.cpuInternalCycleDrivesBus,
       'machine.busTraceEnabled':               !!machine.busTraceEnabled,
       'machine.busTraceDepth':                 machine.busTraceDepth,
       'mem.externalDataBus8':                  '0x' + (machine.mem.externalDataBus8 & 0xFF).toString(16).padStart(2, '0'),
@@ -524,75 +458,6 @@ window.c64Bus = {
     };
     console.table(s);
     return s;
-  },
-  openBus(mode) {
-    if (!machine) { console.warn('machine not ready'); return; }
-    if (mode === undefined) {
-      console.log(`mem.openBusMode = '${machine.mem.openBusMode}'`);
-      return machine.mem.openBusMode;
-    }
-    if (mode !== 'vice-compatible' && mode !== 'disabled' && mode !== 'random') {
-      console.warn(`invalid openBus mode '${mode}' — expected 'vice-compatible' | 'disabled' | 'random'`);
-      return machine.mem.openBusMode;
-    }
-    machine.mem.openBusMode = mode;
-    console.log(`mem.openBusMode = '${mode}'`);
-    return mode;
-  },
-  colorRam(on) {
-    if (!machine) { console.warn('machine not ready'); return; }
-    if (on === undefined) {
-      const cur = !!machine.mem.colorRamReadDrivesComposedByte;
-      console.log(`mem.colorRamReadDrivesComposedByte = ${cur}`);
-      return cur;
-    }
-    machine.mem.colorRamReadDrivesComposedByte = !!on;
-    console.log(`mem.colorRamReadDrivesComposedByte = ${!!on}`);
-    return !!on;
-  },
-  portZeroOne(on) {
-    if (!machine) { console.warn('machine not ready'); return; }
-    if (on === undefined) {
-      const cur = !!machine.mem.openBusWritesToZeroOneEnabled;
-      console.log(`mem.openBusWritesToZeroOneEnabled = ${cur}`);
-      return cur;
-    }
-    machine.mem.openBusWritesToZeroOneEnabled = !!on;
-    console.log(`mem.openBusWritesToZeroOneEnabled = ${!!on}`);
-    return !!on;
-  },
-  refresh(on) {
-    if (!machine) { console.warn('machine not ready'); return; }
-    if (on === undefined) {
-      const cur = !!machine.vic2.vicRefreshDrivesBus;
-      console.log(`vic2.vicRefreshDrivesBus = ${cur}`);
-      return cur;
-    }
-    machine.vic2.vicRefreshDrivesBus = !!on;
-    console.log(`vic2.vicRefreshDrivesBus = ${!!on}`);
-    return !!on;
-  },
-  spriteIdle(on) {
-    if (!machine) { console.warn('machine not ready'); return; }
-    if (on === undefined) {
-      const cur = !!machine.vic2.spriteIdleFetchLeakEnabled;
-      console.log(`vic2.spriteIdleFetchLeakEnabled = ${cur}`);
-      return cur;
-    }
-    machine.vic2.spriteIdleFetchLeakEnabled = !!on;
-    console.log(`vic2.spriteIdleFetchLeakEnabled = ${!!on}`);
-    return !!on;
-  },
-  cpuInternal(on) {
-    if (!machine) { console.warn('machine not ready'); return; }
-    if (on === undefined) {
-      const cur = !!machine.cpu.cpuInternalCycleDrivesBus;
-      console.log(`cpu.cpuInternalCycleDrivesBus = ${cur}`);
-      return cur;
-    }
-    machine.cpu.cpuInternalCycleDrivesBus = !!on;
-    console.log(`cpu.cpuInternalCycleDrivesBus = ${!!on}`);
-    return !!on;
   },
   traceStart(depth = 1024) {
     if (!machine) { console.warn('machine not ready'); return; }

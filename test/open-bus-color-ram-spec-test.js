@@ -6,10 +6,7 @@
 // the same cycle, but for unit testing we set the latch directly.
 //
 // Composed value: (externalDataBus8 & 0xF0) | (colorRam[idx] & 0x0F).
-// When `colorRamReadDrivesComposedByte` is true (default), the composed
-// value re-drives the latch (so a follow-up open read at $DExx sees it).
-//
-// `openBusMode = 'disabled'` falls back to the historical (0xF0 | nybble).
+// A read re-drives the shared latch with the composed byte.
 
 import { Memory } from '../src/memory.js';
 
@@ -39,7 +36,7 @@ function makeMem() {
   return mem;
 }
 
-// 1. Composed read: latch high nybble + Color RAM low nybble.
+// Composed read: latch high nybble + Color RAM low nybble.
 {
   const mem = makeMem();
   mem.colorRam[0x000] = 0x07;
@@ -49,7 +46,7 @@ function makeMem() {
   ok('Color RAM upper nybble samples latch');
 }
 
-// 2. Latched value re-drives the bus after composed read.
+// Latched value re-drives the bus after composed read.
 {
   const mem = makeMem();
   mem.colorRam[0x100] = 0x0A;
@@ -59,33 +56,7 @@ function makeMem() {
   ok('composed read re-drives latch');
 }
 
-// 3. colorRamReadDrivesComposedByte=false leaves the latch alone.
-{
-  const mem = makeMem();
-  mem.colorRamReadDrivesComposedByte = false;
-  mem.colorRam[0x200] = 0x0F;
-  mem.externalDataBus8 = 0x40;
-  const v = mem.read(0xDA00);
-  expect(v === 0x4F, `expected composed 0x4F, got 0x${v.toString(16)}`);
-  expect(mem.externalDataBus8 === 0x4F, `latch is still re-driven by Memory.read() epilogue, got 0x${mem.externalDataBus8.toString(16)}`);
-  // Note: the gate only controls whether the composed step itself updates
-  // the latch; the outer Memory.read() epilogue still latches the final
-  // returned value (it's the byte the CPU sees on D0-D7).
-  ok('colorRamReadDrivesComposedByte=false consistent');
-}
-
-// 4. openBusMode='disabled' returns legacy 0xF0 | nybble.
-{
-  const mem = makeMem();
-  mem.openBusMode = 'disabled';
-  mem.colorRam[0x000] = 0x07;
-  mem.externalDataBus8 = 0xB3;
-  const v = mem.read(0xD800);
-  expect(v === 0xF7, `expected legacy 0xF7, got 0x${v.toString(16)}`);
-  ok('openBusMode=disabled returns 0xF0|nybble');
-}
-
-// 5. Write masks to low nybble unchanged.
+// Write masks to low nybble unchanged.
 {
   const mem = makeMem();
   mem.write(0xDB00, 0xA9);

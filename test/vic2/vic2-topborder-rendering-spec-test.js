@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Top-border rendering with mode-flip demo spec audit. 10 tests
 // targeting the user's snapshot scenario: vBorder=open across top zone
 // (via DEN/RSEL flip trick) + mid-line $D011 mode flips. Per spec the

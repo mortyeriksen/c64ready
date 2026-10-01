@@ -10,95 +10,9 @@
 // default. Resolution happens at call time (see `switchOn`), so a script may set
 // `process.env.X` before constructing the machine and still have it take effect.
 //
-// This module has no imports (leaf), so both machine.js and cia.js can import it
-// without an import cycle.
+// This module has no imports.
 
 const SWITCHES = {
-  // Clock the 1541 at the true PAL ratio — drive 1 MHz vs C64 985248 Hz,
-  // ~1.5% fast — via a 16.16 fixed-point accumulator (factor 66517; see
-  // the drive block in machine.js). OFF pins the
-  // legacy 1:1 lockstep (factor 65536), bit-for-bit the pre-switch behavior.
-  // 1:1 freezes the drive↔C64 phase at its load-start value, which made
-  // marginal fastloader receptions all-or-nothing per boot and let
-  // phase-dependent faults hide (Coma mole $390f JAM family); the true ratio
-  // sweeps phase continuously like real hardware. The original float-ratio
-  // accumulator was removed early on (pre-43b7902) because its quantization
-  // broke NOSDOS-style 2-bit loaders against the then-rough CPU/CIA/VIC
-  // timing — that surround is now cycle-audited, so the ratio returns as the
-  // intended default. Toggle with DRIVE_TRUE_CLOCK_RATIO ('0' = 1:1 for A/B).
-  driveTrueClockRatio: {
-    default: true,
-    env: ['DRIVE_TRUE_CLOCK_RATIO'],
-  },
-
-  // Model the IEC read-side propagation latency the instant-wire model
-  // omits: drive output pins reach the C64's CIA one master cycle later
-  // than the run order already gives — a $DD00 read at cycle S sees drive
-  // writes from ≤ S−2. The C64→drive direction stays instant (delaying it
-  // was tried and corrupts the NOSDOS install stage). Measured need:
-  // NOSDOS F128's drive-release-to-4th-sample margin is exactly +1 C64
-  // cycle at the legacy 1:1 drive clock and dips to −1 under the true
-  // ratio's phase sweep — received bytes get bit 7/6 read HIGH when the
-  // release lands one cycle before the sample (GnG/Commando CHECKING
-  // corruption). Real hardware sweeps phase the same way and survives; the
-  // asynchronous CIA input latching carries this margin. OFF = legacy
-  // instant wiring, bit-exact.
-  iecEdgeLatency: {
-    default: true,
-    env: ['IEC_EDGE_LATENCY'],
-  },
-
-  // Compact render-history indices; off retains dense cycle snapshots.
-  sparseRenderState: {
-    default: true,
-    env: ['VIC_SPARSE_STATE'],
-  },
-
-  // Stable deferred sprites wait for their next horizontal output interval.
-  spriteIntervals: {
-    default: true,
-    env: ['VIC_SPRITE_INTERVALS'],
-  },
-
-  // Decode foreground independently of output colors.
-  separateColorOutput: {
-    default: false,
-    env: ['VIC_SEPARATE_COLOR'],
-  },
-
-  // Fetch-fed deferred graphics retain the RAM-write observer fallback.
-  fetchFedRender: {
-    default: false,
-    env: ['VIC_FETCH_FEED'],
-  },
-
-  // Tier-3 line-batch rendering: defer a raster line's segment paints and
-  // replay them in one burst through the SAME incremental machinery — at
-  // line end (coalesced into maximal uniform spans, Phase 2), or
-  // immediately when the CPU observes render-derived state mid-line
-  // ($D019/$D01E/$D01F reads, $D01A collision-IRQ arming, fetch-config
-  // changes, RAM writes into the line's g-access window — see
-  // vic2._catchUpDeferredLine). Byte-identical at every CPU-observable
-  // point: 339/339 both modes, fbhash + 195-shot + demo-status parity, and
-  // the vic2-line-batch spec test locksteps the contract. Measured (clean
-  // interleaved): orbit −14.5%, raster_time −25.8% ms/frame. Default ON
-  // since 2026-07-03 (user visual pass); force the per-cycle live path
-  // with ?LINE_BATCH=0 / LINE_BATCH=0 for A/B or triage.
-  lineBatchRender: {
-    default: true,
-    env: ['LINE_BATCH'],
-  },
-
-  // Disk write support: let the 1541 write head mutate the raw GCR track buffer
-  // and fold changes back into the D64 image, so SAVE / scratch / rename / format
-  // (and a real DOS N) actually persist. OFF forces every inserted disk
-  // write-protected — the legacy read-only behavior, bit-for-bit. Toggle with
-  // DRIVE_WRITE ('0' = force read-only) for A/B or triage.
-  driveWrite: {
-    default: true,
-    env: ['DRIVE_WRITE'],
-  },
-
   // Record new blank tapes as TAP v2 (half-waves) instead of v1 (full waves).
   // v1 is what every tool and preserved tape uses, and the duty cycle inside a
   // pulse is invisible to the C64's read path, so it loses nothing functionally.

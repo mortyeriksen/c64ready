@@ -7,10 +7,9 @@ This is a cycle-accurate C64: every master cycle it clocks the VIC-II, the 6510,
 two CIAs, the SID shadow voices and (when attached) the 1541's 6502. That
 per-cycle fidelity, not demo content, is what sets the cost, so the
 performance story is mostly about keeping the always-on per-cycle machinery
-cheap and allocation-free. Runtime performance switches live in
+cheap and allocation-free. Presentation switches live in
 `src/switches.js`; the rendering pipeline is summarised in the
-[master overview](ARCHITECTURE.md) ("Rendering pipeline & performance
-switches") and detailed in the [VIC-II](VIC2-ARCHITECTURE.md) §14.
+[master overview](ARCHITECTURE.md) ("Rendering pipeline") and detailed in the [VIC-II](VIC2-ARCHITECTURE.md) §14.
 
 ## 1. Cost model
 
@@ -49,22 +48,23 @@ Structurally, that breaks down as:
 
 ## 2. Standing optimizations
 
-All of these are in place and on by default. Those with runtime switches live
-in `src/switches.js` and can be flipped for A/B without a
-rebuild: append `?NAME=0` to the URL in the browser, or set `NAME=0` as an env
-var for node harnesses.
+The VIC optimizations are permanent, with automatic live and diagnostic paths.
+WebGL and CRT presentation switches remain in `src/switches.js`: use `?NAME=0`
+in the browser or `NAME=0` in Node harnesses.
 
-- **Line-batch renderer** (`LINE_BATCH`, default on). Defers a raster line's
+- **Automatic line batching.** Defers a raster line's
   pixel emission and replays it in one burst, coalescing runs of unchanged
   cycles into wide segments through the same segment renderer; any mid-line
   event the CPU could observe triggers an immediate catch-up, so the output is
-  byte-identical to per-cycle rendering. `?LINE_BATCH=0` forces the per-cycle
-  live path. See the [VIC-II](VIC2-ARCHITECTURE.md) §14.
-- **Compact render history** (`VIC_SPARSE_STATE`, default on). Register,
+  byte-identical to per-cycle rendering. Tracing and armed collision IRQs
+  select the live path. See the [VIC-II](VIC2-ARCHITECTURE.md) §14.
+- **Compact render history.** Register,
   matrix/color and sprite payloads record new snapshots only when their source
   versions change. Each cycle retains three byte indices instead of eleven
   snapshot references. Diagnostic array access materializes the dense view.
-- **Sprite interval scheduling** (`VIC_SPRITE_INTERVALS`, default on). Deferred
+  Sprite snapshots use one contiguous 96-byte copy with typed field views;
+  diagnostic recording retains separate field copies.
+- **Sprite interval scheduling.** Deferred
   sprites with stable inputs wait for their next output interval. Input changes
   wake them immediately; collision drains and end-of-line passes keep their
   cycle ordering. Live rendering keeps the reference dispatch path.
@@ -88,7 +88,7 @@ var for node harnesses.
 - **Allocation-free hot paths.** The VIC per-cycle path reuses pooled scratch and
   flat typed arrays (pending border-FF transitions, sprite state, segment
   scratch) and aliases unchanged capture buffers rather than re-copying them
-  (`captureDedup`, `spriteSkipIdle`, `batchRender`); the interrupt sequence and
+  through versioned capture and selective rendering; the interrupt sequence and
   the JAM-halt program are prebuilt like opcodes. In steady state the hot loop
   allocates essentially nothing. See the [VIC-II](VIC2-ARCHITECTURE.md) §14 and
   the [6510 CPU](CPU-ARCHITECTURE.md) §4.
@@ -136,14 +136,12 @@ var for node harnesses.
   reuses its descriptor, and Starry pools its meteor geometry
   and material. See [Retro Vibes](RETROVIBES-ARCHITECTURE.md) §§4–5.
 
-`src/switches.js` also carries hardware-accuracy switches, flipped the same
-way, `DRIVE_TRUE_CLOCK_RATIO` and `IEC_EDGE_LATENCY` among them (both default
-on).
-These tune hardware fidelity, not performance; see the [1541 drive](DRIVE-ARCHITECTURE.md)
-§3 and the [machine orchestrator](MACHINE-ARCHITECTURE.md) §3. Not every toggle
-lives there: the drive's mechanical timing models are compile-time constants at
-the top of `drive1541.js` ([1541 drive](DRIVE-ARCHITECTURE.md) §11), and the
-`c64Vic.*` console toggles belong to the debug surface in [TESTING](TESTING.md).
+The true PAL drive clock ratio and IEC read-side propagation are permanent
+parts of the hardware model. Disk writes respect each mounted image's
+write-protect state. See the [1541 drive](DRIVE-ARCHITECTURE.md) and
+[machine orchestrator](MACHINE-ARCHITECTURE.md). Mechanical timing experiments
+remain compile-time constants in `drive1541.js`; diagnostic console controls
+are documented in [TESTING](TESTING.md).
 
 ### Assembly64 requests
 
@@ -269,15 +267,15 @@ for throughput, but V8 can escape-analyze short-lived allocations away. Use
 `allocsites` to see allocation a non-EA engine, such as JavaScriptCore on iOS,
 would still pay for.
 
-For renderer comparisons, `VIC_SPARSE_STATE=0 VIC_SPRITE_INTERVALS=0` selects
-the dense-history, per-cycle sprite path. `VIC_FETCH_FEED=1` enables the
-experimental deferred fetch-data stream. It retains RAM-write catch-up and
-reference reads for unavailable sources; it is not enabled by default.
-`VIC_SEPARATE_COLOR=1` enables the separate foreground/color display decoder.
-Its closed-border path skips color expansion, but the complete split pipeline
-adds dispatch overhead to ordinary visible columns. It remains opt-in pending
-a net throughput benefit. This switch does not suppress rendering or skip
-collision processing on undisplayed frames.
+Compact render history, sprite interval scheduling and immutable graphics
+fetches are permanent parts of the renderer. Tracing and diagnostic history
+access retain dense recording; live rendering retains per-cycle sprite
+dispatch. Cartridge and tracing lines use the RAM-reading graphics path.
+Both graphics sources use the combined color/foreground decoder. Active
+fetches record packed samples once; live/deferred rendering and corrections
+consume them without rereading graphics RAM. RAM/DMA and fetch-configuration
+writes no longer force those lines to render early. Collision observers retain
+catch-up.
 The disk-trap workload explicitly disables true-drive mode and rejects a run
 whose pending LOAD/RUN never completes.
 
@@ -292,10 +290,52 @@ intervals and the interior pixel-copy path measured these median frame times
 | Raster Time | 7.012 ms | 6.774 / 6.767 ms |
 
 These are modest throughput gains, about 3–5%, for the combined change, not
-isolated attribution to either switch. Desktop WebKit idle measured 5.051 ms
+isolated attribution to each optimization. Desktop WebKit idle measured 5.051 ms
 baseline against 4.996 / 4.999 ms candidate, effectively neutral. These figures
-do not establish a phone performance gain. The experimental fetch stream keeps
-extra capture work and existing catch-up barriers, so it remains off by default.
+do not establish a phone performance gain.
+
+Next Round's first 6,000 PAL frames after RUN (true drive, SID 8580, loading
+excluded) were compared on frozen common sources with one change per
+candidate/baseline/candidate triplet. All 39 timed runs matched pixel and
+sampled-state hashes across Node 25.6.0 and desktop WebKit. AC power was used
+with low-power mode off; an inconsistent fetch triplet under background CPU
+load was repeated. Approximate reductions in mean frame time were:
+
+| Change and baseline | Node/V8 | Reduced-JIT WebKit |
+| --- | --- | --- |
+| Sparse history vs dense history | 2.1–3.0% faster | 1.5–2.1% faster |
+| Sprite intervals added to sparse history | 5.3–7.3% faster | 2.7–4.0% faster |
+| Contiguous sprite copies, RAM-based renderer | 3.7–4.2% faster | 3.3–3.7% faster |
+
+These incremental gains are not additive. WebKit used `JSC_useFTLJIT=false`, verified in its
+option dump, with no extra warm-up beyond boot/loading. This limits the JIT
+tiers available; it does not emulate phone hardware or measure input latency.
+Input sampling, frame presentation scheduling and emulated cycle order are
+unchanged by contiguous copying.
+
+V8 allocation sampling across all configurations measured 0.17–0.23 KiB of VIC
+allocation per frame, including runs with escape analysis disabled. There was
+no sustained allocation or deoptimization problem attributable to contiguous
+copying. Occasional missing-feedback bailouts occur as new sprite branches are
+reached during the demo; these are not JSC allocation or deoptimization results.
+
+The combined package (sparse history, sprite intervals, contiguous copies and
+fetch-fed graphics using the combined decoder) was also measured together
+against dense history, per-cycle sprites and RAM-based graphics on the same
+source. Next Round used the same 6,000-frame window and
+candidate/baseline/candidate procedure:
+
+| Engine | Reference mean | Package first / repeat | Mean frame-time reduction |
+| --- | --- | --- | --- |
+| Node/V8 | 10.375 ms | 9.133 / 9.256 ms | 10.8–12.0% |
+| Reduced-JIT desktop WebKit | 8.923 ms | 8.197 / 8.090 ms | 8.1–9.3% |
+
+All six runs matched every pixel and sampled-state hash. These package gains
+are measured directly, not added from the individual comparisons. WebKit's
+FTL tier was disabled in all three runs. The measurements exclude host input,
+presentation and audio synthesis, and do not establish actual phone latency.
+Fetch-fed graphics is permanent; tracing and cartridges retain the
+RAM-reading path.
 
 The Safari/JSC harness is `tools/jsc-perf.mjs` plus
 `tools/jsc-perf-harness.html`:

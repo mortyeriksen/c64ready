@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Bauer §3.8.2 spec audit — gaps not covered by sprite-corner-cases-spec
 // (priority/MxDP/inheritance), sprite-bg-collision-modes-spec (per-mode
 // fg/bg rules), or sprite-collision-irq-spec (IRQ fire timing).

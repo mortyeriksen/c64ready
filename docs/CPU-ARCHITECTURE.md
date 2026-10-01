@@ -100,7 +100,7 @@ well as V8.
    pending IRQ's recognition is correctly held.
 3. **Dispatch one micro-op**: read `microOpKinds[head]` into `currentMicroOpKind`,
    run `microOpFns[head]()`, advance the cursor. For a `KIND_INTERNAL` op,
-   synthesize a discarded read at PC (`cpuInternalCycleDrivesBus`); the real
+   synthesize a discarded read at PC; the real
    6510 does a bus access *every* cycle, even internal ones, which matters for
    open-bus / I/O side-effect fidelity.
 4. Decrement `instructionCyclesRemaining`.
@@ -337,7 +337,7 @@ inherit the correct BCD behaviour.
 - **One micro-op = one bus cycle.** The whole engine's accuracy rests on this;
   never collapse two bus accesses into one micro-op.
 - **Every cycle drives the bus**, including internal/dummy cycles, required for
-  open-bus and I/O side-effect fidelity (`cpuInternalCycleDrivesBus`).
+  open-bus and I/O side-effect fidelity.
 - **Bus-kind tags drive RDY**: reads/internals stall under BA-low, writes don't.
   Padding cycles must be real `read` ops, not no-ops.
 - **Opcode is decoded via `peek()`**, fetched via `r()` in cycle 1; don't

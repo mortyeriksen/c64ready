@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Sprite pixel-precision spec audit. 10 tests derived from Bauer §3.8 +
 // the C64 Programmer's Reference Guide §3.5. Each test exercises a sprite
 // X/Y/expand/multicolor configuration through `_renderSpriteLine` and

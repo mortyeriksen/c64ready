@@ -1,18 +1,6 @@
-// Capture-state snapshot dedup equivalence spec test.
-//
-// vic2.captureDedup aliases the previous cycle's row + sprite snapshot buffers
-// when the source is unchanged (tracked by _rowSnapVersion / _sprSnapVersion)
-// instead of re-copying 9 typed arrays every visible cycle in _captureCycleState.
-// It is meant to be a pure performance optimisation — BYTE-IDENTICAL to copying.
-//
-// This drives a full frame with 8 enabled sprites (spread in Y so the sprite
-// state machine runs DMA / s-access / end-of-display across the visible band),
-// bad-line character display, and dense mid-line $D021/$D011/$D016 writes. It
-// renders once with captureDedup=false and once with =true and asserts the whole
-// framebuffer is bit-for-bit equal. A third pass runs with captureDedupVerify=true,
-// which asserts every aliased snapshot still equals the live source — so a missed
-// version-counter bump (stale alias) would throw rather than silently diverge.
-
+import { referencePaths } from './_vic2-reference-paths.js';
+// Compare versioned capture with a test-only dense-copy reference.
+// Alias verification checks that all source writers invalidate snapshots.
 import { CANVAS_W, CANVAS_H } from '../../src/vic2.js';
 import { newVic, placeSprites, runFrame, standardWrites, compareFrames, distinctColors } from './_vic2-equivalence.js';
 
@@ -41,7 +29,7 @@ function makeVic() {
 
 function renderFrame(dedup, verify) {
   const vic = makeVic();
-  vic.captureDedup = dedup;
+  if (!(dedup)) vic._captureCycleState = referencePaths._captureCycleState;
   vic.captureDedupVerify = !!verify;
   return runFrame(vic, standardWrites);
 }

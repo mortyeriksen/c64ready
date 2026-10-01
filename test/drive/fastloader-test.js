@@ -333,7 +333,7 @@ function primeKernelLoadCall(machine, name = '*', device = 8) {
 
   // Reach into CIA2 PA: PA3 = ATN OUT. CIA2 PA bit set HIGH = drives the
   // 7406 inverter low → pulls the IEC line low (asserted). C64→drive
-  // propagation is instant (iecEdgeLatency only delays the drive→C64 read
+  // propagation is instant (IEC read-side propagation only delays the drive→C64 read
   // view; see switches.js).
   machine.cia2.portADir = 0x3F;          // ATN/CLK/DATA out + low bits
   machine.cia2.portA    = 0x08;          // PA3=1 → ATN asserted (bus low)
@@ -850,7 +850,7 @@ function primeKernelLoadCall(machine, name = '*', device = 8) {
   m.cia2.portADir = 0x3F;
   m.cia2.portA    = 0x10;                 // PA4=1 → assert CLK
   m._syncIecBus();
-  m._iecClock();                          // C64 edge reaches the drive next cycle (iecEdgeLatency)
+  m._iecClock();                          // C64 edge reaches the drive next cycle (IEC read-side propagation)
   // Drive sees CLK low (= asserted). VIA1 PB2 (CLK IN, 7406-inverted) → 1.
   const pb = m.drive1541.read(0x1800);
   assert((pb & 0x04) !== 0, 'drive PB2 (CLK IN) reflects C64-asserted CLK');
@@ -1002,7 +1002,7 @@ function primeKernelLoadCall(machine, name = '*', device = 8) {
   m.cia2.portADir = 0x3F;
   m.cia2.portA    = 0x08;          // PA3=1 → ATN asserted
   m._syncIecBus();
-  m._iecClock();                   // edge visible one master cycle later (iecEdgeLatency)
+  m._iecClock();                   // edge visible one master cycle later (IEC read-side propagation)
   assert(m.drive1541.atnIn === 0,
     'drive observes ATN low one cycle after _syncIecBus from host write');
 
@@ -1167,7 +1167,7 @@ function primeKernelLoadCall(machine, name = '*', device = 8) {
 
   drive.clock(1);
   m._syncIecBus();
-  if (m.iecEdgeLatency) { m._iecClock(); m._iecClock(); }  // pin → C64-facing delay line
+  { m._iecClock(); m._iecClock(); }  // pin → C64-facing delay line
   const pa2 = m.cia2.readPortA();
   assert((pa2 & 0x80) === 0,
     `next bus sample sees the drive assertion after the normal drive tick (got $${pa2.toString(16)})`);
@@ -1262,7 +1262,7 @@ function primeKernelLoadCall(machine, name = '*', device = 8) {
   m.cia2.portADir = 0x3F;
   m.cia2.portA = 0x08;                  // PA3=1 -> ATN asserted on the bus
   m._syncIecBus();
-  if (m.iecEdgeLatency) m._iecClock();  // ATN edge reaches the drive next cycle
+  m._iecClock();  // ATN edge reaches the drive next cycle
   assert(!drive.canIdleSkip(), 'asserted ATN disables TDE idle skip');
   assert(m._driveIdleSkipping === false, 'host IEC activity wakes cached idle skip');
   const beforeResume = drive.totalCycles;
@@ -1304,7 +1304,7 @@ function primeKernelLoadCall(machine, name = '*', device = 8) {
   assert(m._driveIdleSkipping === true, 'steady ROM-idle CLK-low bus can remain in cached idle skip');
   m.cia2.portA = 0x00;                  // CLK changes high again
   m._syncIecBus();
-  if (m.iecEdgeLatency) m._iecClock();  // edge reaches the drive-facing bus next cycle
+  m._iecClock();  // edge reaches the drive-facing bus next cycle
   assert(m._driveIdleSkipping === false, 'IEC bus changes wake cached idle skip even if ATN stays released');
 }
 

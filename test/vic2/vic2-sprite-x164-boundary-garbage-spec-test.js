@@ -128,14 +128,7 @@ function ok(label) {
   ok('Sprite not displaying this line emits no boundary garbage');
 }
 
-// ── 5: master flag spriteBoundaryGarbage gates the whole feature ────────
-// (The dispatch checks the flag before calling the painter; here we assert the
-//  flag exists and defaults on so the documented bisection toggle is real.)
-{
-  const vic = makeVic();
-  expect(vic.spriteBoundaryGarbage === true, 'spriteBoundaryGarbage defaults true');
-  ok('Boundary-garbage master flag present and default-on');
-}
+
 
 console.log(`\n${testNo - failing}/${testNo} passed`);
 if (failing) process.exit(1);

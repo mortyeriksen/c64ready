@@ -1,3 +1,4 @@
+import { forceLiveRendering } from './_vic2-equivalence.js';
 // Sprite-X mid-line rewrite spec test.
 //
 // Bauer §3.8.2: each sprite has an 8-bit X-comparator (plus MSB bit in
@@ -49,8 +50,8 @@ function makeVic() {
   // state), which only the live incremental path exhibits — under the
   // Tier-3 line-batch mode pixels/commits land at line end or on a CPU
   // observer event, both byte-identical at every CPU-observable point.
-  // Pin the live path so a LINE_BATCH=1 suite run still tests this contract.
-  vic.lineBatchRender = false;
+  // Exercise the per-cycle rendering contract.
+  if (!(false)) forceLiveRendering(vic);
   vic.ram = new Uint8Array(0x10000);
   vic.colorRam = new Uint8Array(0x0400);
   vic.charRom = new Uint8Array(0x1000);

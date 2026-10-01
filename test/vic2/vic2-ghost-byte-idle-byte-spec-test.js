@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // VIC-II: Ghost-byte shine-through + idle-byte alignment (Tests 22-30)
 // Extracted from vic2-test.js.
 

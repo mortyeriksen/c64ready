@@ -1,3 +1,4 @@
+import './_vic2-reference-line.js';
 // Sprite shifter X-comparator delay + first-pixel landing spec test.
 //
 // Bauer §3.8.2: when the VIC's X counter matches a sprite's X register,
