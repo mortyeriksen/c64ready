@@ -30,6 +30,9 @@ for (const bytes of [174848, 175531, 196608, 197376, 205312, 206114]) {
   eq(sniff(new Uint8Array(bytes)), 'd64', `${bytes} bytes is a D64 variant`);
 }
 eq(sniff(new Uint8Array(174849)), 'unknown', 'one byte past a D64 variant is not a disk');
+eq(sniff(new Uint8Array(349696)), 'd71', '349696 bytes is a D71');
+eq(sniff(new Uint8Array(351062)), 'd71', '351062 bytes is a D71 with an error table');
+eq(sniff(new Uint8Array(349697)), 'unknown', 'one byte past a D71 is not a disk');
 // A 1581 image is the same kind of test at its own two lengths.
 eq(sniff(new Uint8Array(819200)), 'd81', '819200 bytes is a D81');
 eq(sniff(new Uint8Array(822400)), 'd81', '822400 bytes is a D81 with an error table');

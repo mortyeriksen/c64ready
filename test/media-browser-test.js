@@ -73,12 +73,13 @@ test('A full page advances by the number received', () => assert.equal(normalize
 test('A short page ends pagination', () => assert.equal(normalizePage([], { offset: 20, limit: 10 }).hasMore, false));
 test('D64 actions include mount and run', () => assert.deepEqual(allowedActions('d64'), ['mount', 'run', 'save', 'download']));
 test('G64 actions include mount and run', () => assert.deepEqual(allowedActions('g64'), ['mount', 'run', 'save', 'download']));
+test('D71 actions include mount and run', () => assert.deepEqual(allowedActions('d71'), ['mount', 'run', 'save', 'download']));
 test('D81 actions include mount and run', () => assert.deepEqual(allowedActions('d81'), ['mount', 'run', 'save', 'download']));
 test('Every openable media type but REU can be kept in the Library', () => {
   // An REU image is the one exception: a 16 MB image would evict the rest.
   assert.deepEqual(SUPPORTED_MEDIA.filter(type => !isLibraryType(type)), []);
 });
-for (const type of ['d71', 'p00']) {
+for (const type of [ 'p00']) {
   test(`${type} cannot be sent to the emulator`, () => assert.deepEqual(allowedActions(type), ['download']));
 }
 test('Direct run requires exactly one file', () => assert.equal(directRunFile({ files: [{ mediaType: 'prg' }, { mediaType: 'sid' }] }), null));
@@ -206,11 +207,11 @@ function mediaPort(overrides = {}) {
     save: async (...args) => { calls.push(['save', ...args]); return true; },
     ...Object.fromEntries(['prg', 'disk', 'crt', 'tap', 'reu'].map(type => [type, async (...args) => calls.push([type, ...args])])), ...overrides };
 }
-for (const type of ['prg', 'd64', 'd81', 'crt', 'tap', 'reu']) {
+for (const type of ['prg', 'd64', 'd71', 'd81', 'crt', 'tap', 'reu']) {
   test(`${type.toUpperCase()} passes validated media to its public media port`, async () => {
     const port = mediaPort();
     await createOpenMedia(port)({ name: `sample.${type}`, bytes: type === 'tap' ? buildMixtape() : sampleMedia(type), mediaType: type, saveToLibrary: false });
-    assert.equal(port.calls[0][0], type === 'd64' || type === 'd81' ? 'disk' : type);
+    assert.equal(port.calls[0][0], type === 'd64' || type === 'd71' || type === 'd81' ? 'disk' : type);
   });
 }
 test('A D81 mounts as a 1581 disk and tells the drive prompt its kind', async () => {

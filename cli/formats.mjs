@@ -2,7 +2,7 @@
 // Copyright © 2026 Morten Øien Eriksen
 // cli/formats.mjs — what kind of file is this, read off the bytes so a user
 // never has to name a format. Magic strings first (a .g64 signs itself
-// GCR-1541); a .d64 or .d81 has none, so the exact byte length is the test
+// GCR-1541); a .d64, .d71 or .d81 has none, so the exact byte length is the test
 // (d64Variant); a .prg has nothing at all, so it is the fallback for anything
 // small enough to fit a C64's memory.
 
@@ -17,7 +17,7 @@ const ascii = (bytes, at, s) => {
  * @param {Uint8Array} bytes
  * @param {string} filename  only consulted for the extension, and only after
  *   every magic has failed — a renamed file should still be what it is
- * @returns {'tap'|'wav'|'dmp'|'crt'|'sid'|'d64'|'d81'|'g64'|'nib'|'nbz'|'t64'|'prg'|'unknown'}
+ * @returns {'tap'|'wav'|'dmp'|'crt'|'sid'|'d64'|'d71'|'d81'|'g64'|'nib'|'nbz'|'t64'|'prg'|'unknown'}
  */
 export function sniff(bytes, filename = '') {
   if (bytes.length >= 12 && ascii(bytes, 0, 'C64-TAPE-RAW')) return 'tap';
@@ -52,6 +52,7 @@ export const KIND_NAMES = {
   dmp: 'DC2N tape dump',
   crt: 'cartridge image',
   d64: 'disk image',
+  d71: '1571 disk image',
   d81: '1581 disk image',
   g64: 'raw GCR disk image',
   nib: 'nibbler disk dump',

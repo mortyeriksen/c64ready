@@ -60,7 +60,7 @@ const speedSaid = speed => (speed === 1 ? 'real time' : `${+speed.toFixed(2)}× 
 // decrunches or plays an intro before it shows anything, so it gets longest.
 // A .g64 loads through the emulated 1541 at the real drive's speed, and a
 // protected original's loader takes its time, so it gets a full minute.
-const RUN_FRAMES = { prg: 200, crt: 250, d64: 500, d81: 500, g64: 3000, tap: 1500 };
+const RUN_FRAMES = { prg: 200, crt: 250, d64: 500, d71: 500, d81: 500, g64: 3000, tap: 1500 };
 
 export async function run(argv) {
   const { args, flags } = parseArgs(argv, {
@@ -69,7 +69,7 @@ export async function run(argv) {
     anim: {}, fps: { value: true }, speed: { value: true }, jobs: { value: true },
     'no-press': {}, collage: {},
   });
-  if (args.length !== 1) throw new UsageError('Usage: c64rdy run <prg|tap|d64|d81|g64|t64|crt> [--file NAME | --all] [-o out.png] [--frames N] [--anim [--fps N] [--speed N]] [--jobs N] [--roms <dir>]');
+  if (args.length !== 1) throw new UsageError('Usage: c64rdy run <prg|tap|d64|d71|d81|g64|t64|crt> [--file NAME | --all] [-o out.png] [--frames N] [--anim [--fps N] [--speed N]] [--jobs N] [--roms <dir>]');
   const p = args[0];
   let bytes = fs.readFileSync(p);
   let kind = sniff(bytes, p);
@@ -83,10 +83,10 @@ export async function run(argv) {
     bytes = disks[0].img;
     kind = 'd64';
   }
-  if (!RUN_FRAMES[kind]) throw new Error(`run boots a .prg, .tap, .d64, .d81, .g64, .t64 or .crt — this is a ${kind}`);
-  const isDisk = kind === 'd64' || kind === 'd81' || kind === 'g64';
-  if (flags.all && !isDisk && kind !== 'tap') throw new UsageError('--all runs every program on a .d64, a .d81, a .g64 or a .tap; this input boots as itself');
-  if (flags.file && !isDisk && kind !== 'tap') throw new UsageError('--file picks a program off a .d64, a .d81, a .g64 or a .tap; this input boots as itself');
+  if (!RUN_FRAMES[kind]) throw new Error(`run boots a .prg, .tap, .d64, .d71, .d81, .g64, .t64 or .crt — this is a ${kind}`);
+  const isDisk = kind === 'd64' || kind === 'd71' || kind === 'd81' || kind === 'g64';
+  if (flags.all && !isDisk && kind !== 'tap') throw new UsageError('--all runs every program on a .d64, a .d71, a .d81, a .g64 or a .tap; this input boots as itself');
+  if (flags.file && !isDisk && kind !== 'tap') throw new UsageError('--file picks a program off a .d64, a .d71, a .d81, a .g64 or a .tap; this input boots as itself');
   if (flags.file && flags.all) throw new UsageError('--file names one program, --all runs every one; pick one');
   if (flags.all && flags.out) throw new UsageError('--all writes one PNG per program; use --out-dir, not -o');
   if (flags.collage && !flags.all) throw new UsageError('--collage gathers a --all run into one sheet; add --all');
@@ -198,8 +198,8 @@ export async function run(argv) {
       bootToReady(m);
     } else {
       bootToReady(m);
-      // The KERNAL load trap serves the disk; for a .d81 it is the only way in,
-      // since the 1541 cannot read 1581 media.
+      // The KERNAL load trap serves the disk; for D71/D81 it is the only way in,
+      // since the 1541 cannot read these disk geometries.
       m.setTrueDrive(false);
     }
     m.setD64(disk);

@@ -152,6 +152,9 @@ and honors Retry-After without automatic retries. Search pages are cached for
 in-memory cache is bounded to 64 responses and 4 MiB. Binaries are streamed with
 size limits and are never cached by the API client or service worker.
 
+D71 and D81 images use the virtual drive with TDE off. Their filesystem work
+runs on file/channel operations, without adding per-cycle drive emulation.
+
 ## 3. Throughput & footprint
 
 The figures below are approximate and machine-dependent; treat them as orders

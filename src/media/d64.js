@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 // src/media/d64.js – CBM DOS sector images: the 1541's D64 (35, 40 and 42
-// tracks, with or without an appended error table) and the 1581's D81. One
-// class reads and writes both; a layout says where each DOS keeps its header,
+// tracks, with or without an appended error table), the 1571's D71 and the
+// 1581's D81. One class reads and writes all three; a layout says where each DOS keeps its header,
 // BAM and directory.
 
 // 1541 sectors per track (1-indexed, index 0 unused): the CAV zones the head
@@ -48,7 +48,17 @@ const LAYOUT_1581 = {
   interleave: 1,
   readableBy1541: false,
 };
-for (const layout of [LAYOUT_1541, LAYOUT_1581]) {
+// Side two repeats the 35-track geometry. Its BAM counts live in 18/0,
+// while its three-byte allocation maps live in 53/0.
+const LAYOUT_1571 = {
+  ...LAYOUT_1541,
+  kind: 'd71',
+  spt: t => SPT[((t - 1) % 35) + 1] || 0,
+  maxTracks: 70,
+  reservedTracks: [18, 53],
+  readableBy1541: false,
+};
+for (const layout of [LAYOUT_1541, LAYOUT_1571, LAYOUT_1581]) {
   // Each track's first sector as a running count, so a sector's byte offset is
   // one lookup.
   const base = [0, 0];
@@ -59,7 +69,7 @@ for (const layout of [LAYOUT_1541, LAYOUT_1581]) {
 // Image-size variants: a data area of (sectors × 256), optionally followed by an
 // error table of one byte per sector. Nothing inside the file distinguishes them,
 // so the byte length IS the variant — and the only way to tell a disk image from
-// a file that merely ends in .d64 or .d81.
+// a file that merely ends in .d64, .d71 or .d81.
 const IMAGE_VARIANTS = [
   { bytes: 174848, tracks: 35, sectors: 683,  errorInfo: false, layout: LAYOUT_1541 },
   { bytes: 175531, tracks: 35, sectors: 683,  errorInfo: true,  layout: LAYOUT_1541 },
@@ -67,13 +77,15 @@ const IMAGE_VARIANTS = [
   { bytes: 197376, tracks: 40, sectors: 768,  errorInfo: true,  layout: LAYOUT_1541 },
   { bytes: 205312, tracks: 42, sectors: 802,  errorInfo: false, layout: LAYOUT_1541 },
   { bytes: 206114, tracks: 42, sectors: 802,  errorInfo: true,  layout: LAYOUT_1541 },
+  { bytes: 349696, tracks: 70, sectors: 1366, errorInfo: false, layout: LAYOUT_1571 },
+  { bytes: 351062, tracks: 70, sectors: 1366, errorInfo: true,  layout: LAYOUT_1571 },
   { bytes: 819200, tracks: 80, sectors: 3200, errorInfo: false, layout: LAYOUT_1581 },
   { bytes: 822400, tracks: 80, sectors: 3200, errorInfo: true,  layout: LAYOUT_1581 },
 ].map(v => ({ ...v, kind: v.layout.kind }));
 
 /**
- * The variant a byte length describes, or null when no D64 or D81 has that size.
- * Its `kind` is 'd64' or 'd81'. Callers taking a file from the user check this
+ * The variant a byte length describes, or null when no D64, D71 or D81 has that size.
+ * Its `kind` is 'd64', 'd71' or 'd81'. Callers taking a file from the user check this
  * first: a truncated download otherwise parses into a directory full of
  * nonsense instead of being turned away.
  * @param {number} byteLength
@@ -221,7 +233,7 @@ export class D64 {
     this._bamExt = this._detectBamExtension(hdr);
     let free = 0;
     for (let t = 1; t <= this.trackCount; t++) {
-      if (t === dirTrack) continue;
+      if ((this.layout.reservedTracks || [dirTrack]).includes(t)) continue;
       const e = this._bamEntry(t);
       if (e) free += e.sec[e.off];
     }
@@ -332,6 +344,10 @@ export class D64 {
    */
   _bamEntry(track) {
     if (track < 1 || track > this.trackCount) return null;
+    if (this.kind === 'd71' && track > 35) {
+      return { sec: this._sec(18, 0), off: 0xDD + track - 36,
+        mapSec: this._sec(53, 0), mapOff: (track - 36) * 3 };
+    }
     const { sectors, entry, width, perSector } = this.layout.bam;
     const i = track - 1;
     const at = sectors[Math.floor(i / perSector)];
@@ -344,14 +360,14 @@ export class D64 {
   _bamIsFree(track, sector) {
     const e = this._bamEntry(track);
     if (!e) return false;
-    return !!(e.sec[e.off + 1 + (sector >> 3)] & (1 << (sector & 7)));
+    return !!((e.mapSec || e.sec)[(e.mapOff ?? e.off + 1) + (sector >> 3)] & (1 << (sector & 7)));
   }
 
   /** Mark (track, sector) allocated: clear its bit, drop the track's free count. */
   _bamTake(track, sector) {
     const e = this._bamEntry(track);
     if (!e) return;
-    e.sec[e.off + 1 + (sector >> 3)] &= ~(1 << (sector & 7));
+    (e.mapSec || e.sec)[(e.mapOff ?? e.off + 1) + (sector >> 3)] &= ~(1 << (sector & 7));
     if (e.sec[e.off] > 0) e.sec[e.off]--;
   }
 
@@ -363,9 +379,10 @@ export class D64 {
   _bamFree(track, sector) {
     const e = this._bamEntry(track);
     if (!e) return;
-    const byte = e.off + 1 + (sector >> 3), bit = 1 << (sector & 7);
-    if (e.sec[byte] & bit) return;             // already free
-    e.sec[byte] |= bit;
+    const map = e.mapSec || e.sec;
+    const byte = (e.mapOff ?? e.off + 1) + (sector >> 3), bit = 1 << (sector & 7);
+    if (map[byte] & bit) return;             // already free
+    map[byte] |= bit;
     e.sec[e.off]++;
   }
 
@@ -381,7 +398,7 @@ export class D64 {
     for (let t = dirTrack - 1; t >= 1; t--) tracks.push(t);
     for (let t = dirTrack + 1; t <= this.trackCount; t++) tracks.push(t);
     // Only tracks the BAM actually describes (see _bamEntry).
-    const usable = tracks.filter((t) => this._bamEntry(t));
+    const usable = tracks.filter((t) => !this.layout.reservedTracks?.includes(t) && this._bamEntry(t));
 
     const got = [];
     for (const t of usable) {
@@ -819,9 +836,28 @@ export function createBlankD81(name = '', id = '00') {
   return fresh(img);
 }
 
-/** A blank formatted disk of the given kind ('d64' or 'd81'). */
+/** A double-sided 1571 disk, with both metadata tracks reserved (1328 blocks). */
+export function createBlankD71(name = '', id = '00') {
+  const img = new Uint8Array(349696);
+  img.set(createBlankD64(name, id).img);
+  const header = sectorView(img, LAYOUT_1571, 18, 0);
+  const sideBam = sectorView(img, LAYOUT_1571, 53, 0);
+  header[3] = 0x80;
+  for (let track = 36; track <= 70; track++) {
+    if (track === 53) continue;
+    const count = LAYOUT_1571.spt(track);
+    header[0xDD + track - 36] = count;
+    for (let sector = 0; sector < count; sector++) {
+      sideBam[(track - 36) * 3 + (sector >> 3)] |= 1 << (sector & 7);
+    }
+  }
+  return fresh(img);
+}
+
+/** A blank formatted disk of the given kind ('d64', 'd71' or 'd81'). */
 export function createBlankDisk(kind, name = '', id = '00') {
-  return kind === 'd81' ? createBlankD81(name, id) : createBlankD64(name, id);
+  return kind === 'd71' ? createBlankD71(name, id)
+    : kind === 'd81' ? createBlankD81(name, id) : createBlankD64(name, id);
 }
 
 /**

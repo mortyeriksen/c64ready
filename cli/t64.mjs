@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 // cli/t64.mjs — the .t64 archive, written and converted: t642d64 (its files onto
-// disks), t642tap (its files onto a real tape, saved by the machine), d642t64
+// disks), t642tap (its files onto a real tape, saved by the machine), disk2t64
 // (a disk's programs into an archive), tap2t64 (a tape's programs, decoded,
 // into one). `dir` lists an archive through the same reader.
 //
@@ -27,11 +27,10 @@ import path from 'node:path';
 import { parseArgs, inputFiles, UsageError } from './args.mjs';
 import { say, fail, mss, progressDone } from './report.mjs';
 import { sniff, sysTarget } from './formats.mjs';
-import { packPRGs, diskSeriesPath, hostName } from './disk.mjs';
+import { openDisk, packPRGs, diskSeriesPath, hostName } from './disk.mjs';
 import {
-  D64, diskNameFromFilename, prgOverflow, splitTap, tapDirectory, tapSeconds, tapeFacts,
+  diskNameFromFilename, prgOverflow, splitTap, tapDirectory, tapSeconds, tapeFacts,
   t64Files,
-  G64,
 } from './core.mjs';
 import { outFileFor, oneOutputOnly, writeOut } from './tape.mjs';
 import { diskListing, tapeListing, archiveListing, printable } from './listing.mjs';
@@ -268,7 +267,7 @@ function entryName(name, taken) {
   return out;
 }
 
-// ── d642t64 / g642t64 ────────────────────────────────────────────────────────
+// ── disk2t64 ────────────────────────────────────────────────────────
 
 /**
  * The programs on a disk, shaped for an archive entry: { name, start, payload }.
@@ -301,23 +300,15 @@ export function diskPrograms(d) {
   return { files, skipped };
 }
 
-export function d642t64(argv) { return diskArchives(argv, 'd642t64', 'd64'); }
-
-/** The same off a .g64, whose programs come from the sectors decoded out of
- *  its raw tracks. Its own command: the name says which image goes in. */
-export function g642t64(argv) { return diskArchives(argv, 'g642t64', 'g64'); }
-/** And off a 1581 disk. */
-export function d812t64(argv) { return diskArchives(argv, 'd812t64', 'd81'); }
-
-function diskArchives(argv, as, kind) {
+export function disk2t64(argv) {
   const { args, flags } = parseArgs(argv, { out: { value: true, alias: 'o' }, 'out-dir': { value: true } });
-  if (!args.length) throw new UsageError(`Usage: c64rdy ${as} <in.${kind}…> [-o out.t64]`);
+  if (!args.length) throw new UsageError('Usage: c64rdy disk2t64 <disk…> [-o out.t64]');
   const disks = inputFiles(args);
   oneOutputOnly(flags, disks.length);
   let failed = false;
   for (const p of disks) {
     try {
-      if (writeDiskArchive(p, flags, kind)) failed = true;
+      if (writeDiskArchive(p, flags)) failed = true;
     } catch (e) {
       fail(`${p}: ${e.message}`);
       failed = true;
@@ -326,10 +317,8 @@ function diskArchives(argv, as, kind) {
   return failed ? 1 : 0;
 }
 
-function writeDiskArchive(p, flags, kind) {
-  const bytes = fs.readFileSync(p);
-  if (sniff(bytes, p) !== kind) throw new Error(`this command takes a .${kind} disk image`);
-  const d = kind === 'g64' ? new G64(bytes) : new D64(bytes);
+function writeDiskArchive(p, flags) {
+  const d = openDisk(p, { write: false });
   const { files, skipped } = diskPrograms(d);
   // The archive is named what the disk is named; the filename only speaks for
   // a disk whose header holds no name at all.

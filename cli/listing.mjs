@@ -112,7 +112,7 @@ export function diskListing(name, disk) {
 /**
  * The archive listing — what a .t64 holds. `dir` prints it as it stands;
  * t642d64 and t642tap print it with each file's destination appended, the way
- * loadtest appends to the tape listing; d642t64 prints the entries it just
+ * loadtest appends to the tape listing; disk2t64 prints the entries it just
  * wrote. One renderer, for the reason at the top of this file.
  * @param {string} name  what to head the listing with
  * @param {object} t     { name: label, files, skipped } as t64Files shapes them

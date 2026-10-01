@@ -10,6 +10,11 @@ The version you are running is shown at the bottom of the About dialog.
 
 ## Next release
 
+- **D71 and D81 disks.** Use 1571 and 1581 disk images in drives 8 and 9,
+  with loading, saving, formatting, export, the Library and Assembly64.
+  These formats use the virtual drive and turn True Drive Emulation off
+  for that drive.
+
 - **Collision overlay.** An optional diagnostic tint shows sprite and graphics
   collision areas over the screen, with a 200 ms sprite-to-sprite collision indicator.
 
@@ -29,13 +34,9 @@ The version you are running is shown at the bottom of the About dialog.
   Loading one turns True Drive Emulation on.
 - **Nibbler dumps.** A `.nbz` from the C64 Preservation Project loads too; it
   becomes a `.g64` on the way in.
-- **1581 disk images.** Load a `.d81` into drive 8 or 9, browse it and
-  click a program to load it. A 1541 cannot read a 1581 disk, so the emulator
-  serves it directly and turns True Drive Emulation off for that drive.
-  FORMAT, export, the Library and Assembly64 handle it like a `.d64`.
 - **Disk I/O with TDE off.** A built-in drive now answers the KERNAL for
   drives 8 and 9: programs open and read files, list the directory, use the
-  command channel and `SAVE`, on a `.d64` or a `.d81`, without the 1541
+  command channel and `SAVE`, on a `.d64`, `.d71` or `.d81`, without the 1541
   ROM. Loaders that call the LOAD routine through its vector work too.
 - **Shorter tooltips** on the controls.
 - **CRT looks redrawn.** Scanlines sit on the C64's own raster lines and the

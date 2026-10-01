@@ -58,6 +58,9 @@ installs as an app. For a step-by-step walkthrough see the
   unlocked `.g64`.
 - **`.nbz` nibbler dumps**: the C64 Preservation Project's raw dumps become a
   `.g64` on the way in, one revolution per half-track, and load like one.
+- **`.d71` disk images**: 1571 disks, 70 tracks and 1328 blocks, with loading,
+  saving, directory and command-channel access through the virtual drive.
+  Inserting one turns TDE off for that drive; formatting and export retain D71.
 - **`.d81` disk images**: 1581 disks, 80 tracks and 3160 blocks, with
   directory listing, wildcard loading and click-to-load. A 1541 cannot read
   them, so the emulator serves the disk itself: inserting one turns TDE off
@@ -101,7 +104,7 @@ of scene groups and creators.
   Source filters, and see ten results in the control. Demos is the default type.
 - **Explore**: start with the newest demos in the Assembly64 Browser, with advanced filters,
   sorting and pagination. Refine Search carries a quick search into the browser.
-- **Load or download**: PRG, D64, D81, G64, CRT, TAP and REU files use the emulator's media
+- **Load or download**: PRG, D64, D71, D81, G64, CRT, TAP and REU files use the emulator's media
   controls. ZIP archives offer a choice of supported files. Disk loads are write
   protected and can use drive 8 or 9, with autorun or mount only.
 - **Local collections**: favorites and named searches survive a reload. Save
@@ -155,19 +158,19 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   CPU + DOS) for fastloaders, cracked intros, demos, and copy-protected disks.
 - **Disk I/O with TDE off**: a built-in drive answers the KERNAL's file and
   command calls, so programs open, read and write files, list the directory,
-  read the status and use block commands on a `.d64` or `.d81`, without the
+  read the status and use block commands on a `.d64`, `.d71` or `.d81`, without the
   1541 ROM. Loaders that drive the hardware themselves still need TDE on.
 - **Fast loading**: with TDE off, an instant built-in shortcut load for plain
   games. Loading a `.prg` with TDE on offers to switch it off, since nothing on
   that disk needs the real drive.
-- **Disk writing**: the drive writes back to the `.d64` or `.d81`: `SAVE`,
-  scratch and rename run through the real 1541 DOS, or through the built-in
-  drive with TDE off. Modified disks auto-save to your
+- **Disk writing**: the drive writes back to the `.d64`, `.d71` or `.d81`: `SAVE`,
+  scratch and rename use the real 1541 DOS for D64 with TDE on, or the
+  virtual drive for D64/D71/D81 with TDE off. Modified disks auto-save to your
   browser Library, and the directory listing updates itself as files change.
 - **Blank & format**: insert a fresh blank (unformatted) disk, then format it
   from the panel or with BASIC `N:name,id`, ready to save to.
 - **Export**: download the current disk, with your changes, as a `.d64` file
-  (or a `.d81` or `.g64`, for a disk that came in as one).
+  (or a `.d71`, `.d81` or `.g64`, for a disk that came in as one).
 - **Write-protect toggle**: lock a disk against writes (or unlock it) per drive;
   loaded disks start protected so nothing is changed by accident.
 - **Eject** control per drive.

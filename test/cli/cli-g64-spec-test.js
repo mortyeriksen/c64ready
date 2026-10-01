@@ -1,5 +1,5 @@
 // Spec test for .g64 through the CLI: the sniffer names it by its signature,
-// dir and info read the directory decoded from its tracks, d642prg pulls a
+// dir and info read the directory decoded from its tracks, disk2prg pulls a
 // file out byte-identical, disk add refuses it (raw tracks are read-only
 // here), and — with the four ROMs on hand — run boots it through the emulated
 // 1541 and writes a PNG. The image is built from the format layout by
@@ -13,8 +13,8 @@ import { createBlankD64 } from '../../cli/core.mjs';
 import { sniff, KIND_NAMES } from '../../cli/formats.mjs';
 import { dir } from '../../cli/tape.mjs';
 import { run as info } from '../../cli/info.mjs';
-import { disk, d642prg, g642prg } from '../../cli/disk.mjs';
-import { d642t64, g642t64, t64Files } from '../../cli/t64.mjs';
+import { disk, disk2prg } from '../../cli/disk.mjs';
+import { disk2t64, t64Files } from '../../cli/t64.mjs';
 import { run } from '../../cli/run.mjs';
 import { setQuiet } from '../../cli/report.mjs';
 
@@ -60,22 +60,18 @@ const line = printed(() => info([g64]));
 assert(/\.g64, 35 of 42 tracks recorded/.test(line), `info counts the recorded whole tracks (got: ${line})`);
 assert(/"G64 CLI", 1 file, 663 blocks free/.test(line), 'info reads the name, file count and free blocks');
 
-// g642prg pulls the file out of the decoded sectors, byte for byte; d642prg
-// takes a .d64 only, and the format-neutral disk extract takes either.
-eq(g642prg([g64, '-d', at('out')]), 0, 'g642prg reads a .g64');
-const back = fs.readFileSync(at('out', 'HELLO.prg'));
-assert(back.length === prg.length && back.every((v, i) => v === prg[i]), 'the extracted PRG is byte-identical');
-let wrongKind = null;
-try { d642prg([g64, '-d', at('out-wrong')]); } catch (e) { wrongKind = e; }
-assert(wrongKind && /\.d64 disk image/.test(wrongKind.message), 'd642prg refuses a .g64');
+// Both extraction commands read decoded sectors.
+eq(disk2prg([g64, '-d', at('out')]), 0, 'disk2prg reads a .g64');
+assert(fs.readFileSync(at('out', 'HELLO.prg')).equals(prg), 'the extracted PRG is byte-identical');
 eq(disk(['extract', g64, '-d', at('out2')]), 0, 'disk extract reads a .g64');
+fs.writeFileSync(at('renamed.d71'), bytes);
+eq(disk2prg([at('renamed.d71'), '-d', at('renamed')]), 0, 'G64 signature overrides a D71 extension');
 
-// g642t64 packs the same decoded programs into an archive; d642t64 takes a
-// .d64 only, so the command name says which image goes in.
-eq(g642t64([g64, '-o', at('out.t64')]), 0, 'g642t64 reads a .g64');
+eq(disk2t64([g64, '-o', at('out.t64')]), 0, 'disk2t64 reads a .g64');
 const archived = t64Files(fs.readFileSync(at('out.t64')));
 assert(archived.files.length === 1 && archived.files[0].name.trim() === 'HELLO', 'the archive holds the program off the tracks');
-eq(d642t64([g64, '-o', at('wrong.t64')]), 1, 'd642t64 refuses a .g64');
+assert(Buffer.from(archived.files[0].bytes).equals(prg), 'the archive preserves program bytes');
+eq(disk2t64([at('hello.prg'), '-o', at('wrong.t64')]), 1, 'disk2t64 refuses a PRG');
 assert(!fs.existsSync(at('wrong.t64')), 'the refusal wrote no archive');
 
 // Nothing writes into raw tracks here.

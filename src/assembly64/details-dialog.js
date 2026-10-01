@@ -29,12 +29,12 @@ export async function openDetailsDialog(controller, reference, perform, details 
     const originalUrl = safeExternalUrl(item.originalUrl);
     if (originalUrl) dialog.body.append(el('a', 'Original release page ↗', { href: originalUrl, target: '_blank', rel: 'noopener noreferrer' }));
     const options = { targetDrive: 8, writeProtected: true, autorun: undefined, saveToLibrary: true };
-    const hasDisk = item.files.some(file => ['d64', 'd81', 'g64', 'zip'].includes(file.mediaType));
+    const hasDisk = item.files.some(file => ['d64', 'd71', 'd81', 'g64', 'zip'].includes(file.mediaType));
     const hasOpenable = item.files.some(file => allowedActions(file.mediaType).some(action => ['run', 'extract'].includes(action)));
     const settings = el('fieldset', null, { class: 'mb-grid' });
     settings.append(el('legend', 'Open media'));
     if (hasDisk) settings.append(renderField({ key: 'drive', label: 'Disk target drive', type: 'select', allowEmpty: false, options: [{ value: '8', label: 'Drive 8 (default)' }, { value: '9', label: 'Drive 9' }] }, '8', value => { options.targetDrive = Number(value); }));
-    if (item.files.some(file => ['prg', 'd64', 'd81', 'g64', 'tap', 'zip'].includes(file.mediaType))) settings.append(renderField({ label: 'Autorun', type: 'select', allowEmpty: false, options: [{ value: 'default', label: 'Follow app setting' }, { value: 'on', label: 'On' }, { value: 'off', label: 'Off / mount only' }] }, 'default', value => { options.autorun = value === 'default' ? undefined : value === 'on'; }));
+    if (item.files.some(file => ['prg', 'd64', 'd71', 'd81', 'g64', 'tap', 'zip'].includes(file.mediaType))) settings.append(renderField({ label: 'Autorun', type: 'select', allowEmpty: false, options: [{ value: 'default', label: 'Follow app setting' }, { value: 'on', label: 'On' }, { value: 'off', label: 'Off / mount only' }] }, 'default', value => { options.autorun = value === 'default' ? undefined : value === 'on'; }));
     settings.append(renderField({ label: 'Save selected file to Library', type: 'checkbox' }, true, value => { options.saveToLibrary = value; }));
     if (hasOpenable) dialog.body.append(settings);
     dialog.body.append(el('h3', `Files (${item.files.length})`, { class: 'mb-files-heading' }));

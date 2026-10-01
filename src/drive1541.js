@@ -299,7 +299,7 @@ export class Drive1541 {
 
   // ── Disk attach/detach ────────────────────────────────────────────────────
   setDisk(d64) {
-    // A disk this drive cannot read (a 1581's .d81) leaves it empty: the DOS
+    // Images served only by the virtual drive leave this drive empty: the DOS
     // answers DRIVE NOT READY, as with nothing in the slot. The machine keeps
     // the image for the KERNAL load trap.
     if (d64 && d64.readableBy1541 === false) d64 = null;

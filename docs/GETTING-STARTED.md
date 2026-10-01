@@ -69,6 +69,7 @@ Drag any supported file onto the screen and it goes to the right place, or use
 | `.prg` | Normally written onto a disk of its own in drive 8. See [Loading a .prg](USER-GUIDE.md#loading-a-prg) for autorun and the fallback without a 1541 ROM. |
 | `.d64` `.g64` | The emulator types `LOAD"*",8,1` and `RUN`. A `.g64` holds the raw tracks of a copy-protected original and turns TDE on. See [Disk drive 8](USER-GUIDE.md#disk-drive-8). |
 | `.nbz` | A nibbler dump. It becomes a `.g64` on the way in and loads like one. |
+| `.d71` | A double-sided 1571 disk, served by the virtual drive. Inserting it turns TDE off for that drive; use `LOAD"*",8,1` and `RUN`. |
 | `.d81` | A 1581 disk, served by the emulator itself: inserting it turns TDE off for that drive, then `LOAD"*",8,1` and `RUN` as for a `.d64`. |
 | `.crt` | The [cartridge](USER-GUIDE.md#cartridge) takes over at once, or on the next power-on if inserted while off. |
 | `.tap` `.wav` `.dmp` | Becomes a tape in the [Datasette](USER-GUIDE.md#datasette): type `LOAD`, then press **▶ PLAY**. |
@@ -85,9 +86,8 @@ Loading a `.d64` with **TDE off** offers to turn True Drive Emulation on when
 the 1541 ROM is available. Choose **Turn TDE on** for disk-loader compatibility,
 or **Keep TDE off** to continue with the current setting. A `.g64` needs the
 real drive, since its loader and protection live in the raw tracks, so loading
-one turns TDE on without asking. A `.d81` turns it off instead, since a 1541
-cannot read a 1581 disk. With TDE off a built-in drive serves a `.d64` or
-`.d81` fully: loading, saving and the command channel.
+one turns TDE on without asking. D71 and D81 turn it off to use the virtual
+drive. With TDE off, D64/D71/D81 support loading, saving and the command channel.
 
 The drive card lists the disk's directory: click any program to load just that
 one, or press **🔍** to see the filename artwork many demos hide there.

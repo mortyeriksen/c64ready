@@ -45,7 +45,11 @@ try {
   await page.goto(new URL('/?SPLASH=0', process.argv.find(arg => arg.startsWith('--url='))?.slice(6) || 'http://127.0.0.1:5173').href, { waitUntil: 'networkidle' });
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#media-browser-card .expand-btn').getAttribute('aria-expanded'), 'true', 'Assembly64 is expanded without a saved preference');
-  if (process.argv.includes('--tde')) {
+  if (process.argv.includes('--d71')) {
+    const { checkD71 } = await import('./d71-check.mjs');
+    await checkD71(page);
+    assert.deepEqual(errors, [], 'D71 checks have no browser runtime errors');
+  } else if (process.argv.includes('--tde')) {
     await page.evaluate(async () => {
       const mediaUrl = performance.getEntriesByType('resource').find(entry => new URL(entry.name).pathname === '/src/media.js').name;
       const { openMedia } = await import(mediaUrl);

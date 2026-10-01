@@ -65,6 +65,12 @@ software:
   `N:` format of an image with gaps leaves the gaps empty. Every track of a
   normal image is recorded, so this only shows on partial dumps.
 
+## D71 disk images
+
+- D71 uses the virtual drive. Loaders that upload drive code or use 1571
+  hardware/burst mode are unsupported. Existing virtual-drive file-type and
+  command limitations apply.
+
 ## D81 disk images
 
 - **Partitions** are listed as `CBM` but cannot be entered or loaded.

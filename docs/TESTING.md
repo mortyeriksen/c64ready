@@ -45,6 +45,15 @@ A skipping test exits 0, which on its own is indistinguishable from a pass, so i
 
 Both lists print the reason (from `missingNote(key)`, which names the manifest entry and its environment variable), so a green run still shows exactly which fixtures went missing. A test that skips without a directive is reported as a plain `PASS`: that is the bug the directive exists to prevent.
 
+## D71 virtual-drive tests
+
+`test/drive/d71-format-spec-test.js` covers geometry, split BAM, cross-side
+files, full-disk rollback, formatting, write protection and virtual channels.
+`test/drive/d71-trap-load-spec-test.js` covers KERNAL loading on devices 8/9
+and machine/media restore. Both run in `npm test`; D64/D81 tests cover the
+shared allocation code. Run `node test/assembly64/browser-check.mjs --d71` against
+the dev server for file pickers, TDE routing, format/export, Library and state restore.
+
 ## VIC renderer tests
 
 Compact history, sprite scheduling and fetch-fed graphics have no runtime switches.

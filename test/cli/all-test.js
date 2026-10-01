@@ -14,6 +14,7 @@ const TESTS = [
   'cli-dir-spec-test.js',
   'cli-wav2tap-spec-test.js',
   'cli-disk-spec-test.js',
+  'cli-disk2d81-spec-test.js',
   'cli-roms-spec-test.js',
   'cli-apng-spec-test.js',
   'cli-collage-spec-test.js',

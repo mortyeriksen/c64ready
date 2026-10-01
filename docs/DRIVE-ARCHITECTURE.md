@@ -59,7 +59,7 @@ bit-bang the bus / count cycles) behave correctly.
 **Two host-integration modes** (chosen in `machine.js`):
 - **Trap-served drive** (TDE off): the machine intercepts the KERNAL LOAD
   entry (`$FFD5`, or the routine behind the ILOAD vector) and reads the file
-  straight from the disk image, a D64 or a D81, and answers the KERNAL's serial
+  straight from the disk image, a D64, D71 or D81, and answers the KERNAL's serial
   primitives with the [virtual drive](#the-virtual-drive-src-virtual-drive-js),
   so OPEN, CHKIN, CHRIN, CLOSE, SAVE and channel 15 reach the image too. Fast,
   and without the drive ROM, but loaders that bit-bang the bus still find the
@@ -89,7 +89,7 @@ bit-bangs `$DD00` can talk to the drive CPU/VIA state.
 | `drive1541.js` | **`Drive1541`**, the orchestrator: a 6502 CPU + VIA1 + VIA2 + ROM + RAM + the spindle/GCR read+write engine + IEC wiring + stepper |
 | `6522.js` | **`VIA6522`** ×2: VIA1 (serial bus) and VIA2 (mechanics + read/write head); timers, ports, CA1/CA2, IRQ |
 | `gcr.js` | **`GCRDisk`**: wraps a D64 and synthesizes a raw GCR track bitstream on demand (4-to-5 encode, sync, gaps) |
-| `media/d64.js` | **`D64`**: parses a D64 or D81 sector image by its layout: sectors, BAM, directory, file chains, `$`-directory PRG synthesis |
+| `media/d64.js` | **`D64`**: parses a D64, D71 or D81 sector image by its layout: sectors, BAM, directory, file chains, `$`-directory PRG synthesis |
 | `drive-sounds.js` | cosmetic head-step/motor sound effects (not part of the data path) |
 
 ---
@@ -345,10 +345,10 @@ into the image:
 
 ---
 
-## 9. The sector image: D64 and D81 (`media/d64.js`)
+## 9. Sector images: D64, D71 and D81 (`media/d64.js`)
 
 `D64` parses a 35-track (683-sector) image, an extended variant, or a 1581's
-D81. A **layout** per kind says where the DOS keeps things: the 1541's header
+D81, or a 1571's 70-track D71. A **layout** per kind says where the DOS keeps things: the 1541's header
 and BAM share 18/0 (4-byte entries) with the directory from 18/1; the 1581 has
 its header at 40/0, forty tracks per BAM sector at 40/1 and 40/2 (6-byte
 entries: count plus a 40-bit map) and its directory from 40/3, interleave 1.
@@ -356,9 +356,15 @@ entries: count plus a 40-bit map) and its directory from 40/3, interleave 1.
 the layout. A D81 is `readableBy1541: false`: `Drive1541.setDisk()` treats it
 as an empty drive, and only the load trap serves it.
 
+D71 repeats the 35-track geometry on side two. Its header/directory remain
+18/0 and 18/1. Tracks 36-70 store free counts in 18/0 at `$DD` and bitmaps
+in 53/0, so `_bamEntry` supplies separate count and map locations. Allocation
+reserves tracks 18 and 53; a blank disk has 1328 file blocks. D71 is virtual-only
+(`readableBy1541: false`); mounting disables TDE for the selected device.
+
 - **`d64Variant(byteLength)`**: the length is the only thing identifying the
   format, so it serves as both the variant lookup (35/40/42 tracks or an
-  80-track D81, ± error table, with a `kind`) and the "is this a disk image at
+  70-track D71 or 80-track D81, ± error table, with a `kind`) and the "is this a disk image at
   all" check callers run before
   mounting. `errorForSector()` reads the table; `writeSector()` clears an entry.
 - **`SPT`**: sectors-per-track table (21 on tracks 1-17 down to 17 on 31-35 and
@@ -373,6 +379,7 @@ as an empty drive, and only the load trap serves it.
   (marks the image dirty), used by `gcr.js`'s decoder.
 - **`createBlankD64(name, id)`**: synthesizes a fresh empty *formatted* image
   (empty BAM at 18/0 + directory at 18/1, 664 blocks free) for the FORMAT action.
+  `createBlankD71` adds the second side and its split BAM.
   `createBlankD81` does the same for a 1581 disk (header at 40/0, BAM at 40/1
   and 40/2, directory at 40/3, 3160 blocks free); `createBlankDisk(kind)` picks.
 - **Directory** (`_parse`): reads the header sector for name/ID/DOS type,
@@ -454,7 +461,7 @@ output is an ordinary G64 for `G64` and the drive.
 ### The virtual drive (`src/virtual-drive.js`)
 
 With true drive emulation off, the trap-served drive is a `VirtualDrive`: a
-DOS over the mounted sector image (D64 or D81 alike), answering the KERNAL's
+DOS over the mounted sector image (D64, D71 or D81), answering the KERNAL's
 serial primitives instead of the IEC bus. The machine traps TALK and LISTEN
 (`$ED09`, `$ED0C`) when A names a trap-served device, then SECOND, TKSA,
 CIOUT, ACPTR, UNTALK and UNLISTEN until the drive is released, and returns
@@ -536,9 +543,9 @@ idle scheduler before the first LOAD, so the C64 doesn't time out racing the boo
   at `$FFD5` and `$F4A5`, and the serial traps serve everything else the
   KERNAL sends to the drive (OPEN, CHKIN, CHRIN, CLOSE, SAVE, channel 15). A
   bit-banged loader still finds the real 1541, or nothing, on the wires.
-- **A 1541 never holds a `.d81`**: `setDisk()` treats media it cannot read as
-  an empty drive, so with TDE on the DOS answers DRIVE NOT READY; the trap (TDE
-  off) is the only path to a 1581 image.
+- **D71/D81 stay on the virtual-drive path**: `setDisk()` treats media it cannot read as
+  an empty drive. With TDE on the DOS answers DRIVE NOT READY; the virtual
+  drive (TDE off) serves D71 and D81 images.
 - **The trap still prints the KERNAL's load messages** via the ROM's own
   routines; a program reading its next command off the screen counts on them.
 - **`$FFD5`'s register arguments are banked before those routines run**: A picks

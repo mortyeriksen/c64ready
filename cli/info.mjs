@@ -55,6 +55,7 @@ function describe(bytes, filename) {
       return `${name} (.dmp v${bytes[12]}), ${machine} ${video}`;
     }
     case 'd64':
+    case 'd71':
     case 'd81': {
       const v = d64Variant(bytes.length);
       const disk = new D64(bytes);

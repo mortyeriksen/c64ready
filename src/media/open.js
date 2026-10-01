@@ -16,8 +16,8 @@ export function validateMedia(bytes, type) {
   if (bytes.length > MAX_DOWNLOAD_BYTES) throw new Error('Media exceeds the 32 MiB limit.');
   if (type === 'prg') {
     if (bytes.length < 3 || prgOverflow(bytes)) throw new Error('Invalid PRG address or size.');
-  } else if (type === 'd64' || type === 'd81') {
-    // The length is the whole check, and it also says which of the two it is.
+  } else if (type === 'd64' || type === 'd71' || type === 'd81') {
+    // The length is the whole check, and it also says which sector-image format it is.
     if (d64Variant(bytes.length)?.kind !== type) throw new Error(`Unsupported ${type.toUpperCase()} size.`);
     return new D64(bytes);
   } else if (type === 'g64') {
@@ -113,7 +113,7 @@ export function createOpenMedia(port) {
         if (reset && !['crt', 'reu'].includes(load.type) && port.reset && !port.reset()) {
           throw new Error('Could not reset the machine to load this.');
         }
-        if (['prg', 'd64', 'd81', 'g64', 'crt', 'tap'].includes(load.type)) port.configureSid?.(load.tune ?? null);
+        if (['prg', 'd64', 'd71', 'd81', 'g64', 'crt', 'tap'].includes(load.type)) port.configureSid?.(load.tune ?? null);
         if (DISK_MEDIA.includes(load.type)) {
           await port.prepareDisk?.({ targetDrive, signal, rawGcr: load.type === 'g64', kind: load.type });
           signal?.throwIfAborted();

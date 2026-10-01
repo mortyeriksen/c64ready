@@ -15,13 +15,14 @@ the same decoder, the same repairs, the same listings.
 | --- | --- |
 | **Recordings → tapes** | `wav2tap`, `dmp2tap`, `tapfix`, `tapcat` |
 | **Tapes → anything** | `tap2wav`, `tap2d64`, `tap2prg`, `tap2t64` |
-| **.t64 archives** | `t642d64`, `t642prg` and `t642tap` out, `d642t64`, `d812t64` and `g642t64` in |
+| **.t64 archives** | `t642d64`, `t642prg` and `t642tap` out, `disk2t64` in |
+| **D64/D71 → D81** | `disk2d81` |
 | **Nibbler dumps → disks** | `nbz2g64` |
 | **Programs → containers** | `prg2d64`, `prg2crt`, `prg2tap`, `prg2turbo` |
 | **SID music → player or audio** | `sid2prg`, `sid2wav` |
 | **Questions** | `dir`, `info`, `loadtest`, `loader` |
 | **The machine** | `run` |
-| **A disk's interior** | `disk new`, `disk add`, `disk rm`, `disk extract` (= `d642prg`, or `d812prg` off a `.d81`, `g642prg` off a `.g64`) |
+| **A disk's interior** | `disk new`, `disk add`, `disk rm`, `disk extract` (also `disk2prg`) |
 
 ## Who it's for
 
@@ -31,12 +32,12 @@ where it couldn't; `dir` and `loadtest` tell you what survived. One quoted
 wildcard converts a whole shelf, and a damaged tape is a result, not a crash.
 
 **The player** has a folder of downloaded games and wants to see one run.
-`run` boots a `.prg`, `.tap`, `.d64`, `.d81`, `.g64`, `.crt` or `.t64` headless and saves a PNG
+`run` boots a `.prg`, `.tap`, `.d64`, `.d71`, `.d81`, `.g64`, `.crt` or `.t64` headless and saves a PNG
 of the screen, or with `--all` a PNG for every program on a side at once, so
 you can tell a working dump from a broken one without opening an emulator.
 
 **The archivist** moves programs between the era's containers. `tap2d64`,
-`t642d64`, `d642prg` and the `prg2*` family convert in every direction that is
+`t642d64`, `disk2prg` and the `prg2*` family convert in every direction that is
 honest, each printing the directory it produced, so a tape becomes a disk
 becomes a `.prg` and back with the bytes accounted for at every step.
 
@@ -95,7 +96,7 @@ c64rdy wav2tap "$HOME/tapes/*.wav"
 ```
 
 Two commands still take exactly one input, because each works *inside* one
-container: `run` and `disk extract` (`d642prg`).
+container: `run` and `disk extract` (`disk2prg`).
 
 And a **damaged tape is a result, not an error**: the exit code is non-zero
 only when an input failed outright (or usage was wrong, which exits 2).
@@ -157,7 +158,7 @@ not guessed), and — when part of the tape holds a signal no known loader could
 read — how much, so "it only found 3 files" becomes "…and twelve minutes
 belong to a loader this does not know".
 
-`dir` works on `.tap`, `.d64`, `.d81`, `.g64`, `.t64` archives, DC2N `.dmp` dumps, and
+`dir` works on `.tap`, `.d64`, `.d71`, `.d81`, `.g64`, `.t64` archives, DC2N `.dmp` dumps, and
 directly on a `.wav` recording (at the cost of the full decode). Flags: `--damaged` shows only the
 broken rows, `--seconds` prints raw seconds instead of `m:ss`, `--pulses` adds
 pulse indexes for diagnosis. Times are PAL; on an NTSC recording they read
@@ -491,16 +492,12 @@ Chopper Demo.tap
 1 of 1 file saved onto 4:04 of tape.
 ```
 
-The other direction packs one. `d642t64` puts a disk's programs into an
-archive under their own names, labelled what the disk is labelled — and
-`tap2t64` decodes a tape's programs into one, which is the instantly LOADable
-form of a turbo tape, kept under the names and addresses the tape itself
-claims. `g642t64` does the same for a `.g64`, off the sectors decoded from its
-raw tracks, and `d812t64` for a 1581's `.d81`:
+`disk2t64` archives programs from D64, D71, D81 or G64 images, preserving
+their names and load addresses. `tap2t64` decodes tape programs into an archive.
 
-<!-- shot: c64rdy d642t64 disk.d64 -->
+<!-- shot: c64rdy disk2t64 disk.d64 -->
 ```
-$ c64rdy d642t64 disk.d64
+$ c64rdy disk2t64 disk.d64
 disk.d64  ·  "TEST DISK"
   #  NAME          LOAD  SIZE
   1  HELLO  $0801-$0819   24B
@@ -590,8 +587,7 @@ the player's other limitations.
 
 ## Disk images
 
-The one command group, because a disk image is the one file you edit over its
-lifetime, a `.d64` or a 1581's `.d81`:
+The `disk` group creates and edits D64, D71 and D81 images:
 
 ```
 c64rdy disk new mydisk.d64 game.prg tools.prg --name "MY DISK"
@@ -600,22 +596,19 @@ c64rdy disk rm  mydisk.d64 "TOOLS"
 c64rdy disk extract mydisk.d64 "GAME*" -d out/
 ```
 
-`new` formats a blank 35-track disk (664 blocks free), or a 1581 disk (3160
-blocks free) when the output name ends in `.d81`, and refuses to reformat
-an existing file unless `--force` says so; name PRGs on the same line and they
-go straight in, so a disk is built in one command. `add` writes more PRGs in
-later, under DOS-shaped names. `rm` scratches files a pattern matches and gives
-their blocks back. `extract` pulls files back out byte-identical, with DOS's
-own pattern rules — `*` and `?`, `"AL"` does not match `ALPHA` but `"AL*"` does.
+`new` selects the format from the output extension: D64 (664 free blocks),
+D71 (1328) or D81 (3160). Existing files require `--force`. Include PRGs to
+populate the new image. `add` writes more programs; `rm` scratches matching
+files and frees their blocks.
 
-Extraction answers to a second name, since `prg2d64` invites its inverse:
+`disk2prg` and `disk extract` accept all four disk formats, detecting the
+format from the contents. G64 images support extraction only.
 
 ```
-c64rdy d642prg mydisk.d64                    # every file on the disk
-c64rdy d642prg mydisk.d64 "GAME*" -d out/    # the same command, other door
-c64rdy d642prg mydisk.d64 "?ELLO"            # ? is one character
-c64rdy g642prg original.g64                  # the same off a raw .g64
-c64rdy d812prg big.d81                       # the same off a 1581 .d81
+c64rdy disk2prg mydisk.d64 "GAME*" -d out/
+c64rdy disk2prg double.d71
+c64rdy disk2prg big.d81
+c64rdy disk2prg original.g64
 ```
 
 **Quote the pattern.** A bare `*` never reaches the tool — the shell expands
@@ -623,6 +616,21 @@ it into your local filenames first, and the command sees a dozen arguments
 instead of a pattern. It fails loudly rather than quietly, but the fix is
 quotes, or simply leaving the pattern out: no pattern already means every
 file. A pattern that matches nothing says so and exits 1.
+
+### Convert D64/D71 to D81
+
+```bash
+c64rdy disk2d81 game.d71 -o game.d81
+c64rdy disk2d81 "*.d71" --out-dir converted/
+```
+
+Copies closed PRG, SEQ and USR files, including raw game data. Preserves file
+order, names, types, lock flags, disk name and ID. Deleted entries are omitted.
+REL files, unclosed files and damaged chains fail without writing an output.
+Existing outputs require `--force`; the source image cannot be overwritten.
+
+This rebuilds the disk filesystem. Sector-based loaders and drive-specific
+fastloaders may need a D81-compatible version of the game.
 
 ## Nibbler dumps
 
@@ -944,7 +952,7 @@ One game from a tape onto a cartridge, end to end:
 
 ```
 c64rdy tap2d64 side-a.tap --file "BR TR CHINA"
-c64rdy d642prg side-a.d64 "BR TR CHINA" -d out/
+c64rdy disk2prg side-a.d64 "BR TR CHINA" -d out/
 c64rdy prg2crt "out/BR TR CHINA.prg"
 c64rdy run "out/BR TR CHINA.crt" --anim        # see it start, as a moving PNG
 ```
@@ -998,9 +1006,8 @@ unpacker unpacks, and never into the input's own folder.
 | `t642d64` | — |
 | `t642prg` | `-d <dir>` where the files land (`--out-dir` too) |
 | `t642tap` | `--roms <dir>` |
-| `d642t64` | — |
-| `g642t64` | — |
-| `d812t64` | — |
+| `disk2t64` | |
+| `disk2d81` | `-o <file>` or `--out-dir <dir>`, `--force` to replace an output |
 | `nbz2g64` | — (writes `<name>.g64`) |
 | `dmp2tap` | — |
 | `tapfix` | — (writes `<name>-mended.tap`) |
@@ -1015,11 +1022,11 @@ unpacker unpacks, and never into the input's own folder.
 | `loadtest` | `--file NAME` one program only · `--jobs <n>` threads · `--roms <dir>` |
 | `loader` | `--dump <file>` write all 64 KB of memory · `--seconds <n>` how long to let it run (60) · `--roms <dir>` |
 | `roms` | — (a folder to remember; run it bare at a terminal and it asks) |
-| `run` | `--no-press` leave a screen that stopped moving alone · `--frames <n>` how long after the start · `--file NAME` a program off a `.d64`, `.d81`, `.g64` or `.tap` · `--all` every program on a `.d64`, `.d81`, `.g64` or `.tap` · `--collage` tile a `--all` run into one sheet (animated with `--anim`) · `--jobs <n>` threads, with `--all` · `--anim` film it · `--fps <n>` how often to film (5, at most 50) · `--speed <n>` how fast it plays against the machine · `--roms <dir>` |
+| `run` | `--no-press` leave a screen that stopped moving alone · `--frames <n>` how long after the start · `--file NAME` a program off a `.d64`, `.d71`, `.d81`, `.g64` or `.tap` · `--all` every program on a `.d64`, `.d71`, `.d81`, `.g64` or `.tap` · `--collage` tile a `--all` run into one sheet (animated with `--anim`) · `--jobs <n>` threads, with `--all` · `--anim` film it · `--fps <n>` how often to film (5, at most 50) · `--speed <n>` how fast it plays against the machine · `--roms <dir>` |
 | `disk new` | `--name NAME` the disk's header name · `--id ID` its two-character id · PRGs named on the line are written straight in · `--force` reformats an existing image |
 | `disk add` | — |
 | `disk rm` | — (takes a DOS `"GAME*"` pattern; scratches every match) |
-| `disk extract` / `d642prg` / `d812prg` / `g642prg` | `-d <dir>` where the files land (`--out-dir` too). A quoted `"GAME*"` pattern narrows it; no pattern means every file |
+| `disk extract` / `disk2prg` | `-d <dir>` where the files land (`--out-dir` too). A quoted `"GAME*"` pattern narrows it; no pattern means every file |
 
 ## What it won't do (yet)
 

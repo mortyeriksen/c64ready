@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
-import { createBlankD81, createPRGDisk } from '../../src/media/d64.js';
+import { createBlankD71, createBlankD81, createPRGDisk } from '../../src/media/d64.js';
 
 export function sampleMedia(type) {
   // 10 PRINT "MEDIA BROWSER":END
@@ -9,6 +9,7 @@ export function sampleMedia(type) {
   if (type === 'prg') return prg;
   if (type === 'reu') { const bytes = new Uint8Array(1024 * 1024); bytes.set([0x52, 0x45, 0x55]); return bytes; }
   if (type === 'd64') return createPRGDisk('BROWSER', prg).img;
+  if (type === 'd71') { const disk = createBlankD71('BROWSER', '71'); disk.writePRG('BROWSER', prg); return disk.img; }
   if (type === 'd81') { const disk = createBlankD81('BROWSER', '81'); disk.writePRG('BROWSER', prg); return disk.img; }
   // An archive holding that one program: 64-byte header, one 32-byte directory
   // entry, then the program's bytes at the offset the entry names.

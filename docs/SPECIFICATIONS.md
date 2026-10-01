@@ -203,6 +203,10 @@ revisions:
   for the per-sector error table `src/gcr.js` turns back into read failures, and
   for the 40-track BAM extension locations.
   <https://ist.uwaterloo.ca/~schepers/formats/D64.TXT>
+- **D71 disk-image format**: Peter Schepers, “The D71 disk image format”,
+  VICE manual §17.7, edited by Marco van den Heuvel. Geometry, split
+  second-side BAM, metadata tracks and optional error table:
+  <https://vice-emu.sourceforge.io/vice_17.html#SEC424>
 - **D81 disk-image format**: Peter Schepers, _D81 (Electronic form of a physical
   1581 disk)_. `src/media/d64.js` follows it for the image sizes, the header at
   40/0, the BAM at 40/1 and 40/2 and the directory from 40/3, reading and
