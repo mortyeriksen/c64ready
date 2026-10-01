@@ -7,6 +7,9 @@
 // directory reads as a channel, buffers take block commands, and channel 15
 // takes DOS commands and reports the status line. Everything the KERNAL's
 // OPEN, CHKIN, CHRIN, GETIN, CLOSE, LOAD and SAVE do reaches the image this way.
+// Commands, errors and the status line follow the 1541 and 1581 User's Guides;
+// the serial contract (EOI with the last byte, timeouts) the Programmer's
+// Reference Guide.
 
 import { TYPE_SEQ, TYPE_PRG, TYPE_USR } from './media/d64.js';
 

@@ -155,14 +155,14 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   CPU + DOS) for fastloaders, cracked intros, demos, and copy-protected disks.
 - **Disk I/O with TDE off**: a built-in drive answers the KERNAL's file and
   command calls, so programs open, read and write files, list the directory,
-  read the status and use block commands on the mounted image, `.d81`
-  included, without the 1541 ROM. Loaders that drive the hardware themselves
-  still need TDE on.
+  read the status and use block commands on a `.d64` or `.d81`, without the
+  1541 ROM. Loaders that drive the hardware themselves still need TDE on.
 - **Fast loading**: with TDE off, an instant built-in shortcut load for plain
   games. Loading a `.prg` with TDE on offers to switch it off, since nothing on
   that disk needs the real drive.
-- **Disk writing**: the drive writes back to the `.d64`: `SAVE`, scratch, and
-  rename all run through the real 1541 DOS. Modified disks auto-save to your
+- **Disk writing**: the drive writes back to the `.d64` or `.d81`: `SAVE`,
+  scratch and rename run through the real 1541 DOS, or through the built-in
+  drive with TDE off. Modified disks auto-save to your
   browser Library, and the directory listing updates itself as files change.
 - **Blank & format**: insert a fresh blank (unformatted) disk, then format it
   from the panel or with BASIC `N:name,id`, ready to save to.

@@ -86,7 +86,8 @@ the 1541 ROM is available. Choose **Turn TDE on** for disk-loader compatibility,
 or **Keep TDE off** to continue with the current setting. A `.g64` needs the
 real drive, since its loader and protection live in the raw tracks, so loading
 one turns TDE on without asking. A `.d81` turns it off instead, since a 1541
-cannot read a 1581 disk.
+cannot read a 1581 disk. With TDE off a built-in drive serves a `.d64` or
+`.d81` fully: loading, saving and the command channel.
 
 The drive card lists the disk's directory: click any program to load just that
 one, or press **🔍** to see the filename artwork many demos hide there.

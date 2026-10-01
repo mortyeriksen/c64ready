@@ -45,9 +45,20 @@ function c64IecLineLow(portA, ddr, bit) {
 const KERNAL_LOAD_ROUTINE = 0xF4A5;
 // The KERNAL's serial bus primitives, which every OPEN, CHKIN, CHRIN, GETIN,
 // CLOSE, LOAD and SAVE on the bus goes through. With true drive emulation
-// off, a trap answers them for the drive instead of the IEC bus.
+// off, a trap answers them for the drive instead of the IEC bus. Entry points
+// per Mapping the Commodore 64.
 const SERIAL_TALK = 0xED09, SERIAL_LISTEN = 0xED0C, SERIAL_SECOND = 0xEDB9, SERIAL_TKSA = 0xEDC7;
 const SERIAL_CIOUT = 0xEDDD, SERIAL_ACPTR = 0xEE13, SERIAL_UNTALK = 0xEDEF, SERIAL_UNLISTEN = 0xEDFE;
+// The KERNAL's published jump table (Programmer's Reference Guide) and where
+// each entry jumps, with the default ILOAD vector RESTOR installs (Mapping the
+// Commodore 64). The traps sit on those routines, so a KERNAL whose table or
+// vector points elsewhere is not trapped; it gets the bus.
+const KERNAL_JUMP_TABLE = [
+  [0xFFB1, SERIAL_LISTEN], [0xFFB4, SERIAL_TALK], [0xFF93, SERIAL_SECOND], [0xFF96, SERIAL_TKSA],
+  [0xFFA8, SERIAL_CIOUT], [0xFFA5, SERIAL_ACPTR], [0xFFAB, SERIAL_UNTALK], [0xFFAE, SERIAL_UNLISTEN],
+  [0xFFD5, 0xF49E],
+];
+const KERNAL_ILOAD_DEFAULT_AT = 0xFD4C;
 
 // 1541 drive-CPU cycles per C64 master cycle, 16.16 fixed point. True PAL
 // ratio = drive 1 MHz (16 MHz crystal / 16) against C64 phi2 985248 Hz;
@@ -175,8 +186,8 @@ export class C64Machine {
     this.vdrive8.onWrite = () => { if (this.onTrapDiskWrite) { try { this.onTrapDiskWrite(8); } catch { } } };
     this.vdrive9.onWrite = () => { if (this.onTrapDiskWrite) { try { this.onTrapDiskWrite(9); } catch { } } };
     this._serialDrive = null;
-    this._serialStockRom = null;
-    this._serialStock = false;
+    this._stockKernalRom = null;
+    this._stockKernal = false;
     // External hook: fired when a trap-served drive wrote to its disk image.
     this.onTrapDiskWrite = null;
     this.cpu = new CPU(this.mem);
@@ -978,20 +989,21 @@ export class C64Machine {
     return null;
   }
 
-  // Are the serial primitives where the stock KERNAL keeps them? Checked once
-  // per ROM image: a replacement KERNAL gets the bus, not the trap.
-  _kernalSerialIsStock() {
+  // Does the loaded KERNAL keep its jump table and default LOAD vector where
+  // the documentation puts them? Checked once per ROM image. The traps, and
+  // the jumps into the ROM's own message routines, rely on that layout.
+  _kernalIsStock() {
     const rom = this.mem._kernal;
-    if (rom !== this._serialStockRom) {
-      this._serialStockRom = rom;
+    if (rom !== this._stockKernalRom) {
+      this._stockKernalRom = rom;
       const at = a => rom[a - 0xE000];
-      this._serialStock = !!rom && rom.length >= 0x2000
-        && at(0xED09) === 0x09 && at(0xED0A) === 0x40 && at(0xED0B) === 0x2C && at(0xED0C) === 0x09 && at(0xED0D) === 0x20
-        && at(0xEDB9) === 0x85 && at(0xEDBA) === 0x95 && at(0xEDC7) === 0x85 && at(0xEDC8) === 0x95
-        && at(0xEDDD) === 0x24 && at(0xEDDE) === 0x94 && at(0xEE13) === 0x78 && at(0xEE14) === 0xA9
-        && at(0xEDEF) === 0x78 && at(0xEDF0) === 0x20 && at(0xEDFE) === 0xA9 && at(0xEDFF) === 0x3F;
+      this._stockKernal = !!rom && rom.length >= 0x2000
+        && KERNAL_JUMP_TABLE.every(([entry, target]) =>
+          at(entry) === 0x4C && at(entry + 1) === (target & 0xFF) && at(entry + 2) === (target >> 8))
+        && at(KERNAL_ILOAD_DEFAULT_AT) === (KERNAL_LOAD_ROUTINE & 0xFF)
+        && at(KERNAL_ILOAD_DEFAULT_AT + 1) === (KERNAL_LOAD_ROUTINE >> 8);
     }
-    return this._serialStock;
+    return this._stockKernal;
   }
 
   // A call to one of the serial primitives, answered by a virtual drive when
@@ -1001,7 +1013,7 @@ export class C64Machine {
   _serialTrap(pc) {
     const cpu = this.cpu;
     if (pc === SERIAL_TALK || pc === SERIAL_LISTEN) {
-      if (!this._kernalSerialIsStock()) return false;
+      if (!this._kernalIsStock()) return false;
       const drive = this._virtualDriveFor(cpu.a & 0x1F);
       if (!drive) return false;
       this._serialDrive = drive;
@@ -1036,29 +1048,11 @@ export class C64Machine {
     return true;
   }
 
-  // Is the LOAD routine behind the ILOAD vector the stock one? $F49E banks X/Y
-  // and jumps through $0330, whose default target opens `STA $93; LDA #0;
-  // STA $90`. A loader that saved the vector and jumps to it directly, or that
-  // hooks the vector and chains on, arrives there without passing $FFD5.
-  _kernalLoadRoutineIsStock() {
-    const rom = this.mem._kernal;
-    if (!rom || rom.length < 0x2000) return false;
-    const at = a => rom[a - 0xE000];
-    return at(0xF49E) === 0x86 && at(0xF49F) === 0xC3 && at(0xF4A0) === 0x84 && at(0xF4A1) === 0xC4
-        && at(0xF4A2) === 0x6C && at(0xF4A3) === 0x30 && at(0xF4A4) === 0x03
-        && at(0xF4A5) === 0x85 && at(0xF4A6) === 0x93 && at(0xF4A7) === 0xA9 && at(0xF4A8) === 0x00;
-  }
-
-  // Do the ROM's message routines actually live where we are about to jump?
-  // $F5AF opens `LDA MSGFLG` and $F5D2 opens `LDY #$49`. A replacement or stub
-  // KERNAL that has something else there gets the silent load instead of a jump
-  // into whatever happens to sit at that address.
-  _kernalPrintsLoadMessages() {
-    const rom = this.mem._kernal;
-    if (!rom || rom.length < 0x2000) return false;
-    return rom[0xF5AF - 0xE000] === 0xA5 && rom[0xF5B0 - 0xE000] === 0x9D
-        && rom[0xF5D2 - 0xE000] === 0xA0 && rom[0xF5D3 - 0xE000] === 0x49;
-  }
+  // The trap prints SEARCHING FOR and LOADING by jumping into the ROM's own
+  // message routines, which a stock KERNAL keeps at $F5AF and $F5D2 (Mapping
+  // the Commodore 64). A replacement or stub KERNAL gets the silent load
+  // instead of a jump into whatever sits at those addresses.
+  _kernalPrintsLoadMessages() { return this._kernalIsStock(); }
 
   // JSR into the KERNAL and come back here: RTS pops this and adds one, so the
   // trap runs again once the routine has finished.
@@ -1913,7 +1907,7 @@ export class C64Machine {
     this._masterPhase = 'cpu';
     const trapDisk =
       (this.cpu.atInstructionBoundary() && !cpuBlocked
-        && (this.cpu.pc === 0xFFD5 || (this.cpu.pc === KERNAL_LOAD_ROUTINE && this._kernalLoadRoutineIsStock())))
+        && (this.cpu.pc === 0xFFD5 || (this.cpu.pc === KERNAL_LOAD_ROUTINE && this._kernalIsStock())))
         ? this._loadTrapDisk()
         : null;
     if (trapDisk) {

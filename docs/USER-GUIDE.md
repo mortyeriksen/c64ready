@@ -450,6 +450,15 @@ The primary 1541 floppy drive (IEC device 8).
 | **▼ *n* files** | Expands the directory: disk name, blocks free, and the file list. It updates itself when the running program changes the disk. Click a **PRG** or **USR** row to load and run that file; SEQ and REL rows are data, so they stay dim. |
 | **🔍** | Opens the [Directory zoom](#directory-zoom) viewer: enlarged, filenames only, so PETSCII directory art reads clearly. |
 
+**When you need TDE.** True Drive Emulation runs a real 1541 on the bus. You
+need it for `.g64` and `.nbz` images (raw tracks; it turns on by itself) and
+for fastloaders and copy protections that drive the hardware directly. You do
+not need it for `LOAD`, `SAVE`, files, the directory or the command channel on
+a `.d64` or `.d81`: with TDE off a built-in drive serves those from the image
+instantly, where TDE loads at the real drive's speed, and it needs no 1541
+ROM. A `.d81` always uses the built-in drive, since a 1541 cannot read it.
+When in doubt, try TDE off first and turn it on if a disk does not load.
+
 **Loading with TDE off.** When the 1541 ROM is available, loading a `.d64`
 asks whether to turn TDE on before inserting the disk. **Turn TDE on** enables it
 for that drive and remembers the setting; **Keep TDE off** continues loading
@@ -472,7 +481,7 @@ stays off after you eject. The directory, click-to-load, FORMAT and export
 work as for a `.d64`, and programs `SAVE` to it and use its command channel
 as on a 1581.
 
-**Writing to disk.** The drive writes back to the `.d64`: `SAVE` a program, scratch
+**Writing to disk.** The drive writes back to the `.d64` or `.d81`, with TDE on or off: `SAVE` a program, scratch
 or rename a file, and the change lands on the disk. Writing needs the disk unlocked
 (🔓); loaded disks are protected until you allow it. Modified disks **auto-save to
 your browser Library** so they survive a reload, and the **⤓ .D64** button enables so
@@ -518,7 +527,7 @@ until you switch it on. It reads, writes, and formats just like drive 8.
 | **Power switch** | Connects / disconnects device 9. Turning it on opens a confirmation dialog first (see the warning below). |
 | **💾 LOAD / 💾 BLANK / ⏏ EJECT** | Insert / insert-blank / remove a `.d64`, `.d81`, `.g64` or `.nbz` as device 9. |
 | **🔒 / 🧹 FORMAT / ⤓ .D64** | Write-protect toggle, format, and export, the same as [drive 8](#disk-drive-8). |
-| **TDE: OFF / ON** | True Drive Emulation for device 9 (needs the 1541 ROM). |
+| **TDE: OFF / ON** | True Drive Emulation for device 9 (needs the 1541 ROM); off, the built-in drive serves it. |
 
 Loading a `.d64` with TDE off offers to enable it for drive 9, using the same
 [prompt as drive 8](#disk-drive-8). The choice affects only the selected drive.

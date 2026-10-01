@@ -209,6 +209,12 @@ revisions:
   writing alike; the 3160 free blocks of a formatted disk are the 1581 User's
   Guide's figure.
   <https://ist.uwaterloo.ca/~schepers/formats/D81.TXT>
+- **Virtual drive (TDE off)**: the KERNAL's serial routines, their ROM entry
+  points and the status bits, from the _Commodore 64 Programmer's Reference
+  Guide_ and _Mapping the Commodore 64_; the DOS side (open syntax, commands,
+  error numbers and messages, the status line) from the _1541 User's Guide_ and
+  the _1581 User's Guide_. `src/virtual-drive.js` approximates M-R, M-W, M-E
+  and a full disk.
 - **G64 disk-image format**: Peter Schepers, _G64 (GCR-encoded 1541 disk image)_,
   and the VICE manual's description of the same layout. `src/media/g64.js`
   follows them for the header, the half-track offset and speed-zone tables,

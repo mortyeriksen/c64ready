@@ -57,15 +57,19 @@ bit-bang the bus / count cycles) behave correctly.
 ```
 
 **Two host-integration modes** (chosen in `machine.js`):
-- **KERNAL load trap** (TDE off): the machine intercepts the KERNAL LOAD entry
-  `$FFD5` and reads the file straight from the disk image, a D64 or a D81. Fast, but only handles standard
-  LOADs (and `SAVE`/format are never trapped, so they still reach the real drive).
-  The trap is not silent: it runs the ROM's own `SEARCHING FOR` and `LOADING`
-  printing first, so the screen and cursor end up exactly where a real load
-  leaves them (intros that read their next command back off the screen count
-  on that), while a program-initiated LOAD still prints nothing. Guarded on the
-  ROM actually holding those routines; a replacement KERNAL falls back to a
-  silent load.
+- **Trap-served drive** (TDE off): the machine intercepts the KERNAL LOAD
+  entry (`$FFD5`, or the routine behind the ILOAD vector) and reads the file
+  straight from the disk image, a D64 or a D81, and answers the KERNAL's serial
+  primitives with the [virtual drive](#the-virtual-drive-srcvirtual-drivejs),
+  so OPEN, CHKIN, CHRIN, CLOSE, SAVE and channel 15 reach the image too. Fast,
+  and without the drive ROM, but loaders that bit-bang the bus still find the
+  real 1541 or nothing. The load trap is not silent: it runs the ROM's own
+  `SEARCHING FOR` and `LOADING` printing first, so the screen and cursor end
+  up exactly where a real load leaves them (intros that read their next command
+  back off the screen count on that), while a program-initiated LOAD still
+  prints nothing. Both are guarded on the KERNAL's jump table and default LOAD
+  vector pointing where the documentation says; a replacement KERNAL gets the
+  bus and a silent load.
 - **True Drive Emulation** (TDE on, the default): `$FFD5` is left to the real IEC
   protocol, so the full `Drive1541` services LOADs, fastloaders, protected disks,
   and all writes.
@@ -451,29 +455,24 @@ output is an ordinary G64 for `G64` and the drive.
 ### The virtual drive (`src/virtual-drive.js`)
 
 With true drive emulation off, the trap-served drive is a `VirtualDrive`: a
-DOS over the mounted sector image, answering the KERNAL's serial primitives
-instead of the IEC bus. The machine traps TALK and LISTEN (`$ED09`, `$ED0C`)
-when A names a trap-served device, then SECOND, TKSA, CIOUT, ACPTR, UNTALK and
-UNLISTEN until the drive is released, and returns from each as the ROM would
-(a stock KERNAL is required). What the primitives carry:
+DOS over the mounted sector image (D64 or D81 alike), answering the KERNAL's
+serial primitives instead of the IEC bus. The machine traps TALK and LISTEN
+(`$ED09`, `$ED0C`) when A names a trap-served device, then SECOND, TKSA,
+CIOUT, ACPTR, UNTALK and UNLISTEN until the drive is released, and returns
+from each as the ROM would. A stock KERNAL is required.
 
-- **Channels 0-14**: an open (`$Fx` then the name bytes, committed at
-  UNLISTEN) resolves `[@][0:]name[,type][,mode]`, `$` (the directory as
-  `buildDirectoryPRG` lists it) or `#` (a 256-byte buffer). Reads hand out the
-  file with EOI on the last byte and a timeout after; writes collect bytes and
-  `writeFile` them at close (`63 FILE EXISTS` without `@`, `26` when protected,
-  `72` when they do not fit). Secondary address 0 reads and 1 writes a PRG,
-  as LOAD and SAVE use them.
-- **Channel 15**: commands I, V, UI/UJ, S, R, N, U1/U2 and B-R/B-W (a sector
-  into or out of a buffer), B-P, M-R (zero bytes), M-W/M-E (accepted); the
-  status line `NN,MESSAGE,TT,SS` reads back and clears to `00, OK`; power-on
-  and UI announce the DOS (`73`), named for the 1541 or the 1581 by the
-  image's kind.
-- **Hooks**: `onOpen` drives the LED and drive sound, `onWrite` the app's
-  directory refresh and Library save. Channels are transient: a disk swap
-  or reset closes them, and a save state holds none.
-- **Not here**: bus timing, and loaders that bit-bang `$DD00` themselves;
-  those still find the real 1541 (or nothing) on the wires.
+| Area | Supported | Not supported |
+| --- | --- | --- |
+| Open | `[@][0:]name[,P\|S\|U][,R\|W\|A]`, wildcards, `$[0:][pattern]` as the LOAD"$" listing, `#` buffer; sa 0 reads and sa 1 writes a PRG | REL files (`,L`), partitions (64), more than one drive number |
+| Read | the file with EOI on the last byte, then a timeout | |
+| Write | collected and written at close as PRG, SEQ or USR; `@` replaces, `,A` appends | writes larger than the free space fail at close (72), not as they arrive |
+| Channel 15 | `I`, `V`, `UI`/`UJ` (73), `S`, `R`, `N`, `U1`/`U2`, `B-R`/`B-W`, `B-P`, `M-R` (zero bytes), `M-W`/`M-E` (accepted, no effect) | `C`, `D`, `P`, REL positioning, drive code (31) |
+| Status | `NN,MESSAGE,TT,SS`: 00, 01, 26, 31, 62, 63, 64, 66, 70, 72, 73 (1541 or 1581 wording by image kind), 74 | read errors from an error table |
+| Hardware | | bus timing, LED on the bus, loaders that bit-bang `$DD00` (they still find the real 1541, or nothing) |
+
+Hooks: `onOpen` drives the LED and drive sound, `onWrite` the app's directory
+refresh and Library save. Channels are transient: a disk swap or reset closes
+them, and a save state holds none.
 
 ## 10. Idle-skip optimisation
 
