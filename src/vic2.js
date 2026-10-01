@@ -20,6 +20,8 @@ import {
   CANVAS_H, CANVAS_W, CYCLES_PER_LINE, GRAPHICS_WINDOW_END, GRAPHICS_WINDOW_START,
   LINES_PER_FRAME, VIC_VARIANT,
 } from './vic2-tables.js';
+import { switchOn } from './switches.js';
+import { CollisionOverlay } from './vic2-collision-overlay.js';
 import { lineOps } from './vic2-line.js';
 import { spriteOps } from './vic2-sprites.js';
 import { renderOps } from './vic2-render.js';
@@ -202,7 +204,8 @@ export class VIC2 {
     this._fixupSplitL = new Uint32Array(8);
     this._fixupSplitLPri = new Uint8Array(8);
     this._fixupSplitLBor = new Uint8Array(8);
-    this.imageData = null;    // created lazily by blit(), wrapping frameBuffer
+    this._collisionOverlay = switchOn('vicCollisionOverlay') ? new CollisionOverlay() : null;
+    this.imageData = null;    // created lazily by blit(), wrapping presentation pixels
 
     // References set by Machine. Initialised with empty placeholder arrays
     // so a clock() invocation before Machine wires the real backing stores
@@ -1037,6 +1040,8 @@ export class VIC2 {
           // write()). Applied last so it wins over graphics/sprites/fixups,
           // matching the colour-mux output-stage nature of the artifact.
           if (this._greyDotCount > 0) this._applyGreyDots(this._cycleRenderActiveCanvasY);
+          if (this._collisionOverlay) this._collisionOverlay.capture(
+            this._cycleRenderActiveCanvasY, this.graphicsCollisionBuffer, this.spriteCollisionBuffer);
         }
 
         // Frame trace capture — gated. Skipped entirely unless the user
@@ -1927,13 +1932,17 @@ export class VIC2 {
   // raw X $163. Canvas X = raw X + 8.
   static get _SPRITE_BG_GARBAGE_RAW_X() { return 0x163; }
 
-  // Blit frame buffer to canvas context. The ImageData WRAPS frameBuffer's
-  // backing store (frameBuffer is allocated once in the constructor and never
-  // reassigned), so renderer writes are already visible through
-  // imageData.data — no per-frame copy needed before putImageData.
+  // Diagnostic tints affect presentation only; frameBuffer remains raw RGBA.
+  presentationBuffer() {
+    return this._collisionOverlay
+      ? this._collisionOverlay.compose(this.frameBuffer) : this.frameBuffer;
+  }
+
+  // ImageData wraps the persistent presentation buffer; no per-frame allocation.
   blit(ctx) {
+    const pixels = this.presentationBuffer();
     if (!this.imageData) {
-      this.imageData = new ImageData(this.frameBuffer, CANVAS_W, CANVAS_H);
+      this.imageData = new ImageData(pixels, CANVAS_W, CANVAS_H);
     }
     ctx.putImageData(this.imageData, 0, 0);
   }
@@ -2012,6 +2021,10 @@ export class VIC2 {
     // mid-frame they retain stale pixels from the prior session. Clear
     // them so a freshly-reset chip starts with a clean canvas.
     this.fb32.fill(0);
+    if (this._collisionOverlay) {
+      this._collisionOverlay.mask.fill(0);
+      this._collisionOverlay.collisionPending = false;
+    }
     this.graphicsPriorityBuffer.fill(0);  // shared collision/priority store (#2)
     this.spriteCollisionBuffer.fill(0);
     this.spriteOwnerBuffer.fill(0xFF);
@@ -2120,6 +2133,10 @@ export class VIC2 {
   }
 
   deserialize(s) {
+    if (this._collisionOverlay) {
+      this._collisionOverlay.mask.fill(0);
+      this._collisionOverlay.collisionPending = false;
+    }
     this._aecLowPhi2 = false; // Transient arbitration sample, refreshed by clock().
     this._fetchFeedLine = false;
     this._lineDeferred = false;   // saved states are canonical (see serialize)

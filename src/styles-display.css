@@ -907,3 +907,15 @@ body.touch-input-capable:has(.touch-controls:not([hidden])) .panel-restore-btn {
   white-space: nowrap;
 }
 
+
+#collision-indicator {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 20;
+  padding: 4px 7px;
+  color: #fff;
+  background: #b00020;
+  font: bold 12px monospace;
+  pointer-events: none;
+}

@@ -63,6 +63,21 @@ the application build.
 Expected hardware behavior follows the VIC-II specification, not reference-path
 output alone.
 
+### Collision overlay
+
+Reload with `?VIC_COLLISION_OVERLAY=1` to tint collision buffers over the screen:
+green = graphics foreground, blue = sprite pixels, red = sprite/graphics or
+sprite/sprite overlap. Includes pixels hidden by borders or sprite priority.
+A top-left **COLLISION** label stays visible for 200 ms after the latest
+sprite-to-sprite collision, including while paused. Sprite/graphics overlap
+does not trigger or extend the label.
+These are completed-line buffer snapshots, not the delayed, sticky collision
+registers. Raw framebuffer exports and save states exclude the tint. Default off;
+`?VIC_COLLISION_OVERLAY=0` disables it. Works with WebGL and Canvas 2D.
+
+`node test/vic2/vic2-collision-overlay-spec-test.js` checks classification,
+live/deferred state parity and presentation isolation.
+
 ## Assembly64 integration checks
 
 The default suite includes the Assembly64 and media-browser tests. They use

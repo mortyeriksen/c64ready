@@ -10,6 +10,9 @@ The version you are running is shown at the bottom of the About dialog.
 
 ## Next release
 
+- **Collision overlay.** An optional diagnostic tint shows sprite and graphics
+  collision areas over the screen, with a 200 ms sprite-to-sprite collision indicator.
+
 - **Cleanup.** Removed unused switches and obsolete code paths.
 
 - **More accurate mid-line graphics changes.** Pixels already fetched for display

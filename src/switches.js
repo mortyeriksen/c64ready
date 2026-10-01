@@ -13,6 +13,13 @@
 // This module has no imports.
 
 const SWITCHES = {
+  // Tint collision participants over the display: graphics green, sprites blue,
+  // overlapping participants red. Reload with ?VIC_COLLISION_OVERLAY=1.
+  vicCollisionOverlay: {
+    default: false,
+    env: ['VIC_COLLISION_OVERLAY'],
+  },
+
   // Record new blank tapes as TAP v2 (half-waves) instead of v1 (full waves).
   // v1 is what every tool and preserved tape uses, and the duty cycle inside a
   // pulse is invisible to the C64's read path, so it loses nothing functionally.

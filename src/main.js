@@ -21,6 +21,7 @@ import { VERSION }     from './version.js';
 // first need — both pull in three.js (~700 kB), kept out of the main bundle so it
 // loads on demand. See _ensurePauseDemo / _ensureModelViewer below.
 import { switchOn }   from './switches.js';
+import { CollisionIndicator } from './vic2-collision-overlay.js';
 import { attachVibesButtonFx, createVibesZoom } from './vibes/vibes-btn-fx.js';
 import { WebGLPresenter } from './webgl-presenter.js';
 import { resolveParams, readOverrides, CRT_STORAGE_KEY } from './crt-params.js';
@@ -88,6 +89,8 @@ const presenter = switchOn('webglPresenter')
   ? WebGLPresenter.create(canvas, CANVAS_W, CANVAS_H)
   : null;
 const ctx = presenter ? null : canvas.getContext('2d');
+const collisionIndicator = switchOn('vicCollisionOverlay')
+  ? new CollisionIndicator(document.getElementById('collision-indicator')) : null;
 const crtShader = !!presenter && presenter.crtAvailable && switchOn('crtShader')
   && (!presenter.softwareGl || switchOn('crtShaderSoftware'));
 document.body.classList.add(crtShader ? 'crt-gl' : 'crt-css');
@@ -1368,6 +1371,7 @@ function _redriveTick() {
 
 function rafLoop(timestamp) {
   _scheduleTick();
+  if (collisionIndicator) collisionIndicator.update(timestamp, machine?.vic2._collisionOverlay);
   if (!running || paused) return;
 
   if (lastTime === 0) lastTime = timestamp;
@@ -1456,7 +1460,8 @@ function rafLoop(timestamp) {
   if (_autoSeq) _serviceAutoLoad();
 
   if (frameExecuted) {
-    if (presenter) presenter.present(machine.vic2.frameBuffer);
+    if (collisionIndicator) collisionIndicator.update(timestamp, machine.vic2._collisionOverlay);
+    if (presenter) presenter.present(machine.vic2.presentationBuffer());
     else machine.vic2.blit(ctx);
 
     // A/V clapper: off by default. avMarkerEnabled() is a session boolean only

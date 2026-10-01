@@ -649,6 +649,11 @@ shipped tree) builds on these hooks.
 
 ---
 
+The optional `VIC_COLLISION_OVERLAY` captures final graphics/sprite collision
+buffers at visible line end without enabling tracing. Presentation tints a
+separate RGBA buffer; hardware state, raw pixels and serialization stay unchanged.
+Buffers allocate only when enabled; reset/restore clear diagnostic snapshots.
+
 ## 16. Key invariants & gotchas (quick reference)
 
 - **VIC acts before CPU**: phi1 logic in `clock()`, same-cycle CPU-write

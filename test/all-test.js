@@ -26,6 +26,7 @@ import { fileURLToPath } from 'url';
 
 const TESTS = [
   'test/vic2/vic2-graphics-foreground-spec-test.js',
+  'test/vic2/vic2-collision-overlay-spec-test.js',
   'test/vic2/vic2-render-history-spec-test.js',
   'test/vic2/vic2-fetch-feed-spec-test.js',
   // Quick unit tests (deterministic, fast)
