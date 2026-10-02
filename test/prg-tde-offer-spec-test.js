@@ -10,8 +10,9 @@
 //   - only on the path that puts a disk in the drive (with no 1541 ROM the
 //     program goes straight into RAM and the setting is not involved),
 //   - before the disk goes in, so the answer governs the LOAD that follows,
-//   - once, not on every load: turning it down is remembered, and switching
-//     emulation back on by hand arms it again.
+//   - once per session, not on every load: turning it down lasts until the
+//     page reloads, and switching emulation back on arms it again.
+//     The decline is never stored, so it cannot outlive the session.
 //
 // media.js and main.js drive the DOM, which no test here can construct (there
 // is no DOM library in the suite), so this reads the wiring off the source the
@@ -42,7 +43,7 @@ expect(
   'The offer is skipped when true drive emulation is already off'
 );
 expect(
-  /_prgTdeOfferDeclined\(\)\) return;/.test(offer),
+  /\|\| _prgTdeOfferDeclined\) return;/.test(offer),
   'and when the offer has already been turned down'
 );
 
@@ -52,12 +53,12 @@ expect(
   'Accepting switches true drive emulation off'
 );
 expect(
-  /else \{[^}]*localStorage\.setItem\(_PRG_TDE_DECLINED_KEY/.test(offer),
-  'Declining is remembered, so the question is not asked on every load'
+  /else _prgTdeOfferDeclined = true;/.test(offer),
+  'Declining is remembered for the session, so the question is not asked on every load'
 );
 expect(
-  /catch \{ return true; \}/.test(media.match(/function _prgTdeOfferDeclined\(\)[\s\S]*?\n\}/)?.[0] || ''),
-  'With no storage to remember an answer in, the offer stays silent rather than nagging'
+  !/localStorage/.test(offer) && !/_PRG_TDE_DECLINED_KEY/.test(media),
+  'The decline is not stored, so a reload asks again'
 );
 
 // ── Where it sits in the load ──────────────────────────────────────────────
@@ -82,7 +83,7 @@ expect(
   `Every call to _insertPRG is awaited, so the dialog is never skipped (${unawaited.length} not awaited)`
 );
 
-// ── One place changes the setting, and only a manual switch-on re-arms ─────
+// ── One place changes the setting, and switching it on re-arms ─────────────
 expect(applyTde !== '' && /machine\?\.setTrueDrive\(tdeEnabled\)/.test(applyTde)
   && /localStorage\.setItem\('c64emu\.tde'/.test(applyTde) && /_syncTdeBtn\(\)/.test(applyTde),
   'One function applies a TDE choice: the machine, the stored preference and the button label');
@@ -91,16 +92,12 @@ expect(
   'The toggle button goes through it rather than setting the flag itself'
 );
 expect(
-  /if \(tdeEnabled\) rearmPrgTdeOffer\(\);/.test(toggle),
-  'Switching emulation back on by hand arms the offer again, so a decline is not a dead end'
+  /if \(tdeEnabled\) rearmPrgTdeOffer\(\);/.test(applyTde),
+  'Switching emulation on, by hand or from the disk prompt, arms the offer again'
 );
 expect(
-  !/rearmPrgTdeOffer/.test(applyTde),
-  'and the offer made during a load does not re-arm itself'
-);
-expect(
-  /export function rearmPrgTdeOffer\(\)[\s\S]*?removeItem\(_PRG_TDE_DECLINED_KEY\)/.test(media),
-  'Re-arming forgets the remembered decline'
+  /export function rearmPrgTdeOffer\(\)[\s\S]*?_prgTdeOfferDeclined = false;/.test(media),
+  'Re-arming forgets the decline'
 );
 
 // ── The dialog names its own way out ───────────────────────────────────────
@@ -118,4 +115,4 @@ if (failures) {
   process.exit(1);
 }
 
-console.log('ok  - Loading a .prg offers to switch true drive emulation off, once, when it is on');
+console.log('ok  - Loading a .prg offers to switch true drive emulation off, once per session, when it is on');

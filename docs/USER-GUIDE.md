@@ -506,8 +506,8 @@ a `.d64`. Inserting the disk keeps the machine running, and the **TDE** setting
 applies as usual.
 
 Nothing on that disk needs the real drive, so with **TDE** on, loading a `.prg`
-offers to switch it off and load at once. Declining is remembered until you
-switch **TDE** on again yourself.
+offers to switch it off and load at once. Declining lasts until you reload the
+page or switch **TDE** on again.
 
 The disk arrives write-protected. Flip the tabs to `SAVE` onto it.
 

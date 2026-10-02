@@ -971,10 +971,12 @@ function _syncTdeBtn() {
 }
 
 // Switch true drive emulation, remember the choice, and relabel the button.
-// The toggle and the offer a PRG load makes both come through here, so there is
-// one place that changes it.
+// The toggle, the disk compatibility prompt and the offer a PRG load makes all
+// come through here, so there is one place that changes it. Switching it on
+// lets the next PRG load offer to switch it off again.
 function _applyTde(on) {
   tdeEnabled = !!on;
+  if (tdeEnabled) rearmPrgTdeOffer();
   try { localStorage.setItem('c64emu.tde', tdeEnabled ? 'on' : 'off'); } catch {}
   machine?.setTrueDrive(tdeEnabled);
   _syncTdeBtn();
@@ -985,10 +987,6 @@ if (tdeToggleBtn) {
   tdeToggleBtn.addEventListener('click', () => {
     if (!machine?.drive1541) return;
     _applyTde(!tdeEnabled);
-    // Switching it back on by hand is a deliberate choice about the drive, so
-    // the next PRG load may offer to switch it off again even if that offer was
-    // turned down before. Turning it down is otherwise remembered for good.
-    if (tdeEnabled) rearmPrgTdeOffer();
   });
 }
 

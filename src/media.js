@@ -868,24 +868,20 @@ function _prgSizeError(data, fileName = '') {
 // The disk a .prg is wrapped in holds one plain program: no fastloader, no
 // protection, nothing the real 1541 exists for. True drive emulation still
 // loads it at 1541 speed, so offer to switch it off. Only when it is on, and
-// only before the disk goes in. A decline is remembered (a question on every
-// load is a nag); switching emulation on by hand re-arms it (main.js).
-const _PRG_TDE_DECLINED_KEY = 'c64emu.prgTdeDeclined';
-function _prgTdeOfferDeclined() {
-  // No storage to remember an answer in: stay silent rather than ask every time.
-  try { return localStorage.getItem(_PRG_TDE_DECLINED_KEY) === 'on'; } catch { return true; }
-}
+// only before the disk goes in. A decline lasts for this session; switching
+// emulation on again re-arms it (main.js).
+let _prgTdeOfferDeclined = false;
 /** Let a PRG load offer to switch true drive emulation off again. */
 export function rearmPrgTdeOffer() {
-  try { localStorage.removeItem(_PRG_TDE_DECLINED_KEY); } catch {}
+  _prgTdeOfferDeclined = false;
 }
 async function _offerTdeOffForPrg() {
-  if (!getTdeEnabled?.() || _prgTdeOfferDeclined()) return;
+  if (!getTdeEnabled?.() || _prgTdeOfferDeclined) return;
   const yes = await confirmDialog(
     'True Drive Emulation loads this at real 1541 speed. This program does not need it.',
     { title: 'Load faster?', okLabel: 'Turn TDE off', cancelLabel: 'Keep TDE on' });
   if (yes) setTdeEnabled(false);
-  else { try { localStorage.setItem(_PRG_TDE_DECLINED_KEY, 'on'); } catch {} }
+  else _prgTdeOfferDeclined = true;
 }
 
 // A .prg is put on a disk of its own and inserted, so it behaves exactly like a

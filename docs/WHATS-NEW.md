@@ -8,6 +8,14 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
+## Next release
+
+- **The "Load faster?" question comes back.** Loading a `.prg` with True Drive
+  Emulation on asks again whether to turn it off. Saying no, or closing the
+  question, now lasts only until you reload the page or turn TDE on again.
+
+---
+
 ## 2026.10.1 — October 2, 2026
 
 Load D71, D81 and copy-protected G64 disks, and use disks with True Drive
