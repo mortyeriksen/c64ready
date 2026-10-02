@@ -227,7 +227,7 @@ revisions:
   bytes after a data block's checksum as the DOS does.
   <https://ist.uwaterloo.ca/~schepers/formats/G64.TXT>
   <https://vice-emu.sourceforge.io/vice_17.html>
-- **NIB and NBZ nibbler dumps**: nibtools by Pete Rittwage and contributors
+- **NIB and NBZ nibbler dumps**: nibtools by Markus Brenner, Pete Rittwage and contributors
   defines both (`.nib`: an 8 KB raw 1541 read per half-track; `.nbz`: the same
   as one LZ77 stream), and its nibconv sets the conversion rules that
   `src/media/nib.js` ports. The LZ77 stream is Marcus Geelnard's Basic

@@ -4,7 +4,7 @@
 //
 // GENERATED FILE — do not edit by hand. Rebuild: node tools/build-sid-player.mjs
 // Source: tools/build-sid-player.mjs (the program) + tools/asm6502.mjs (the
-// assembler). Design: investigation/SID-PLAYER-DESIGN.md
+// assembler).
 //
 // PLAYER is everything in the .prg ahead of the tune: the two-byte load address,
 // a BASIC stub, the copier that moves the player to $C000, and the player

@@ -105,11 +105,6 @@ function runCycles(cpu, n) {
 // asserted at the start of any cycle is recognized at the end of that
 // instruction. Our impl samples in clock() before the micro-op runs,
 // when cyclesRemaining > 0 — so the last cycle's sample IS taken.
-//
-// Fix 2026-05-03 (OrbitUntold investigation): previously this was
-// `> 1`, which delayed IRQ recognition by one instruction whenever IRQ
-// asserted during the last cycle. Caused OrbitUntold's CIA1-timer IRQ
-// to be off-by-one-instruction relative to VICE.
 {
   const { cpu, mem } = makeCpuWithIrqVector();
   // Vector points at $9000; load a known sentinel (LDA #$77 / BRK) so we

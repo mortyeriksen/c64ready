@@ -3,10 +3,7 @@
 // Spec source: standard 6502 timing tables (e.g. Synertek SY6502
 // datasheet, Bauer reference, "Programming the 65816" Eyes/Lichty).
 //
-// These are the two CPU-level timing aspects that the sbsprf24 stable-IRQ
-// investigation flagged as candidates for its 5-cyc set_timer deficit
-// (that characterization test is gone; the timing rules it leaned on are
-// pinned here):
+// The two CPU-level timing rules a stable-IRQ routine depends on:
 //
 //   1. `lda abs,Y` page-cross: real 6502 does a DUMMY read at the
 //      un-fixed address (high byte not yet incremented) before the

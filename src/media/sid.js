@@ -10,7 +10,7 @@
 //
 // Everything tune-specific lives in the parameter block, so the player is the
 // same bytes for every file (src/media/sid-player-blob.js, built by
-// tools/build-sid-player.mjs). Design: investigation/SID-PLAYER-DESIGN.md
+// tools/build-sid-player.mjs).
 //
 // The header is big-endian, which no other format here is: the format came from
 // a Java program on a big-endian day and never changed.

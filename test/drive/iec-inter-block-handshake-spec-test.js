@@ -11,8 +11,7 @@
 //   - iec-handshake-test.js: ATN-edge → CA1 IRQ, atnIn tracking 50 edges
 //   - nosdos-bootstrap-test.js: standard CBM-serial via _atna_pin XOR atnIn
 //
-// What this file adds (specifically for Sparkle's inter-block handshake bug
-// found in the Aloft investigation):
+// What this file adds (for the Sparkle loader's inter-block handshake):
 //   1. Bus-state ROUND-TRIP at the machine level: drive sets AA=1 ("drive
 //      busy" per Sparkle), C64 reads $DD00 — C64 must see DATA bit reflect
 //      the wired-AND of drive-pulled DATA via ATNA XOR.
@@ -130,10 +129,8 @@ function readDD00BitCI(m) { settle(m); return (m.cia2.readPortA() & 0x40) ? 1 : 
 // 2. Inter-block trigger: drive AA=1 + C64 pulls ATN → drive releases DATA,
 //    bus DATA goes high, C64 sees DI=1 ("ready for next block" signal).
 //
-//    This is the SPECIFIC transition Sparkle's drive at $0575-$057C polls
-//    for, per the Aloft investigation's disassembly finding:
-//    "the drive went to its idle poll at $0575-$057C which waits for
-//     'ATN asserted AND DATA released' as the next-block trigger".
+//    This is the transition Sparkle's drive code at $0575-$057C polls for:
+//    'ATN asserted AND DATA released' as the next-block trigger.
 // ─────────────────────────────────────────────────────────────────────────
 {
   console.log('Spec[Sparkle inter-block]: AA=1 + ATN asserted → drive releases DATA, C64 sees DI=1...');

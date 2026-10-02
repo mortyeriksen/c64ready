@@ -2,8 +2,7 @@
 //
 // Renders a .prg in our emulator and compares the framebuffer against a
 // VICE reference PNG. We build this kind of check constantly (dentest,
-// border, colorsplit, FLI, …) so it lives here as a shared tool rather
-// than a throwaway investigation script.
+// border, colorsplit, FLI, …) so it lives here as a shared tool.
 //
 // KEY GOTCHAS this tool handles for you:
 //   1. PALETTE. VICE reference PNGs (the testprogs `references/` dirs)

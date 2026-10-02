@@ -1,8 +1,7 @@
 // Long IRQ chain stability spec test.
 //
-// Existing chain tests run 10-20 iterations. The NLP investigation
-// showed that drift in IRQ pattern compounds over many frames before
-// manifesting visibly. This test exercises longer chains.
+// Other chain tests run 10-20 iterations. Drift in an IRQ pattern compounds
+// over many frames before it shows, so this test exercises longer chains.
 //
 // Key math constraint: handler `INC $D012` advances compare by 1 per
 // iter. After 176 iters from compare=$50, compare wraps from $FF→$00.

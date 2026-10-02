@@ -1,6 +1,6 @@
-// Regenerate the terminal examples in cli/USER-GUIDE-CLI.md from real runs.
+// Regenerate the terminal examples in docs/USER-GUIDE-CLI.md from real runs.
 //
-//   node investigation/guide-shots.mjs [filter]
+//   node tools/cli-guide-shots.mjs [filter]
 //
 // The guide marks a fenced block with an HTML comment naming the command:
 //

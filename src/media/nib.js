@@ -7,7 +7,7 @@
 // revolution, begun anywhere. A G64 wants exactly one, cut and aligned. The
 // rules for finding it are nibconv's, at its default settings.
 //
-// Ported from nibtools by Pete Rittwage and contributors
+// Ported from nibtools by Markus Brenner, Pete Rittwage and contributors
 // (https://github.com/rittwage/nibtools, GPL-3.0-or-later): fileio.c (NIB
 // header, G64 writer), gcr.c (track cycle, alignment, sync reduction, bad
 // GCR) and prot.c (fat tracks, auto gap). lzUncompress is a rewrite, so an

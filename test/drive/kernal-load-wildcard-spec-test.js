@@ -16,8 +16,7 @@
 //   2. Drive ROM's command channel parser — resolves "*" wildcard to the
 //      first non-deleted directory entry (CBM DOS spec).
 //   3. Drive ROM's $F50A sector-read path → $F4E0 GCR-byte-read BVC loop.
-//      This is the path that depends on `setOverflow` timing (= the bug
-//      area from the Aloft/Sparkle install investigation).
+//      This is the path that depends on `setOverflow` timing.
 //   4. Drive ROM's IEC byte send (TALK turnaround + CLK/DATA bit timing).
 //   5. C64 KERNAL ACPTR receive ($EE13) places bytes at correct address
 //      (start address from file's first 2 bytes when ",1" suffix is used).

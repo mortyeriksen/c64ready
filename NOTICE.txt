@@ -142,7 +142,8 @@ VIC-II color palettes — "Pepto" and "Colodore"
     reproduce pepto's published palette values.
 
 nibtools — nibbler dumps (.nib, .nbz) and their conversion to G64
-    Copyright © Pete Rittwage and the nibtools contributors
+    Copyright © Markus Brenner, Pete Rittwage and the nibtools contributors
+    (gcr.c is based on code by Andreas Boose)
     GNU General Public License, version 3 or later
     https://github.com/rittwage/nibtools  ·  https://rittwage.com/c64pp/
     src/media/nib.js is a JavaScript port of nibconv's default path: the

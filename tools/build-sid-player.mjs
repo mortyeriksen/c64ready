@@ -10,8 +10,6 @@
 // program with a screen rather than a stub generated per file.
 //
 // Rebuild: node tools/build-sid-player.mjs
-//
-// Design: investigation/SID-PLAYER-DESIGN.md
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -1598,7 +1596,7 @@ const js = `// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // GENERATED FILE — do not edit by hand. Rebuild: node tools/build-sid-player.mjs
 // Source: tools/build-sid-player.mjs (the program) + tools/asm6502.mjs (the
-// assembler). Design: investigation/SID-PLAYER-DESIGN.md
+// assembler).
 //
 // PLAYER is everything in the .prg ahead of the tune: the two-byte load address,
 // a BASIC stub, the copier that moves the player to $${PLAYER_ORIGIN.toString(16).toUpperCase()}, and the player
