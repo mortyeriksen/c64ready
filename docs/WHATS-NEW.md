@@ -8,27 +8,16 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
-## Next release
+## 2026.10.1 — October 2, 2026
+
+Load D71, D81 and copy-protected G64 disks, and use disks with True Drive
+Emulation off through a new built-in drive. The CRT looks are redrawn, with
+a settings panel for fine-tuning each one.
 
 - **D71 and D81 disks.** Use 1571 and 1581 disk images in drives 8 and 9,
   with loading, saving, formatting, export, the Library and Assembly64.
   These formats use the virtual drive and turn True Drive Emulation off
   for that drive.
-
-- **Collision overlay.** An optional diagnostic tint shows sprite and graphics
-  collision areas over the screen, with a 200 ms sprite-to-sprite collision indicator.
-
-- **Cleanup.** Removed unused switches and obsolete code paths.
-
-- **More accurate mid-line graphics changes.** Pixels already fetched for display
-  stay intact when a program changes graphics memory or switches video banks.
-
-- **Less CPU work to draw the screen.** The video renderer spends less time
-  recording unchanged state and processing sprites between their visible pixels.
-
-- **Complete picture in Flescos.** The full-height black stripe through the
-  picture is gone.
-
 - **G64 disk images.** Load `.g64` raw disk images into drive 8 or 9: the disk
   as the original recorded it, so copy-protected games load as on a real 1541.
   Loading one turns True Drive Emulation on.
@@ -38,7 +27,6 @@ The version you are running is shown at the bottom of the About dialog.
   drives 8 and 9: programs open and read files, list the directory, use the
   command channel and `SAVE`, on a `.d64`, `.d71` or `.d81`, without the 1541
   ROM. Loaders that call the LOAD routine through its vector work too.
-- **Shorter tooltips** on the controls.
 - **CRT looks redrawn.** Scanlines sit on the C64's own raster lines and the
   phosphor mask on your screen's pixels, so no more ripple or banding at any
   size or on Retina screens. Bright areas glow instead of dimming.
@@ -47,6 +35,12 @@ The version you are running is shown at the bottom of the About dialog.
 - **CRT settings.** A CRT SETTINGS button in Options (or Cmd/Ctrl+Shift+F)
   opens a draggable panel with the six looks and a slider for every setting
   behind them, remembered per look. The CRT button still cycles the looks.
+- **Collision overlay.** An optional diagnostic tint shows sprite and graphics
+  collision areas over the screen, with a 200 ms sprite-to-sprite collision indicator.
+- **Smaller fixes.** Pixels already fetched for display stay intact when a
+  program changes graphics memory or switches video banks mid-line. Drawing
+  the screen takes less CPU work. Flescos no longer shows a black stripe
+  through the picture. Tooltips on the controls are shorter.
 
 ---
 
