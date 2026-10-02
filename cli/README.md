@@ -143,7 +143,7 @@ rest) are credited in
 
 ## Release notes
 
-### Next version
+### 0.9.4
 
 - **D64/D71 to D81.** `disk2d81` copies PRG, SEQ and USR files into a D81,
   preserving their bytes, names, types and lock flags.
