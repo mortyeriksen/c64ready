@@ -646,6 +646,11 @@ Without a 1541 ROM, the program loads directly into RAM. This fallback resets
 the machine first unless it is still at a fresh boot. With **AUTORUN** on, it
 uses `RUN` for a program loaded at `$0801`, or `SYS` at the load address otherwise.
 
+A `.prg` that loads over `$D000` to `$DFFF` is a memory image, which a `LOAD`
+would write into the I/O chips, so it goes straight into RAM after a reset,
+and the status line says so. One that loads over the IRQ vector at `$0314`
+starts itself.
+
 ## Disk drive 9
 
 ![Disk drive 9 powered on, showing its power switch and the same LOAD, BLANK, EJECT, write-protect, FORMAT, EXPORT and TDE controls as drive 8.](/guide/drive9.webp)

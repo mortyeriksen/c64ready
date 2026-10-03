@@ -5,7 +5,7 @@
 // consistent with the blocks taken, a real directory entry, the file findable by
 // name and by wildcard. That is what lets a wrapped .prg behave exactly like any
 // other disk for LOAD, the directory listing and export.
-import { D64, createBlankD64, createPRGDisk, diskNameFromFilename, prgAutostart, SPT } from '../../src/media/d64.js';
+import { D64, createBlankD64, createPRGDisk, diskNameFromFilename, prgAutostart, prgCoversIO, prgSetsIrqVector, SPT } from '../../src/media/d64.js';
 
 function expect(cond, msg) {
   if (!cond) throw new Error(msg);
@@ -47,6 +47,22 @@ expect(prgAutostart(new Uint8Array([0x00,0x10, 0x78,0xA9,0x35,0x85,0x01,0x60])) 
 expect(prgAutostart(new Uint8Array([0x01,0x08, 0x78,0xA9,0x35,0x85,0x01,0x60])) === null,
   'machine code at $0801 is not mistaken for BASIC');
 expect(prgAutostart(new Uint8Array([0x01,0x08, 0x00,0x00])) === null, 'a stub too short to be BASIC starts nothing');
+
+// ── Memory images: a load over $D000-$DFFF ───────────────────────────────────
+// A file is placed at [addr, addr + length - 2). The I/O area is $D000-$DFFF.
+const span = (addr, n) => { const b = new Uint8Array(n + 2); b[0] = addr & 0xFF; b[1] = addr >> 8; return b; };
+expect(prgCoversIO(span(0x0314, 0x10000 - 0x0314)), 'a load from $0314 to $FFFF covers the I/O area');
+expect(prgCoversIO(span(0xCFFF, 2)), 'a load whose last byte is $D000 covers the I/O area');
+expect(prgCoversIO(span(0xDFFF, 1)), 'a load of $DFFF alone covers the I/O area');
+expect(!prgCoversIO(span(0xCF00, 0x100)), 'a load ending at $CFFF stops short of the I/O area');
+expect(!prgCoversIO(span(0xE000, 0x100)), 'a load from $E000 is above the I/O area');
+expect(!prgCoversIO(span(0x0801, 0x4000)), 'an ordinary BASIC-area load is not an image');
+// The IRQ vector is the two bytes at $0314-$0315.
+expect(prgSetsIrqVector(span(0x0314, 2)), 'a load of $0314-$0315 sets the IRQ vector');
+expect(prgSetsIrqVector(span(0x0300, 0x100)), 'a load across $0314-$0315 sets the IRQ vector');
+expect(!prgSetsIrqVector(span(0x0315, 0x100)), 'a load from $0315 sets only half of it');
+expect(!prgSetsIrqVector(span(0x0300, 0x15)), 'a load ending at $0314 sets only half of it');
+expect(!prgSetsIrqVector(span(0x0801, 0x100)), 'a BASIC-area load leaves the IRQ vector alone');
 
 // ── Round trip, across block-boundary sizes ──────────────────────────────────
 // 254 bytes per block, so these straddle every interesting boundary.

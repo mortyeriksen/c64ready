@@ -934,6 +934,34 @@ export function prgOverflow(data) {
 }
 
 /**
+ * Does a .prg load over the I/O area at $D000-$DFFF? Such a file is a memory
+ * image, made to be put straight into RAM. A KERNAL LOAD runs with the I/O
+ * chips banked in, so its bytes for that range land in the VIC-II, SID and CIA
+ * registers instead of the RAM beneath them: a $00 for $D011 switches the
+ * display off, and writes to CIA 2 reach the serial bus the load runs on.
+ * @param {Uint8Array} data .prg content (2-byte load address first)
+ */
+export function prgCoversIO(data) {
+  if (!data || data.length < 3) return false;
+  const addr = data[0] | (data[1] << 8);
+  const end = addr + (data.length - 2);      // exclusive
+  return addr < 0xE000 && end > 0xD000;
+}
+
+/**
+ * Does a .prg load over the IRQ vector at $0314-$0315? Put into RAM at a READY
+ * prompt, such a program starts itself on the next interrupt, so it needs no
+ * RUN or SYS.
+ * @param {Uint8Array} data .prg content (2-byte load address first)
+ */
+export function prgSetsIrqVector(data) {
+  if (!data || data.length < 3) return false;
+  const addr = data[0] | (data[1] << 8);
+  const end = addr + (data.length - 2);      // exclusive
+  return addr <= 0x0314 && end >= 0x0316;
+}
+
+/**
  * Wrap a .prg in its own freshly formatted disk, so a PRG can be loaded through
  * exactly the same path as any other disk — a real LOAD by name, a real
  * directory, exportable. Returns null if the program won't fit.

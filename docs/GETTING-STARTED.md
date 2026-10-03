@@ -66,7 +66,7 @@ Drag any supported file onto the screen and it goes to the right place, or use
 
 | Format | What happens |
 |--------|--------------|
-| `.prg` | Normally written onto a disk of its own in drive 8. See [Loading a .prg](USER-GUIDE.md#loading-a-prg) for autorun and the fallback without a 1541 ROM. |
+| `.prg` | Normally written onto a disk of its own in drive 8. A memory image covering `$D000` to `$DFFF` goes straight into RAM. See [Loading a .prg](USER-GUIDE.md#loading-a-prg) for autorun and the fallback without a 1541 ROM. |
 | `.d64` `.g64` | The emulator types `LOAD"*",8,1` and `RUN`. A `.g64` holds the raw tracks of a copy-protected original and turns TDE on. See [Disk drive 8](USER-GUIDE.md#disk-drive-8). |
 | `.nbz` | A nibbler dump. It becomes a `.g64` on the way in and loads like one. |
 | `.d71` | A double-sided 1571 disk, served by the virtual drive. Inserting it turns TDE off for that drive; use `LOAD"*",8,1` and `RUN`. |

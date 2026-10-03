@@ -28,7 +28,9 @@ import {
   setRunning, setPristineBoot, setHasBeenReady,
 } from './state.js';
 import { confirmDialog, promptDialog } from './ui/dialogs.js';
-import { D64, createBlankDisk, createPRGDisk, d64Variant, prgAutostart, prgOverflow } from './media/d64.js';
+import {
+  D64, createBlankDisk, createPRGDisk, d64Variant, prgAutostart, prgOverflow, prgCoversIO, prgSetsIrqVector,
+} from './media/d64.js';
 import { G64, isG64 } from './media/g64.js';
 import { nibFileToG64, isNbz } from './media/nib.js';
 import { tapToPcm, pcmToWav } from './media/tap-audio.js';
@@ -885,15 +887,40 @@ async function _offerTdeOffForPrg() {
   else _prgTdeOfferDeclined = true;
 }
 
+// A memory image (prgCoversIO) goes straight into RAM on a freshly reset
+// machine, since a LOAD would write its I/O-area bytes into the chips. One that
+// loads over the IRQ vector starts itself on the next interrupt; otherwise it
+// starts the way a disk-wrapped .prg does: RUN for BASIC, nothing for machine
+// code, whose entry point the file does not say.
+function _injectPRGImage(data, verb, autorun) {
+  const alreadyClean = _pristineBoot;   // capture before _hardReset() flips it back on
+  if (!alreadyClean && !_hardReset()) return;
+  _queueAutoLoad([
+    { ready: true },
+    { run: () => {
+        _leavePristineBoot();
+        const addr = machine.loadPRG(data);
+        let started = null;
+        if (prgSetsIrqVector(data)) started = 'starts itself';
+        else if (autorun && prgAutostart(data)) { machine.injectRun(); started = 'RUN'; }
+        _reportPrgLoaded(addr, started, `${verb} straight into RAM`);
+      } },
+  ]);
+  if (!alreadyClean) setStatus('Reset — booting, then putting the PRG into memory…', 'running');
+}
+
 // A .prg is put on a disk of its own and inserted, so it behaves exactly like a
 // .d64 from here on: a real LOAD by name, listable, re-loadable and exportable,
 // AUTORUN deciding whether it starts, and the drive honouring the TDE setting.
 // Inserting a disk does not reboot a C64, so this doesn't either — swapping one
 // in goes through the same eject-then-attach the drive already does. Used by
-// every PRG entry point (file picker, drag-drop, library).
+// every PRG entry point (file picker, drag-drop, library). A memory image that
+// covers the I/O area is the exception: no LOAD can put it in place, so it is
+// injected into RAM (_injectPRGImage).
 async function _insertPRG(data, verb = 'loaded', fileName = '', { autorun = getAutorunEnabled() } = {}) {
   const sizeError = _prgSizeError(data, fileName);
   if (sizeError) { setStatus(sizeError, 'error'); return; }
+  if (prgCoversIO(data)) { _injectPRGImage(data, verb, autorun); return; }
   // No drive to put a disk in (1541 ROM missing) — fall back to dropping the
   // bytes straight into RAM. That needs a clean machine, so it keeps the reset.
   const disk = machine?.drive1541 ? createPRGDisk(fileName || 'PROGRAM', data) : null;

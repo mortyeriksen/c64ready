@@ -43,6 +43,10 @@ The version you are running is shown at the bottom of the About dialog.
 - **The "Load faster?" question comes back.** Loading a `.prg` with True Drive
   Emulation on asks again whether to turn it off. Saying no, or closing the
   question, now lasts only until you reload the page or turn TDE on again.
+- **Full-memory PRGs start.** A `.prg` that fills memory through the
+  `$D000` to `$DFFF` area, like the uncrunched OneLoad64 games, is now put
+  straight into memory instead of loaded from a disk. Before, Commando and
+  others like it played their music over a black screen.
 
 ---
 
