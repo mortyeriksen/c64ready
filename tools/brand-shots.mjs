@@ -77,8 +77,8 @@ const SHOTS = {
   // be a multi-megabyte PNG.
   vibes:    { out: 'screens/c64rdy-3d-vibes',   width: 1000, height: 628,  scale: 2, vibes: true,
               suffix: '-v4', scene: 2, webp: 2000 },
-  emulator: { out: 'screens/c64rdy-emulator',   width: 1512, height: 803,  scale: 2, vibes: false,
-              suffix: '-v4' },
+  emulator: { out: 'screens/c64rdy-emulator',   width: 1512, height: 813,  scale: 2, vibes: false,
+              suffix: '-v5' },
   // Splash card art: it sits in the landing page's own card, captioned there, so
   // it carries no lockup and no viewer chrome — and it moves in close, because at
   // card size the whole desk would read as clutter around a tiny screen. Nearly
@@ -94,7 +94,9 @@ const done = [];
 
 for (const [name, s] of Object.entries(SHOTS)) {
   if (!want(name)) continue;
-  const ctx = await browser.newContext({
+  // Dark, as the brand art has always been; the app would follow headless
+  // Chromium's light system setting otherwise.
+  const ctx = await browser.newContext({ colorScheme: 'dark',
     viewport: { width: s.width, height: s.height },
     deviceScaleFactor: s.scale,
   });

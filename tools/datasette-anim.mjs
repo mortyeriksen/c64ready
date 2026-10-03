@@ -44,7 +44,7 @@ const OUT_W = 760;                // downscale target width
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const b = await chromium.launch();
-const ctx = await b.newContext({ viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 2, reducedMotion: 'reduce' });
+const ctx = await b.newContext({ colorScheme: 'dark', viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 2, reducedMotion: 'reduce' });
 // splashSeen too: the splash covers the page and its teaser video swallows the
 // POWER click.
 await ctx.addInitScript(() => {
@@ -54,7 +54,7 @@ await ctx.addInitScript(() => {
   } catch {}
 });
 const p = await ctx.newPage();
-await p.goto('http://localhost:5173', { waitUntil: 'networkidle' });
+await p.goto(process.env.GUIDE_BASE || 'http://localhost:5173', { waitUntil: 'networkidle' });
 await p.waitForSelector('#btn-power:not([disabled])', { timeout: 20000 });
 await p.locator('#btn-power').click();
 await p.waitForSelector('body.powered-on').catch(() => {});

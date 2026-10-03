@@ -23,7 +23,7 @@ const browser = await chromium.launch({
 // Block the PWA service worker (its app-shell fallback would answer
 // /roms/*.bin with index.html) and serve the ROMs straight from the
 // repo-root roms/ dir — works against dev server and preview alike.
-const ctx = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1280, height: 800 } });
+const ctx = await browser.newContext({ colorScheme: 'dark', serviceWorkers: 'block', viewport: { width: 1280, height: 800 } });
 // Pre-seed localStorage before the app runs: the splash screen covers the whole
 // page (its teaser video swallows the POWER / VIBES clicks) and the PWA install
 // card pushes the side panel around a couple of seconds in.

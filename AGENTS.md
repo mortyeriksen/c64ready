@@ -24,7 +24,7 @@ contract, not the runbook — keep it short.
 - Screenshot-tool specifics: each tool's header comment
   (`test/commit-screenshots.mjs`, `test/demo-status.mjs`, `tools/guide-shots.mjs`,
   `tools/guide-extra-shots.mjs`, `tools/guide-dialog-shots.mjs`,
-  `tools/guide-setup-shot.mjs`, `tools/vibes-guide-shots.mjs`,
+  `tools/guide-setup-shot.mjs`, `tools/guide-theme-shots.mjs`, `tools/vibes-guide-shots.mjs`,
   `tools/vibes-strip.mjs`, `tools/datasette-anim.mjs`, `tools/pick-frames.mjs`).
   `tools/guide-shots.mjs` heads the full guide-asset regeneration order.
 

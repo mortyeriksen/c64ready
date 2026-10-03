@@ -8,7 +8,27 @@ from blank screen to running demo, start with
 [Getting Started](GETTING-STARTED.md); for what the machine can do, see
 [Features](FEATURES.md).
 
+<!-- gallery overview -->
+
+**Classic**
 ![The C64 READY. interface: the CRT display on the left showing the blue BASIC boot screen, with the side panel of controls on the right.](/guide/overview.webp)
+
+**GEOS**
+![The interface in the GEOS theme's dark mode: white on black.](/guide/overview-geos.webp)
+
+**Breadbin**
+![The interface in the Breadbin theme's dark mode: the brown keyboard with cream text.](/guide/overview-breadbin.webp)
+
+**Phosphor**
+![The interface in the Phosphor theme's dark mode: amber on black.](/guide/overview-phosphor.webp)
+
+**Out Run**
+![The interface in the Out Run theme's dark mode: a magenta horizon glow over violet night.](/guide/overview-outrun.webp)
+
+**Commando**
+![The interface in the Commando theme's dark mode: sand on dark brown with orange accents.](/guide/overview-commando.webp)
+
+<!-- /gallery -->
 
 Three regions: the **header** (branding and links), the **display** (the
 emulated CRT), and the **side panel** of control cards.
@@ -66,38 +86,82 @@ centres the picture on the whole screen with bars around it.
 ## Themes
 
 A theme sets the interface's colours. **Classic** is the default, and five
-more are built in:
+more are built in. The gallery below shows each in dark mode on the left and
+light mode on the right; step through it with **Previous** and **Next**. The screen, the CRT looks, the splash and Retro Vibes keep their
+own colours whatever the theme, and you can import your own too.
 
-- **GEOS**: black on white, like the C64's own desktop.
-- **Breadbin**: the machine itself, the beige case in light mode and the brown
-  keyboard in dark, with the badge's rainbow stripe for accents.
-- **Phosphor**: an amber monitor in dark mode, and in light mode a printer
-  listing on green-bar paper.
-- **Out Run**: the sunset over the road. In dark mode the horizon glows
-  magenta at the top of the page, with neon pink edges, sun yellow and grid
-  cyan; light mode is the hot coral sky.
-- **Commando**: after the game. Dark mode is the dirt road at night, sand on
-  brown with muzzle-flash orange; light mode is khaki drill and olive drab,
-  with camouflage logo blocks.
+<!-- gallery themes -->
 
-You can import your own too. The screen, the CRT looks, the splash and Retro Vibes keep their own
-colours whatever the theme.
+**Classic**: The C64's own blue, from the boot screen.
+
+![Classic: deep VIC blue in dark mode, white Paper panels with blue text in light mode.](/guide/theme-classic.webp)
+
+**GEOS**: Black on white, like the C64's own desktop.
+
+![GEOS: white on black in dark mode, black on white in light mode.](/guide/theme-geos.webp)
+
+**Breadbin**: The machine itself: brown keys in dark mode, the beige case in light.
+
+![Breadbin: brown keyboard with cream text in dark mode, the beige case in light mode, orange and blue accents in both.](/guide/theme-breadbin.webp)
+
+**Phosphor**: An amber monitor in dark mode, green-bar printer paper in light.
+
+![Phosphor: amber on black in dark mode, black ink on pale green paper in light mode.](/guide/theme-phosphor.webp)
+
+**Out Run**: The sunset over the road: neon night in dark mode, a coral sky in light.
+
+![Out Run: a magenta horizon glow over violet night with yellow and cyan accents in dark mode, a coral sunset sky in light mode.](/guide/theme-outrun.webp)
+
+**Commando**: Night road and muzzle flash in dark mode, khaki and olive drab in light.
+
+![Commando: sand on dark brown with orange accents in dark mode, khaki and olive drab in light mode.](/guide/theme-commando.webp)
+
+<!-- /gallery -->
 
 Pick one with **THEME** in [Options ▸ Theme](#theme). **IMPORT** loads a theme
 file, which then stays in this browser; **REMOVE** takes an imported one
 out again. **EXPORT** saves the current theme with every colour filled in,
 so exporting Classic gives you a complete file to start your own from.
 
-A theme file is JSON:
+A theme file is JSON. Here is the start of one, with Classic's colours; the
+`…` lines stand for the rest. A complete file has 137 colours per mode, but a
+theme only needs the ones it changes. Export Classic to get the whole file to
+edit.
 
-```json
+```jsonc
 {
   "format": "c64ready-theme/1",
   "name": "My theme",
   "author": "optional",
   "modes": {
-    "dark":  { "panel-bg": "#11142e", "text": "#ccd0ec", "accent": "#706deb" },
-    "light": { "panel-bg": "#ffffff", "text": "#23264d", "accent": "#4c49c0" }
+    "dark": {
+      "crt-bg": "#070a1c",
+      "ui-bg": "#0b0e24",
+      "panel-bg": "#11142e",
+      "border": "#2c2f63",
+      "control-bg": "#1a1a30",
+      "text": "#ccd0ec",
+      "dim": "#6e6ea4",
+      "accent": "#706deb",
+      "green": "#8fe985",
+      "amber": "#e6dd6b",
+      "red": "#d76b70",
+      …
+    },
+    "light": {
+      "crt-bg": "#e8e9f3",
+      "ui-bg": "#f4f5fb",
+      "panel-bg": "#ffffff",
+      "border": "#cfd2e7",
+      "control-bg": "#eef0f8",
+      "text": "#23264d",
+      "dim": "#5f6390",
+      "accent": "#4c49c0",
+      "green": "#2a7337",
+      "amber": "#7a5d00",
+      "red": "#b8323b",
+      …
+    }
   }
 }
 ```
@@ -197,23 +261,33 @@ available over the 3D scene.
 
 ### Scenes
 
-The **🎬** button cycles through five scenes. Each strip shows the scene from the
-default view, up close, and from a low angle.
+The **🎬** button cycles through five scenes. Each strip in the gallery shows
+the scene from the default view, up close, and from a low angle; step through
+them with **Previous** and **Next**.
 
-**Synthwave**
+<!-- gallery scenes -->
+
+**Synthwave**: A glowing neon grid under a banded sun and wireframe mountains.
+
 ![Three views of the Synthwave scene: the C64 setup on a glowing neon grid under a banded Outrun sun and wireframe mountains.](/guide/retro-vibes-synthwave.webp)
 
-**Starry Plain**
+**Starry Plain**: A pulsing grid beneath the Milky Way and the occasional meteor.
+
 ![Three views of the Starry Plain scene: the machine on a dark pulsing grid beneath a blue-violet Milky Way, deep star field and occasional meteor.](/guide/retro-vibes-starry-plain.webp)
 
-**Spotlight**
+**Spotlight**: One warm spotlight in the dark, the live CRT colouring the floor.
+
 ![Three views of the Spotlight scene: the setup picked out of pitch darkness by a single warm overhead spotlight, grounded on a matte studio floor while the live CRT softly colours its surroundings.](/guide/retro-vibes-spotlight.webp)
 
-**IK+ Sunset**
+**IK+ Sunset**: A courtyard by the bay at dusk, a torii gate before the setting sun.
+
 ![Three views of the IK+ Sunset scene: a stone courtyard by a bay at dusk, a black torii gate rising from the water in front of the setting sun, an autumn maple and a fishing village on the shores.](/guide/retro-vibes-ikplus.webp)
 
-**80s Bedroom**
+**80s Bedroom**: A teenager's bedroom at night, the C64 under an amber lamp.
+
 ![Three views of the 80s Bedroom scene: a messy 1980s teenager's bedroom at night: the C64 on a faux-wood desk under an amber lamp, a plaid-duvet bed, venetian blinds, taped-up posters and a corkboard, a wood-grain CRT, a boombox and scattered clutter.](/guide/retro-vibes-80s-bedroom.webp)
+
+<!-- /gallery -->
 
 Which model loads is set by **3D MODEL** in [Options](#options).
 

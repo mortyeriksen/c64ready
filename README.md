@@ -40,7 +40,7 @@ it that way.
 
 **▶ Play it live at [c64ready.com](https://www.c64ready.com)**
 
-![C64 READY. emulator overview.](public/screens/c64rdy-emulator-v4.png)
+![C64 READY. emulator overview.](public/screens/c64rdy-emulator-v5.png)
 
 ## Features
 

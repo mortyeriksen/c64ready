@@ -145,7 +145,7 @@
    "description": "Commando (Elite/Capcom, 1985) as a ready-to-run PRG for the User Guide touch-joystick screenshot \u2014 a game title screen behind the on-screen controls. tools/guide-extra-shots.mjs",
    "env": "C64_COMMANDO_PRG",
    "paths": [
-    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Uncrunched/Commando.prg"
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Crunched/Commando.prg"
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },

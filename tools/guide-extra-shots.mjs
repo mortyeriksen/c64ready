@@ -96,7 +96,7 @@ const browser = await chromium.launch();
 //    the datasette's tape listing ───────────────────────────────────────────────
 if (want('update-toast') || want('drive8-loaded') || want('directory-zoom') || want('tape-listing')
     || want('tape-scope')) {
-  const ctx = await browser.newContext({
+  const ctx = await browser.newContext({ colorScheme: 'dark',
     viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 2, reducedMotion: 'reduce',
   });
   await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); } catch {} });
@@ -222,7 +222,7 @@ if (want('update-toast') || want('drive8-loaded') || want('directory-zoom') || w
 // cartridge card. Isolated context: applying a cart cold-boots the machine, so it
 // must not share a page with the other shots.
 if (want('cartridge-freezer')) {
-  const ctx = await browser.newContext({
+  const ctx = await browser.newContext({ colorScheme: 'dark',
     viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 2, reducedMotion: 'reduce',
   });
   await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); } catch {} });
@@ -250,7 +250,7 @@ if (want('cartridge-freezer')) {
 // already hidden. Own context so the pre-hidden cards can't leak into any other
 // shot's panel.
 if (want('panel-hide') || want('panel-restore')) {
-  const ctx = await browser.newContext({
+  const ctx = await browser.newContext({ colorScheme: 'dark',
     // Much shorter than the other desktop shots: the panel ends well above 1180
     // and the target sits in the corner of the VIEWPORT, so spare height lands
     // as a band of empty page between the two things the shot is about.
@@ -310,7 +310,7 @@ if (want('panel-hide') || want('panel-restore')) {
 // ── touch joystick over the display, landscape phone ──────────────────────────
 if (want('touch-joystick')) {
   try {
-    const mctx = await browser.newContext({
+    const mctx = await browser.newContext({ colorScheme: 'dark',
       viewport: { width: 844, height: 390 }, deviceScaleFactor: 3,
       isMobile: true, hasTouch: true, reducedMotion: 'reduce',
     });
@@ -326,6 +326,10 @@ if (want('touch-joystick')) {
     // Load a game so the joystick sits over a title screen, not the READY prompt.
     if (GAME && fs.existsSync(GAME)) {
       await mpage.setInputFiles('#prg-input', GAME);
+      // A .prg with TDE on is offered the faster load; take it, so the dialog is
+      // gone and the game is up in time.
+      const offer = mpage.locator('#confirm-modal:not([hidden])');
+      if (await offer.waitFor({ timeout: 3000 }).then(() => true, () => false)) await mpage.locator('#btn-confirm-ok').click();
       await sleep(8000);   // load + autorun → the game's title screen
     }
     try { await mpage.selectOption('#cp-device-p2', 'touchJoystick'); } catch {}

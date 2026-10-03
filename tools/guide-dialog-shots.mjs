@@ -65,7 +65,7 @@ async function rowCount(page, listSel) {
 }
 
 const browser = await chromium.launch();
-const ctx = await browser.newContext({
+const ctx = await browser.newContext({ colorScheme: 'dark',
   viewport: { width: 1460, height: 1180 },
   deviceScaleFactor: 2,
   reducedMotion: 'reduce',

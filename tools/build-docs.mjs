@@ -386,6 +386,53 @@ function writeTextDoc(srcRel, outHref, title) {
   }, body, []));
 }
 
+// <!-- gallery NAME --> … <!-- /gallery --> in a doc becomes a gallery: one
+// image at a time: its caption above, Previous and Next below. Each image is a
+// slide; the text before it is its caption, and a leading **bold** run is the slide's title. On
+// GitHub the comments are invisible and the images simply follow each other.
+// No script: each slide is a radio button and Previous / Next are labels for
+// its neighbours, so the gallery works offline and from the keyboard (Tab to
+// it, then the arrow keys).
+function renderGalleries(html) {
+  return html.replace(/<!--\s*gallery\s+([a-z0-9-]+)\s*-->([\s\S]*?)<!--\s*\/gallery\s*-->/g, (match, name, inner) => {
+    const slides = [];
+    let rest = inner;
+    const imgRe = /<img\b[^>]*>/;
+    for (let m = rest.match(imgRe); m; m = rest.match(imgRe)) {
+      const before = rest.slice(0, m.index).replace(/<\/?p>/g, ' ').replace(/\s+/g, ' ').trim();
+      const strong = before.match(/^<strong>([\s\S]*?)<\/strong>\s*:?\s*/);
+      // "**Classic**: the C64's blue" reads as a sentence once the title moves out.
+      const caption = (strong ? before.slice(strong[0].length) : before).replace(/^[a-z]/, (c) => c.toUpperCase());
+      slides.push({ img: m[0], title: strong ? strong[1] : '', caption });
+      rest = rest.slice(m.index + m[0].length);
+    }
+    if (!slides.length) return match;
+    const n = slides.length;
+    const id = (i) => `gallery-${name}-${((i + n) % n) + 1}`;
+    const items = slides.map((s, i) => {
+      const label = (s.title || `Image ${i + 1}`).replace(/<[^>]+>/g, '');
+      return `<input type="radio" class="gallery-pick" name="gallery-${name}" id="${id(i)}" aria-label="${label}, ${i + 1} of ${n}"${i === 0 ? ' checked' : ''}>
+<figure class="gallery-slide">${s.caption ? `\n<figcaption>${s.caption}</figcaption>` : ''}
+${s.img}
+<div class="gallery-nav">
+<label class="gallery-step" for="${id(i - 1)}" aria-hidden="true">‹ Previous</label>
+<span class="gallery-title">${s.title}<span class="gallery-count">${i + 1} / ${n}</span></span>
+<label class="gallery-step" for="${id(i + 1)}" aria-hidden="true">Next ›</label>
+</div>
+</figure>`;
+    }).join('\n');
+    return `<div class="gallery" role="group" aria-label="Gallery">\n${items}\n</div>`;
+  });
+}
+
+// The landing page leads with the same theme gallery the User Guide opens with,
+// taken from the guide's source so the two never drift apart.
+function overviewGallery() {
+  const md = readFileSync(join(DOCS_SRC, 'USER-GUIDE.md'), 'utf8');
+  const block = md.match(/<!--\s*gallery\s+overview\s*-->[\s\S]*?<!--\s*\/gallery\s*-->/);
+  return block ? renderGalleries(marked.parse(block[0])).trim().split('\n').map((line) => `      ${line}`).join('\n') : '';
+}
+
 function readDocsIndexOverview() {
   const md = readFileSync(join(DOCS_SRC, INDEX_OVERVIEW_FILE), 'utf8')
     // Strip the source SPDX header comment so it doesn't leak into the page.
@@ -435,8 +482,7 @@ ${topbar}
 ${overviewHtml.trim().split('\n').map((line) => `        ${line}`).join('\n')}
       </section>
 
-      <img src="/guide/overview.webp" width="1920" height="1122"
-        alt="The C64 READY. emulator: the monitor booted to BASIC beside the control panels">
+${overviewGallery()}
 
 ${guidesSection}      <h2 class="cards-heading">Architecture &amp; internals</h2>
       <div class="doc-cards">
@@ -650,7 +696,29 @@ code, pre, .brand, kbd { font-family: 'Share Tech Mono', ui-monospace, SFMono-Re
 .doc-content img { max-width: 100%; height: auto; display: block; margin: 22px 0; border-radius: 8px; }
 .doc-content img[src*="overview"],
 .doc-content img[src*="/guide/header"],
-.doc-content img[src*="retro-vibes"] { border: 1px solid var(--border); }
+.doc-content img[src*="retro-vibes"],
+.doc-content img[src*="/guide/theme-"] { border: 1px solid var(--border); }
+
+/* Galleries (renderGalleries): one slide at a time, picked by a hidden radio
+   button; Previous / Next are labels for the neighbouring slides. */
+.gallery { margin: 40px 0; }
+.gallery-pick { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.gallery-slide { display: none; margin: 0; }
+.gallery-pick:checked + .gallery-slide { display: block; }
+.gallery-nav { display: flex; align-items: center; gap: 12px; border-radius: 8px; }
+.gallery-pick:focus-visible + .gallery-slide .gallery-nav { outline: 2px solid var(--accent); outline-offset: 4px; }
+.gallery-step {
+  flex: none; cursor: pointer; user-select: none; padding: 6px 12px;
+  border: 1px solid var(--border); border-radius: 6px; background: var(--panel-bg);
+  color: var(--text); font-family: 'Share Tech Mono', monospace; letter-spacing: 0.06em;
+}
+.gallery-step:hover { border-color: var(--accent); }
+.gallery-title { flex: 1; text-align: center; font-weight: 600; }
+.gallery-count { margin-left: 10px; font-weight: 400; color: var(--dim); font-family: 'Share Tech Mono', monospace; }
+.gallery-slide img { margin: 12px 0; }
+.gallery-slide figcaption { color: var(--text); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* One line where there is room; a phone would cut it off, so there it wraps. */
+@media (max-width: 700px) { .gallery-slide figcaption { white-space: normal; } }
 
 /* underline inline prose links only — not the block-level doc cards */
 .doc-content p a, .doc-content li a, .doc-content td a, .doc-content blockquote a {
@@ -802,7 +870,7 @@ export async function buildDocs() {
       .replace(/^<!--\s*SPDX-License-Identifier[\s\S]*?-->\s*<!--\s*Copyright[\s\S]*?-->\s*/, '');
     const meta = extractMeta(md, name);
     let bodyHtml = marked.parse(md);
-    bodyHtml = rewriteDocLinks(bodyHtml);
+    bodyHtml = renderGalleries(rewriteDocLinks(bodyHtml));
     if (href === 'about') writeAboutFragment(bodyHtml);
     const { html, toc } = addAnchorsAndToc(bodyHtml);
     writeFileSync(join(DOCS_OUT, `${href}.html`), renderDocPage({ ...meta, href }, html, toc));

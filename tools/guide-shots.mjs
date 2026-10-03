@@ -34,6 +34,7 @@
 //   node tools/guide-shots.mjs                     20 shots (above)
 //   node tools/guide-extra-shots.mjs               5 shots needing their own setup
 //   node tools/guide-setup-shot.mjs                setup-dialog (fresh, ROM-less ctx)
+//   node tools/guide-theme-shots.mjs               theme-<id>: each theme, dark and light
 //   node tools/guide-dialog-shots.mjs [baseURL] <demoDir> <statesDir>
 //                                                  the populated Library + Save-States
 //   node tools/vibes-guide-shots.mjs <baseURL> <paneDir>    3 panes per 3D scene
@@ -83,7 +84,7 @@ const done = [];
 const skipped = [];
 
 const browser = await chromium.launch();               // headless by default
-const ctx = await browser.newContext({
+const ctx = await browser.newContext({ colorScheme: 'dark',
   viewport: { width: 1460, height: 1180 },
   deviceScaleFactor: 2,                                 // crisp retina PNGs
   reducedMotion: 'reduce',                              // freeze CRT roll / animations
@@ -118,6 +119,61 @@ if (TUNE && fs.existsSync(TUNE)) {
     localStorage.setItem('c64emu.secondSid', JSON.stringify(config));
   }, { enabled: true, address: tune.secondSidAddress, is8580: tune.secondChip !== 1, mix: 'stereo' });
 }
+// ── The SID player ──────────────────────────────────────────────────────
+// A .sid is wrapped in a .prg that carries a 6502 player, so what this shows is
+// a program running on the C64 rather than any part of the app's own interface:
+// the shot is the display alone. It runs in a context of its own, a fresh
+// machine with its own storage, so the tune never reaches the Library, drive 8
+// or the TDE setting the other shots show; and before the main page opens,
+// because the app freezes a machine whose page is not the focused one.
+console.log('\n[sid player]');
+if (want('sid-player') && TUNE && fs.existsSync(TUNE)) {
+  const sidCtx = await browser.newContext({ colorScheme: 'dark',
+    viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 2, reducedMotion: 'reduce',
+  });
+  try {
+    await sidCtx.addInitScript(() => {
+      try { localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); } catch {}
+    });
+    await sidCtx.addInitScript(cache => {
+      for (const [key, value] of Object.entries(cache)) localStorage.setItem(key, value);
+    }, romCache);
+    // SID2 on before the run, at the address and chip the tune asks for.
+    const tune = parseSid(new Uint8Array(fs.readFileSync(TUNE)));
+    if (tune.secondSidAddress) await sidCtx.addInitScript(config => {
+      localStorage.setItem('c64emu.secondSid', JSON.stringify(config));
+    }, { enabled: true, address: tune.secondSidAddress, is8580: tune.secondChip !== 1, mix: 'stereo' });
+    const sidPage = await sidCtx.newPage();
+    await sidPage.goto(`${BASE}/?CRT_SHADER_SOFTWARE=1`, { waitUntil: 'networkidle' });
+    await sidPage.waitForSelector('#btn-power:not([disabled])', { timeout: 20000 });
+    await sidPage.locator('#btn-power').click({ timeout: 5000 });
+    await sidPage.waitForSelector('body.powered-on', { timeout: 8000 }).catch(() => {});
+    await sleep(4200);                                 // blue screen settles to READY.
+    // A tune is wrapped in a .prg, so it draws the same "Load faster?" offer any
+    // .prg does, and that dialog would be the shot. TDE off first.
+    const sidTde = sidPage.locator('#btn-tde-toggle');
+    if (/ON/.test(await sidTde.textContent().catch(() => '')))
+      { await sidTde.click().catch(() => {}); await sleep(300); }
+    await sidPage.setInputFiles('#prg-input', TUNE);
+    // A two-SID tune first asks to turn SID2 on. The question comes once the
+    // file is read, so wait for it rather than look the instant the file is in.
+    const ask = sidPage.locator('#confirm-modal:not([hidden])');
+    if (await ask.waitFor({ timeout: 3000 }).then(() => true, () => false))
+      await sidPage.locator('#btn-confirm-ok').click({ timeout: 5000 });
+    await sleep(7000);                                 // load, run, and a few seconds on the clock
+    const info = saveGuideShot(await sidPage.locator('#screen').screenshot(), OUT, 'sid-player');
+    done.push('sid-player');
+    console.log('  ✓', shotLabel('sid-player', info));
+  } catch (e) {
+    skipped.push('sid-player');
+    console.error('  ✗ sid-player —', e.message.split('\n')[0]);
+  }
+  await sidCtx.close();
+} else {
+  console.log('  skipped —', !want('sid-player') ? 'not in GUIDE_ONLY'
+    : TUNE ? `no tune at ${TUNE}` : 'no tune (asset registry: guide-sid)');
+}
+
 const page = await ctx.newPage();
 page.on('pageerror', (e) => console.error('  page error:', e.message));
 
@@ -264,7 +320,7 @@ try {
 
 // If only the shots up to here were requested, stop now — skip the modals,
 // the slow Retro Vibes / overview-running passes, and the disk load entirely.
-const restShots = ['options', 'crt-settings', 'keymap', 'library', 'save-states', 'key-joystick', 'retro-vibes', 'drive8-loaded', 'directory-zoom', 'overview-running', 'sid-player'];
+const restShots = ['options', 'crt-settings', 'keymap', 'library', 'save-states', 'key-joystick', 'retro-vibes', 'drive8-loaded', 'directory-zoom', 'overview-running'];
 if (ONLY.length && !restShots.some(want)) {
   await browser.close();
   console.log(`\nDone. ${done.length} shots → ${OUT}`);
@@ -413,6 +469,10 @@ if (want('overview-running') && fs.existsSync(RASTER)) {
     if (/ON/.test(await tde.textContent().catch(() => '')))
       { await tde.click().catch(() => {}); await sleep(300); }
     await page.setInputFiles('#d64-input', RASTER);
+    // A disk inserted with TDE off is offered TDE; keep it off, the instant
+    // trap load the frame below is timed against.
+    const offer = page.locator('#confirm-modal:not([hidden])');
+    if (await offer.waitFor({ timeout: 3000 }).then(() => true, () => false)) await click('#btn-confirm-cancel');
     await sleep(2500);                                 // autoload + RUN hand off to the demo
     await sleep(58000);                                // ~58 s in — "PROJECT" logo over the raster bars
     await shotCropped('overview-running');
@@ -424,35 +484,6 @@ if (want('overview-running') && fs.existsSync(RASTER)) {
   // Two different reasons land here; saying which saves a false "missing asset".
   console.log('  skipped —', !want('overview-running') ? 'not in GUIDE_ONLY'
     : RASTER ? `no raster demo d64 at ${RASTER}` : 'no raster demo d64 (pass argv[4])');
-}
-
-// ── The SID player ──────────────────────────────────────────────────────
-// A .sid is wrapped in a .prg that carries a 6502 player, so what this shows is
-// a program running on the C64 rather than any part of the app's own interface:
-// the shot is the display alone. Runs last, and resets first, because the tune
-// before it owns the interrupts and the screen.
-console.log('\n[sid player]');
-if (want('sid-player') && TUNE && fs.existsSync(TUNE)) {
-  try {
-    await click('#btn-reset');
-    await sleep(2800);                                 // cold boot back to READY.
-    // A tune is wrapped in a .prg, so it draws the same "Load faster?" offer any
-    // .prg does — and that dialog would be the shot. Turn TDE off first, as the
-    // running-demo shot above does, so nothing is in front of the screen.
-    const sidTde = page.locator('#btn-tde-toggle');
-    if (/ON/.test(await sidTde.textContent().catch(() => '')))
-      { await sidTde.click().catch(() => {}); await sleep(300); }
-    await page.setInputFiles('#prg-input', TUNE);
-    if (await page.locator('#confirm-modal:not([hidden])').isVisible()) await click('#btn-confirm-ok');
-    await sleep(7000);                                 // load, run, and a few seconds on the clock
-    await shot('#screen', 'sid-player');
-  } catch (e) {
-    skipped.push('sid-player');
-    console.error('  ✗ sid-player —', e.message.split('\n')[0]);
-  }
-} else {
-  console.log('  skipped —', !want('sid-player') ? 'not in GUIDE_ONLY'
-    : TUNE ? `no tune at ${TUNE}` : 'no tune (asset registry: guide-sid)');
 }
 
 await browser.close();

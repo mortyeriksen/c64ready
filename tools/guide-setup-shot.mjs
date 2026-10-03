@@ -27,7 +27,7 @@ const BASE = process.argv[2] || 'http://localhost:5173';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const browser = await chromium.launch();                 // headless by default
-const ctx = await browser.newContext({
+const ctx = await browser.newContext({ colorScheme: 'dark',
   viewport: { width: 1460, height: 1180 },
   deviceScaleFactor: 2,                                   // crisp retina PNG, matches the other guide shots
   reducedMotion: 'reduce',
