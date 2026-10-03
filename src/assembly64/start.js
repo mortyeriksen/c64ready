@@ -5,6 +5,7 @@ import { Assembly64Controller } from './controller.js';
 import { createAssembly64Control } from './control.js';
 import { createAssembly64Actions } from './actions.js';
 import { createAssembly64Store } from './store.js';
+import { libList, libLoad } from '../media/library.js';
 import '../styles/styles-assembly64.css';
 
 export async function initializeAssembly64() {
@@ -13,7 +14,7 @@ export async function initializeAssembly64() {
   const controller = new Assembly64Controller({ transport: (...args) => fetch(...args) });
   let storage;
   try { storage = localStorage; } catch { storage = { getItem: () => null, setItem: () => { throw new Error('Storage unavailable'); } }; }
-  createAssembly64Control(root, controller, createAssembly64Store(storage), createAssembly64Actions(controller, openMedia));
+  createAssembly64Control(root, controller, createAssembly64Store(storage), createAssembly64Actions(controller, openMedia, { list: libList, load: libLoad }));
   try { await controller.initialize(); }
   catch (error) { controller.emit({ status: 'error', message: error.message }); }
 }

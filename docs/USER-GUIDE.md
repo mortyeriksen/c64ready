@@ -509,7 +509,9 @@ Open a production's details to see its complete file list.
 - **LOAD** opens compatible PRG, D64, CRT, TAP and REU files in the emulator.
   SID and unsupported disk formats are available for download.
 - **SAVE TO LIB** stores compatible files in Library. Files already there show
-  **SAVED IN LIB**.
+  **SAVED IN LIB**, and **LOAD** opens them from Library instead of downloading
+  them again. **DOWNLOAD** always fetches a fresh copy, and a ZIP is always
+  downloaded so you can choose from it.
 - D64 files default to drive 8, write protected, following the app's autorun
   setting. Choose drive 9 or mount only when needed. Loading a disk can offer
   to enable True Drive Emulation for compatibility.

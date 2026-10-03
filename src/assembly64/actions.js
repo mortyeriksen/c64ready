@@ -5,6 +5,7 @@ import { inspectZip } from '../media/archive.js';
 import { copyData } from '../serializable.js';
 import { el } from './dom.js';
 import { chooseFile } from '../media/choose-file.js';
+import { libraryEntryFor } from './library.js';
 
 function chooseArchive(entries, signal) {
   if (!entries.length) throw new Error('The ZIP contains no supported PRG, D64, CRT, TAP, T64, SID or REU files.');
@@ -14,10 +15,39 @@ function chooseArchive(entries, signal) {
     signal,
   });
 }
-export function createAssembly64Actions(controller, openMedia) {
+// A file already in the Library opens from there instead of downloading it again,
+// online or not. A ZIP is always fetched, since which member to open is chosen
+// from the archive, and a DOWNLOAD fetches a fresh copy.
+async function savedBytes(library, item, file) {
+  if (!library) return null;
+  try {
+    const entry = libraryEntryFor(item, file, await library.list());
+    const stored = entry && await library.load(entry.id);
+    return stored?.data?.length ? stored.data : null;
+  } catch { return null; }
+}
+export function createAssembly64Actions(controller, openMedia, library = null) {
   let busy = false;
   return async function perform(item, file, options, signal, onProgress) {
     if (busy) throw new Error('Another media download is in progress.');
+    // Catalog media lands on a machine that is rarely at a BASIC prompt, so
+    // it asks for one first.
+    const open = (name, bytes, mediaType) => openMedia({ ...options, name, bytes, mediaType, signal, reset: true,
+      metadata: { source: 'assembly64', releaseTitle: item.title, provenance: {
+        version: 1, provider: 'assembly64', itemId: item.id, itemRef: copyData(item.ref), fileId: file.id, fileRef: copyData(file.ref),
+      } },
+    });
+    if (options.action !== 'download' && file.mediaType !== 'zip') {
+      busy = true;
+      try {
+        const saved = await savedBytes(library, item, file);
+        signal?.throwIfAborted();
+        if (saved) {
+          onProgress?.({ stage: 'open', name: file.name, loaded: 0, total: null });
+          return await open(file.name, saved, file.mediaType);
+        }
+      } finally { busy = false; }
+    }
     if (!controller.online()) throw new Error('Offline — new downloads are unavailable. Open saved files with LOAD LIB.');
     if (file.size > MAX_DOWNLOAD_BYTES) throw new Error('Download exceeds the 32 MiB limit.');
     busy = true;
@@ -43,13 +73,7 @@ export function createAssembly64Actions(controller, openMedia) {
         return { message: 'File downloaded.' };
       }
       onProgress?.({ stage: options.action === 'save' ? 'save' : 'open', name, loaded: 0, total: null });
-      // Catalog media lands on a machine that is rarely at a BASIC prompt, so
-      // it asks for one first.
-      return await openMedia({ ...options, name, bytes, mediaType, signal, reset: true,
-        metadata: { source: 'assembly64', releaseTitle: item.title, provenance: {
-          version: 1, provider: 'assembly64', itemId: item.id, itemRef: copyData(item.ref), fileId: file.id, fileRef: copyData(file.ref),
-        } },
-      });
+      return await open(name, bytes, mediaType);
     } finally { busy = false; }
   };
 }

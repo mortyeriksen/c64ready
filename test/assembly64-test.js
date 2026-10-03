@@ -179,6 +179,49 @@ test('Opening a release from the catalog asks for a prompt to load at', async ()
     { action: 'run' }, undefined, () => {});
   assert.equal(request.reset, true);
 });
+// A Library holding one saved file: the release's PRG, with the provenance an
+// Assembly64 save records.
+function savedLibrary(bytes) {
+  const entry = { id: 'saved-1', type: 'prg', name: 'release.prg', source: 'assembly64', releaseTitle: 'Release', provenance: {
+    version: 1, provider: 'assembly64', itemId: '[1,"rel"]', itemRef: { id: 'rel', categoryId: 1 }, fileId: 'p', fileRef: { itemId: 'rel', categoryId: 1, id: 'p' },
+  } };
+  return { list: async () => [entry], load: async id => (id === entry.id ? { ...entry, data: bytes } : null) };
+}
+const release = { id: '[1,"rel"]', title: 'Release', ref: { id: 'rel', categoryId: 1 } };
+const releasePrg = { id: 'p', name: 'release.prg', mediaType: 'prg', size: 16, ref: { itemId: 'rel', categoryId: 1, id: 'p' } };
+test('LOAD opens a file already in the Library without downloading it', async () => {
+  const saved = sampleMedia('prg');
+  let downloads = 0, request = null;
+  const controller = { online: () => true, download: async () => { downloads++; return new Uint8Array(4); } };
+  const perform = createAssembly64Actions(controller, async value => { request = value; return { message: 'PRG loaded' }; }, savedLibrary(saved));
+  await perform(release, releasePrg, { action: 'run' }, undefined, () => {});
+  assert.equal(downloads, 0, 'nothing is downloaded');
+  assert.equal(request.bytes, saved, 'the Library copy opens');
+  assert.equal(request.metadata.provenance.fileId, 'p', 'under the same provenance as a download');
+});
+test('A file in the Library opens while offline', async () => {
+  let request = null;
+  const controller = { online: () => false, download: async () => { throw new Error('no network'); } };
+  const perform = createAssembly64Actions(controller, async value => { request = value; return { message: 'PRG loaded' }; }, savedLibrary(sampleMedia('prg')));
+  await perform(release, releasePrg, { action: 'run' }, undefined, () => {});
+  assert.ok(request, 'the saved file opens without a connection');
+});
+test('Another file of the same release is still downloaded', async () => {
+  let downloads = 0;
+  const controller = { online: () => true, download: async () => { downloads++; return sampleMedia('d64'); } };
+  const perform = createAssembly64Actions(controller, async () => ({ message: 'loaded' }), savedLibrary(sampleMedia('prg')));
+  await perform(release, { ...releasePrg, id: 'd', name: 'release.d64', mediaType: 'd64' }, { action: 'run' }, undefined, () => {});
+  assert.equal(downloads, 1);
+});
+test('DOWNLOAD fetches a fresh copy even when the file is in the Library', async () => {
+  let downloads = 0;
+  const controller = { online: () => true, download: async () => { downloads++; return sampleMedia('prg'); } };
+  const perform = createAssembly64Actions(controller, async () => ({ message: 'loaded' }), savedLibrary(sampleMedia('prg')));
+  // The save-to-disk step needs a DOM; the download it follows is what counts.
+  await perform(release, releasePrg, { action: 'download' }, undefined, () => {}).catch(() => {});
+  assert.equal(downloads, 1);
+});
+
 test('An Assembly64 .t64 offers the same actions as any other program', () => {
   assert.deepEqual(allowedActions('t64'), ['run', 'save', 'download']);
 });
