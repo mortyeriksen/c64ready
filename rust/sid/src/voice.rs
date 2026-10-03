@@ -2,7 +2,7 @@
 // Translated from reSID (wave.h/wave.cc, envelope.h/envelope.cc, voice.h/
 // voice.cc) as distributed in VICE 3.10 src/resid, Copyright (C) 2010
 // Dag Lem (voice.cc portions (C) 2004), GNU GPL v2 or later. Line-for-line
-// mirror of the VICE-gated JavaScript translation in src/sid-voice.js
+// mirror of the VICE-gated JavaScript translation in src/sid/sid-voice.js
 // (audio path only — OSC3/ENV3 readback is served by the main-thread JS
 // shadow, so the OSC3 view pipeline is intentionally absent here).
 

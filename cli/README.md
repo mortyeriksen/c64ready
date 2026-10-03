@@ -3,7 +3,7 @@
 You have a stack of C64 cassettes recorded as WAV files, or a folder of `.tap`,
 `.d64`, `.d71`, `.d81`, `.g64`, `.nbz`, `.crt` and `.prg` files, and you want to convert, inspect, repair and
 run them in batches, without dragging each 285 MB recording through a browser.
-`c64rdy` is the [C64 Ready](https://c64ready.com) tape and disk engine with a
+`c64rdy` is the [C64 READY.](https://c64ready.com) tape and disk engine with a
 terminal in front of it: the same decoder, the same repairs, the same listings,
 scriptable and with no dependencies at all.
 

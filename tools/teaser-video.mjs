@@ -7,13 +7,13 @@
 //
 // outDir defaults to public/media/, giving c64ready-teaser.mp4 and
 // c64ready-teaser-poster.webp. Both are referenced with a ?v= query (index.html
-// and src/splash.js) — bump it there when the artwork changes, because /media/*
+// and src/ui/splash.js) — bump it there when the artwork changes, because /media/*
 // is served immutable.
 //
 // What the encode is for: a muted, looping, autoplaying background video on a
 // first-visit page. That dictates the settings.
 //   • 16:9 CROP, ANCHORED TO THE BOTTOM. .splash-media is `aspect-ratio: 16/9`
-//     with `object-fit: cover` (src/styles-splash.css), so the browser crops to
+//     with `object-fit: cover` (src/styles/styles-splash.css), so the browser crops to
 //     16:9 no matter what it is given; doing it here spends no bytes on rows the
 //     page never shows. Taking the crop off the TOP rather than centring it is
 //     what keeps the viewer's own chrome out of frame: Retro Vibes puts round
@@ -154,4 +154,4 @@ const saved = src.bytes ? Math.round((1 - out.bytes / src.bytes) * 100) : 0;
 console.log(`teaser  ${describe(out)}  (${saved}% smaller, crf ${CRF})`);
 console.log(`poster  ${poster.width}px webp ${poster.mode} ` +
             `${Math.round(poster.bytes / 1024)} KiB  @ ${at}s`);
-console.log(`\nBump the ?v= on both in index.html and src/splash.js — /media/* is immutable.`);
+console.log(`\nBump the ?v= on both in index.html and src/ui/splash.js — /media/* is immutable.`);

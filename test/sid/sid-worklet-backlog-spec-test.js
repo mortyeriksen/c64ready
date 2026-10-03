@@ -26,7 +26,7 @@ const CPS = CLOCK / RATE;
 const BLOCK = 128;
 const CYCLES_PER_BLOCK = BLOCK * CPS;
 const FRAME_CY = 19656;                     // PAL frame
-const MAX_BACKLOG_CYCLES = 147787;          // mirrors src/sid-worklet.js
+const MAX_BACKLOG_CYCLES = 147787;          // mirrors src/sid/sid-worklet.js
 const LOOKAHEAD_S = 24576 / CLOCK;          // the intended steady-state lateness
 
 const ctx = loadSidIntoContext({ sampleRate: RATE });

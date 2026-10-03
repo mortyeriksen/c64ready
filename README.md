@@ -120,14 +120,16 @@ Hosted at **[c64ready.com/docs](https://www.c64ready.com/docs/)**; sources in [`
 │   ├── machine.js    # wires the machine together on a PAL master clock
 │   ├── cpu.js        # 6510 CPU (official + illegal opcodes)
 │   ├── vic2.js       # VIC-II video, raster-level (+ vic2-tables/line/sprites/render.js)
-│   ├── sid-voice.js  # SID audio DSP (+ sid-worklet.js)
+│   ├── sid/          # SID audio: voices, filter, the audio worklet, the WASM engine
 │   ├── cia.js        # CIA timers & I/O
 │   ├── memory.js     # RAM / ROM / PLA banking
 │   ├── drive1541.js  # true 1541 drive (+ media/d64.js, gcr.js)
 │   ├── media/        # disk, cartridge and tape formats, loading and library
 │   ├── reu.js        # RAM Expansion Unit, the 8726 REC as a second bus master
 │   ├── cartridges/   # .crt types: generic, Action Replay, Final Cartridge III, Magic Desk, EasyFlash
-│   └── …             # datasette, control ports, CRT, input, UI, Retro Vibes
+│   ├── ui/           # dialogs, panels, splash, appearance and themes
+│   ├── styles/       # the stylesheets, styles.css first
+│   └── …             # datasette, control ports, CRT, input, Retro Vibes
 ├── rust/             # reSID engine in Rust, compiled to the WebAssembly SID
 ├── docs/             # Markdown docs, compiled to HTML by tools/build-docs.mjs
 ├── test/             # unit + spec + hardware-testprog suites (npm test)

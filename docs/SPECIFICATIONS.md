@@ -217,7 +217,7 @@ revisions:
   points and the status bits, from the _Commodore 64 Programmer's Reference
   Guide_ and _Mapping the Commodore 64_; the DOS side (open syntax, commands,
   error numbers and messages, the status line) from the _1541 User's Guide_ and
-  the _1581 User's Guide_. `src/virtual-drive.js` approximates M-R, M-W, M-E
+  the _1581 User's Guide_. `src/media/virtual-drive.js` approximates M-R, M-W, M-E
   and a full disk.
 - **G64 disk-image format**: Peter Schepers, _G64 (GCR-encoded 1541 disk image)_,
   and the VICE manual's description of the same layout. `src/media/g64.js`

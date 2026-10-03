@@ -4,7 +4,7 @@
 // Upstream pin and attribution: NOTICE.txt at the repository root.
 //
 // Measured combined-waveform tables + R-2R DAC builder. The .dat payloads
-// are byte-identical to src/sid-wavetables.js (same upstream files); DAC
+// are byte-identical to src/sid/sid-wavetables.js (same upstream files); DAC
 // tables match the JS engine's buildDacTableU16 exactly (pure f64 ladder
 // math, floor(x+0.5) rounding).
 

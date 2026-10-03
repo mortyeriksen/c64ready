@@ -1,4 +1,4 @@
-// SID WASM engine: the compiled Rust translation (src/sid-wasm-blob.js,
+// SID WASM engine: the compiled Rust translation (src/sid/sid-wasm-blob.js,
 // built from rust/sid) must be a drop-in for the JS reSID engine — same
 // cycle-stamped event stream, same samples, bit for bit. This doubles as a
 // stale-blob detector: changing the JS engine (sid-voice.js / sid-filter.js

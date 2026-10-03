@@ -13,7 +13,7 @@
 // resolve to a single typed-array load. I/O ($D000-$DFFF when CHAREN
 // gates it on) and CPU port $00/$01 still go through the slow path.
 
-import { validSecondSidAddress } from './sid-config.js';
+import { validSecondSidAddress } from './sid/sid-config.js';
 import { IO_UNHANDLED } from './cartridges/device.js';
 import { createCartridgeFromConfig } from './cartridges/registry.js';
 

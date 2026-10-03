@@ -4,7 +4,7 @@ import { dirsToByte, portByte, portDirs } from '../src/control-port.js';
 import {
   dropSoftKeyboardFocus, hostTouchControls, isTouchCapable, resolveTouchStick,
   resolveTouchStickInto, restoreTouchControls,
-} from '../src/touch-joystick.js';
+} from '../src/ui/touch-joystick.js';
 
 let testNo = 0, testsFailing = 0, currentFailures = [];
 function expect(cond, msg) { if (!cond) currentFailures.push(msg); }

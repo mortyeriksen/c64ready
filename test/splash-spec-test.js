@@ -1,4 +1,4 @@
-import { shouldShowSplash, SPLASH_SEEN_KEY } from '../src/splash-policy.js';
+import { shouldShowSplash, SPLASH_SEEN_KEY } from '../src/ui/splash-policy.js';
 
 function expect(cond, msg) {
   if (!cond) throw new Error(msg);

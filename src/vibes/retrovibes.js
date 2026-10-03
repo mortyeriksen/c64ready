@@ -17,7 +17,7 @@
 // floor grid completes the retrowave scene.
 
 import * as THREE from 'three';
-import { pushEscapeLayer, popEscapeLayer } from '../escape-stack.js';
+import { pushEscapeLayer, popEscapeLayer } from '../ui/escape-stack.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
@@ -28,7 +28,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import { attachKeycapPresses } from './keycap-press.js';   // [removable prototype]
-import { hostTouchControls, restoreTouchControls } from '../touch-joystick.js';
+import { hostTouchControls, restoreTouchControls } from '../ui/touch-joystick.js';
 import { bgTexture } from './vibes-scene-common.js';
 import { sampleScreenLight } from './vibes-screen-light.js';
 import { ShadowCache } from './vibes-shadow-cache.js';

@@ -85,7 +85,7 @@ reSID
     reSID: oscillator and waveform timing, the noise shift-register logic,
     the pipelined ADSR envelope generator, the measured combined-waveform
     lookup tables (OSC3 samplings of real 6581/8580 chips, embedded verbatim
-    in src/sid-wavetables.js and, for the WASM engine, as the eight
+    in src/sid/sid-wavetables.js and, for the WASM engine, as the eight
     rust/sid/data/wave*.dat files — see rust/sid/data/README.md), the R-2R
     DAC models with subthreshold leakage (dac.cc), the transistor-level
     filter / mixer / nonlinear volume stage (filter8580new), the external RC
@@ -110,10 +110,10 @@ reSID
     upstream copyright notices retained in the translated files.
 
     The engine ships in two additional forms beside the JavaScript
-    translation (src/sid-voice.js, src/sid-filter.js, src/sid-worklet.js):
+    translation (src/sid/sid-voice.js, src/sid/sid-filter.js, src/sid/sid-worklet.js):
     a Rust translation of that JavaScript under rust/sid/, and the
     WebAssembly module compiled from it (embedded base64 in
-    src/sid-wasm-blob.js; rebuilt reproducibly by rust/sid/build.sh with
+    src/sid/sid-wasm-blob.js; rebuilt reproducibly by rust/sid/build.sh with
     the toolchain pinned in rust/sid/rust-toolchain.toml). Both are
     derivative works of reSID as pinned above, conveyed under
     GPL-3.0-or-later; rust/sid/ is the corresponding source for the

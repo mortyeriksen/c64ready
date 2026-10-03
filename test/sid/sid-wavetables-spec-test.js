@@ -1,13 +1,13 @@
 // SID measured wave-table integrity checks.
 //
-// src/sid-wavetables.js is GENERATED from the pinned reSID wave sample data
+// src/sid/sid-wavetables.js is GENERATED from the pinned reSID wave sample data
 // (the wave*.dat files of the src/resid tree in the official VICE 3.10
 // source release; upstream pin in NOTICE.txt). These checks pin the decoded
 // tables to that upstream content via FNV-1a checksums computed at
 // extraction time, plus structural invariants, so a regeneration mistake or
 // base64-decoder regression cannot slip through silently.
 
-import { WAVETABLES_6581, WAVETABLES_8580 } from '../../src/sid-wavetables.js';
+import { WAVETABLES_6581, WAVETABLES_8580 } from '../../src/sid/sid-wavetables.js';
 
 let tests = 0;
 let failures = 0;

@@ -10,12 +10,12 @@ import { CIA } from './cia.js';
 import { VIC2, CYCLES_PER_FRAME, CANVAS_W, CANVAS_H } from './vic2.js';
 import { Memory } from './memory.js';
 import { Drive1541, IDLE_WAKE_NONE } from './drive1541.js';
-import { VirtualDrive } from './virtual-drive.js';
+import { VirtualDrive } from './media/virtual-drive.js';
 import { Datasette } from './datasette.js';
 import { REU, REU_DEFAULT_MODEL } from './reu.js';
 import { parseCRT } from './media/crt.js';
 import { createCartridgeFromCRT } from './cartridges/registry.js';
-import { makeVoiceTrio, computeSyncPulses } from './sid-voice.js';
+import { makeVoiceTrio, computeSyncPulses } from './sid/sid-voice.js';
 
 // SharedArrayBuffer ring buffer layout:
 // SharedArrayBuffer layout (Int32-indexed):

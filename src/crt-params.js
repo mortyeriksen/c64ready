@@ -101,6 +101,36 @@ export function resolveParams(mode, overrides) {
   return { ...p, ...(overrides && overrides[mode]) };
 }
 
+// How the header logo follows the panel: the CSS custom properties that scale
+// the logo's own per-look values (styles-header.css), plus two switches.
+// `vars` holds only the properties that differ from untouched, so a look left
+// alone sets nothing; `tuned` asks for the tone filter ON has no rule for, and
+// `hum` for the hum band in a look that has none by default.
+//
+// Each slider is taken relative to the look's default. Where that default is 0
+// a ratio means nothing: the hum bar then scales from HUM's own strength, and
+// B&W's saturation eases the logo's greyscale. OFF has no parameters.
+export const LOGO_TUNING_VARS = ['--logo-scan-k', '--logo-bright-k', '--logo-contrast-k', '--logo-sat-k', '--logo-hum-k', '--logo-gray'];
+
+export function logoTuning(mode, overrides) {
+  const p = resolveParams(mode, overrides), base = presetParams(mode);
+  const vars = {};
+  if (!p || !base) return { vars, tuned: false, hum: false };
+  const ratio = (key) => (base[key] ? p[key] / base[key] : 1);
+  const values = {
+    '--logo-scan-k': [ratio('scanDepth'), 1],
+    '--logo-bright-k': [ratio('brightness'), 1],
+    '--logo-contrast-k': [ratio('contrast'), 1],
+    '--logo-sat-k': [ratio('saturation'), 1],
+    '--logo-hum-k': [base.humStrength ? ratio('humStrength') : p.humStrength / CRT_PRESETS.hum.humStrength, base.humStrength ? 1 : 0],
+    '--logo-gray': [base.saturation ? 1 : Math.max(0, 1 - p.saturation), 1],
+  };
+  for (const [name, [v, untouched]] of Object.entries(values)) {
+    if (Math.abs(v - untouched) >= 1e-6) vars[name] = Math.round(v * 1000) / 1000;
+  }
+  return { vars, tuned: mode === 'on' && Object.keys(vars).length > 0, hum: !base.humStrength && p.humStrength > 0 };
+}
+
 // Both patterns need two device pixels per emulated line/column to show a
 // beam and a gap; under that the pattern would alias, so it fades out.
 // Mirrors smoothstep(1, 2, x) in the shader.

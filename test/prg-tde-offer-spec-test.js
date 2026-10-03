@@ -21,7 +21,7 @@ import fs from 'fs';
 
 const media = fs.readFileSync(new URL('../src/media.js', import.meta.url), 'utf8');
 const main = fs.readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
-const dialogs = fs.readFileSync(new URL('../src/dialogs.js', import.meta.url), 'utf8');
+const dialogs = fs.readFileSync(new URL('../src/ui/dialogs.js', import.meta.url), 'utf8');
 
 let failures = 0;
 function expect(cond, msg) {

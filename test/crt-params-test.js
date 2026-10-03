@@ -6,7 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import {
   CRT_PARAMS, CRT_MODES, CRT_PRESETS, presetParams, patternFade, backingSize,
-  clipPreservingHue, humPhase, readOverrides, resolveParams, HUM_PERIOD_S,
+  clipPreservingHue, humPhase, readOverrides, resolveParams, logoTuning, LOGO_TUNING_VARS, HUM_PERIOD_S,
 } from '../src/crt-params.js';
 
 function expect(cond, msg) {
@@ -97,11 +97,31 @@ expect(humPhase(0, HUM_PERIOD_S) === 0 && near(humPhase(7000, HUM_PERIOD_S), 0) 
 // The CSS fallback is locked to the raster too: one band per line, and none of
 // the old picture-fraction periods that beat against it.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const css = fs.readFileSync(path.join(root, 'src', 'styles-display.css'), 'utf8');
+const css = fs.readFileSync(path.join(root, 'src', 'styles', 'styles-display.css'), 'utf8');
 expect(css.includes('calc(100% / 272)'), 'CSS scanlines repeat once per raster line');
 for (const n of [222, 296, 394]) {
   expect(!css.includes(`/ ${n})`), `no ${n}-period overlay survives`);
 }
 expect(!/\.crt-bezel[^{]*::before/.test(css), 'the CSS path has no phosphor mask (it cannot sit on the device grid)');
+
+// The header logo follows the panel: each slider relative to the look's default.
+for (const mode of CRT_MODES) {
+  const t = logoTuning(mode, {});
+  expect(Object.keys(t.vars).length === 0 && !t.tuned && !t.hum, `an untouched ${mode.toUpperCase()} leaves the logo as the look draws it`);
+}
+expect(logoTuning('off', { on: { scanDepth: 0.6 } }).vars['--logo-scan-k'] === undefined, "OFF has no parameters, so the logo takes no tuning (and does not throw)");
+{
+  const t = logoTuning('on', { on: { scanDepth: 0.30, brightness: 1.3 } });
+  expect(t.vars['--logo-scan-k'] === 2 && t.vars['--logo-bright-k'] === 1.3 && t.tuned, 'ON: twice the scanlines doubles the logo\'s, brightness carries over, and the tone filter switches on');
+}
+expect(logoTuning('arcade', { arcade: { brightness: 1.12 } }).vars['--logo-bright-k'] === undefined, 'a slider at its default sets nothing');
+{
+  const t = logoTuning('tube', { tube: { humStrength: CRT_PRESETS.hum.humStrength * 2 } });
+  expect(t.vars['--logo-hum-k'] === 2 && t.hum, "a hum bar in a look without one: the band turns on, scaled from HUM's own strength");
+}
+expect(logoTuning('hum', { hum: { humStrength: CRT_PRESETS.hum.humStrength * 2 } }).vars['--logo-hum-k'] === 2 && !logoTuning('hum', {}).hum, 'HUM scales its own band and needs no switch');
+expect(Object.keys(logoTuning('on', { on: { scanDepth: 1, brightness: 1.5, contrast: 1.5, saturation: 2, humStrength: 0.3 } }).vars).every((k) => LOGO_TUNING_VARS.includes(k)),
+  'every variable logoTuning sets is in LOGO_TUNING_VARS, the list main.js clears from');
+expect(logoTuning('bw', { bw: { saturation: 0.6 } }).vars['--logo-gray'] === 0.4, "B&W's saturation eases the logo's greyscale (default 0 has no ratio)");
 
 console.log('crt params spec: PASS');

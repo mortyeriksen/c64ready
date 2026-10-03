@@ -5,7 +5,7 @@ import { Assembly64Controller } from './controller.js';
 import { createAssembly64Control } from './control.js';
 import { createAssembly64Actions } from './actions.js';
 import { createAssembly64Store } from './store.js';
-import '../styles-assembly64.css';
+import '../styles/styles-assembly64.css';
 
 export async function initializeAssembly64() {
   const root = document.getElementById('media-browser-body');

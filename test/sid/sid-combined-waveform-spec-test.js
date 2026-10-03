@@ -4,7 +4,7 @@
 // x64sc reSID. They pin the 8580 pulse-combo retune without embedding GPL
 // lookup tables.
 
-import { COMBINED_6581, COMBINED_8580 } from '../../src/sid-voice.js';
+import { COMBINED_6581, COMBINED_8580 } from '../../src/sid/sid-voice.js';
 
 let tests = 0;
 let failures = 0;

@@ -20,7 +20,7 @@
 //   2. outputStageOsc3() → OSC3/ENV3/env stay byte-identical to full.
 // Pattern mirrors sid-shadow-phaseonly-spec-test.js.
 
-import { makeVoiceTrio, computeSyncPulses } from '../../src/sid-voice.js';
+import { makeVoiceTrio, computeSyncPulses } from '../../src/sid/sid-voice.js';
 
 let testNo = 0, fails = 0, current = [];
 function expect(cond, msg) { if (!cond) current.push(msg); }

@@ -1,6 +1,6 @@
 // test/drive/virtual-drive-spec-test.js
 //
-// Spec test for the DOS behind a trap-served drive (src/virtual-drive.js),
+// Spec test for the DOS behind a trap-served drive (src/media/virtual-drive.js),
 // driven through the serial primitives the KERNAL calls: LISTEN/SECOND,
 // CIOUT, UNLISTEN, TALK/TKSA, ACPTR, UNTALK.
 //
@@ -17,7 +17,7 @@
 // Observed surface: VirtualDrive's listen/write/unlisten/talk/read/untalk,
 // its status text, and the disk image it writes.
 
-import { VirtualDrive } from '../../src/virtual-drive.js';
+import { VirtualDrive } from '../../src/media/virtual-drive.js';
 import { createBlankD64, createBlankD81, TYPE_SEQ } from '../../src/media/d64.js';
 
 let failed = 0;

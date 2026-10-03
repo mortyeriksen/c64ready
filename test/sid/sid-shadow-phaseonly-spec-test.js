@@ -9,7 +9,7 @@
 // This guards against a future edit to clock()'s phase math that isn't
 // mirrored into clockPhaseOnly() (which would silently desync OSC3 readback).
 
-import { SIDVoice, makeVoiceTrio } from '../../src/sid-voice.js';
+import { SIDVoice, makeVoiceTrio } from '../../src/sid/sid-voice.js';
 
 let testNo = 0, fails = 0, current = [];
 function expect(cond, msg) { if (!cond) current.push(msg); }

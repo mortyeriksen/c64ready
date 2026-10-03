@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {D64, createBlankD71, createBlankDisk, TYPE_SEQ, d64Variant} from '../../src/media/d64.js';
 import {Drive1541} from '../../src/drive1541.js';
-import {VirtualDrive} from '../../src/virtual-drive.js';
+import {VirtualDrive} from '../../src/media/virtual-drive.js';
 import {validateMedia} from '../../src/media/open.js';
 import {createDiskCompatibilityPrompt} from '../../src/media/disk-compatibility.js';
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
-import { pushEscapeLayer, popEscapeLayer } from '../escape-stack.js';
+import { pushEscapeLayer, popEscapeLayer } from '../ui/escape-stack.js';
 
 export function el(tag, text, attrs = {}) {
   const node = document.createElement(tag);

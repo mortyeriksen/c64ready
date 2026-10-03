@@ -4,7 +4,7 @@
 // Copyright (C) 2010 Dag Lem <resid@nimrod.no> (voice.cc portions (C)
 // 2004), GNU GPL version 2 or (at your option) any later version — the
 // WASM SID engine for the c64 emulator. Mirrors the VICE-gated JavaScript
-// translation (src/sid-voice.js, src/sid-filter.js, src/sid-worklet.js
+// translation (src/sid/sid-voice.js, src/sid/sid-filter.js, src/sid/sid-worklet.js
 // reSID paths) structure-for-structure; upstream pin and attribution in
 // NOTICE.txt at the repository root.
 //

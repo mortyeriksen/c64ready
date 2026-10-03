@@ -2,7 +2,7 @@
 // Translated from reSID (filter8580new.h/filter8580new.cc, extfilt.h/
 // extfilt.cc, spline.h) as distributed in VICE 3.10 src/resid, Copyright
 // (C) 2010 Dag Lem, GNU GPL v2 or later. Mirror of the VICE-gated
-// JavaScript translation in src/sid-filter.js (fused clockOut form).
+// JavaScript translation in src/sid/sid-filter.js (fused clockOut form).
 
 use crate::tables::build_dac_table;
 
@@ -582,7 +582,7 @@ impl Filter {
     }
 
     /// Fused clock + output: one SID cycle in, the 16-bit mixer/volume
-    /// output back (mirrors src/sid-filter.js clockOut exactly).
+    /// output back (mirrors src/sid/sid-filter.js clockOut exactly).
     pub fn clock_out(&mut self, mf: &Model, voice1: i32, voice2: i32, voice3: i32) -> i32 {
         let scale = mf.voice_scale_s14;
         let vdc = mf.voice_dc;

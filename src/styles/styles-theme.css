@@ -1,0 +1,313 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2026 Morten Øien Eriksen */
+/* src/styles/styles-theme.css – the default theme: every colour the interface uses, as
+   custom properties on :root. The rest of the stylesheets name these and hold no
+   colour of their own, so a theme is this one block with other values.
+   Part of the styles.css @import manifest — cascade order is set there.
+
+   The chrome palette is pulled from the VIC-II (Colodore) colours the emulator
+   itself renders, so the UI around the monitor speaks the C64's own 16 hues
+   instead of generic Material tones. --accent is light blue (VIC #14), the
+   boot-screen text colour; the ambient is C64 blue, not cosmic purple.
+
+   Not themed, and so written as plain colours where they are used: the monitor
+   and the CRT looks drawn over the picture (black glass, scanlines, shine, hum),
+   the scanline overlays on the logo, the collision badge on the screen, the
+   splash's video frame, and the Retro Vibes 3D scenes, which carry their own
+   per-scene palettes. */
+
+/* Dark mode: the default values, and what .mode-dark areas keep in light mode
+   (the monitor and the splash). */
+:root,
+.mode-dark {
+  /* ── Page and surfaces ─────────────────────────────────────────────── */
+  --crt-bg: #070a1c;          /* the dark room the monitor glows in (blue-black) */
+  --page-glow: #15184a;       /* top of the page's radial glow */
+  --ui-bg: #0b0e24;
+  --panel-bg: #11142e;        /* deep VIC-blue shadow */
+  --border: #2c2f63;          /* blue (VIC #6) at low intensity */
+  --monitor-border: #2c2f63;  /* the frame round the screen (dark mode; light mode hides it) */
+  --control-bg: #1a1a30;      /* buttons, fields, rows: the base every hover tint mixes into */
+  --field-bg-hover: #1e2840;
+  --menu-bg: #16162a;         /* drop-down trigger and list */
+  --status-bg: #0e0e1c;
+  --dropzone-border: #2a3a5a;
+  --row-hover: #22223e;       /* library and save-state rows */
+  --dir-row-hover: #1a2a40;   /* a loadable entry in a disk directory */
+  --scrollbar-thumb: #2a2a4a;
+  --backdrop: #020008;        /* behind a modal */
+  --scrim: #0c0c14;           /* the drop-to-hide target */
+  --shadow: #000;             /* every drop shadow, at its own strength */
+  --highlight: #fff;          /* inner top highlights on raised controls */
+
+  /* ── Text ──────────────────────────────────────────────────────────── */
+  --text: #ccd0ec;            /* light grey (VIC #15) with a blue cast */
+  --dim: #6e6ea4;             /* grey (VIC #12) toward blue */
+  --text-dim: #8a8aa8;        /* secondary lines in the library and lists */
+  --text-bright: #fff;        /* hover and pressed labels */
+  --on-accent: #fff;          /* label on a filled accent button, in both modes */
+  --button-ink: #07071a;      /* label on a light filled button */
+  --warn-text: #e6c46b;
+
+  /* ── Accents and signals ───────────────────────────────────────────── */
+  --accent: #706deb;          /* C64 light blue (VIC #14), boot-screen text */
+  --accent2: #b362c4;         /* C64 purple (VIC #4), lifted for legibility */
+  --accent-bright: #dff4ff;   /* near-white tint of --accent */
+  --accent-soft: #a9a6f2;
+  --accent-pale: #cfd2ff;
+  --accent-deep: #4c49c0;
+  --green: #8fe985;           /* C64 green family (VIC #5 / #13) */
+  --amber: #e6dd6b;           /* C64 yellow (VIC #7) */
+  --red: #d76b70;             /* C64 light red (VIC #10) */
+  --info: #4fc3f7;            /* drop-down highlight and help panels */
+  --on-green-ink: #06110b;    /* label on a lit green key */
+  --power: #a9ff9f;           /* the splash's power button */
+  --power-hover: #c6ffbf;
+  --power-ink: #08240c;
+
+  /* ── Logo ──────────────────────────────────────────────────────────── */
+  --logo-drop: #07071a;       /* the hard 2px shadow under the splash heading */
+  --logo-ramp-4: #9b98ff;     /* shading blocks, brightest to darkest */
+  --logo-ramp-2: #5a57b8;
+  --logo-ramp-1: #43407c;
+
+  /* ── Buttons with their own look ───────────────────────────────────── */
+  --key-down-bg: #12121f;     /* a latched tape key mixes its label colour into this */
+  --led-off: #333;
+  --tape-motor-on: #0f0;
+  --tape-bar-bg: #1e1e30;
+  --tape-bar-hover: #26264a;
+  --zoom-btn-bg: #141428;
+  --zoom-btn-hover: #1e1e3a;
+  --dirzoom-bg: #0b0b18;
+  --kbd-bg: #1a1a2e;
+  --kbd-border: #333355;
+  --kbd-hover: #2a2a4a;
+  --kbd-ink: #1a1a2e;         /* label on a pressed or latched key */
+  --vibes-text: #ffdcfa;
+  --vibes-bg-1: #2a1145;
+  --vibes-bg-2: #3a1550;
+  --vibes-bg-3: #12233f;
+  --vibes-hover-border: #ff6ad5;
+  --vibes-hover-bg-1: #3a1656;
+  --vibes-hover-bg-2: #571f6c;
+  --vibes-hover-bg-3: #163356;
+
+  /* ── Drawn by the machine (directory, tape scope) ──────────────────── */
+  --dir-text: #cbd5f5;        /* a loadable file's name in a disk directory */
+  --dir-dim: #6b7280;         /* SEQ/REL files and the disk id */
+  --scope-bg: #0b0e24;
+  --scope-grid: rgba(112, 109, 235, 0.22);
+  --scope-trace: #8fe985;     /* C64 green, the phosphor this belongs to */
+
+  /* ── Touch joystick ────────────────────────────────────────────────── */
+  --touch-knob: #5a58c7;
+  --touch-a: #ef8a8e;
+  --touch-b: #f1e97d;
+  --touch-active: #192a2d;
+
+  /* ── Media types (library chips) ───────────────────────────────────── */
+  --chip-ink: #0a0a18;
+  --type-prg: #b362c4;
+  --type-cbm: #e6dd6b;
+  --type-turbo: #9dd270;
+  --type-disk: #75cec8;
+  --type-crt: #cf8a4f;
+  --type-tap: #e6dd6b;
+  --type-t64: #c46c71;
+  --type-sid: #f298c4;
+
+  /* ── About dialog ──────────────────────────────────────────────────── */
+  --credits-bg-top: #0a0a18;
+  --credits-bg-bottom: #08081a;
+  /* A gradient stop, so a plain rgba(): a color-mix() stop would switch the
+     gradient to Oklab interpolation and draw the lines differently. */
+  --credits-scanline: rgba(112, 109, 235, 0.04);
+
+  /* ── Splash ────────────────────────────────────────────────────────── */
+  --splash-screen: #2e2c9b;   /* the C64 screen inside the splash frame */
+  --splash-card-text: #b9bcf4;
+  --splash-phone: #0e1033;
+
+  /* ── Assembly64 ────────────────────────────────────────────────────── */
+  --a64-row-hover: #191d40;
+  --a64-highlight: #bcbaff;
+  --a64-meta: #a1a6cb;
+  --a64-overlay: #03051d;
+  --a64-fact-label: #b6aaca;
+  --a64-body: #c3c6e3;
+  --a64-subtle: #989ec4;
+  --a64-link: #c6b5ff;
+  --a64-primary-border: #908df5;
+  --a64-primary-hover: #5c58c7;
+  --a64-text-button: #b4b2ff;
+  --a64-text-button-hover: #e2e1ff;
+  --a64-line: #4b4d88;
+  --a64-tagline: #9b9fc4;
+  --a64-search-icon: #a7a5ed;
+  --a64-tab-active: #d7d6ff;
+  --a64-tab-underline: #9d99ff;
+  --a64-tab-hover: #e3e2ff;
+  --a64-sidebar-bg: #0d1028;
+  --a64-eyebrow: #9390e2;
+  --a64-note: #9095bb;
+  --a64-main-bg: #0a0d23;
+  --a64-chip-text: #c1bfff;
+  --a64-chip-border: #454474;
+  --a64-chip-bg: #232346;
+  --a64-format-bg: #24254b;
+  --a64-format-border: #494c85;
+  --a64-disk-text: #99daca;
+  --a64-disk-bg: #193735;
+  --a64-disk-border: #375b57;
+  --a64-crt-text: #dfb2e7;
+  --a64-crt-bg: #35223f;
+  --a64-crt-border: #61466b;
+  --a64-tape-text: #e0ce9f;
+  --a64-tape-bg: #373022;
+  --a64-tape-border: #605339;
+  --a64-tag: #8e94bc;
+  --a64-rating: #d9d08b;
+  --a64-star: #989bc7;
+  --a64-run-text: #a6dda7;
+  --a64-run-border: #385c48;
+  --a64-run-bg: #162a25;
+  --a64-footer: #959ac0;
+  --a64-hint: #8287b0;
+  --a64-empty-border: #3d4176;
+  --a64-empty-bg: #181d40;
+  --a64-empty-text: #aaa8fa;
+  --a64-progress-bg: #151a39;
+  --a64-progress-stripe: #625ed1;
+  --a64-counter: #b9bddf;
+}
+
+/* Light mode: "Paper". A cool lavender-grey page, white panels, and the indigo
+   accent darkened for contrast on white. Only what differs from dark mode is
+   listed: the media-type chips read on either and keep their colours, and the
+   touch joystick and the splash sit in .mode-dark areas. */
+:root[data-mode="light"] {
+  /* ── Page and surfaces ───────────────────────────────────────────────── */
+  --crt-bg: #e8e9f3;
+  --page-glow: #d8d9f2;
+  --ui-bg: #f4f5fb;
+  --panel-bg: #ffffff;
+  --border: #cfd2e7;
+  --control-bg: #eef0f8;
+  --field-bg-hover: #dedff2;
+  --menu-bg: #ffffff;
+  --dropzone-border: #cfd2e7;
+  --row-hover: #dedff2;
+  --scrollbar-thumb: #adb0c8;
+  --status-bg: #f4f5fb;
+  --backdrop: #5b5f8c;
+  --scrim: #e8e9f3;
+  --shadow: #5b5f8c;
+  --highlight: #ffffff;
+  /* ── Text ────────────────────────────────────────────────────────────── */
+  --text: #23264d;
+  --dim: #5f6390;
+  --text-dim: #5d6189;
+  --text-bright: #12143a;
+  --button-ink: #ffffff;
+  --warn-text: #7a5d00;
+
+  /* ── Accents and signals ─────────────────────────────────────────────── */
+  --accent: #4c49c0;
+  --accent2: #8a3a9c;
+  --accent-bright: #12143a;
+  --green: #2a7337;
+  --amber: #7a5d00;
+  --red: #b8323b;
+  --info: #0b6aa2;
+  --on-green-ink: #ffffff;
+
+  /* ── Logo ────────────────────────────────────────────────────────────── */
+  --logo-ramp-4: #3e3c9f;
+  --logo-ramp-2: #9d9bdc;
+  --logo-ramp-1: #c9c8ec;
+
+  /* ── Buttons with their own look ─────────────────────────────────────── */
+  --key-down-bg: #dee0ea;
+  --led-off: #cfd2e7;
+  --tape-motor-on: #2e7d3b;
+  --tape-bar-bg: #eef0f8;
+  --tape-bar-hover: #dedff2;
+  --dirzoom-bg: #f4f5fb;
+  --kbd-bg: #eef0f8;
+  --kbd-border: #cfd2e7;
+  --kbd-hover: #dedff2;
+  --kbd-ink: #ffffff;
+  --vibes-text: #6d1f7e;
+  --vibes-bg-1: #f6e8f9;
+  --vibes-bg-2: #f2dcf6;
+  --vibes-bg-3: #e5edf9;
+  --vibes-hover-border: #b12f8f;
+  --vibes-hover-bg-1: #f1daf5;
+  --vibes-hover-bg-2: #eccef2;
+  --vibes-hover-bg-3: #d7e3f6;
+
+  /* ── Drawn by the machine (directory, tape scope) ──────────────────── */
+  --dir-text: #2e2c9b;
+  --dir-dim: #6e7294;
+  --scope-bg: #f4f5fb;
+  --scope-grid: rgba(76, 73, 192, 0.18);
+  --scope-trace: #2e7d3b;
+
+  /* ── About dialog ──────────────────────────────────────────────────── */
+  --credits-bg-top: #ffffff;
+  --credits-bg-bottom: #f4f5fb;
+  --credits-scanline: rgba(76, 73, 192, 0.035);
+
+  /* ── Assembly64 ──────────────────────────────────────────────────────── */
+  --a64-row-hover: #dedff2;
+  --a64-highlight: #4c49c0;
+  --a64-meta: #5d6189;
+  --a64-overlay: #5b5f8c;
+  --a64-fact-label: #5d6189;
+  --a64-body: #23264d;
+  --a64-subtle: #5d6189;
+  --a64-link: #4c49c0;
+  --a64-primary-border: #4c49c0;
+  --a64-primary-hover: #3b3998;
+  --a64-text-button: #4c49c0;
+  --a64-text-button-hover: #12143a;
+  --a64-line: #cfd2e7;
+  --a64-tagline: #5d6189;
+  --a64-search-icon: #4c49c0;
+  --a64-tab-active: #12143a;
+  --a64-tab-underline: #4c49c0;
+  --a64-tab-hover: #23264d;
+  --a64-sidebar-bg: #f4f5fb;
+  --a64-eyebrow: #4c49c0;
+  --a64-note: #5d6189;
+  --a64-main-bg: #ffffff;
+  --a64-chip-text: #4c49c0;
+  --a64-chip-border: #cfd2e7;
+  --a64-chip-bg: #eef0f8;
+  --a64-format-bg: #eef0f8;
+  --a64-format-border: #cfd2e7;
+  --a64-disk-text: #1d6657;
+  --a64-disk-bg: #e6f4f1;
+  --a64-disk-border: #b0ddd2;
+  --a64-crt-text: #7a3d87;
+  --a64-crt-bg: #f6edf8;
+  --a64-crt-border: #e0c2e7;
+  --a64-tape-text: #6b5512;
+  --a64-tape-bg: #f7f3e4;
+  --a64-tape-border: #e7d7a9;
+  --a64-tag: #5d6189;
+  --a64-rating: #7a5d00;
+  --a64-star: #5d6189;
+  --a64-run-text: #2e7d3b;
+  --a64-run-border: #a1c5a7;
+  --a64-run-bg: #eaf2eb;
+  --a64-footer: #5d6189;
+  --a64-hint: #5d6189;
+  --a64-empty-border: #cfd2e7;
+  --a64-empty-bg: #eef0f8;
+  --a64-empty-text: #4c49c0;
+  --a64-progress-bg: #eef0f8;
+  --a64-progress-stripe: #4c49c0;
+  --a64-counter: #5d6189;
+}

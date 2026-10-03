@@ -49,7 +49,33 @@
       window.__c64InstallPrompt = null;
     });
   </script>
-  <link rel="stylesheet" href="/src/styles.css">
+  <!-- Pick dark or light, and put the stored theme in place, before first
+       paint, so a reload never flashes the other mode or the Classic colours.
+       Mirrors parseAppearance() / resolveMode() in src/ui/appearance.js and the
+       stored keys of src/ui/themes.js (no module has run this early) — keep them
+       in sync; test/appearance-spec-test.js and test/themes-spec-test.js check
+       they agree. Default: follow the OS, Classic theme. -->
+  <script>
+    (function () {
+      var a = null, dark = true, pinned = null, css = null;
+      try { a = localStorage.getItem('c64emu.appearance'); } catch (e) {}
+      try { pinned = localStorage.getItem('c64emu.themeModes'); css = localStorage.getItem('c64emu.themeCss'); } catch (e) {}
+      try { dark = window.matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) {}
+      var mode = pinned === 'dark' || pinned === 'light' ? pinned
+        : a === 'dark' || a === 'light' ? a : (dark ? 'dark' : 'light');
+      var root = document.documentElement;
+      root.setAttribute('data-mode', mode);
+      root.style.colorScheme = mode;
+      if (pinned === 'dark' || pinned === 'light') root.setAttribute('data-theme-modes', pinned);
+      if (css) {
+        var s = document.createElement('style');
+        s.id = 'c64-theme';
+        s.textContent = css;
+        document.head.appendChild(s);
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="/src/styles/styles.css">
 </head>
 
 <body>
@@ -76,12 +102,12 @@
   <!-- ── First-visit splash ──────────────────────────────────────────────────
        Full-screen welcome pitch, shown once per browser. Visibility is decided
        by the inline script below BEFORE first paint, so neither new nor
-       returning visitors see a flash; dismissal wiring lives in src/splash.js,
-       the policy in src/splash-policy.js, the styling in
-       src/styles-splash.css. -->
+       returning visitors see a flash; dismissal wiring lives in src/ui/splash.js,
+       the policy in src/ui/splash-policy.js, the styling in
+       src/styles/styles-splash.css. -->
   <script>
     (function () {
-      // Mirrors shouldShowSplash() in src/splash-policy.js (inline because no
+      // Mirrors shouldShowSplash() in src/ui/splash-policy.js (inline because no
       // module has run this early) — keep the two in sync. SPLASH_DEFAULT_ON is
       // the ship switch: true = live (first visits see the splash); set false
       // to dark-launch again (then only ?SPLASH=1 shows it). ?SPLASH=0 always
@@ -100,7 +126,7 @@
     })();
   </script>
 
-  <section id="splash" aria-label="Welcome to C64 READY.">
+  <section id="splash" class="mode-dark" aria-label="Welcome to C64 READY.">
     <div class="splash-frame">
       <div class="splash-inner">
 
@@ -194,13 +220,17 @@
   <header>
     <div class="logo">
       <div class="logo-text">
-        <span class="lt-blocks"><span class="b4">█</span><span class="b3">▓</span><span class="b2">▒</span><span class="b1">░</span></span>
-        <span class="lt-main"><span class="lt-c64">C64</span> <span class="lt-ready">READY.</span></span>
+        <span class="lt-blocks"><span class="b4" data-t="█">█</span><span class="b3" data-t="▓">▓</span><span class="b2" data-t="▒">▒</span><span class="b1" data-t="░">░</span></span>
+        <span class="lt-main"><span class="lt-c64" data-t="C64">C64</span> <span class="lt-ready" data-t="READY.">READY.</span></span>
       </div>
       <p><span class="tagline-prompt">»</span>Serious emulation, retro vibes.</p>
     </div>
     <div class="header-right">
       <div class="header-links">
+        <button class="credits-link appearance-link" id="btn-appearance" type="button"
+            aria-label="Appearance"><svg viewBox="0 0 24 24" width="17" height="17" fill="none"
+            stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+            aria-hidden="true" focusable="false"></svg></button>
         <button class="credits-link" id="btn-credits"
             title="About C64 READY. — what it is, how it was built, and the credits." type="button">ABOUT</button>
         <a class="credits-link" id="docs-link" href="/docs/" title="Documentation">DOCS</a>
@@ -226,7 +256,7 @@
 
     <!-- CRT Display -->
     <div class="screen-col">
-      <div class="c64-monitor" id="monitor">
+      <div class="c64-monitor mode-dark" id="monitor">
         <div class="crt-bezel">
           <canvas id="screen" tabindex="0" aria-label="C64 display"></canvas>
           <div id="collision-indicator" hidden>COLLISION</div>
@@ -272,7 +302,7 @@
       <!-- Two independent card columns. Which card sits in which is the
            user’s to change: dragging a card by its handle moves it within a
            column or across to the other, and either column may be emptied
-           entirely. src/panel-order.js persists the result. Below 1180px, and
+           entirely. src/ui/panel-order.js persists the result. Below 1180px, and
            at the larger picture sizes, the columns collapse into one flow. -->
       <div class="panel-cols">
         <div class="panel-col" data-col="0">
@@ -388,19 +418,19 @@
               <h2>Media load</h2>
             </div>
             <div class="btn-group u-mb-8">
+              <button class="btn btn-prg" id="btn-prg"
+                title="Load any C64 file: .prg, .d64, .d71, .d81, .g64, .nbz, .crt, .tap, .t64, .sid, .wav, .dmp or .reu. Powers the machine on if it is off, as dropping a file on the screen does.">▶ LOAD ANY</button>
+              <input type="file" id="prg-input" accept=".prg,.d64,.d71,.d81,.g64,.nbz,.crt,.tap,.t64,.sid,.wav,.dmp,.reu">
+              <button class="btn" id="btn-library"
+                title="Files you have loaded before, cached in this browser.">📂 LOAD LIB</button>
+            </div>
+            <div class="btn-group">
               <button class="btn" id="btn-load-state"
                 title="Restore a saved state; import and export state files.">📂 LOAD
                 STATE</button>
               <button class="btn" id="btn-save-state" disabled
                 title="Freeze the whole machine, media included, into a named slot in this browser.">💾 SAVE
                 STATE</button>
-            </div>
-            <div class="btn-group">
-              <button class="btn" id="btn-library"
-                title="Files you have loaded before, cached in this browser.">📂 LOAD LIB</button>
-              <button class="btn btn-prg" id="btn-prg"
-                title="Load any C64 file: .prg, .d64, .d71, .d81, .g64, .nbz, .crt, .tap, .t64, .sid, .wav, .dmp or .reu." disabled>▶ LOAD ANY</button>
-              <input type="file" id="prg-input" accept=".prg,.d64,.d71,.d81,.g64,.nbz,.crt,.tap,.t64,.sid,.wav,.dmp,.reu">
             </div>
           </div>
 
@@ -536,10 +566,10 @@
           <div class="panel-card" id="datasette-card" data-panel="datasette" data-persist-expanded="datasette">
             <div class="panel-card-header">
               <h2>Datasette</h2>
-              <button class="btn-icon tape-scope" id="btn-tape-scope"
+              <button class="btn-icon tape-scope" id="btn-tape-scope" disabled
                 aria-label="Show the tape signal"
                 title="Show the tape signal as it passes the head, sound on or off."></button>
-              <button class="btn-icon tape-listen" id="btn-tape-listen" aria-pressed="false"
+              <button class="btn-icon tape-listen" id="btn-tape-listen" aria-pressed="false" disabled
                 aria-label="Listen to the tape"
                 title="Hear the tape: the real signal, as from a cassette deck."></button>
               <button class="expand-btn" title="Expand" aria-label="Toggle Datasette">▼</button>
@@ -699,6 +729,23 @@
             title="Animate the VIBES button with its pixel demo. Off for a plain button.">VIBES BUTTON FX: ON</button>
           <button class="btn" id="btn-panel-order-reset"
             title="Restore the original card order and bring back hidden cards.">RESET PANELS</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Theme</h3>
+        <div class="btn-group btn-group-toggles btn-group-theme">
+          <button class="btn" id="btn-theme-cycle"
+            title="The colour theme: Classic (the default), GEOS, and any you import.">THEME: CLASSIC</button>
+          <button class="btn" id="btn-appearance-toggle"
+            title="Dark, light, or follow your system's setting (the default). The button in the header does the same.">APPEARANCE: SYSTEM</button>
+          <button class="btn" id="btn-theme-import"
+            title="Load a theme file (.json, c64ready-theme/1). It is kept in this browser.">IMPORT</button>
+          <input type="file" id="theme-input" accept=".json,application/json">
+          <button class="btn" id="btn-theme-export"
+            title="Save the current theme as a complete file, every colour filled in: a starting point for your own.">EXPORT</button>
+          <button class="btn" id="btn-theme-remove" disabled
+            title="Remove the current imported theme from this browser.">REMOVE</button>
         </div>
       </div>
 
@@ -1021,7 +1068,7 @@
   <!-- The tape signal, drawn from the pulses under the head. A C64 tape IS a
        square wave, so this is the waveform itself, not a visualisation of it —
        the same signal the speaker button plays, shown whether or not sound is
-       on. Filled in by src/tape-scope.js. -->
+       on. Filled in by src/ui/tape-scope.js. -->
   <div class="modal-backdrop" id="tapescope-modal" hidden>
     <div class="modal-card tapescope-card" role="dialog" aria-modal="true" aria-labelledby="tapescope-title">
       <div class="panel-card-header">

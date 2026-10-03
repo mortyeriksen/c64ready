@@ -19,7 +19,7 @@ const COI_HEADERS = {
 const sidWorkletFullReload = {
   name: 'c64:sid-worklet-full-reload',
   hotUpdate({ file }) {
-    if (!/[\\/]src[\\/]sid-(worklet|voice)\.js$/.test(file)) return;
+    if (!/[\\/]src[\\/]sid[\\/]sid-(worklet|voice)\.js$/.test(file)) return;
     this.environment.hot.send({ type: 'full-reload' });
     return [];   // exactly one reload, not default HMR propagation
   },

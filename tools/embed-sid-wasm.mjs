@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 // embed-sid-wasm.mjs — package the compiled Rust SID engine
-// (rust/sid → wasm32-unknown-unknown) as src/sid-wasm-blob.js.
+// (rust/sid → wasm32-unknown-unknown) as src/sid/sid-wasm-blob.js.
 //
 // The AudioWorkletGlobalScope has no fetch() and no atob(), so the module
 // bytes are embedded base64 with a hand decoder, exactly like the wave
-// tables in src/sid-wavetables.js. Rebuild flow:
+// tables in src/sid/sid-wavetables.js. Rebuild flow:
 //   sh rust/sid/build.sh        (cargo build --release + this script)
 //
 // Usage: node tools/embed-sid-wasm.mjs
@@ -17,21 +17,21 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WASM = path.join(ROOT, 'rust/sid/target/wasm32-unknown-unknown/release/sid.wasm');
-const OUT = path.join(ROOT, 'src/sid-wasm-blob.js');
+const OUT = path.join(ROOT, 'src/sid/sid-wasm-blob.js');
 
 const bytes = fs.readFileSync(WASM);
 const sha = createHash('sha256').update(bytes).digest('hex');
 const b64 = bytes.toString('base64');
 
 const js = `// SPDX-License-Identifier: GPL-3.0-or-later
-// src/sid-wasm-blob.js — the compiled WASM SID engine, embedded.
+// src/sid/sid-wasm-blob.js — the compiled WASM SID engine, embedded.
 //
 // GENERATED FILE — do not edit by hand. Rebuild: sh rust/sid/build.sh
 // (cargo build of rust/sid with the pinned toolchain, then
 // tools/embed-sid-wasm.mjs). Module sha256: ${sha}
 //
 // The module is a Rust translation of this project's JavaScript SID engine
-// (src/sid-voice.js / src/sid-filter.js reSID paths) — itself a translation
+// (src/sid/sid-voice.js / src/sid/sid-filter.js reSID paths) — itself a translation
 // of reSID as distributed in VICE 3.10 src/resid, Copyright (C) 2010
 // Dag Lem, GNU GPL v2 or later; corresponding source: rust/sid/. The
 // compiled module statically includes portions of the Rust standard

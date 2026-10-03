@@ -11,14 +11,14 @@ export async function checkD71(page) {
   });
   for(const drive of [8,9]){
     await page.evaluate(async drive=>{
-      const dom=await import('/src/dom.js');
+      const dom=await import('/src/ui/dom.js');
       const toggle=drive===8?dom.tdeToggleBtn:dom.DRIVE9_UI.tdeBtn;
       if(!toggle.textContent.includes('ON'))toggle.click();
     },drive);
     await page.locator(drive===8?'#d64-input':'#d64-input-9').setInputFiles({name:`browser-${drive}.d71`,mimeType:'application/octet-stream',buffer:Buffer.from(sampleMedia('d71'))});
     await page.waitForFunction(drive=>document.querySelector(drive===8?'#d64-input':'#d64-input-9').value==='',drive);
     const mounted=await page.evaluate(async drive=>{
-      const dom=await import('/src/dom.js');
+      const dom=await import('/src/ui/dom.js');
       const disk=drive===8?window.machine.currentD64:window.machine.currentD64Drive9;
       return {kind:disk.kind,protected:disk.writeProtected,tde:(drive===8?dom.tdeToggleBtn:dom.DRIVE9_UI.tdeBtn).textContent};
     },drive);
@@ -50,7 +50,7 @@ export async function checkD71(page) {
     const m=window.machine, state=m.serializeState();
     state.media={d64:m.currentD64.img.slice(),d64drive9:m.currentD64Drive9.img.slice(),drive9Enabled:true,vicVariant:'6569',sidIs8580:true};
     await stateSave('D71 RESTORE',state,null);
-    const dom=await import('/src/dom.js');
+    const dom=await import('/src/ui/dom.js');
     dom.tdeToggleBtn.click();dom.DRIVE9_UI.tdeBtn.click();
   });
   await page.locator('#btn-load-state').click();

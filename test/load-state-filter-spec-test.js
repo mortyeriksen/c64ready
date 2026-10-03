@@ -1,7 +1,7 @@
 import fs from 'fs';
 
 const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const dom = fs.readFileSync(new URL('../src/dom.js', import.meta.url), 'utf8');
+const dom = fs.readFileSync(new URL('../src/ui/dom.js', import.meta.url), 'utf8');
 const media = fs.readFileSync(new URL('../src/media.js', import.meta.url), 'utf8');
 
 let failures = 0;

@@ -369,7 +369,7 @@ body.fullscreen-mode .c64-monitor {
   border: 0;
   border-radius: 0;
   padding: 0;
-  background: linear-gradient(to top, #070a1c 0%, #15184a 100%);   /* black at bottom → bluer at top, applied uniformly across the letterbox/pillarbox */
+  background: linear-gradient(to top, var(--crt-bg) 0%, var(--page-glow) 100%);   /* black at bottom → bluer at top, applied uniformly across the letterbox/pillarbox */
   box-shadow: none;
   display: flex;
   align-items: center;

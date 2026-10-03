@@ -243,6 +243,12 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **VIC-II model**: switch between **6569** (original PAL) and **8565** (C64C).
 - **Colour palette**: **Colodore** (modern, saturated) or **Pepto** (classic
   2001 measurements).
+- **Dark and light mode**: the interface follows the system's colour scheme, or
+  stays dark or light, from a button in the header or Options ▸ Theme. The
+  screen and the CRT looks are the same in both.
+- **Themes**: Classic, GEOS, Breadbin, Phosphor, Out Run and Commando built in, and your own as a JSON file of
+  colours, with a dark mode, a light mode or both; export any theme as a
+  complete starting point (see [Themes](USER-GUIDE.md#themes)).
 - **FPS and per-frame timer** readout in the header.
 
 ## Sound

@@ -1,4 +1,4 @@
-// Spec test for the Escape key owner (src/escape-stack.js).
+// Spec test for the Escape key owner (src/ui/escape-stack.js).
 //
 // The behaviour that matters is priority: Escape must close whatever the user
 // sees on top, not whichever dialog's module happened to be imported first.
@@ -10,7 +10,7 @@ import { installMiniDom, fire } from './_mini-dom.js';
 const dom = installMiniDom();
 const {
   pushEscapeLayer, popEscapeLayer, escapeLayerCount, handleEscape, _resetEscapeLayers,
-} = await import('../src/escape-stack.js');
+} = await import('../src/ui/escape-stack.js');
 
 function expect(cond, msg) {
   if (!cond) throw new Error(msg);

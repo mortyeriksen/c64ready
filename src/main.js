@@ -3,8 +3,8 @@
 // src/main.js – Entry point: audio init, keyboard handling, RAF loop, video blit
 // Wires up auto-ROM loading, D64 disk images, joystick emulation, and PRG injection.
 
-import './tooltips.js';   // must own `title` before any module writes one
-import { validSecondSidAddress } from './sid-config.js';
+import './ui/tooltips.js';   // must own `title` before any module writes one
+import { validSecondSidAddress } from './sid/sid-config.js';
 import { C64Machine } from './machine.js';
 import { ROMLoader, pickViceRoms } from './roms.js';
 import * as ControlPort from './control-port.js';
@@ -12,9 +12,9 @@ import { CANVAS_W, CANVAS_H, CYCLES_PER_FRAME, VIC_VARIANT, VIC_VARIANTS, PALETT
 import { D64 }        from './media/d64.js';
 import { DriveSounds } from './drive-sounds.js';
 import { TapeSound } from './tape-sound.js';
-import { SPEAKER_ON_SVG, SPEAKER_MUTE_SVG } from './pixel-speaker.js';
-import { SCOPE_SVG } from './pixel-scope.js';
-import './tape-scope.js';
+import { SPEAKER_ON_SVG, SPEAKER_MUTE_SVG } from './ui/pixel-speaker.js';
+import { SCOPE_SVG } from './ui/pixel-scope.js';
+import './ui/tape-scope.js';
 import { shouldMuteOnAutoFreeze, needsForegroundAudioRestore } from './audio-lifecycle.js';
 import { VERSION }     from './version.js';
 // PauseDemo (pausedemo.js) + ModelViewer (retrovibes.js) are imported lazily on
@@ -24,9 +24,9 @@ import { switchOn }   from './switches.js';
 import { CollisionIndicator } from './vic2-collision-overlay.js';
 import { attachVibesButtonFx, createVibesZoom } from './vibes/vibes-btn-fx.js';
 import { WebGLPresenter } from './webgl-presenter.js';
-import { resolveParams, readOverrides, CRT_STORAGE_KEY } from './crt-params.js';
-import { createCrtPanel } from './crt-panel.js';
-import sidWorkletUrl   from './sid-worklet.js?worker&url';
+import { resolveParams, readOverrides, logoTuning, LOGO_TUNING_VARS, CRT_STORAGE_KEY } from './crt-params.js';
+import { createCrtPanel } from './ui/crt-panel.js';
+import sidWorkletUrl   from './sid/sid-worklet.js?worker&url';
 import { registerSW }  from 'virtual:pwa-register';
 import {
   machine, loader, sidNode, running, _pristineBoot, _hasBeenReady,
@@ -43,7 +43,7 @@ import {
 } from './media.js';
 import { initializeAssembly64 } from './assembly64/start.js';
 import { initInput, updateJoyPorts, installNeosHook, _releaseAllLatched, softKeyboardInput } from './input.js';
-import { pushEscapeLayer, popEscapeLayer } from './escape-stack.js';
+import { pushEscapeLayer, popEscapeLayer } from './ui/escape-stack.js';
 import { createAvMarker, avMarkerEnabled } from './av-marker.js';
 import { SoftKeyboardInsertState } from './input-key-ownership.js';
 import { CAPTURE_PRESETS, DEFAULT_CAPTURE_PRESET, capturePreset, nextCapturePreset }
@@ -51,8 +51,11 @@ import { CAPTURE_PRESETS, DEFAULT_CAPTURE_PRESET, capturePreset, nextCapturePres
 import {
   initRecorder, recorderAudioClockActive, setRecorderAudioPaused,
 } from './recorder.js';
-import { splashIsOpen } from './splash.js';
-import { initPanelOrder } from './panel-order.js';
+import { splashIsOpen } from './ui/splash.js';
+import { initPanelOrder } from './ui/panel-order.js';
+import { initAppearance } from './ui/appearance.js';
+import { initThemes } from './ui/themes.js';
+import { confirmDialog } from './ui/dialogs.js';
 // ── Elements (see dom.js for the full inventory) ─────────────────────────────
 import {
   canvas, statusEl, powerBtn, resetBtn, pauseBtn, recordBtn, prgBtn, pasteBtn,
@@ -61,13 +64,14 @@ import {
   tapeListenBtn, tdeToggleBtn, fpsCounter, fpsDisplay, frametimeDisplay, frametimeWrap,
   heapDisplay, heapWrap, fullscreenBtn, fsCloseBtn, sizeBtn, crtEffectBtn, crtSettingsBtn, _logoText,
   driveSoundToggleBtn, sidEngineToggleBtn, wakeLockToggleBtn, muteToggleBtn, volumeSlider,
-  volumeValue, attractToggleBtn, vibesModelBtn, recResToggleBtn, runBackgroundBtn, _romFnSpans, romClearBtn,
+  volumeValue, attractToggleBtn, appearanceBtn, appearanceToggleBtn, themeCycleBtn, themeImportBtn, themeExportBtn,
+  themeRemoveBtn, themeInput, vibesModelBtn, recResToggleBtn, runBackgroundBtn, _romFnSpans, romClearBtn,
   mobileKbd, touchControls, autorunBtn, creditsModal, creditsBtn, creditsClose, creditsVer,
   tapeScopeBtn,
   creditsProse, vibesBtn, vibesFxBtn, vibesZoomModal, vibesZoomStage, vibesZoomClose,
   modelViewerCloseBtn, creditLink, creditPopup, settingsModal, settingsBtn, settingsClose,
   setupModal, externalBrowserModal,
-} from './dom.js';
+} from './ui/dom.js';
 
 
 // Set native canvas resolution
@@ -847,6 +851,19 @@ if (muteToggleBtn || volumeSlider) {
     });
   }
 }
+
+// Dark / light / system: the header button and Options ▸ Theme cycle the same
+// setting. The inline script in index.html has already applied it before first
+// paint; this wires the controls and follows the OS while on 'system'.
+initAppearance({ headerButton: appearanceBtn, optionsButton: appearanceToggleBtn });
+// Colour themes (Options ▸ Theme): Classic, GEOS and imported ones. Applied
+// before first paint by the same inline script; this wires the controls.
+const themes = initThemes({
+  cycleButton: themeCycleBtn, importButton: themeImportBtn, exportButton: themeExportBtn,
+  removeButton: themeRemoveBtn, fileInput: themeInput,
+  notify: (message) => confirmDialog(message, { title: 'Theme', okOnly: true }),
+  confirm: (message) => confirmDialog(message, { title: 'Remove theme', okLabel: 'REMOVE' }),
+});
 
 // Attract-mode toggle (Settings ▸ Display). Persisted; applies live — when
 // toggled while powered off it swaps between the animated demo and the static
@@ -1808,7 +1825,6 @@ powerBtn.addEventListener('click', async () => {
     if (pauseBtn) { pauseBtn.disabled = true; pauseBtn.textContent = '⏸ PAUSE'; }
     if (recordBtn) recordBtn.disabled = true;
     if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-    prgBtn.disabled   = true;
     if (pasteBtn) pasteBtn.disabled = true;
     if (saveStateBtn) saveStateBtn.disabled = true;   // can't snapshot an off machine
     // Tape transport keys are machine-bound; the deck sync disables them while
@@ -2181,8 +2197,22 @@ let _toggleCrtPanel = () => {};
       crtEffectBtn.textContent = LABELS[crtMode];
     }
     if (crtShader) presenter.setCrt(params(), { reducedMotion: _reducedMotion() });
+    _tuneLogo();
     panel?.refresh();
   };
+  // The header logo follows the panel's scanline, tone and hum sliders; the
+  // maths is logoTuning() in crt-params.js, the values it scales are in
+  // styles-header.css.
+  function _tuneLogo() {
+    if (!_logoText) return;
+    const { vars, tuned, hum } = logoTuning(crtMode, overrides);
+    for (const name of LOGO_TUNING_VARS) {
+      if (name in vars) _logoText.style.setProperty(name, String(vars[name]));
+      else _logoText.style.removeProperty(name);
+    }
+    _logoText.classList.toggle('logo-tuned', tuned);
+    _logoText.classList.toggle('logo-hum', hum);
+  }
   apply();
   // The hum bar stands still under reduced motion; follow the setting live.
   window.matchMedia?.('(prefers-reduced-motion: reduce)')?.addEventListener?.('change', apply);
@@ -2947,7 +2977,7 @@ function _showInstallCard(mode) {
 
   // Top of the first card column, so it reads as one more card in the stack.
   // Not above .panel-cols: that spans both columns and lands as a full-width
-  // block over the panel. It carries no data-panel, so src/panel-order.js does
+  // block over the panel. It carries no data-panel, so src/ui/panel-order.js does
   // not treat it as arrangeable — dropping a card at the top of that column
   // still lands under it.
   const col = document.querySelector('.panel-col[data-col="0"]');
@@ -3008,6 +3038,11 @@ setTimeout(() => {
 // the keyboard paste buffer on focus loss.
 initInput({
   toggleCrtPanel: () => _toggleCrtPanel(),
+  // The shortcut has no button to show the new name on, so the status line does.
+  cycleTheme: () => {
+    themes.cycle();
+    setStatus(`Theme: ${themes.current().name}`, running ? 'running' : 'idle');
+  },
   toggleVibesZoom: () => vibesZoom?.toggle(),
   downloadSnapshot,
   clearPendingPaste: () => { pendingPasteText = ''; },

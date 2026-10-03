@@ -10,7 +10,7 @@ import {
   PATTERN_SECS, MORPH_SECS, SLOT_SECS, CYCLE_SECS,
   sampleField, attachVibesButtonFx, createVibesZoom,
 } from '../src/vibes/vibes-btn-fx.js';
-import { escapeLayerCount, _resetEscapeLayers } from '../src/escape-stack.js';
+import { escapeLayerCount, _resetEscapeLayers } from '../src/ui/escape-stack.js';
 import { installMiniDom, fire } from './_mini-dom.js';
 
 function expect(cond, msg) {

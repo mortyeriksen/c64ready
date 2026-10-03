@@ -60,7 +60,7 @@ bit-bang the bus / count cycles) behave correctly.
 - **Trap-served drive** (TDE off): the machine intercepts the KERNAL LOAD
   entry (`$FFD5`, or the routine behind the ILOAD vector) and reads the file
   straight from the disk image, a D64, D71 or D81, and answers the KERNAL's serial
-  primitives with the [virtual drive](#the-virtual-drive-src-virtual-drive-js),
+  primitives with the [virtual drive](#the-virtual-drive-src-media-virtual-drive-js),
   so OPEN, CHKIN, CHRIN, CLOSE, SAVE and channel 15 reach the image too. Fast,
   and without the drive ROM, but loaders that bit-bang the bus still find the
   real 1541 or nothing. The load trap is not silent: it runs the ROM's own
@@ -458,7 +458,7 @@ output is an ordinary G64 for `G64` and the drive.
 
 ---
 
-### The virtual drive (`src/virtual-drive.js`)
+### The virtual drive (`src/media/virtual-drive.js`)
 
 With true drive emulation off, the trap-served drive is a `VirtualDrive`: a
 DOS over the mounted sector image (D64, D71 or D81), answering the KERNAL's

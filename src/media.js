@@ -18,16 +18,16 @@ import {
   dirzoomModal, dirzoomTitle, dirzoomDiskName, dirzoomDiskMeta, dirzoomListEl, dirzoomCloseBtn,
   tapedirModal, tapedirTitle, tapedirHint, tapedirListEl, tapedirEmpty, tapedirNote, tapedirCloseBtn,
   wavImportModal, wavImportName, wavImportFill, wavImportStage,
-  tapeDirZoomBtn,
+  tapeDirZoomBtn, tapeScopeBtn, tapeListenBtn,
   REU_UI,
-} from './dom.js';
+} from './ui/dom.js';
 import { reuModel, REU_MODELS, REU_DEFAULT_MODEL } from './reu.js';
-import { pushEscapeLayer, popEscapeLayer } from './escape-stack.js';
+import { pushEscapeLayer, popEscapeLayer } from './ui/escape-stack.js';
 import {
   machine, loader, sidNode, running, _pristineBoot,
   setRunning, setPristineBoot, setHasBeenReady,
 } from './state.js';
-import { confirmDialog, promptDialog } from './dialogs.js';
+import { confirmDialog, promptDialog } from './ui/dialogs.js';
 import { D64, createBlankDisk, createPRGDisk, d64Variant, prgAutostart, prgOverflow } from './media/d64.js';
 import { G64, isG64 } from './media/g64.js';
 import { nibFileToG64, isNbz } from './media/nib.js';
@@ -36,11 +36,12 @@ import { importWav, importProgress } from './media/wav-import.js';
 import { dmpToTap } from './media/dmp-tape.js';
 import { repairTape } from './media/tap-repair.js';
 import { blankTapBytes } from './datasette.js';
-import { LOCK_CLOSED_SVG, LOCK_OPEN_SVG } from './pixel-lock.js';
+import { LOCK_CLOSED_SVG, LOCK_OPEN_SVG } from './ui/pixel-lock.js';
 import { parseCRT } from './media/crt.js';
 import { CANVAS_W, CANVAS_H, C64_PALETTE } from './vic2.js';
 import { libList, libLoad, libSave, libDelete, libClear, libExport, libImport } from './media/library.js';
 import { tapDirectory, tapeFacts } from './media/tap-directory.js';
+import { themeColor, isLightMode } from './ui/appearance.js';
 import { openT64 } from './media/choose-file.js';
 import { stateList, stateSave, stateLoad, stateDelete, stateRename, stateClear, stateExport, stateExportAll, stateImportFile } from './statelibrary.js';
 
@@ -1016,12 +1017,11 @@ prgInput.addEventListener('change', async e => {
   try { ({ data, name } = _diskFileBytes(new Uint8Array(buf), file.name)); }
   catch (err) { setStatus(`"${file.name}" is not a usable nibbler dump — ${err.message}`, 'error'); prgInput.value = ''; return; }
   const type = mediaTypeOf(name);
-  _libRemember(type, name, data);
   prgInput.value = '';
-  if (!running || !machine.ready) {
-    setStatus(`${type.toUpperCase()} cached — POWER ON, then use 📂 LOAD LIB to run it`, 'idle');
-    return;
-  }
+  if (!type) return;
+  // As a drop on the screen: cached for the Library, then the shared loader,
+  // which powers the machine on first if it is off.
+  _libRemember(type, name, data);
   await _loadLibraryEntry({ type, name, data });
 });
 
@@ -1510,6 +1510,7 @@ function _wireDirToggle(ui) {
   ui.dirToggle.addEventListener('click', () => {
     ui.dirExpanded = !ui.dirExpanded;
     if (ui.dirEl) ui.dirEl.style.display = ui.dirExpanded ? '' : 'none';
+    _syncDirScroll(ui.dirEl);
     // update arrow while preserving file count text
     const txt = ui.dirToggle.textContent;
     ui.dirToggle.textContent = (ui.dirExpanded ? '▼' : '▶') + txt.slice(1);
@@ -1517,6 +1518,21 @@ function _wireDirToggle(ui) {
 }
 _wireDirToggle(DRIVE8_UI);
 _wireDirToggle(DRIVE9_UI);
+
+// A listing scrolls only when it is taller than its box. Its lines are a
+// fractional height, so one that fits can round a pixel or two past the box,
+// which overflow-y: auto would answer with a scrollbar for nothing. The class
+// turns scrolling on only past that, and moves the 🔍 clear of the bar. The
+// observer catches a listing measured while hidden (a collapsed card) once it
+// shows.
+function _syncDirScroll(dirEl) {
+  if (!dirEl) return;
+  dirEl.classList.toggle('dir-scrolls', dirEl.scrollHeight - dirEl.clientHeight > 2);
+}
+if (typeof ResizeObserver === 'function') {
+  const observer = new ResizeObserver(entries => entries.forEach(e => _syncDirScroll(e.target)));
+  for (const ui of [DRIVE8_UI, DRIVE9_UI]) if (ui.dirEl) observer.observe(ui.dirEl);
+}
 
 // ── Secondary drive (IEC device 9) ───────────────────────────────────────────
 // Switched off by default and invisible to the C64 until the user turns it on.
@@ -2455,6 +2471,10 @@ export function _syncTapeButtons() {
   // cached one while the machine is off.
   // The magnifier reads whatever is in the deck, so it appears with the tape.
   if (tapeDirZoomBtn) tapeDirZoomBtn.hidden = !has;
+  // The scope and the speaker show and play the signal at the head, and there
+  // is none without a tape in a running machine. The speaker keeps its setting.
+  if (tapeScopeBtn) tapeScopeBtn.disabled = !live || !has;
+  if (tapeListenBtn) tapeListenBtn.disabled = !live || !has;
   if (tapExportBtn) tapExportBtn.disabled = !has && !_cachedTapData;
   if (tapExportWavBtn) tapExportWavBtn.disabled = !has && !_cachedTapData;
   if (tapWpBtn) {
@@ -2632,7 +2652,7 @@ function _asciiToScreen(b) {
 function petsciiCanvas(petStr, opts = {}) {
   const rom   = loader?.charRom;
   const scale = opts.scale || 1;
-  const fg    = opts.fg || '#cbd5f5';
+  const fg    = opts.fg || themeColor('--dir-text', '#cbd5f5');
   if (!rom || !petStr || petStr.length === 0) {
     const span = document.createElement('span');
     span.textContent = petStr || '';
@@ -2693,7 +2713,7 @@ function showD64Directory(disk, ui = DRIVE8_UI) {
   }
   if (ui.diskMeta) {
     ui.diskMeta.innerHTML = '';
-    ui.diskMeta.append(petsciiCanvas(`${disk.diskId}  ${disk.dosType}`, { fg: '#6b7280', ascii }));
+    ui.diskMeta.append(petsciiCanvas(`${disk.diskId}  ${disk.dosType}`, { fg: themeColor('--dir-dim', '#6b7280'), ascii }));
   }
 
   if (ui.dirToggle) {
@@ -2706,6 +2726,7 @@ function showD64Directory(disk, ui = DRIVE8_UI) {
   if (ui.dirEl) {
     ui.dirEl.style.display = ui.dirExpanded ? '' : 'none';
     ui.dirEl.innerHTML = '';
+    const dirText = themeColor('--dir-text', '#cbd5f5'), dirDim = themeColor('--dir-dim', '#6b7280');
     for (const entry of disk.entries) {
       const el = document.createElement('div');
       // PRG and USR both hold programs — DOS LOADs either, and plenty of disks
@@ -2719,7 +2740,7 @@ function showD64Directory(disk, ui = DRIVE8_UI) {
       blocks.textContent = String(entry.blocks).padStart(4, '\u00A0');
       const fname = document.createElement('span');
       fname.className = 'd64-fname';
-      const fnameFg = (loadable || entry.deleted) ? '#cbd5f5' : '#6b7280';
+      const fnameFg = (loadable || entry.deleted) ? dirText : dirDim;
       fname.append(petsciiCanvas(entry.name, { fg: fnameFg, ascii }));
       const type = document.createElement('span');
       type.className = 'd64-type';
@@ -2735,6 +2756,7 @@ function showD64Directory(disk, ui = DRIVE8_UI) {
     free.className = 'd64-entry d64-free';
     free.textContent = `${disk.freeBlocks} BLOCKS FREE.`;
     ui.dirEl.appendChild(free);
+    _syncDirScroll(ui.dirEl);
   }
   disk._dirSig = _dirSignature(disk);   // baseline so a later refresh only re-renders on change
 }
@@ -2821,10 +2843,14 @@ const _c64Hex = (rgb) => '#' + (rgb & 0xFFFFFF).toString(16).padStart(6, '0');
 // Build the raster ramp from the ACTIVE palette as [r,g,b] triples. C64_PALETTE
 // is a live module binding repointed by setVicPalette(), so calling this when the
 // dialog opens picks up the currently-selected Colodore/Pepto palette.
+// In light mode the rainbow is drawn on a pale well, where the C64's bright
+// hues (yellow, light green, cyan) would wash out, so each is darkened to the
+// same depth.
 function _buildDirRamp() {
+  const k = isLightMode() ? 0.6 : 1;
   return DIR_RAMP_INDICES.map((i) => {
     const rgb = C64_PALETTE[i];
-    return [(rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF];
+    return [((rgb >> 16) & 0xFF) * k, ((rgb >> 8) & 0xFF) * k, (rgb & 0xFF) * k].map(Math.round);
   });
 }
 
@@ -2891,7 +2917,13 @@ function _petsciiRasterCanvas(petStr, { scale = 1, yOffset = 0, ramp, bandPx = 8
 function showDirZoom(disk, deviceLabel) {
   if (!disk || !dirzoomModal) return;
   pushEscapeLayer(_dirzoomEscape);
+  _renderDirZoom(disk, deviceLabel);
+  dirzoomModal.hidden = false;
+}
 
+// The zoom's contents, drawn in the current mode's colours. Called on open and
+// again when the mode or theme changes while it is open.
+function _renderDirZoom(disk, deviceLabel) {
   if (dirzoomTitle) dirzoomTitle.textContent = `${deviceLabel} — directory`;
 
   // Disk header (name + id/DOS type), for context — kept visually separate from
@@ -2901,11 +2933,13 @@ function showDirZoom(disk, deviceLabel) {
   const ascii = !!disk.isGEOS;      // GEOS names are ASCII, not PETSCII
   if (dirzoomDiskName) {
     dirzoomDiskName.innerHTML = '';
-    dirzoomDiskName.append(petsciiCanvas(disk.diskName, { scale: 2, fg: _c64Hex(C64_PALETTE[14]), ascii }));
+    const nameFg = isLightMode() ? themeColor('--dir-text', '#2e2c9b') : _c64Hex(C64_PALETTE[14]);
+    dirzoomDiskName.append(petsciiCanvas(disk.diskName, { scale: 2, fg: nameFg, ascii }));
   }
   if (dirzoomDiskMeta) {
     dirzoomDiskMeta.innerHTML = '';
-    dirzoomDiskMeta.append(petsciiCanvas(`${disk.diskId}  ${disk.dosType}`, { scale: 2, fg: _c64Hex(C64_PALETTE[12]), ascii }));
+    const metaFg = isLightMode() ? themeColor('--dir-dim', '#6e7294') : _c64Hex(C64_PALETTE[12]);
+    dirzoomDiskMeta.append(petsciiCanvas(`${disk.diskId}  ${disk.dosType}`, { scale: 2, fg: metaFg, ascii }));
   }
 
   if (dirzoomListEl) {
@@ -2942,11 +2976,11 @@ function showDirZoom(disk, deviceLabel) {
       dirzoomListEl.append(note);
     }
   }
-
-  dirzoomModal.hidden = false;
 }
 
+let _dirzoomUi = null;
 function _openDirZoom(ui) {
+  _dirzoomUi = ui;
   const disk = ui === DRIVE9_UI ? currentD64Drive9 : currentD64;
   if (!disk) return;
   showDirZoom(disk, ui === DRIVE9_UI ? 'Disk drive 9' : 'Disk drive 8');
@@ -3188,6 +3222,31 @@ function _tapeTitle() {
 }
 
 if (dirzoomCloseBtn) dirzoomCloseBtn.addEventListener('click', _closeDirZoom);
+
+// The directories are pixels drawn in the mode's colours, so a change of mode
+// redraws them. Each drive keeps its listing open or closed as it was.
+window.addEventListener('c64-appearance', () => {
+  for (const [disk, ui] of [[currentD64, DRIVE8_UI], [currentD64Drive9, DRIVE9_UI]]) {
+    if (!disk || !ui?.dirEl) continue;
+    const expanded = ui.dirExpanded;
+    showD64Directory(disk, ui);
+    if (expanded !== undefined && expanded !== ui.dirExpanded) {
+      ui.dirExpanded = expanded;
+      ui.dirEl.style.display = expanded ? '' : 'none';
+      if (ui.dirToggle) ui.dirToggle.textContent = (expanded ? '▼' : '▶') + ui.dirToggle.textContent.slice(1);
+    }
+  }
+  // An open zoom keeps its place (and its spot among open dialogs): only its
+  // pictures are drawn again.
+  if (_dirzoomIsOpen() && _dirzoomUi) {
+    const disk = _dirzoomUi === DRIVE9_UI ? currentD64Drive9 : currentD64;
+    if (disk) {
+      const scroll = dirzoomListEl?.scrollTop ?? 0;
+      _renderDirZoom(disk, _dirzoomUi === DRIVE9_UI ? 'Disk drive 9' : 'Disk drive 8');
+      if (dirzoomListEl) dirzoomListEl.scrollTop = scroll;
+    }
+  }
+});
 if (dirzoomModal) {
   dirzoomModal.addEventListener('click', e => { if (e.target === dirzoomModal) _closeDirZoom(); });
 }

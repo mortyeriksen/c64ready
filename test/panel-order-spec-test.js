@@ -2,8 +2,8 @@ import fs from 'fs';
 import {
   parseSavedLayout, resolveLayout, isDefaultLayout, parseHiddenKeys, initPanelOrder,
   PANEL_ORDER_KEY, PANEL_HIDDEN_KEY,
-} from '../src/panel-order.js';
-import { handleEscape, escapeLayerCount } from '../src/escape-stack.js';
+} from '../src/ui/panel-order.js';
+import { handleEscape, escapeLayerCount } from '../src/ui/escape-stack.js';
 import { installMiniDom, fire } from './_mini-dom.js';
 
 function expect(cond, msg) {
@@ -243,7 +243,7 @@ expect(parseHiddenKeys('["gone","tape"]').length === 2, 'unknown keys still pars
 
 // The hide target and the hidden-card rule have to exist in the stylesheet the
 // drag relies on: the JS only toggles classes.
-const displayCss = fs.readFileSync(new URL('../src/styles-display.css', import.meta.url), 'utf8');
+const displayCss = fs.readFileSync(new URL('../src/styles/styles-display.css', import.meta.url), 'utf8');
 expect(/\.panel-card\.is-panel-hidden\s*\{[^}]*display:\s*none/.test(displayCss),
   'a hidden card is not drawn');
 expect(/body\.panels-reordering\s+\.panel-hide-target\s*\{[^}]*opacity:\s*1/.test(displayCss),
@@ -276,7 +276,7 @@ expect(/\.panel-restore-btn\s*\{[^}]*display:\s*none/.test(displayCss) &&
 
 // The picker's narrow width has to be declared AFTER .modal-card (width:100%,
 // max-width:1066px) or it loses the cascade tie and the dialog spans the page.
-const dialogCss = fs.readFileSync(new URL('../src/styles-dialogs.css', import.meta.url), 'utf8');
+const dialogCss = fs.readFileSync(new URL('../src/styles/styles-dialogs.css', import.meta.url), 'utf8');
 expect(dialogCss.indexOf('.panel-restore-card') > dialogCss.indexOf('.modal-card {'),
   'the hidden-panels picker overrides .modal-card by source order');
 expect(/\.panel-restore-card\s*\{[^}]*max-width:\s*320px/.test(dialogCss),
@@ -336,6 +336,10 @@ console.log('ok  - side panel card layout persistence, arranging and drop-to-hid
   expect(headerClicks === 0 && clickEv.defaultPrevented, 'a click on the handle stops at the handle');
 
   // ── Pointer drag: Status from the top of column 1 into column 2 ──
+  // Give the card an id and a form name, to check what the ghost keeps.
+  const statusBody = document.querySelector('[data-panel="status"] p');
+  statusBody.setAttribute('id', 'status-body');
+  statusBody.setAttribute('name', 'status-field');
   down('status', 7, 50, 20);
   move(7, 52, 21);
   expect(!document.body.classList.contains('panels-reordering'), 'a couple of pixels is a click, not a drag');
@@ -343,6 +347,10 @@ console.log('ok  - side panel card layout persistence, arranging and drop-to-hid
   move(7, 250, 150);
   expect(document.body.classList.contains('panels-reordering') && document.querySelector('.panel-drag-ghost'),
     'past the threshold a ghost flies and the page marks the drag');
+  const ghost = document.querySelector('.panel-drag-ghost');
+  expect(ghost.querySelector('#status-body'), "the ghost keeps the card's ids, so styles keyed on them still apply");
+  expect(!ghost.querySelector('[name]'), 'the ghost drops form names, so a cloned control never joins a real radio group');
+  expect(document.querySelector('#status-body') === statusBody, 'an id lookup still finds the real card, not the ghost');
   expect(keysIn(cols[1]).join() === 'media,drive8,status', `the placeholder moves to the pointer's slot (${keysIn(cols[1])})`);
   move(7, 250, 150);                          // same slot: nothing to do
   move(7, 250, 10);

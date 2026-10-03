@@ -28,7 +28,7 @@ export { parseSid, sidToPrg } from '../src/media/sid.js';
 
 /** The same offline-capable SID engine used by the audio worklet. */
 export async function loadSidEngine() {
-  const { sidWasmBytes } = await import('../src/sid-wasm-blob.js');
+  const { sidWasmBytes } = await import('../src/sid/sid-wasm-blob.js');
   const { instance } = await WebAssembly.instantiate(sidWasmBytes());
   return instance.exports;
 }

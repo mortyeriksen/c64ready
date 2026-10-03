@@ -19,8 +19,8 @@ import {
   keymapModal, keymapBtn, keymapClose,
   joykeysModal, joykeysTitle, joykeysHint, joykeysGrid,
   btnJoykeysAll, btnJoykeysReset, btnJoykeysDone, btnJoykeysClose,
-} from './dom.js';
-import { pushEscapeLayer, popEscapeLayer } from './escape-stack.js';
+} from './ui/dom.js';
+import { pushEscapeLayer, popEscapeLayer } from './ui/escape-stack.js';
 import { machine, running } from './state.js';
 import { KEY_MAP, CHAR_MAP } from './cia.js';
 import { MatrixKeyOwnership } from './input-key-ownership.js';
@@ -28,7 +28,7 @@ import { appAccel } from './app-accel.js';
 import * as ControlPort from './control-port.js';
 import {
   dropSoftKeyboardFocus, isTouchCapable, resolveTouchStickInto,
-} from './touch-joystick.js';
+} from './ui/touch-joystick.js';
 
 const keyboardFocusHint = document.getElementById('keyboard-focus-hint');
 function updateKeyboardFocusHint() {
@@ -55,7 +55,7 @@ const IS_WINDOWS =
 
 // ── Injected core hooks (assigned by initInput) ──────────────────────────────
 let downloadSnapshot, clearPendingPaste, toggleCrtPanel, toggleVibesZoom, pasteFromShortcut;
-let toggleVibesStudio;
+let toggleVibesStudio, cycleTheme;
 
 // ── Control Port state ──────────────────────────────────────────────────────
 // C64 joystick bits: active-low
@@ -1857,6 +1857,11 @@ registerAppShortcut({
   code: 'KeyF', label: 'CRT settings',
   run: () => toggleCrtPanel(),
 });
+// T is the browser's (new tab); Y is free in every major browser.
+registerAppShortcut({
+  code: 'KeyY', label: 'Next theme',
+  run: () => cycleTheme?.(),
+});
 registerAppShortcut({
   code: 'KeyZ', label: 'Zoom VIBES button 10x',
   run: () => toggleVibesZoom(),
@@ -2271,5 +2276,5 @@ document.addEventListener('pointerlockchange', () => {
 // ── Dependency injection ─────────────────────────────────────────────────────
 export function initInput(deps) {
   ({ downloadSnapshot, clearPendingPaste, toggleCrtPanel, toggleVibesZoom, pasteFromShortcut,
-     toggleVibesStudio } = deps);
+     toggleVibesStudio, cycleTheme } = deps);
 }

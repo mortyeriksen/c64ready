@@ -7,7 +7,7 @@ import { singleLoadableFile } from '../media/formats.js';
 import { createFavoriteIcon } from './icons.js';
 import { defaultSort } from './query.js';
 import { createDownloadProgress } from './progress.js';
-import { canvas } from '../dom.js';
+import { canvas } from '../ui/dom.js';
 
 export function createAssembly64Control(root, controller, store, perform) {
   let browser, availableFields = controller.fields, request, generation = 0, items = [], busy = false, quickCategory = 'demos', quickSource = '', lastQuickSearch = null;

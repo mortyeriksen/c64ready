@@ -316,7 +316,7 @@ function head(title, page = {}) {
 // .nav-links box holds the links so phones can drop them in one rule while the
 // pill stays.
 // Same three controls, and the same look, as the emulator's own header — see the
-// .credits-link / .icon-link rules in src/styles-header.css.
+// .credits-link / .icon-link rules in src/styles/styles-header.css.
 const GITHUB_SVG =
   '<svg viewBox="0 0 16 16" width="17" height="17" fill="currentColor" aria-hidden="true" focusable="false">' +
   '<path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>';
@@ -553,7 +553,7 @@ code, pre, .brand, kbd { font-family: 'Share Tech Mono', ui-monospace, SFMono-Re
 .top-nav a:hover { color: var(--text); text-decoration: none; }
 
 /* ABOUT + the GitHub / YouTube / Facebook icons, matching the emulator's own header
-   buttons (.credits-link in src/styles-header.css) so the two bars read alike. */
+   buttons (.credits-link in src/styles/styles-header.css) so the two bars read alike. */
 .nav-btn {
   font-family: 'Share Tech Mono', monospace;
   font-size: 0.9rem;
@@ -742,7 +742,7 @@ h4:hover .anchor, h5:hover .anchor, h6:hover .anchor { opacity: 0.6; }
 /* The version links to what changed in that release. Dim like the rest of the
    line, with the underline carrying the affordance: the accent colour every
    other link gets would shout from a footer. Matches the emulator's own About
-   footer (.credits-footer in src/styles-header.css). */
+   footer (.credits-footer in src/styles/styles-header.css). */
 .doc-foot a {
   color: inherit; text-decoration: underline; text-underline-offset: 2px;
   text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);

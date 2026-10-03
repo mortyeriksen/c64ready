@@ -6,7 +6,7 @@
 // (previous behavior) smeared cycle-precise tricks.
 
 import { C64Machine } from '../../src/machine.js';
-import { SIDVoice, makeVoiceTrio } from '../../src/sid-voice.js';
+import { SIDVoice, makeVoiceTrio } from '../../src/sid/sid-voice.js';
 
 let testNo = 0, fails = 0, current = [];
 function expect(cond, msg) { if (!cond) current.push(msg); }

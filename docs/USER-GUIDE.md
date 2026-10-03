@@ -30,6 +30,7 @@ The same interface with a demo running:
 | Control | What it does |
 | --- | --- |
 | **C64 READY.** wordmark | The logo. Purely decorative. |
+| **Appearance** (moon, sun or screen) | Switches the interface between dark, light and following your system's setting. From following the system (the default), the first click shows the other mode, the second your system's own, the third goes back to following the system. The icon shows the current setting: a moon for dark, a sun for light, a screen for following the system (the default). The same setting is **APPEARANCE** in Options ▸ Theme. Shown on phones too. |
 | **ABOUT** | Opens the About panel: what the emulator is, how the project started, the current known-issues, and credits. |
 | **DOCS** | Opens this documentation site. |
 | **GitHub** | The full source, on GitHub. Desktop only; on a phone the same link is in the About panel. |
@@ -59,6 +60,57 @@ centres the picture on the whole screen with bars around it.
   onto the screen to load it (pointer devices). The hint below the monitor reminds you.
 - **On touch devices**, tap the screen to raise the on-screen keyboard; the hint
   changes to say so.
+
+---
+
+## Themes
+
+A theme sets the interface's colours. **Classic** is the default, and five
+more are built in:
+
+- **GEOS**: black on white, like the C64's own desktop.
+- **Breadbin**: the machine itself, the beige case in light mode and the brown
+  keyboard in dark, with the badge's rainbow stripe for accents.
+- **Phosphor**: an amber monitor in dark mode, and in light mode a printer
+  listing on green-bar paper.
+- **Out Run**: the sunset over the road. In dark mode the horizon glows
+  magenta at the top of the page, with neon pink edges, sun yellow and grid
+  cyan; light mode is the hot coral sky.
+- **Commando**: after the game. Dark mode is the dirt road at night, sand on
+  brown with muzzle-flash orange; light mode is khaki drill and olive drab,
+  with camouflage logo blocks.
+
+You can import your own too. The screen, the CRT looks, the splash and Retro Vibes keep their own
+colours whatever the theme.
+
+Pick one with **THEME** in [Options ▸ Theme](#theme). **IMPORT** loads a theme
+file, which then stays in this browser; **REMOVE** takes an imported one
+out again. **EXPORT** saves the current theme with every colour filled in,
+so exporting Classic gives you a complete file to start your own from.
+
+A theme file is JSON:
+
+```json
+{
+  "format": "c64ready-theme/1",
+  "name": "My theme",
+  "author": "optional",
+  "modes": {
+    "dark":  { "panel-bg": "#11142e", "text": "#ccd0ec", "accent": "#706deb" },
+    "light": { "panel-bg": "#ffffff", "text": "#23264d", "accent": "#4c49c0" }
+  }
+}
+```
+
+- **Modes**: give `dark`, `light` or both. A theme with only one mode always
+  shows that one, whatever the appearance setting.
+- **Colours**: each key is one of the interface's colour names (an exported
+  file lists them all), and each value a plain colour: `#rgb`, `#rrggbb`,
+  `#rrggbbaa`, `rgb()` or `rgba()`. Any colour you leave out keeps its Classic
+  value for that mode.
+- **Checks**: a file with an unknown name, a value that is not a colour, or a
+  missing `name` or `modes` is refused, and the message says which. Importing a
+  file with the same name as an imported theme replaces it.
 
 ---
 
@@ -200,14 +252,14 @@ as `c64ready-<date-and-time>.mp4`.
 
 ## Media load
 
-![The Media load card with LOAD STATE, SAVE STATE, LOAD LIB and LOAD ANY buttons.](/guide/media-load.webp)
+![The Media load card with LOAD ANY and LOAD LIB on the first row, LOAD STATE and SAVE STATE on the second.](/guide/media-load.webp)
 
 | Button | What it does |
 | --- | --- |
+| **▶ LOAD ANY** | Picks any C64 file (`.prg`, `.d64`, `.d71`, `.d81`, `.g64`, `.nbz`, `.crt`, `.tap`, `.t64`, `.sid`, `.wav`, `.dmp` or `.reu`) and does the right thing with it. With the machine off, it powers it on first, as dropping a file on the screen does. |
+| **📂 LOAD LIB** | Opens the [Library dialog](#library-dialog) of files you've loaded before, cached in this browser. |
 | **📂 LOAD STATE** | Opens the [Save states dialog](#save-states-dialog) to restore a frozen machine; also imports / exports state files. |
 | **💾 SAVE STATE** | Freezes the *whole* machine (RAM, every chip register, and whatever disk / tape / cartridge is inserted) into a named slot stored in this browser (browse them later with LOAD STATE). |
-| **📂 LOAD LIB** | Opens the [Library dialog](#library-dialog) of files you've loaded before, cached in this browser. |
-| **▶ LOAD ANY** | Picks any C64 file (`.prg`, `.d64`, `.d71`, `.d81`, `.g64`, `.nbz`, `.crt`, `.tap`, `.t64`, `.sid`, `.wav`, `.dmp` or `.reu`) and does the right thing with it. |
 
 ### Save states dialog
 
@@ -716,6 +768,9 @@ is reading, not a sound effect. A loader sounds like a loader.
 tape *is* a square wave, so the trace is the signal itself, read from the
 `.tap` entries passing under the head, pulse for pulse.
 
+Both are greyed out until there is a tape in the deck and the machine is on,
+since until then there is no signal to hear or see.
+
 ![The Tape signal dialog: a green square wave of varying pulse widths on a graticule, reading PLAYING at the bottom left and "43 pulses · 20 ms window · 384–688 cycles" at the right.](/guide/tape-scope.webp)
 
 The window is about 20 ms of tape, and the readout under it says what the deck
@@ -758,13 +813,21 @@ ROM management. All choices persist in this browser.
 | Button | What it does |
 | --- | --- |
 | **🖥 CRT** | Cycles the CRT look: **ON** (basic scanlines) → **TUBE** (phosphor mask + vignette + glow) → **B&W** (monochrome tube) → **ARCADE** (bright, sharp scanlines) → **HUM** (tube look with a slow rolling mains-hum bar) → **OFF** (flat, crisp pixels). |
-| **CRT SETTINGS** | Opens the CRT settings panel (also **Cmd/Ctrl+Shift+F**): the six looks and a slider for every setting behind them, remembered per look, with **Reset preset**. Drag it by its title bar; **Esc** closes it. |
+| **CRT SETTINGS** | Opens the CRT settings panel (also **Cmd/Ctrl+Shift+F**): the six looks and a slider for every setting behind them, remembered per look, with **Reset preset**. Drag it by its title bar; **Esc** closes it. The logo in the header follows the scanline, brightness, contrast, saturation and hum sliders too. |
 | **ATTRACT MODE** | On by default: plays an animated attract-mode demo on the screen while the machine is powered off. Turn it off to show a simple "press power to boot" hint instead. It also steps aside on its own if your system asks for reduced motion, or the machine has no GPU to spare, you get the hint instead. |
 | **3D MODEL** | Which model the VIBES viewer loads: **SMALL** (default, a light model that's easy on memory everywhere), **AUTO** (picks by device: lighter on phones/tablets, detailed 4K on desktop), or **LARGE** (force the 4K model). Takes effect next time you open VIBES. |
 | **STAY AWAKE** | Keeps the screen awake while a demo runs, so the device doesn't dim or lock (which would pause the emulator). |
 | **VIBES BUTTON FX** | On by default: runs a tiny demo inside the VIBES button itself: a field of dark pixels drifting through ten sine patterns in 3D. Turn it off for a plain button. |
 
 ![The CRT settings panel floating over the top-right of the picture: six look buttons with ON selected, sliders for scanlines, beam width, softness, mask, brightness, contrast, saturation, vignette, black level and hum bar, a mask type selector, and a Reset preset button.](/guide/crt-settings.webp)
+
+### Theme
+
+| Button | What it does |
+| --- | --- |
+| **THEME** | The colour theme: **CLASSIC** (the default), **GEOS**, **BREADBIN**, **PHOSPHOR**, **OUT RUN**, **COMMANDO**, then any you have imported. See [Themes](#themes). |
+| **APPEARANCE** | **SYSTEM** (the default) follows your device's dark or light setting, and changes with it; **DARK** and **LIGHT** keep one. The screen, the CRT looks, the splash and Retro Vibes look the same in both. The appearance button in the header does the same. |
+| **IMPORT** / **EXPORT** / **REMOVE** | Load a theme file, save the current theme as a complete file, or remove an imported theme from this browser. |
 
 ### Video
 
@@ -911,6 +974,7 @@ on every platform.
 | --- | --- |
 | **V** | Pastes the clipboard into the C64 as keystrokes, same as **PASTE**. |
 | **F** | Opens **CRT SETTINGS** (also a button in [Options](#options)): the six looks and a slider for every setting behind them, remembered per look, with **Reset preset**. Drag it by its title bar. Press again, or **Esc**, to close. |
+| **Y** | Switches to the next [theme](#themes), the same as **THEME** in Options. The status line shows which one. |
 | **Z** | Zooms the VIBES button to 10x, so the little pixel demo running inside it can be watched properly: magnified, and running at your display's refresh rate. It stays a working button: clicking it opens [Retro Vibes](#retro-vibes). Press it again (or **Esc**) to send it back. |
 | **X** | Opens [Retro Vibes](#retro-vibes) in Studio mode: the 3D scene and the C64 READY. logo, nothing else. Press it again to bring the controls back. The mode is remembered between visits. |
 

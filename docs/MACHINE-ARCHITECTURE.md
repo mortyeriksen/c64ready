@@ -278,7 +278,7 @@ stores and export format remain compatible with older entries. Library storage
 lives in `src/media/library.js`; tape conversion, inspection, repair and the
 WAV import worker live in `src/media/`.
 
-**Virtual drive** (`src/virtual-drive.js`): with TDE *off*, the KERNAL's serial
+**Virtual drive** (`src/media/virtual-drive.js`): with TDE *off*, the KERNAL's serial
 primitives (TALK, LISTEN, SECOND, TKSA, CIOUT, ACPTR, UNTALK, UNLISTEN at
 `$ED09` to `$EE13`) are trapped for device 8, and for device 9 in trap mode,
 and answered by a DOS over the mounted image: files open, read, write and

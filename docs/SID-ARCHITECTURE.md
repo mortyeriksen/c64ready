@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
 
-# SID 6581/8580 (`src/sid-voice.js` + `src/sid-worklet.js`): Architecture Overview
+# SID 6581/8580 (`src/sid/sid-voice.js` + `src/sid/sid-worklet.js`): Architecture Overview
 
 How the emulator synthesises sound: three voices (oscillator + waveform DAC +
 ADSR envelope), the analog filter, the master-volume DAC / digi path, and the
@@ -11,11 +11,11 @@ cycle-exact).
 
 | File | Role |
 |------|------|
-| `src/sid-voice.js` | One `SIDVoice`: oscillator, waveform generator, noise LFSR, ADSR envelope, OSC3 readback, reSID R-2R DAC tables. Pure DSP, no I/O; shared by the worklet and the shadow. |
-| `src/sid-wavetables.js` | reSID's measured combined-waveform tables (OSC3 chip samplings, embedded verbatim from the pinned upstream data; provenance in NOTICE.txt), checksum-pinned by `test/sid/sid-wavetables-spec-test.js`. |
-| `src/sid-filter.js` | reSID transistor-level filter / mixer / nonlinear volume stage (`filter8580new` port) and the integer external RC filter: the JS engine's analog chain and, via its Rust translation, the WASM engine's. |
-| `src/sid-worklet.js` | `SIDChip` (3 voices + analog chain) and `SIDProcessor` (the `AudioWorkletProcessor`: SAB ring transport, SINC resampler, WASM block renderer). |
-| `src/sid-wasm-blob.js` | GENERATED: the WASM engine (whole chip + resampler compiled from `rust/sid/`), embedded base64 because worklets have no `fetch`/`atob`. Rebuild: `sh rust/sid/build.sh`. |
+| `src/sid/sid-voice.js` | One `SIDVoice`: oscillator, waveform generator, noise LFSR, ADSR envelope, OSC3 readback, reSID R-2R DAC tables. Pure DSP, no I/O; shared by the worklet and the shadow. |
+| `src/sid/sid-wavetables.js` | reSID's measured combined-waveform tables (OSC3 chip samplings, embedded verbatim from the pinned upstream data; provenance in NOTICE.txt), checksum-pinned by `test/sid/sid-wavetables-spec-test.js`. |
+| `src/sid/sid-filter.js` | reSID transistor-level filter / mixer / nonlinear volume stage (`filter8580new` port) and the integer external RC filter: the JS engine's analog chain and, via its Rust translation, the WASM engine's. |
+| `src/sid/sid-worklet.js` | `SIDChip` (3 voices + analog chain) and `SIDProcessor` (the `AudioWorkletProcessor`: SAB ring transport, SINC resampler, WASM block renderer). |
+| `src/sid/sid-wasm-blob.js` | GENERATED: the WASM engine (whole chip + resampler compiled from `rust/sid/`), embedded base64 because worklets have no `fetch`/`atob`. Rebuild: `sh rust/sid/build.sh`. |
 | `rust/sid/` | Rust translation of the JS engine (voice core, filter, external filter, SINC resampler, event queue), compiled to `wasm32-unknown-unknown`; the corresponding source for the blob. |
 | `src/machine.js` | `SIDProxy` (the `$D400-$D7FF` bus device, mirrored every 32 bytes), the ring producer `_sidWrite`, the shadow voices, paddle POT sample-and-hold, model sync. |
 
@@ -243,7 +243,7 @@ With two or more waveform bits set the chip does **not** AND them: the analog
 selector short-circuits bits with neighbour coupling and a DAC threshold. The
 eight tables (`COMBINED_6581` / `COMBINED_8580` × ST/PT/PS/PST) are reSID's
 measured chip samplings (entry = OSC3 byte `<< 4`), embedded verbatim in
-`src/sid-wavetables.js` (provenance and sample lineage in NOTICE.txt). The 6581
+`src/sid/sid-wavetables.js` (provenance and sample lineage in NOTICE.txt). The 6581
 tables are heavily eroded (mostly zeros with occasional peaks; PT loudest), the
 8580's fuller. The full combined-waveform OSC3 sweep is **byte-exact vs
 headless VICE x64sc on both models** (0/32648 mismatches).

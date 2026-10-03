@@ -14,7 +14,7 @@ This is the index document; each subsystem has its own deep-dive:
 | Memory / banking | `src/memory.js` | [Deep-dive ▸](MEMORY-ARCHITECTURE.md) |
 | Machine orchestrator | `src/machine.js` | [Deep-dive ▸](MACHINE-ARCHITECTURE.md) |
 | 1541 disk drive | `src/drive1541.js` + `src/gcr.js` + `src/media/d64.js` + `src/6522.js` | [Deep-dive ▸](DRIVE-ARCHITECTURE.md) |
-| SID 6581/8580 audio | `src/sid-voice.js` + `src/sid-worklet.js` | [Deep-dive ▸](SID-ARCHITECTURE.md) |
+| SID 6581/8580 audio | `src/sid/sid-voice.js` + `src/sid/sid-worklet.js` | [Deep-dive ▸](SID-ARCHITECTURE.md) |
 | Datasette (1530 tape) | `src/datasette.js` | [Deep-dive ▸](DATASETTE-ARCHITECTURE.md) |
 
 > Scope: a cycle-accurate **PAL** Commodore 64, running in the browser. The goal

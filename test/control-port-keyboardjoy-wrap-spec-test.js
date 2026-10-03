@@ -1,7 +1,7 @@
 import fs from 'fs';
 
 const input = fs.readFileSync(new URL('../src/input.js', import.meta.url), 'utf8');
-const css = fs.readFileSync(new URL('../src/styles-ports.css', import.meta.url), 'utf8');
+const css = fs.readFileSync(new URL('../src/styles/styles-ports.css', import.meta.url), 'utf8');
 
 let failures = 0;
 function expect(cond, msg) {

@@ -1,5 +1,5 @@
 // sid-test-loader.js — Helper for SID test files. Concatenates
-// src/sid-voice.js + src/sid-worklet.js, strips ESM `import`/`export`
+// src/sid/sid-voice.js + src/sid/sid-worklet.js, strips ESM `import`/`export`
 // keywords so `vm.runInContext` can eval them, and exposes the classes
 // + constants on the provided context. Needed because the SID
 // source files use real ES modules now (so the AudioWorklet and the
@@ -14,12 +14,12 @@ import vm from 'node:vm';
 const ROOT = path.dirname(new URL(import.meta.url).pathname) + '/../..';
 
 export function loadSidIntoContext(extraStubs = {}) {
-  const wasmBlobSrc = fs.readFileSync(path.join(ROOT, 'src', 'sid-wasm-blob.js'), 'utf8');
-  const waveSrc = fs.readFileSync(path.join(ROOT, 'src', 'sid-wavetables.js'), 'utf8');
-  const dacSrc = fs.readFileSync(path.join(ROOT, 'src', 'sid-dac.js'), 'utf8');
-  const filterSrc = fs.readFileSync(path.join(ROOT, 'src', 'sid-filter.js'), 'utf8');
-  const voiceSrc = fs.readFileSync(path.join(ROOT, 'src', 'sid-voice.js'), 'utf8');
-  const workletSrc = fs.readFileSync(path.join(ROOT, 'src', 'sid-worklet.js'), 'utf8');
+  const wasmBlobSrc = fs.readFileSync(path.join(ROOT, 'src', 'sid', 'sid-wasm-blob.js'), 'utf8');
+  const waveSrc = fs.readFileSync(path.join(ROOT, 'src', 'sid', 'sid-wavetables.js'), 'utf8');
+  const dacSrc = fs.readFileSync(path.join(ROOT, 'src', 'sid', 'sid-dac.js'), 'utf8');
+  const filterSrc = fs.readFileSync(path.join(ROOT, 'src', 'sid', 'sid-filter.js'), 'utf8');
+  const voiceSrc = fs.readFileSync(path.join(ROOT, 'src', 'sid', 'sid-voice.js'), 'utf8');
+  const workletSrc = fs.readFileSync(path.join(ROOT, 'src', 'sid', 'sid-worklet.js'), 'utf8');
   // Strip ESM keywords for vm-eval. `import {...} from '...'` lines and
   // bare `export` keywords disappear; the classes/constants remain
   // declared in the eval scope. Concatenation order = dependency order:

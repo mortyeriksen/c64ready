@@ -13,7 +13,7 @@
 // (index, count, seconds), so the field follows from its timestamp and this part
 // needs no DOM.
 
-import { pushEscapeLayer, popEscapeLayer } from '../escape-stack.js';
+import { pushEscapeLayer, popEscapeLayer } from '../ui/escape-stack.js';
 
 const TAU = Math.PI * 2;
 

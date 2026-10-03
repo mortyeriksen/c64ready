@@ -16,7 +16,7 @@ export async function checkTde(page) {
   try {
     for (const [drive, choice] of [[8, 'off'], [8, 'on'], [9, 'on'], [8, 'already-on'], [8, 'cancel']]) {
       await page.evaluate(async ({ drive, choice }) => {
-        const dom = await import('/src/dom.js');
+        const dom = await import('/src/ui/dom.js');
         const toggle = drive === 8 ? dom.tdeToggleBtn : dom.DRIVE9_UI.tdeBtn;
         if (choice !== 'already-on' && toggle.textContent.includes('ON')) toggle.click();
         const mediaUrl = performance.getEntriesByType('resource').find(entry => new URL(entry.name).pathname === '/src/media.js').name;
@@ -51,7 +51,7 @@ async function checkDiskPickers(page) {
     for (const drive of [8, 9]) {
       for (const choice of ['off', 'on', 'already-on']) {
         await page.evaluate(async ({ drive, choice }) => {
-          const dom = await import('/src/dom.js');
+          const dom = await import('/src/ui/dom.js');
           const toggle = drive === 8 ? dom.tdeToggleBtn : dom.DRIVE9_UI.tdeBtn;
           if (choice !== 'already-on' && toggle.textContent.includes('ON')) toggle.click();
           window.diskBeforePrompt = drive === 8 ? window.machine.currentD64 : window.machine.currentD64Drive9;

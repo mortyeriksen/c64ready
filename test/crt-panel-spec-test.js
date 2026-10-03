@@ -1,12 +1,12 @@
-// Spec test for src/crt-panel.js: the CRT control panel is built from
+// Spec test for src/ui/crt-panel.js: the CRT control panel is built from
 // CRT_PARAMS (one slider per range, a select per choice), shows every preset,
 // writes through its callbacks and owns Escape while open.
 import { installMiniDom, fire } from './_mini-dom.js';
 import { CRT_PARAMS, CRT_MODES, presetParams } from '../src/crt-params.js';
-import { handleEscape, escapeLayerCount, _resetEscapeLayers } from '../src/escape-stack.js';
+import { handleEscape, escapeLayerCount, _resetEscapeLayers } from '../src/ui/escape-stack.js';
 
 installMiniDom();
-const { createCrtPanel } = await import('../src/crt-panel.js');
+const { createCrtPanel } = await import('../src/ui/crt-panel.js');
 
 function expect(cond, msg) {
   if (!cond) throw new Error(msg);

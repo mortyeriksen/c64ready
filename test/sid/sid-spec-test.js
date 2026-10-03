@@ -1,5 +1,5 @@
 // SID emulator spec tests — covers SIDVoice and SIDChip behavior in
-// src/sid-worklet.js. The worklet is loaded by reading the file as
+// src/sid/sid-worklet.js. The worklet is loaded by reading the file as
 // text, stubbing AudioWorkletProcessor + registerProcessor, and
 // eval'ing the source so the SIDVoice / SIDChip classes are usable
 // from Node. This locks down current behavior so the upcoming SID

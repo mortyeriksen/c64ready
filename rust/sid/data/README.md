@@ -9,6 +9,6 @@ tree of the official VICE 3.10 source release (upstream pin — tarball name,
 sha256 and URL — in the repository's NOTICE.txt). Copyright (C) 2010
 Dag Lem, GNU GPL version 2 or (at your option) any later version. Sample
 lineage: chip samplings provided to reSID by Tibor Biczo, Andreas Boose and
-André Fachat (reSID THANKS). The same data ships in src/sid-wavetables.js
+André Fachat (reSID THANKS). The same data ships in src/sid/sid-wavetables.js
 for the JavaScript engines; this copy feeds `include_bytes!` for the WASM
 engine.

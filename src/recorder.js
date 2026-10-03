@@ -21,7 +21,7 @@
 // recording. The button stays visible elsewhere, where a click explains which
 // browser APIs are missing.
 
-import { confirmDialog } from './dialogs.js';
+import { confirmDialog } from './ui/dialogs.js';
 import { createRecorderAudioBridge } from './recorder-audio-bridge.js';
 import { remuxFragmentedMp4 } from './mp4-remux.js';
 import { needsDirectFinish, recordingEndStatus } from './recording-support.js';

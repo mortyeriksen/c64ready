@@ -10,6 +10,36 @@ The version you are running is shown at the bottom of the About dialog.
 
 ## Next release
 
+- **Light mode.** The interface now comes in dark and light, and follows your
+  system's setting unless you pick one. The new button in the header switches
+  between dark, light and following the system, and so does **APPEARANCE** in
+  Options ▸ Theme. The screen, the CRT looks, the splash and Retro Vibes look
+  the same in both.
+- **Themes.** Pick the interface's colours in Options ▸ Theme: **Classic**
+  as before, **GEOS** in the black and white of the C64's own desktop,
+  **Breadbin** in the beige and brown of the machine itself with its rainbow
+  stripe, **Phosphor** in amber monitor glow or on green-bar printer paper,
+  **Out Run** in eighties sunset neon, **Commando** in sand, muzzle flash,
+  khaki and olive drab, or your own, imported from a theme file. **EXPORT**
+  saves the current one as a complete file to start from. **Cmd+Shift+Y**
+  (**Ctrl+Shift+Y** on Windows and Linux) switches to the next theme.
+- **A sharper logo.** The CRT lines in the C64 READY. logo now run through the
+  letters only, and the glow around them is gone, so the edges stay crisp. The
+  logo also follows the CRT settings panel: its scanline, tone and hum sliders
+  change the logo along with the picture.
+- **Panels keep their look while you drag them.** A panel being dragged no
+  longer shifts its title or moves the controls in its header, and its buttons
+  keep their colours.
+- **Media load, reordered.** **LOAD ANY** and **LOAD LIB** now sit on the
+  first row, with **LOAD STATE** and **SAVE STATE** below.
+- **Scrollbars you can see.** Dialogs, the disk directories and Assembly64's
+  quick results keep their scrollbar showing while there is more to scroll to,
+  instead of only while you scroll. A directory that fits shows none, and the
+  🔍 moves aside when one does.
+- **Tape sound and scope wait for a tape.** The Datasette's 🔊 and scope are
+  greyed out until there is a tape in a running machine.
+- **LOAD ANY works with the machine off.** It powers the C64 on and runs the
+  file, as dropping one on the screen does, instead of only caching it.
 - **The "Load faster?" question comes back.** Loading a `.prg` with True Drive
   Emulation on asks again whether to turn it off. Saying no, or closing the
   question, now lasts only until you reload the page or turn TDE on again.
