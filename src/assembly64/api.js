@@ -108,6 +108,7 @@ export function createAssembly64Api({ transport, timeoutMs = 15000, online = () 
   return {
     categories: signal => request('search/categories', { signal, ttl: METADATA_TTL }),
     presets: signal => request('search/aql/presets', { signal, ttl: METADATA_TTL }),
+    chart: (name, signal) => request(`charts/${part(name)}`, { signal, ttl: METADATA_TTL }),
     search: ({ offset, limit, query, signal }) => {
       if (!Number.isSafeInteger(offset) || offset < 0 || !Number.isInteger(limit) || limit < 1 || limit > 100) throw new Assembly64Error('Invalid search page.');
       return request(`search/aql/${offset}/${limit}`, { query, signal, ttl: SEARCH_TTL });

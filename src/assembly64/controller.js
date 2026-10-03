@@ -3,7 +3,10 @@
 import { createAssembly64Api } from './api.js';
 import { filterDefinitions, normalizeCategories, normalizePresets } from './filters.js';
 import { buildQuery, defaultQuery, defaultSort, validateSearchState } from './query.js';
-import { normalizeItem, normalizeFiles, normalizePage } from './normalize.js';
+import { normalizeItem, normalizeFiles, normalizePage, normalizeChart } from './normalize.js';
+
+// The charts the server ranks, by the name its charts/ path takes.
+export const CHARTS = [['demos', 'Demos'], ['onefiledemos', 'One-file demos'], ['games', 'Games'], ['music', 'Music'], ['graphics', 'Graphics'], ['tools', 'Tools']];
 
 async function requestTogether(requests, signal) {
   signal?.throwIfAborted();
@@ -45,6 +48,16 @@ export class Assembly64Controller {
     const details = normalizeItem({ ...meta, id: item.ref.id, category: item.ref.categoryId, name: meta.name || item.title }, this.categories);
     details.files = normalizeFiles(entries, item.ref);
     return details;
+  }
+  async getChart(name, { signal } = {}) {
+    if (!CHARTS.some(([key]) => key === name)) throw new Error('Unknown Assembly64 chart.');
+    signal?.throwIfAborted();
+    if (!this.online()) throw new Error('Offline — charts are unavailable. Open saved files with LOAD LIB.');
+    await this.initialize();
+    signal?.throwIfAborted();
+    const raw = await this.api.chart(name, signal);
+    signal?.throwIfAborted();
+    return normalizeChart(raw, this.categories);
   }
   download(file, { signal, onProgress } = {}) { return this.api.download(file.ref, signal, onProgress); }
   async getFiles(item, { signal } = {}) {

@@ -6,10 +6,10 @@ import { deflateRawSync } from 'node:zlib';
 import { buildQuery, quoteText, defaultSort } from '../src/assembly64/query.js';
 import { filterDefinitions, normalizePresets, normalizeCategories, quickFilters, sortOptions } from '../src/assembly64/filters.js';
 import { fixturePresets, fixtureCategories, sampleMedia, createFixtureTransport } from './fixtures/assembly64.js';
-import { normalizeItem, normalizeFiles, normalizePage } from '../src/assembly64/normalize.js';
+import { normalizeItem, normalizeFiles, normalizePage, normalizeChart } from '../src/assembly64/normalize.js';
 import { createAssembly64Api } from '../src/assembly64/api.js';
 import { readLimited } from '../src/media/stream.js';
-import { Assembly64Controller } from '../src/assembly64/controller.js';
+import { Assembly64Controller, CHARTS } from '../src/assembly64/controller.js';
 import { createAssembly64Store } from '../src/assembly64/store.js';
 import { sourceMetadata } from '../src/media/source-metadata.js';
 import { createOpenMedia, validateMedia } from '../src/media/open.js';
@@ -403,4 +403,36 @@ test('Newest has one option without a duplicate raw date field', () => {
 });
 test('Legacy saved date sorts remain selectable', () => {
   assert.ok(sortOptions(definitions, 'date').some(option => option.value === 'date'));
+});
+
+test('A chart is requested from the charts path by name', async () => {
+  const urls = [];
+  const api = createAssembly64Api({ requestIntervalMs: 0, transport: async url => { urls.push(url); return new Response('[]'); } });
+  await api.chart('demos');
+  assert.deepEqual(urls, ['https://hackerswithstyle.se/leet/charts/demos']);
+});
+test('The charts offered are the ones the server ranks', () => {
+  assert.deepEqual(CHARTS.map(([key]) => key), ['demos', 'onefiledemos', 'games', 'music', 'graphics', 'tools']);
+});
+test('A chart ranks its entries by position and shows the average to one decimal', () => {
+  const chart = normalizeChart([{ id: '1', category: 1, name: 'Next Level', siteRating: 9.7253886 }, { id: '2', category: 1, name: 'The Lab' }]);
+  assert.deepEqual(chart.map(item => [item.rank, item.title, item.rating]), [[1, 'Next Level', 9.7], [2, 'The Lab', null]]);
+});
+test('A chart that is not a list is an error', () => assert.throws(() => normalizeChart({}), /invalid chart/));
+test('The controller loads a chart as ranked catalog items', async () => {
+  const controller = new Assembly64Controller({ requestIntervalMs: 0, transport: createFixtureTransport({ delayMs: 0 }) });
+  const items = await controller.getChart('demos');
+  assert.deepEqual(items.map(item => item.rank), [1, 2, 3, 4, 5]);
+  assert.equal(items[0].ref.id, 'lab-0');
+  assert.equal(items[0].rating, 9.8);
+});
+test('Only the advertised charts can be requested', async () => {
+  const controller = new Assembly64Controller({ requestIntervalMs: 0, transport: createFixtureTransport({ delayMs: 0 }) });
+  await assert.rejects(controller.getChart('../search'), /Unknown Assembly64 chart/);
+});
+test('Charts are not requested offline', async () => {
+  let calls = 0;
+  const controller = new Assembly64Controller({ requestIntervalMs: 0, online: () => false, transport: async () => { calls++; return new Response('[]'); } });
+  await assert.rejects(controller.getChart('games'), /Offline/);
+  assert.equal(calls, 0);
 });

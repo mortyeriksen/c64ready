@@ -95,6 +95,8 @@ export function createFixtureTransport({ delayMs = 80 } = {}) {
     const json = value => new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } });
     if (path.endsWith('/presets')) return json(fixturePresets);
     if (path.endsWith('/categories')) return json(fixtureCategories);
+    // A chart lists references, best first, with the CSDb visitors' average.
+    if (path.includes('/charts/')) return json(fixtureItems.slice(0, 5).map((item, i) => ({ category: item.category, id: item.id, name: item.name, siteRating: 9.84 - i / 10 })));
     if (path.includes('/aql/')) {
       const [offset, limit] = path.split('/').slice(-2).map(Number);
       const clauses = [...(url.searchParams.get('query') || '').matchAll(/\(([a-z]+):("[^"]*"|[^)]+)\)/g)].map(([, key, value]) => [key, value.replace(/^"|"$/g, '')]);

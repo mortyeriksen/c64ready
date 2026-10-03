@@ -104,6 +104,10 @@
 .mb-active-filters { display: flex; gap: 6px; flex-wrap: wrap; }
 .mb-active-filters:not(:empty) { margin-bottom: 16px; }
 .mb-filter-chip { font: inherit; font-size: 10px; color: var(--a64-chip-text); border: 1px solid var(--a64-chip-border); background: var(--a64-chip-bg); border-radius: 5px; padding: 5px 8px; cursor: pointer; max-width: 100%; overflow-wrap: anywhere; }
+.mb-chart-picker { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.mb-chart-picker .mb-filter-chip { font-size: 11px; padding: 6px 10px; }
+.mb-chart-picker .mb-filter-chip[aria-pressed="true"] { color: var(--a64-tab-active); border-color: var(--a64-tab-underline); }
+.mb-rank { color: var(--a64-highlight); font-variant-numeric: tabular-nums; }
 .mb-status { color: var(--a64-subtle); min-height: 20px; margin: 8px 0 18px; }
 .mb-status:empty { display: none; }
 .mb-result-header .mb-loading::before { content: ''; display: inline-block; width: 10px; height: 10px; margin-right: 8px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: mb-spin .8s linear infinite; }

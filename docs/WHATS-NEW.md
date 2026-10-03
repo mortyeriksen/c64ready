@@ -47,6 +47,9 @@ The version you are running is shown at the bottom of the About dialog.
   `$D000` to `$DFFF` area, like the uncrunched OneLoad64 games, is now put
   straight into memory instead of loaded from a disk. Before, Commando and
   others like it played their music over a black screen.
+- **Assembly64 charts.** The Assembly64 Browser has a **Charts** tab between
+  Explore and Favorites: the top-rated demos, one-file demos, games, music,
+  graphics and tools, ranked by CSDb visitors' votes.
 - **Inserted, not loaded.** With AUTORUN off, a disk or `.prg` put in a
   drive now says it was inserted. Nothing is loaded until you type `LOAD`.
 

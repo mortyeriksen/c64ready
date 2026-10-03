@@ -486,6 +486,13 @@ below Control Ports in the left column; saved panel arrangements take precedence
   returns keyboard input to the emulator. When a field or dialog owns input,
   the screen shows "Click screen to capture keyboard." alongside the drop-files hint.
 
+### Charts
+
+- **Charts** in the browser lists the top-rated demos, one-file demos, games,
+  music, graphics or tools, ranked by the average of CSDb visitors' votes.
+  Pick a chart above the list; each release opens and loads as it does in
+  Explore.
+
 ### Favorites and saved searches
 
 - Use a production's star to bookmark it. **FAVORITES** opens your bookmarks

@@ -104,6 +104,8 @@ of scene groups and creators.
   Source filters, and see ten results in the control. Demos is the default type.
 - **Explore**: start with the newest demos in the Assembly64 Browser, with advanced filters,
   sorting and pagination. Refine Search carries a quick search into the browser.
+- **Charts**: the top-rated demos, one-file demos, games, music, graphics and
+  tools, ranked by CSDb visitors' votes.
 - **Load or download**: PRG, D64, D71, D81, G64, CRT, TAP and REU files use the emulator's media
   controls. ZIP archives offer a choice of supported files. Disk loads are write
   protected and can use drive 8 or 9, with autorun or mount only.

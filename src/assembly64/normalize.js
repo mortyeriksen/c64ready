@@ -39,3 +39,13 @@ export function normalizePage(raw, { offset, limit }, categories) {
   if (!Array.isArray(raw) || raw.length > limit) throw new Error('Assembly64 returned an invalid search page.');
   return { items: raw.map(item => normalizeItem(item, categories)), nextOffset: offset + raw.length, hasMore: raw.length === limit };
 }
+// A chart is the server's ranked list for one CSDb category: references with a
+// name and the CSDb visitors' average (siteRating), best first. The rank is the
+// position in that list, and the rating shown is the average to one decimal.
+export function normalizeChart(raw, categories) {
+  if (!Array.isArray(raw) || raw.length > 1000) throw new Error('Assembly64 returned an invalid chart.');
+  return raw.map((entry, index) => {
+    const average = number(entry?.siteRating);
+    return { ...normalizeItem(entry, categories), rank: index + 1, rating: average == null ? null : Math.round(average * 10) / 10 };
+  });
+}

@@ -328,6 +328,9 @@ carry, by disassembling it. What they turned out to be is in the
   graphics, diskmags and other C64 productions.
 - [Assembly64 OpenAPI contract](https://hackerswithstyle.se/leet/v3/api-docs)
   defines the search, preset, category, detail, file-list and download endpoints.
+  The charts come from `charts/{demos|onefiledemos|games|music|graphics|tools}` on the same
+  server, which the contract does not list: a ranked array of `id`, `category`,
+  `name` and `siteRating`.
 - [Ultimate's Assembly64 client](https://github.com/GideonZ/1541ultimate/blob/master/software/network/assembly.cc)
   is a protocol and AQL syntax reference.
 

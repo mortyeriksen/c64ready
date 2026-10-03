@@ -7,6 +7,7 @@ import { openAdvancedDialog } from './advanced-dialog.js';
 import { openDetailsDialog } from './details-dialog.js';
 import { createTypeIcon } from './icons.js';
 import { createDownloadProgress } from './progress.js';
+import { CHARTS } from './controller.js';
 
 function nameDialog(title, initial, submit) {
   const dialog = createDialog(title);
@@ -24,9 +25,10 @@ function nameDialog(title, initial, submit) {
 
 export function openBrowserDialog(controller, store, perform, { view = 'results' } = {}) {
   let timer, unsubscribe = () => {}, mode = view, downloading = false;
+  let chart = CHARTS[0][0], chartRequest = null, charted = { name: null, status: 'idle', items: [], message: '' };
   let availableFields = controller.fields;
   const progress = createDownloadProgress();
-  const dialog = createDialog('Assembly64 Browser', () => { clearTimeout(timer); progress.finish(); controller.cancel(); unsubscribe(); });
+  const dialog = createDialog('Assembly64 Browser', () => { clearTimeout(timer); chartRequest?.abort(); progress.finish(); controller.cancel(); unsubscribe(); });
   dialog.card.classList.add('mb-browser');
   const header = el('div', null, { class: 'mb-browser-heading' });
   header.append(
@@ -40,7 +42,7 @@ export function openBrowserDialog(controller, store, perform, { view = 'results'
   searchForm.append(el('span', '⌕', { class: 'mb-search-icon', 'aria-hidden': true }), input, search);
   const navigation = el('nav', null, { class: 'mb-navigation', 'aria-label': 'Assembly64 browser views' });
   const tabs = new Map();
-  for (const [key, label] of [['results', 'Explore'], ['favorites', 'Favorites'], ['saved', 'Saved searches']]) {
+  for (const [key, label] of [['results', 'Explore'], ['charts', 'Charts'], ['favorites', 'Favorites'], ['saved', 'Saved searches']]) {
     const tab = button(label, () => setView(key), { class: 'mb-tab', 'aria-pressed': key === mode });
     tabs.set(key, tab); navigation.append(tab);
   }
@@ -63,20 +65,42 @@ export function openBrowserDialog(controller, store, perform, { view = 'results'
     store.saveSearch(name, controller.state.filters, controller.state.sort); status.textContent = 'Search saved.';
   }), { class: 'mb-text-button' });
   resultHeader.append(count, save);
+  const chartPicker = el('div', null, { class: 'mb-chart-picker', role: 'group', 'aria-label': 'Chart' });
+  const chartButtons = new Map();
+  for (const [key, label] of CHARTS) {
+    const node = button(label, () => loadChart(key), { class: 'mb-filter-chip', 'aria-pressed': key === chart });
+    chartButtons.set(key, node); chartPicker.append(node);
+  }
   const chips = el('div', null, { class: 'mb-active-filters', 'aria-label': 'Active filters' });
   const status = el('p', '', { class: 'mb-status', role: 'status', 'aria-live': 'polite' });
   const results = el('div', null, { class: 'mb-results', 'aria-label': 'Search results' });
   const more = button('LOAD MORE ↓', () => controller.search(true), { class: 'btn mb-more' });
-  main.append(resultHeader, chips, status, results, more); layout.append(sidebar, main);
+  main.append(resultHeader, chartPicker, chips, status, results, more); layout.append(sidebar, main);
   const footer = el('div', null, { class: 'mb-browser-footer' });
   footer.append(el('span', 'Save files to Library to open them offline.'), el('span', 'ESC to close', { class: 'mb-escape-hint' }));
   dialog.body.append(header, searchForm, navigation, layout, progress.root, footer);
 
   function setView(next) {
     clearTimeout(timer); mode = next;
-    if (mode !== 'results') { controller.cancel(); render(controller.state); }
+    if (mode === 'charts') { controller.cancel(); if (charted.name !== chart || charted.status === 'error') loadChart(chart); else render(controller.state); }
+    else if (mode !== 'results') { controller.cancel(); render(controller.state); }
     else if (controller.state.status === 'idle' && !controller.state.items.length && controller.online()) controller.search();
     else render(controller.state);
+  }
+  // A chart is fetched whole, once per dialog, and a newer pick cancels the one
+  // still loading.
+  async function loadChart(name) {
+    chartRequest?.abort();
+    const request = chartRequest = new AbortController();
+    chart = name; charted = { name, status: 'loading', items: [], message: '' }; render(controller.state);
+    try {
+      const items = await controller.getChart(name, { signal: request.signal });
+      if (request === chartRequest) charted = { name, status: 'ready', items, message: '' };
+    } catch (error) {
+      if (request !== chartRequest || error?.name === 'AbortError') return;
+      charted = { name, status: 'error', items: [], message: error.message };
+    }
+    if (request === chartRequest) { chartRequest = null; if (!dialog.closed) render(controller.state); }
   }
   function updateFilter(key, value) {
     if (controller.state.filters[key] === value && (controller.state.filters.name || '') === input.value) return;
@@ -119,12 +143,14 @@ export function openBrowserDialog(controller, store, perform, { view = 'results'
     sidebar.hidden = mode !== 'results';
     layout.classList.toggle('mb-without-sidebar', mode !== 'results');
     save.hidden = mode !== 'results';
+    chartPicker.hidden = mode !== 'charts';
+    for (const [key, node] of chartButtons) node.setAttribute('aria-pressed', String(key === chart));
     chips.hidden = mode !== 'results';
     search.disabled = state.status === 'loading' || !controller.online();
     results.setAttribute('aria-busy', String(state.status === 'loading'));
     more.hidden = mode !== 'results' || !state.hasMore;
     more.disabled = state.status === 'loading' || !controller.online();
-    count.classList.toggle('mb-loading', state.status === 'loading' && mode === 'results');
+    count.classList.toggle('mb-loading', (state.status === 'loading' && mode === 'results') || (charted.status === 'loading' && mode === 'charts'));
     const quickKeys = ['name', 'group', 'category', 'repo'];
     const active = Object.entries(state.filters).filter(([, value]) => value !== '' && value != null);
     const advancedCount = active.filter(([key]) => !quickKeys.includes(key)).length;
@@ -158,57 +184,68 @@ export function openBrowserDialog(controller, store, perform, { view = 'results'
       if (!searches.length) empty('No saved searches yet', 'Choose your filters in Explore, then select Save search.', '⌕');
       return;
     }
+    if (mode === 'charts') {
+      const label = CHARTS.find(([key]) => key === chart)[1].toLowerCase();
+      count.textContent = charted.status === 'loading' ? `Loading the ${label} chart` : charted.status === 'ready' ? `Top ${charted.items.length} ${label}` : `The ${label} chart`;
+      status.textContent = charted.status === 'error' ? charted.message : '';
+      for (const item of charted.items) results.append(resultRow(item));
+      if (charted.status === 'error') empty(controller.online() ? 'Chart unavailable' : 'You’re offline', '', '⌁');
+      else if (charted.status === 'ready' && !charted.items.length) empty('This chart is empty', '', '⌁');
+      return;
+    }
     const items = mode === 'favorites' ? store.favorites() : state.items;
     count.textContent = mode === 'favorites' ? `${items.length} ${items.length === 1 ? 'favorite' : 'favorites'}` : state.status === 'loading' ? 'Searching the catalog' : state.status === 'idle' ? 'Explore the catalog' : `${items.length} ${items.length === 1 ? 'release' : 'releases'}${state.hasMore ? ' loaded' : ''}`;
     status.textContent = mode === 'favorites' ? '' : state.status === 'ready' || state.status === 'loading' ? '' : state.message;
-    for (const item of items) {
-      const row = el('article', null, { class: 'mb-result' });
-      const viewDetails = () => openDetailsDialog(controller, item, perform);
-      const formats = [...new Set((item.files || []).map(f => f.mediaType.toUpperCase()))];
-      const icon = createTypeIcon(item.kind);
-      const title = button(item.title, viewDetails, { class: 'mb-title' });
-      if (item.producer) title.append(el('span', ` — ${item.producer}`, { class: 'mb-producer' }));
-      const summary = el('div', null, { class: 'mb-result-summary' });
-      summary.append(title, el('p', [item.kind, item.source, item.year || item.date].filter(Boolean).join(' · '), { class: 'mb-meta' }));
-      const tags = el('div', null, { class: 'mb-format-tags' });
-      if (formats.length > 1) for (const format of formats) tags.append(el('span', format));
-      summary.append(tags);
-      const rating = el('span', item.rating == null ? '—' : `★ ${item.rating}`, { class: 'mb-rating', 'aria-label': item.rating == null ? 'No rating' : `Rating ${item.rating}` });
-      const star = button(store.isFavorite(item) ? '★' : '☆', () => {
-        try {
-          store.toggleFavorite(item);
-          if (mode === 'favorites') render(controller.state);
-          else { star.textContent = store.isFavorite(item) ? '★' : '☆'; star.setAttribute('aria-pressed', String(store.isFavorite(item))); }
-        } catch (error) { status.textContent = error.message; }
-      }, { class: 'mb-star', 'aria-label': `Favorite ${item.title}`, 'aria-pressed': store.isFavorite(item) });
-      const actions = el('div', null, { class: 'mb-row-actions' });
-      actions.append(button('VIEW', viewDetails, { class: 'btn mb-view' }));
-      const file = directRunFile(item);
-      if (file) {
-        const run = button('LOAD', async () => {
-          if (downloading) return;
-          downloading = true; setBusy(true); status.textContent = ''; progress.start(file.name);
-          try {
-            const result = await perform(item, file, { action: 'run' }, dialog.signal, progress.update);
-            if (!dialog.closed) {
-              if (result.mediaType) closeAssembly64Dialogs();
-              else status.textContent = result.message;
-            }
-          } catch (error) { if (!dialog.closed) status.textContent = error.message; }
-          finally { progress.finish(); downloading = false; setBusy(false); }
-        }, { class: 'btn mb-run', 'data-mb-download': '' });
-        run.disabled = downloading || !controller.online(); actions.append(run);
-      }
-      row.append(icon, summary, rating, star, actions);
-      row.addEventListener('click', event => { if (!event.target.closest('button, a')) viewDetails(); });
-      results.append(row);
-    }
+    for (const item of items) results.append(resultRow(item));
     if (!items.length && state.status !== 'loading') {
       if (mode === 'favorites') empty('No favorites yet', 'Star a release in Explore to bookmark it here.', '☆');
       else if (state.status === 'error' || state.status === 'offline') empty(controller.online() ? 'Search unavailable' : 'You’re offline', '', '⌁');
       else if (state.status === 'ready') empty('No releases found', 'Try another title or use fewer filters.', '⌕');
       else empty('Search the catalog', 'Enter a title or select SEARCH to browse everything.', '⌕');
     }
+  }
+  function resultRow(item) {
+    const row = el('article', null, { class: 'mb-result' });
+    const viewDetails = () => openDetailsDialog(controller, item, perform);
+    const formats = [...new Set((item.files || []).map(f => f.mediaType.toUpperCase()))];
+    const icon = createTypeIcon(item.kind);
+    const title = button(item.title, viewDetails, { class: 'mb-title' });
+    if (item.rank) title.prepend(el('span', `#${item.rank} `, { class: 'mb-rank' }));
+    if (item.producer) title.append(el('span', ` — ${item.producer}`, { class: 'mb-producer' }));
+    const summary = el('div', null, { class: 'mb-result-summary' });
+    summary.append(title, el('p', [item.kind, item.source, item.year || item.date].filter(Boolean).join(' · '), { class: 'mb-meta' }));
+    const tags = el('div', null, { class: 'mb-format-tags' });
+    if (formats.length > 1) for (const format of formats) tags.append(el('span', format));
+    summary.append(tags);
+    const rating = el('span', item.rating == null ? '—' : `★ ${item.rating}`, { class: 'mb-rating', 'aria-label': item.rating == null ? 'No rating' : `Rating ${item.rating}` });
+    const star = button(store.isFavorite(item) ? '★' : '☆', () => {
+      try {
+        store.toggleFavorite(item);
+        if (mode === 'favorites') render(controller.state);
+        else { star.textContent = store.isFavorite(item) ? '★' : '☆'; star.setAttribute('aria-pressed', String(store.isFavorite(item))); }
+      } catch (error) { status.textContent = error.message; }
+    }, { class: 'mb-star', 'aria-label': `Favorite ${item.title}`, 'aria-pressed': store.isFavorite(item) });
+    const actions = el('div', null, { class: 'mb-row-actions' });
+    actions.append(button('VIEW', viewDetails, { class: 'btn mb-view' }));
+    const file = directRunFile(item);
+    if (file) {
+      const run = button('LOAD', async () => {
+        if (downloading) return;
+        downloading = true; setBusy(true); status.textContent = ''; progress.start(file.name);
+        try {
+          const result = await perform(item, file, { action: 'run' }, dialog.signal, progress.update);
+          if (!dialog.closed) {
+            if (result.mediaType) closeAssembly64Dialogs();
+            else status.textContent = result.message;
+          }
+        } catch (error) { if (!dialog.closed) status.textContent = error.message; }
+        finally { progress.finish(); downloading = false; setBusy(false); }
+      }, { class: 'btn mb-run', 'data-mb-download': '' });
+      run.disabled = downloading || !controller.online(); actions.append(run);
+    }
+    row.append(icon, summary, rating, star, actions);
+    row.addEventListener('click', event => { if (!event.target.closest('button, a')) viewDetails(); });
+    return row;
   }
   function setBusy(busy) {
     for (const node of results.querySelectorAll('[data-mb-download]')) node.disabled = busy || !controller.online();
@@ -221,6 +258,7 @@ export function openBrowserDialog(controller, store, perform, { view = 'results'
   }
   if (mode !== 'results') controller.cancel();
   unsubscribe = controller.subscribe(render); sync();
+  if (mode === 'charts') loadChart(chart);
   dialog.sync = sync;
   if (!window.matchMedia?.('(pointer: coarse)').matches) input.focus();
   return dialog;
