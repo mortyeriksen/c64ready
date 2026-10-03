@@ -949,9 +949,10 @@ async function _insertPRG(data, verb = 'loaded', fileName = '', { autorun = getA
     setStatus(`"${disk.diskName}" is on a disk in drive 8 — press POWER ON`, 'idle');
     return;
   }
-  // Machine code has no entry point we can trust, so say where it landed and let
-  // the user SYS it themselves.
-  if (!startCmd) {
+  // Machine code has no entry point we can trust, so once AUTORUN has loaded it,
+  // say where it landed and let the user SYS it themselves. Without AUTORUN the
+  // disk is only inserted, and the drive's status says that.
+  if (autorun && !startCmd) {
     const addr = data[0] | (data[1] << 8);
     setTimeout(() => setStatus(`Loaded @ $${addr.toString(16).toUpperCase()} — type SYS ${addr} to start it`, 'idle'), 1200);
   }
@@ -1238,7 +1239,7 @@ function _onD64Loaded(disk) {
   _syncD64EjectButton();
   _syncWriteButtons();
   const suffix = machine?.ready ? '' : ' (cached — applies on POWER ON)';
-  setStatus(`${_diskType(disk).toUpperCase()}: "${disk.diskName}" loaded${suffix}`, machine?.ready ? 'running' : 'idle');
+  setStatus(`${_diskType(disk).toUpperCase()}: "${disk.diskName}" inserted${suffix}`, machine?.ready ? 'running' : 'idle');
 }
 
 function _ejectD64() {
@@ -1606,7 +1607,7 @@ function _onD64Drive9Loaded(disk, { autorun = false, startCmd = 'RUN\r' } = {}) 
   _syncWriteButtons();
   if (autorun && running && getAutorunEnabled()) { _autoLoadDisk(startCmd, 9); return; }
   const suffix = machine?.ready ? '' : ' (cached — applies on POWER ON)';
-  setStatus(`Drive 9: "${disk.diskName}" loaded${suffix}`, machine?.ready ? 'running' : 'idle');
+  setStatus(`Drive 9: "${disk.diskName}" inserted${suffix}`, machine?.ready ? 'running' : 'idle');
 }
 
 function _ejectD64Drive9() {
