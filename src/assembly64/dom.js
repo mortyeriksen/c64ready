@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 import { pushEscapeLayer, popEscapeLayer } from '../ui/escape-stack.js';
+import { rovingListKey } from '../ui/roving-list.js';
 
 export function el(tag, text, attrs = {}) {
   const node = document.createElement(tag);
@@ -70,12 +71,8 @@ export function createDialog(title, onClose = () => {}) {
     if (dialogStack.at(-1) !== overlay) return;
     if (document.querySelector('.modal-backdrop:not([hidden])')) return;
     if (event.key === 'Escape') return;
-    const target = event.target;
-    const editing = target.matches('input, textarea') || target.isContentEditable;
-    if (event.code === 'Space' && !editing) {
-      event.preventDefault();
-      return;
-    }
+    // A result list moves its own focus with the arrow keys (ui/roving-list.js).
+    if (rovingListKey(event)) return;
     event.stopImmediatePropagation();
     if (event.key === 'Tab') {
       const focusable = [...card.querySelectorAll('button, input, select, a[href], [tabindex="0"]')].filter(n => !n.disabled && !n.hidden && n.getClientRects().length);

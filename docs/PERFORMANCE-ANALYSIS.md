@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: How a cycle-accurate C64 stays fast in the browser: what each cycle costs, the measurement harnesses, and keeping the hot paths allocation-free. -->
 
 # Performance
 

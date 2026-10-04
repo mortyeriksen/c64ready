@@ -408,6 +408,7 @@ console.log('ok  - side panel card layout persistence, arranging and drop-to-hid
   expect(savedLayout() === 'controls|status,media,drive8,ports', `each keyboard move is saved (${savedLayout()})`);
   expect(document.activeElement === handleOf('media'), 'focus stays on the handle');
 
+
   // ── Drop-to-hide, and the + that brings a card back ──
   const hideTarget = document.querySelector('.panel-hide-target');
   const restoreBtn = document.querySelector('.panel-restore-btn');
@@ -471,6 +472,22 @@ console.log('ok  - side panel card layout persistence, arranging and drop-to-hid
   fire(dialog.querySelectorAll('.panel-restore-item')[1], 'click');
   expect(!dialog.hidden && dialog.querySelectorAll('.panel-restore-item').length === 1, 'with one still hidden the picker stays open');
   expect(handleEscape() === true && dialog.hidden && escapeLayerCount() === 0, 'Escape closes the picker through the shared stack');
+
+  // ── Delete on a handle hides its panel: the keyboard's drop-to-hide ──
+  // The handle that follows Status in reading order, among the shown cards.
+  const shownKeys = () => cols.flatMap(c => keysIn(c).filter(k => !document.querySelector(`[data-panel="${k}"]`).classList.contains('is-panel-hidden')));
+  const afterStatus = shownKeys()[shownKeys().indexOf('status') + 1];
+  ev = kb('status', 'Delete');
+  const status = document.querySelector('[data-panel="status"]');
+  expect(ev.defaultPrevented && status.classList.contains('is-panel-hidden'), 'Delete on a handle hides its panel');
+  expect(JSON.parse(localStorage.getItem(PANEL_HIDDEN_KEY)).sort().join() === 'drive8,status' && /Status hidden/.test(live()),
+    'the hide is saved and announced');
+  expect(document.activeElement === handleOf(afterStatus), `focus moves on to the next panel's handle (${afterStatus})`);
+  ev = kb(afterStatus, 'Backspace');
+  expect(ev.defaultPrevented && document.querySelector(`[data-panel="${afterStatus}"]`).classList.contains('is-panel-hidden'),
+    'Backspace (Delete on a Mac keyboard) hides too, and never reaches the C64');
+  fire(restoreBtn, 'click');
+  for (const item of [...dialog.querySelectorAll('.panel-restore-item')]) fire(item, 'click');
 
   // ── RESET PANELS ──
   fire(document.getElementById('btn-panel-order-reset'), 'click');

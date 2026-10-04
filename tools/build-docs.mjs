@@ -12,11 +12,12 @@
 // calls buildDocs() on buildStart for dev + production build) and standalone
 // via `npm run build:docs`. Generated docs live under public/docs/, which is
 // git-ignored; the .md files under docs/ are the source of truth.
-import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'fs';
+import { readFileSync, readdirSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'fs';
 import { createHash } from 'crypto';
 import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { USER_GUIDE_ANCHORS } from './user-guide-anchors.mjs';
 import { marked } from 'marked';
 import { VERSION } from '../src/version.js';
 
@@ -43,7 +44,12 @@ const ORDER = [
   'ABOUT',
   'GETTING-STARTED',
   'USER-GUIDE',
-  'USER-GUIDE-CLI',
+  'GUIDE-INTERFACE',
+  'GUIDE-MEDIA',
+  'GUIDE-INPUT',
+  'GUIDE-LOOKS',
+  'GUIDE-OPTIONS',
+  'GUIDE-CLI',
   'SPECIFICATIONS',
   'FEATURES',
   'KNOWN-ISSUES',
@@ -65,9 +71,24 @@ const ORDER = [
 // lead the landing page in their own "Overview & guides" band; everything else
 // falls into the "Architecture & internals" grid.
 const GUIDES = new Set([
-  'WHATS-NEW', 'GETTING-STARTED', 'USER-GUIDE', 'USER-GUIDE-CLI', 'FEATURES',
+  'WHATS-NEW', 'GETTING-STARTED', 'USER-GUIDE', 'FEATURES',
   'KNOWN-ISSUES', 'SPECIFICATIONS', 'ABOUT',
 ]);
+
+// The User Guide is a hub (USER-GUIDE.md) and these topic pages, in reading
+// order. Each gets a "User Guide" breadcrumb and previous/next links, and all
+// of them share a left menu listing the guide's pages (renderGuideNav).
+const GUIDE_PAGES = ['GUIDE-INTERFACE', 'GUIDE-MEDIA', 'GUIDE-INPUT', 'GUIDE-LOOKS', 'GUIDE-OPTIONS', 'GUIDE-CLI'];
+
+// Sources kept only so an old link to the file (GitHub, the CLI's published
+// README) still says where it went; they are not built into pages. Their old
+// page URLs redirect in public/_redirects.
+const MOVED_SOURCES = new Set(['USER-GUIDE-CLI.md']);
+
+// The guide was one page; a link to a heading that moved to a topic page
+// (bookmarks, other sites, older release notes) is sent on to it by a small
+// script on the hub. Old heading id → new page and id.
+const GUIDE_REDIRECTS = USER_GUIDE_ANCHORS;
 
 // Hand-written teasers for specific landing-page cards, overriding the
 // auto-extracted first paragraph. Keyed by the lowercase basename (card href).
@@ -77,13 +98,55 @@ const CARD_TEASERS = {
   'whats-new': 'What changed in each release, in plain language.',
   specifications: 'The hardware references, tools, and people this emulator is built on.',
   about: "What it is, what it stands for, and who's behind it.",
-  'user-guide-cli': 'The command line for your cassettes, cartridges and disks: convert, inspect, repair and run them in batches.',
+  'user-guide': 'Every panel, dialog and button, in topics from the interface and media to options and the command line.',
 };
 
 const TEXT_DOCS = [
-  { srcRel: 'LICENSE', href: 'license', title: 'License (GPL-3.0-or-later)' },
-  { srcRel: 'NOTICE.txt', href: 'notice', title: 'Third-party notices' },
+  { srcRel: 'LICENSE', href: 'license', title: 'License (GPL-3.0-or-later)',
+    desc: 'The GNU General Public License, version 3 or later, that C64 READY. is released under, in full.' },
+  { srcRel: 'NOTICE.txt', href: 'notice', title: 'Third-party notices',
+    desc: 'Third-party notices for C64 READY.: the code, fonts and models it includes from others, and their licenses.' },
 ];
+
+// Each doc names its own search and share description in a comment under its
+// licence header, <!-- description: ... -->; test/docs-meta-spec-test.js keeps
+// them whole sentences of a preview's length.
+const DESCRIPTION = /^<!--\s*description:\s*([\s\S]*?)\s*-->\s*/;
+
+// A page's share image: its first picture in a landscape shape a preview card
+// shows whole (width 1.2 to 2 times the height). A page without one uses the
+// site's card. Sizes come from the file headers, so nothing is decoded.
+const SHARE_RATIO = [1.2, 2];
+function imageSize(file) {
+  const b = readFileSync(file);
+  if (b.toString('ascii', 0, 4) === 'RIFF' && b.toString('ascii', 8, 12) === 'WEBP') {
+    const kind = b.toString('ascii', 12, 16);
+    if (kind === 'VP8X') return { width: 1 + b.readUIntLE(24, 3), height: 1 + b.readUIntLE(27, 3) };
+    if (kind === 'VP8L') { const v = b.readUInt32LE(21); return { width: 1 + (v & 0x3fff), height: 1 + ((v >> 14) & 0x3fff) }; }
+    if (kind === 'VP8 ') return { width: b.readUInt16LE(26) & 0x3fff, height: b.readUInt16LE(28) & 0x3fff };
+  }
+  if (b.readUInt32BE(0) === 0x89504e47) return { width: b.readUInt32BE(16), height: b.readUInt32BE(20) };
+  if (b[0] === 0xff && b[1] === 0xd8) {
+    for (let i = 2; i < b.length - 9;) {
+      if (b[i] !== 0xff) { i++; continue; }
+      const marker = b[i + 1], len = b.readUInt16BE(i + 2);
+      if (marker >= 0xc0 && marker <= 0xc3) return { width: b.readUInt16BE(i + 7), height: b.readUInt16BE(i + 5) };
+      i += 2 + len;
+    }
+  }
+  return null;
+}
+function shareImage(md) {
+  for (const [, alt, src] of md.matchAll(/!\[([^\]]*)\]\((\/[^)\s]+)\)/g)) {
+    const file = join(ROOT, 'public', src);
+    if (!existsSync(file)) continue;
+    const size = imageSize(file);
+    if (!size) continue;
+    const ratio = size.width / size.height;
+    if (ratio >= SHARE_RATIO[0] && ratio <= SHARE_RATIO[1]) return { url: absoluteUrl(src), alt, ...size };
+  }
+  return null;
+}
 
 const escapeHtml = (s) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -223,10 +286,20 @@ function addAnchorsAndToc(html) {
     used.add(id);
     const lvl = Number(level);
     if (lvl === 2 || lvl === 3) toc.push({ level: lvl, id, text });
-    return `<h${level} id="${id}">${inner}<a class="anchor" href="#${id}" aria-hidden="true">#</a></h${level}>`;
+    // The # link is for pointing and copying; hidden from assistive tech, so
+    // it stays out of the Tab order too.
+    return `<h${level} id="${id}">${inner}<a class="anchor" href="#${id}" aria-hidden="true" tabindex="-1">#</a></h${level}>`;
   });
   return { html: out, toc };
 }
+
+// Keyboard and screen-reader fixes on marked's output: a code block that may
+// scroll sideways takes focus so the keyboard can scroll it, and an empty table
+// header cell (a corner over a row-label column) is a plain cell.
+const accessibleMarkup = (html) => html
+  .replace(/<pre>/g, '<pre tabindex="0">')
+  .replace(/<th>(\s*)<\/th>/g, '<td>$1</td>')
+  .replace(/<th align="(\w+)">(\s*)<\/th>/g, '<td align="$1">$2</td>');
 
 // Rewrite sibling links that point at the .md sources to the compiled .html.
 // Output filenames are lowercased (see buildDocs), so lowercase the link target
@@ -245,13 +318,39 @@ const rewriteDocLinks = (html) =>
 function writeAboutFragment(bodyHtml) {
   const licenseComment =
     '<!-- SPDX-License-Identifier: GPL-3.0-or-later -->\n<!-- Copyright © 2026 Morten Øien Eriksen -->\n';
+  // The dialog has its own title, so the page's sections sit a level lower.
   const fragment = licenseComment + bodyHtml
     .replace(/<h1\b[^>]*>[\s\S]*?<\/h1>\s*/, '')
+    .replace(/<(\/?)h2\b/g, '<$1h3')
     .replace(/<a href="([^"]*)"/g, (_m, href) => {
       const offsite = /^https?:\/\//i.test(href) ? ' target="_blank" rel="noopener"' : '';
       return `<a class="credits-link-inline"${offsite} href="${href}"`;
     });
   writeFileSync(join(DOCS_OUT, 'about-fragment.html'), fragment);
+}
+
+// The left menu of the User Guide's pages: the hub and every topic page, the
+// one shown marked as current with its own sections listed beneath it.
+function renderGuideNav(name, toc) {
+  const pages = [['USER-GUIDE', 'Overview'], ...GUIDE_PAGES.map((n) => [n, guideTitle(n)])];
+  const sections = (indent) => toc.filter((t) => t.text !== 'Topics')
+    .map((t) => `${indent}<li class="toc-l${t.level}"><a href="#${t.id}">${escapeHtml(t.text)}</a></li>`).join('\n');
+  const items = pages.map(([n, label]) => {
+    const href = `/docs/${n.toLowerCase()}.html`;
+    if (n !== name) return `          <li class="guide-doc"><a href="${href}">${escapeHtml(label)}</a></li>`;
+    const subs = sections('              ');
+    return `          <li class="guide-doc current"><a href="${href}" aria-current="page">${escapeHtml(label)}</a>${subs ? `
+            <ul>
+${subs}
+            </ul>
+          ` : ''}</li>`;
+  }).join('\n');
+  return `      <nav class="doc-toc guide-nav" aria-label="User Guide">
+        <div class="toc-title"><a href="/docs/user-guide.html">User Guide</a></div>
+        <ul>
+${items}
+        </ul>
+      </nav>`;
 }
 
 function renderToc(toc) {
@@ -277,6 +376,7 @@ const LOGO =
 
 function head(title, page = {}) {
   const desc = page.desc || DOCS_DEFAULT_DESC;
+  const image = page.image || { url: SOCIAL_IMAGE_URL, width: 1200, height: 630, alt: SOCIAL_IMAGE_ALT };
   const url = absoluteUrl(page.path || '/docs/');
   return `<!doctype html>
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
@@ -293,18 +393,20 @@ function head(title, page = {}) {
   <meta property="og:site_name" content="C64 READY.">
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(desc)}">
-  <meta property="og:image" content="${SOCIAL_IMAGE_URL}">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="${escapeHtml(SOCIAL_IMAGE_ALT)}">
+  <meta property="og:image" content="${escapeHtml(image.url)}">
+  <meta property="og:image:width" content="${image.width}">
+  <meta property="og:image:height" content="${image.height}">
+  <meta property="og:image:alt" content="${escapeHtml(image.alt)}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(desc)}">
-  <meta name="twitter:image" content="${SOCIAL_IMAGE_URL}">
+  <meta name="twitter:image" content="${escapeHtml(image.url)}">
+  <meta name="twitter:image:alt" content="${escapeHtml(image.alt)}">
   <!-- Same icon set and ?v= as index.html; the icons live under /icons/. -->
   <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg?v=3">
   <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png?v=3">
   <link rel="apple-touch-icon" href="/icons/favicon-180.png?v=3">
+  <script>${APPEARANCE_PREPAINT}</script>
   <link rel="stylesheet" href="/fonts/fonts.css">
   <link rel="stylesheet" href="/docs/docs.css?v=${CSS_VERSION}">
 </head>
@@ -327,10 +429,64 @@ const FACEBOOK_SVG =
   '<svg viewBox="0 0 16 16" width="17" height="17" fill="currentColor" aria-hidden="true" focusable="false">' +
   '<path d="M16 8.05C16 3.6 12.42 0 8 0S0 3.6 0 8.05C0 12.07 2.93 15.4 6.75 16v-5.61H4.72V8.05h2.03V6.28c0-2.02 1.2-3.13 3.02-3.13.87 0 1.79.16 1.79.16v1.98h-1.01c-.99 0-1.3.62-1.3 1.26v1.5h2.22l-.36 2.34H9.25V16C13.07 15.4 16 12.07 16 8.05Z"/></svg>';
 
+// Dark, light or the system's: the emulator's setting (c64emu.appearance), read
+// before first paint and cycled by the top bar's button in the emulator's
+// order. These mirror src/ui/appearance.js (APPEARANCE_KEY, nextAppearance and
+// its icons); test/appearance-spec-test.js checks that the two agree.
+const APPEARANCE_PREPAINT = `(function () {
+    var a = null, dark = true;
+    try { a = localStorage.getItem('c64emu.appearance'); } catch (e) {}
+    try { dark = window.matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) {}
+    var mode = a === 'dark' || a === 'light' ? a : (dark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-mode', mode);
+    document.documentElement.style.colorScheme = mode;
+  })();`;
+const APPEARANCE_BUTTON = `(function () {
+    var KEY = 'c64emu.appearance';
+    var ICONS = {
+      dark: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/>',
+      light: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+      system: '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/>'
+    };
+    var LABELS = { dark: 'Dark', light: 'Light', system: 'System' };
+    var query = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+    var osDark = function () { return query ? query.matches : true; };
+    var read = function () { var a = null; try { a = localStorage.getItem(KEY); } catch (e) {} return a === 'dark' || a === 'light' ? a : 'system'; };
+    function docsNext(now, systemPrefersDark) {
+      var os = systemPrefersDark ? 'dark' : 'light', other = systemPrefersDark ? 'light' : 'dark';
+      return now === 'system' ? other : now === other ? os : 'system';
+    }
+    var btn = document.getElementById('appearance-btn');
+    var appearance = read();
+    function apply() {
+      var mode = appearance === 'system' ? (osDark() ? 'dark' : 'light') : appearance;
+      document.documentElement.setAttribute('data-mode', mode);
+      document.documentElement.style.colorScheme = mode;
+      if (!btn) return;
+      var next = docsNext(appearance, osDark());
+      btn.querySelector('svg').innerHTML = ICONS[appearance];
+      var label = 'Appearance: ' + LABELS[appearance] + '. Switch to ' + LABELS[next].toLowerCase();
+      btn.setAttribute('aria-label', label);
+      btn.title = label;
+    }
+    if (btn) btn.addEventListener('click', function () {
+      appearance = docsNext(appearance, osDark());
+      try { if (appearance === 'system') localStorage.removeItem(KEY); else localStorage.setItem(KEY, appearance); } catch (e) {}
+      apply();
+    });
+    if (query && query.addEventListener) query.addEventListener('change', apply);
+    window.addEventListener('storage', function (e) { if (e.key === KEY) { appearance = read(); apply(); } });
+    apply();
+  })();`;
+
 const topbar = `  <header class="doc-top">
     <a class="brand" href="/docs/" aria-label="C64 READY. docs home">${LOGO}</a>
     <nav class="top-nav">
       <span class="nav-links">
+        <button class="nav-btn nav-icon appearance-btn" id="appearance-btn" type="button"
+          aria-label="Appearance"><svg viewBox="0 0 24 24" width="17" height="17" fill="none"
+          stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+          aria-hidden="true" focusable="false"></svg></button>
         <a class="nav-btn" href="/docs/about.html">ABOUT</a>
         <a class="nav-btn nav-icon" href="https://github.com/mortyeriksen/c64ready"
           target="_blank" rel="noopener" title="Source code on GitHub"
@@ -351,23 +507,55 @@ const foot = `  <footer class="doc-foot">
     <span>© 2026 Morten Øien Eriksen · <a href="/docs/whats-new.html"
       title="What changed in each release">v${VERSION}</a> · GPL-3.0-or-later</span>
   </footer>
+  <script>${APPEARANCE_BUTTON}</script>
 </body>
 </html>`;
 
+// A topic page's title, from its H1.
+const guideTitle = (name) => extractMeta(readFileSync(join(DOCS_SRC, `${name}.md`), 'utf8'), name).title;
+
+// Previous / next links between the User Guide's topic pages, the hub at
+// either end.
+function guidePager(name) {
+  const i = GUIDE_PAGES.indexOf(name);
+  const link = (n, rel) => {
+    const [href, label] = n ? [`/docs/${n.toLowerCase()}.html`, guideTitle(n)] : ['/docs/user-guide.html', 'User Guide'];
+    return `<a class="guide-pager-${rel}" href="${href}">${rel === 'prev' ? '‹ ' : ''}${escapeHtml(label)}${rel === 'next' ? ' ›' : ''}</a>`;
+  };
+  return `      <nav class="guide-pager" aria-label="User Guide pages">${link(GUIDE_PAGES[i - 1], 'prev')}${link(GUIDE_PAGES[i + 1], 'next')}</nav>`;
+}
+
+// On the hub: send a link to a heading that has moved on to its topic page.
+const guideRedirectScript = () => `  <script>
+    (function () {
+      var moved = ${JSON.stringify(GUIDE_REDIRECTS)};
+      function go() {
+        var id = decodeURIComponent(location.hash.slice(1));
+        if (id && !document.getElementById(id) && moved[id]) location.replace('/docs/' + moved[id]);
+      }
+      go();
+      window.addEventListener('hashchange', go);
+    })();
+  </script>`;
+
 function renderDocPage(meta, bodyHtml, toc) {
-  const tocHtml = renderToc(toc);
+  const tocHtml = meta.name === 'USER-GUIDE' || GUIDE_PAGES.includes(meta.name) ? renderGuideNav(meta.name, toc) : renderToc(toc);
   const title = `${meta.title} · C64 READY. docs`;
   const path = meta.path || `/docs/${meta.href || slug(meta.title)}.html`;
-  return `${head(title, { desc: meta.desc, path })}
+  const inGuide = GUIDE_PAGES.includes(meta.name);
+  const crumbs = inGuide
+    ? `<a href="/docs/">Docs</a> <span>/</span> <a href="/docs/user-guide.html">User Guide</a> <span>/</span> ${escapeHtml(meta.title)}`
+    : `<a href="/docs/">Docs</a> <span>/</span> ${escapeHtml(meta.title)}`;
+  return `${head(title, { desc: meta.desc, path, image: meta.image })}
 ${topbar}
   <main class="doc-main${tocHtml ? ' has-toc' : ''}">
 ${tocHtml}
     <article class="doc-content">
-      <p class="crumbs"><a href="/docs/">Docs</a> <span>/</span> ${escapeHtml(meta.title)}</p>
+      <p class="crumbs">${crumbs}</p>
 ${bodyHtml}
-    </article>
+${inGuide ? guidePager(meta.name) + '\n' : ''}    </article>
   </main>
-${foot}`;
+${meta.name === 'USER-GUIDE' ? guideRedirectScript() + '\n' : ''}${foot}`;
 }
 
 // Compile a plain-text file (LICENSE, NOTICE.txt) verbatim into a styled doc
@@ -375,13 +563,13 @@ ${foot}`;
 // instead of the GitHub repo, and they work offline in the installed PWA. The
 // text is escaped and dropped into a <pre> (the .doc-content pre style already
 // gives horizontal scroll for the wide NOTICE separators / GPL lines).
-function writeTextDoc(srcRel, outHref, title) {
+function writeTextDoc(srcRel, outHref, title, desc) {
   const raw = readFileSync(join(ROOT, srcRel), 'utf8');
   const body = `      <h1>${escapeHtml(title)}</h1>
       <pre>${escapeHtml(raw)}</pre>`;
   writeFileSync(join(DOCS_OUT, `${outHref}.html`), renderDocPage({
     title,
-    desc: `${title} for C64 READY.`,
+    desc,
     href: outHref,
   }, body, []));
 }
@@ -394,7 +582,9 @@ function writeTextDoc(srcRel, outHref, title) {
 // its neighbours, so the gallery works offline and from the keyboard (Tab to
 // it, then the arrow keys).
 function renderGalleries(html) {
-  return html.replace(/<!--\s*gallery\s+([a-z0-9-]+)\s*-->([\s\S]*?)<!--\s*\/gallery\s*-->/g, (match, name, inner) => {
+  // An optional label="…" on the marker names what the slides are, shown before
+  // each title ("Theme: Commando").
+  return html.replace(/<!--\s*gallery\s+([a-z0-9-]+)(?:\s+label="([^"]*)")?\s*-->([\s\S]*?)<!--\s*\/gallery\s*-->/g, (match, name, kind, inner) => {
     const slides = [];
     let rest = inner;
     const imgRe = /<img\b[^>]*>/;
@@ -410,13 +600,14 @@ function renderGalleries(html) {
     const n = slides.length;
     const id = (i) => `gallery-${name}-${((i + n) % n) + 1}`;
     const items = slides.map((s, i) => {
-      const label = (s.title || `Image ${i + 1}`).replace(/<[^>]+>/g, '');
+      const prefix = kind ? `${escapeHtml(kind)}: ` : '';
+      const label = prefix + (s.title || `Image ${i + 1}`).replace(/<[^>]+>/g, '');
       return `<input type="radio" class="gallery-pick" name="gallery-${name}" id="${id(i)}" aria-label="${label}, ${i + 1} of ${n}"${i === 0 ? ' checked' : ''}>
 <figure class="gallery-slide">${s.caption ? `\n<figcaption>${s.caption}</figcaption>` : ''}
 ${s.img}
 <div class="gallery-nav">
 <label class="gallery-step" for="${id(i - 1)}" aria-hidden="true">‹ Previous</label>
-<span class="gallery-title">${s.title}<span class="gallery-count">${i + 1} / ${n}</span></span>
+<span class="gallery-title">${s.title ? prefix + s.title : ''}<span class="gallery-count">${i + 1} / ${n}</span></span>
 <label class="gallery-step" for="${id(i + 1)}" aria-hidden="true">Next ›</label>
 </div>
 </figure>`;
@@ -429,7 +620,7 @@ ${s.img}
 // taken from the guide's source so the two never drift apart.
 function overviewGallery() {
   const md = readFileSync(join(DOCS_SRC, 'USER-GUIDE.md'), 'utf8');
-  const block = md.match(/<!--\s*gallery\s+overview\s*-->[\s\S]*?<!--\s*\/gallery\s*-->/);
+  const block = md.match(/<!--\s*gallery\s+overview\b[^>]*-->[\s\S]*?<!--\s*\/gallery\s*-->/);
   return block ? renderGalleries(marked.parse(block[0])).trim().split('\n').map((line) => `      ${line}`).join('\n') : '';
 }
 
@@ -440,24 +631,56 @@ function readDocsIndexOverview() {
   return rewriteDocLinks(marked.parse(md));
 }
 
-function renderIndex(docs) {
-  const cardHtml = (d) => `      <a class="doc-card" href="/docs/${d.href}.html">
-        <h3>${escapeHtml(d.title)}</h3>
-        <p>${escapeHtml(d.desc)}</p>
-        <span class="read">Read ▸</span>
-      </a>`;
+// The landing page lists the docs in two groups, one line each: a short name
+// and a few words, in this order. A doc not named here goes at the end of its
+// group (GUIDES decides which) under its own title and teaser. The User
+// Guide's topic pages are left out: the guide's line leads to its hub, and the
+// hub's menu to them.
+const INDEX_LIST = {
+  guides: [
+    ['GETTING-STARTED', 'Getting Started', 'from blank screen to a running demo'],
+    ['USER-GUIDE', 'User Guide', 'every panel, dialog and button'],
+    ['FEATURES', 'Feature list', 'everything it supports'],
+    ['KNOWN-ISSUES', 'Known Issues', 'what is missing or rough'],
+    ['WHATS-NEW', "What's New", 'changes in each release'],
+    ['ABOUT', 'About', 'what it is and who made it'],
+    ['SPECIFICATIONS', 'Specifications & credits', 'references, formats and thanks'],
+  ],
+  internals: [
+    ['ARCHITECTURE', 'Architecture overview', 'the whole emulator on one page'],
+    ['COMPONENT-STATUS', 'Component status', 'how close each part is to the hardware'],
+    ['MACHINE-ARCHITECTURE', 'Machine', 'wiring, cycle order, interrupts'],
+    ['CPU-ARCHITECTURE', '6510 CPU', 'microops, addressing, illegal opcodes'],
+    ['VIC2-ARCHITECTURE', 'VIC-II', 'timing, bad lines, sprites, rendering'],
+    ['SID-ARCHITECTURE', 'SID', 'voices, filter, audio worklet'],
+    ['MEMORY-ARCHITECTURE', 'Memory', 'banking, I/O routing, cartridges'],
+    ['DRIVE-ARCHITECTURE', '1541 disk drive', 'GCR, IEC bus, true drive emulation'],
+    ['DATASETTE-ARCHITECTURE', 'Datasette', 'tape deck, TAP and WAV'],
+    ['RETROVIBES-ARCHITECTURE', 'Retro Vibes', 'the 3D viewer'],
+    ['PERFORMANCE-ANALYSIS', 'Performance', 'keeping a cycle-accurate C64 fast'],
+    ['TESTING', 'Test suite', 'tests, tools and VICE cross-checks'],
+  ],
+};
 
-  // The overview & guides (using the emulator) lead the page in their own band;
-  // everything else is the chip-by-chip internals grid below them. About sits
-  // second in the first band: the top-bar link to it is hidden on phones, so the
-  // card is the only way there at that width.
-  const guides = docs.filter((d) => GUIDES.has(d.slugFile)).map(cardHtml).join('\n');
-  const internals = docs.filter((d) => !GUIDES.has(d.slugFile)).map(cardHtml).join('\n');
+function renderIndex(docs) {
+  const listed = docs.filter((d) => !GUIDE_PAGES.includes(d.slugFile));
+  const group = (named, inGroup) => {
+    const rows = named.map(([name, label, note]) => {
+      const d = listed.find((x) => x.slugFile === name);
+      return d && { href: d.href, label, note };
+    }).filter(Boolean);
+    const extra = listed.filter((d) => inGroup(d) && !named.some(([name]) => name === d.slugFile))
+      .map((d) => ({ href: d.href, label: d.title, note: d.desc }));
+    return [...rows, ...extra].map((r) =>
+      `        <li><a href="/docs/${r.href}.html">${escapeHtml(r.label)}</a><span class="doc-list-note">${escapeHtml(r.note)}</span></li>`).join('\n');
+  };
+  const guides = group(INDEX_LIST.guides, (d) => GUIDES.has(d.slugFile));
+  const internals = group(INDEX_LIST.internals, (d) => !GUIDES.has(d.slugFile));
   const guidesSection = guides
-    ? `      <h2 class="cards-heading">Overview &amp; guides</h2>
-      <div class="doc-cards">
+    ? `      <h2 class="docs-group-heading">Overview &amp; guides</h2>
+      <ul class="doc-list">
 ${guides}
-      </div>
+      </ul>
 
 `
     : '';
@@ -484,10 +707,10 @@ ${overviewHtml.trim().split('\n').map((line) => `        ${line}`).join('\n')}
 
 ${overviewGallery()}
 
-${guidesSection}      <h2 class="cards-heading">Architecture &amp; internals</h2>
-      <div class="doc-cards">
+${guidesSection}      <h2 class="docs-group-heading">Architecture &amp; internals</h2>
+      <ul class="doc-list">
 ${internals}
-      </div>
+      </ul>
     </article>
   </main>
 ${foot}`;
@@ -525,20 +748,61 @@ const CSS = `/* Generated by tools/build-docs.mjs — do not edit by hand. */
   --ui-bg: #0b0e24;
   --panel-bg: #11142e;
   --border: #2c2f63;
-  --accent: #706deb;
+  --accent: #7471ec;
   --green: #8fe985;
   --amber: #e6dd6b;
   --red: #d76b70;
   --text: #ccd0ec;
-  --dim: #6e6ea4;
+  --dim: #8e8eb7;
+  --text-bright: #ffffff;
+  --on-accent: #070a1c;
+  --accent-hover: #908df0;
+  --page-glow: #10143a;
+  --topbar-bg: rgba(11, 14, 36, 0.82);
+  --zebra: rgba(255, 255, 255, 0.02);
+  --logo-c64: #dff4ff;
+  --logo-edge: var(--accent);
+  --logo-glow: rgba(112, 109, 235, 0.7);
+  --logo-shadow: #07071a;
+  --ramp-4: #9b98ff;
+  --ramp-2: #5a57b8;
+  --ramp-1: #43407c;
   --maxw: 820px;
 }
+/* Light: Classic's light mode, chosen with the same setting as the emulator
+   (c64emu.appearance, set by the header button here or there). */
+:root[data-mode="light"] {
+  --crt-bg: #e8e9f3;
+  --ui-bg: #f4f5fb;
+  --panel-bg: #ffffff;
+  --border: #cfd2e7;
+  --accent: #4c49c0;
+  --green: #2a7337;
+  --amber: #7a5d00;
+  --red: #b8323b;
+  --text: #23264d;
+  --dim: #53567d;
+  --text-bright: #12143a;
+  --on-accent: #ffffff;
+  --accent-hover: #3b3998;
+  --page-glow: #d8d9f2;
+  --topbar-bg: rgba(244, 245, 251, 0.88);
+  --zebra: rgba(35, 38, 77, 0.035);
+  --logo-c64: #16183a;
+  --logo-edge: transparent;
+  --logo-glow: transparent;
+  --logo-shadow: transparent;
+  --ramp-4: #3e3c9f;
+  --ramp-2: #9d9bdc;
+  --ramp-1: #c9c8ec;
+}
+:root[data-mode="light"] .logo-text::after { display: none; }   /* scanlines are for the dark tube */
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 84px; }
 body {
   margin: 0;
   background:
-    radial-gradient(1200px 600px at 50% -10%, #10143a 0%, transparent 60%),
+    radial-gradient(1200px 600px at 50% -10%, var(--page-glow) 0%, transparent 60%),
     var(--crt-bg);
   color: var(--text);
   font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
@@ -555,7 +819,7 @@ code, pre, .brand, kbd { font-family: 'Share Tech Mono', ui-monospace, SFMono-Re
   position: sticky; top: 0; z-index: 10;
   display: flex; align-items: center; justify-content: space-between;
   gap: 16px; padding: 12px 24px;
-  background: rgba(11, 14, 36, 0.82);
+  background: var(--topbar-bg);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
 }
@@ -573,21 +837,21 @@ code, pre, .brand, kbd { font-family: 'Share Tech Mono', ui-monospace, SFMono-Re
 }
 .lt-main { position: relative; top: 0.2em; }
 .lt-c64 {
-  color: #dff4ff;
-  text-shadow: 0 0 2px var(--accent), 0 0 10px rgba(112, 109, 235, 0.7), 2px 2px 0 #07071a;
+  color: var(--logo-c64);
+  text-shadow: 0 0 2px var(--logo-edge), 0 0 10px var(--logo-glow), 2px 2px 0 var(--logo-shadow);
 }
 .lt-ready {
   color: var(--accent); margin-left: calc(-0.333em - 3px);
-  text-shadow: 0 0 2px var(--accent), 0 0 12px rgba(112, 109, 235, 0.6), 2px 2px 0 #07071a;
+  text-shadow: 0 0 2px var(--logo-edge), 0 0 12px var(--logo-glow), 2px 2px 0 var(--logo-shadow);
 }
 .lt-blocks {
   font-family: 'Share Tech Mono', monospace; font-size: 0.85em;
-  text-shadow: 0 0 8px rgba(112, 109, 235, 0.4); margin-right: 6px;
+  text-shadow: 0 0 8px var(--logo-glow); margin-right: 6px;
 }
-.lt-blocks .b4 { color: #9b98ff; }
+.lt-blocks .b4 { color: var(--ramp-4); }
 .lt-blocks .b3 { color: var(--accent); }
-.lt-blocks .b2 { color: #5a57b8; }
-.lt-blocks .b1 { color: #43407c; }
+.lt-blocks .b2 { color: var(--ramp-2); }
+.lt-blocks .b1 { color: var(--ramp-1); }
 .logo-text::after {
   content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2;
   background: repeating-linear-gradient(0deg,
@@ -611,21 +875,24 @@ code, pre, .brand, kbd { font-family: 'Share Tech Mono', ui-monospace, SFMono-Re
   text-decoration: none;
   transition: all 0.15s;
 }
-.top-nav a.nav-btn:hover {
-  color: #fff;
+button.nav-btn { background: transparent; cursor: pointer; line-height: 1; }
+.top-nav .nav-btn:hover {
+  color: var(--text-bright);
   border-color: var(--accent);
   box-shadow: 0 0 12px rgba(112, 109, 235, 0.45);
 }
 .nav-icon { display: inline-flex; align-items: center; justify-content: center; padding: 7px 11px; }
+/* Launch emulator: filled in Classic's accent, labelled in its on-accent ink
+   (dark on the light violet, white on the deep one), like the app's primary
+   buttons. */
 .doc-top .cta {
-  color: #08240c;
+  color: var(--on-accent);
   font-weight: 700;
-  border: 1px solid #a9ff9f; border-radius: 7px;
-  padding: 7px 14px; background: #a9ff9f;   /* Colodore light green (VIC #13) — the power signal */
-  box-shadow: 0 0 14px rgba(169, 255, 159, 0.4);
+  border: 1px solid var(--accent); border-radius: 7px;
+  padding: 7px 14px; background: var(--accent);
   white-space: nowrap;
 }
-.doc-top .cta:hover { background: #c6ffbf; border-color: #c6ffbf; color: #08240c; text-decoration: none; }
+.doc-top .cta:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--on-accent); text-decoration: none; }
 
 /* ── layout ──────────────────────────────────────────────── */
 .doc-main { max-width: 1160px; margin: 0 auto; padding: 34px 24px 80px; }
@@ -639,6 +906,9 @@ code, pre, .brand, kbd { font-family: 'Share Tech Mono', ui-monospace, SFMono-Re
 
 .crumbs { color: var(--dim); font-size: 0.85rem; margin: 0 0 22px; }
 .crumbs span { opacity: 0.5; margin: 0 4px; }
+.guide-pager { display: flex; justify-content: space-between; gap: 16px; margin: 40px 0 0; padding-top: 18px; border-top: 1px solid var(--border); }
+.guide-pager a { display: inline-block; padding: 4px 0; }
+.guide-pager-next { margin-left: auto; text-align: right; }
 
 /* ── on-this-page TOC ────────────────────────────────────── */
 .doc-toc {
@@ -653,9 +923,14 @@ code, pre, .brand, kbd { font-family: 'Share Tech Mono', ui-monospace, SFMono-Re
 }
 .doc-toc ul { list-style: none; margin: 0; padding: 0; }
 .doc-toc li { margin: 3px 0; }
+.doc-toc a { display: inline-block; padding: 2px 0; }   /* 24 px touch targets */
 .doc-toc a { color: var(--dim); }
 .doc-toc a:hover { color: var(--text); text-decoration: none; }
 .toc-l3 { padding-left: 14px; font-size: 0.82rem; }
+.toc-title a { color: inherit; }
+.guide-nav .guide-doc > a { color: var(--text); }
+.guide-nav .guide-doc.current > a { color: var(--accent); font-weight: 600; }
+.guide-nav .guide-doc > ul { margin: 2px 0 8px 10px; padding-left: 8px; border-left: 1px solid var(--border); }
 
 /* ── prose ───────────────────────────────────────────────── */
 .doc-content h1, .doc-content h2, .doc-content h3,
@@ -672,7 +947,7 @@ code, pre, .brand, kbd { font-family: 'Share Tech Mono', ui-monospace, SFMono-Re
 .doc-content h3 { font-size: 1.12rem; margin: 30px 0 10px; color: var(--green); }
 .doc-content h4 { font-size: 1rem; margin: 24px 0 8px; color: var(--amber); }
 .doc-content p, .doc-content li { color: var(--text); }
-.doc-content strong { color: #fff; }
+.doc-content strong { color: var(--text-bright); }
 .doc-content em { color: var(--green); }
 .doc-content ul, .doc-content ol { padding-left: 24px; }
 .doc-content li { margin: 4px 0; }
@@ -724,7 +999,6 @@ code, pre, .brand, kbd { font-family: 'Share Tech Mono', ui-monospace, SFMono-Re
 .doc-content p a, .doc-content li a, .doc-content td a, .doc-content blockquote a {
   text-decoration: underline; text-underline-offset: 2px; text-decoration-color: rgba(112, 109, 235, 0.4);
 }
-.doc-card, .doc-card:hover { text-decoration: none; }
 h1 .anchor, h2 .anchor, h3 .anchor, h4 .anchor, h5 .anchor, h6 .anchor {
   margin-left: 10px; color: var(--dim); opacity: 0; text-decoration: none;
   font-weight: normal; transition: opacity 0.12s;
@@ -770,7 +1044,7 @@ h4:hover .anchor, h5:hover .anchor, h6:hover .anchor { opacity: 0.6; }
   background: var(--panel-bg); color: var(--accent);
   font-family: 'Share Tech Mono', monospace; font-weight: normal;
 }
-.doc-content tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
+.doc-content tbody tr:nth-child(even) { background: var(--zebra); }
 
 /* ── index / landing ─────────────────────────────────────── */
 .docs-hero { margin-bottom: 8px; }
@@ -780,25 +1054,24 @@ h4:hover .anchor, h5:hover .anchor, h6:hover .anchor { opacity: 0.6; }
 }
 .lede { font-size: 1.15rem; color: var(--dim); max-width: 60ch; }
 .overview p { color: var(--text); }
-.cards-heading {
+/* The landing page's grouped list: scoped under .doc-content so it wins over
+   the article's own h2 / ul / li / link rules. */
+.doc-content .docs-group-heading {
   font-family: 'Share Tech Mono', monospace; color: var(--dim);
-  text-transform: uppercase; letter-spacing: 3px; font-size: 0.8rem;
-  margin: 40px 0 16px;
+  text-transform: uppercase; letter-spacing: 3px; font-size: 1.05rem;
+  margin: 40px 0 10px; padding: 0; border: 0; text-shadow: none;
 }
-.doc-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
-.doc-card {
-  display: flex; flex-direction: column;
-  background: var(--panel-bg); border: 1px solid var(--border);
-  border-radius: 12px; padding: 18px 18px 16px; color: var(--text);
-  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+.doc-content .doc-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border); }
+.doc-content .doc-list li {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 16px;
+  margin: 0; padding: 9px 2px; border-bottom: 1px solid var(--border);
 }
-.doc-card:hover {
-  border-color: var(--accent); transform: translateY(-2px); text-decoration: none;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+.doc-content .doc-list a {
+  font-family: 'Share Tech Mono', monospace; color: var(--accent); min-width: 15rem;
+  text-decoration: none;
 }
-.doc-card h3 { font-family: 'Share Tech Mono', monospace; color: var(--accent); margin: 0 0 8px; font-size: 1.05rem; }
-.doc-card p { color: var(--dim); font-size: 0.9rem; margin: 0 0 14px; flex: 1; }
-.doc-card .read { color: var(--green); font-size: 0.85rem; font-family: 'Share Tech Mono', monospace; }
+.doc-content .doc-list a:hover { text-decoration: underline; }
+.doc-list-note { color: var(--dim); font-size: 0.92rem; }
 
 /* ── footer ──────────────────────────────────────────────── */
 .doc-foot {
@@ -851,7 +1124,10 @@ const CSS_VERSION = createHash('sha256').update(CSS).digest('hex').slice(0, 8);
 export async function buildDocs() {
   let files;
   try {
-    files = readdirSync(DOCS_SRC).filter((f) => f.endsWith('.md') && f !== INDEX_OVERVIEW_FILE);
+    files = readdirSync(DOCS_SRC).filter((f) => f.endsWith('.md') && f !== INDEX_OVERVIEW_FILE && !MOVED_SOURCES.has(f));
+    // A moved page must not linger from an earlier build: Netlify skips a
+    // redirect when a file exists at its path.
+    for (const f of MOVED_SOURCES) rmSync(join(DOCS_OUT, `${f.replace(/\.md$/, '').toLowerCase()}.html`), { force: true });
   } catch {
     return; // no docs/ dir — nothing to build
   }
@@ -864,16 +1140,18 @@ export async function buildDocs() {
     // …). `name` (original case) is kept for ORDER/GUIDES matching + sorting;
     // `href` is the lowercase basename used for the filename and every link.
     const href = name.toLowerCase();
-    const md = readFileSync(join(DOCS_SRC, file), 'utf8')
+    let md = readFileSync(join(DOCS_SRC, file), 'utf8')
       // Strip the source SPDX header comment so it doesn't leak into the page
       // body; the compiled page carries its own license header in <head>.
       .replace(/^<!--\s*SPDX-License-Identifier[\s\S]*?-->\s*<!--\s*Copyright[\s\S]*?-->\s*/, '');
-    const meta = extractMeta(md, name);
-    let bodyHtml = marked.parse(md);
+    const described = md.match(DESCRIPTION);
+    md = md.replace(DESCRIPTION, '');
+    const meta = { ...extractMeta(md, name), ...(described ? { desc: described[1].replace(/\s+/g, ' ') } : {}), image: shareImage(md) };
+    let bodyHtml = accessibleMarkup(marked.parse(md));
     bodyHtml = renderGalleries(rewriteDocLinks(bodyHtml));
     if (href === 'about') writeAboutFragment(bodyHtml);
     const { html, toc } = addAnchorsAndToc(bodyHtml);
-    writeFileSync(join(DOCS_OUT, `${href}.html`), renderDocPage({ ...meta, href }, html, toc));
+    writeFileSync(join(DOCS_OUT, `${href}.html`), renderDocPage({ ...meta, href, name }, html, toc));
     // Cleaner label for the index cards: drop the "(src/…)" parentheticals the
     // doc H1s carry, while the page keeps its full title.
     const cardTitle = meta.title.replace(/\s*\([^)]*\)/g, '').replace(/\s{2,}/g, ' ').trim();
@@ -903,7 +1181,7 @@ export async function buildDocs() {
     ...doc,
     lastmod: sourceLastmod(history, doc.srcRel),
   }));
-  for (const doc of textDocs) writeTextDoc(doc.srcRel, doc.href, doc.title);
+  for (const doc of textDocs) writeTextDoc(doc.srcRel, doc.href, doc.title, doc.desc);
   writeFileSync(SITEMAP_OUT, renderSitemap(docs, {
     rootLastmod: appLastmod(history),
     docsLastmod: sourceLastmod(history, 'docs'),

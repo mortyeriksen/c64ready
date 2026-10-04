@@ -75,7 +75,7 @@ header {
   margin-right: 6px;      /* the wider original spacing before "C64" */
 }
 .logo-text .lt-blocks .b4 { color: var(--logo-ramp-4); }   /* █ full   — brightest */
-.logo-text .lt-blocks .b3 { color: var(--accent); } /* ▓ dark   (#706deb) */
+.logo-text .lt-blocks .b3 { color: var(--accent); } /* ▓ dark   (the accent) */
 .logo-text .lt-blocks .b2 { color: var(--logo-ramp-2); }   /* ▒ medium */
 .logo-text .lt-blocks .b1 { color: var(--logo-ramp-1); }   /* ░ light  — faintest */
 

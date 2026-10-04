@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: How the Retro Vibes 3D viewer works: a three.js scene of the C64, 1541 and 1702 monitor, with the live emulator picture on its screen. -->
 
 # Retro Vibes 3D viewer (`src/vibes/retrovibes.js`): Architecture Overview
 

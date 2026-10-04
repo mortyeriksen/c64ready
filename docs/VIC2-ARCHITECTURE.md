@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: How the MOS 6569 VIC-II emulation is structured: the timing model, bad lines, sprites, collisions, borders, interrupts and the rendering pipeline. -->
 
 # VIC-II (`src/vic2*.js`): Architecture Overview
 

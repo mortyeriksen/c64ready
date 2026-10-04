@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: What is missing, approximate or still rough in C64 READY., from hardware that is not emulated to file format limits and performance. -->
 
 # Known Issues
 
@@ -88,7 +89,7 @@ None of these affect ordinary loading:
 ## SID tunes
 
 A `.sid` runs inside a program that carries a 6502 player, which sets these
-limits (see [Playing a .sid tune](USER-GUIDE.md#playing-a-sid-tune)).
+limits (see [Playing a .sid tune](GUIDE-MEDIA.md#playing-a-sid-tune)).
 
 **Tunes that are refused.** The player needs somewhere to live and a screen to
 draw on. Across a 264-file test collection about one in sixteen was refused,
@@ -128,11 +129,6 @@ so on screen.
   RESET, FULL, SIZE, RECORD, LOAD and the save-state library are mouse or touch
   only. The ones that exist are listed under **App shortcuts** in the **KEY
   MAP** dialog.
-- **While the running machine owns keyboard input, it claims Tab** as the C64's
-  INST/DEL, so Tab cannot move focus from the emulator to the side panel.
-  Powering off releases the keys. Focused text fields keep their own keys, and
-  the Assembly64 control and dialogs allow Tab navigation while the machine
-  runs.
 - **F9-F11 are C64 keys** (RUN/STOP, C=, CLR/HOME), so the browser's own F11
   fullscreen does not reach it while running; use the FULL button. F12 is
   RESTORE.

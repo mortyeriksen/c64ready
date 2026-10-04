@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: The hardware references C64 READY. follows, subsystem by subsystem, the file formats it reads and writes, and the credits. -->
 
 # Specifications, source material and credits
 

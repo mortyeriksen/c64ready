@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: How the 1530 Datasette emulation works: the tape deck model, TAP and WAV handling, recording, and the tape tools around it. -->
 
 # Datasette (1530 / C2N): Architecture
 

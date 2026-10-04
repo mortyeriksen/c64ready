@@ -73,6 +73,12 @@
   border-color: var(--accent);
 }
 
+/* From the keyboard, a ring like the other controls' focus. */
+.cp-device-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .cp-gamepad-row {
   display: flex;
   align-items: center;
@@ -280,6 +286,10 @@
   border-radius: 4px;
   background: color-mix(in srgb, var(--text) 7%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 22%, transparent);
+}
+.cp-joy-keys .kbd.cp-joy-dir:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 .cp-joy-keys .kbd.cp-joy-dir:hover {
   background: color-mix(in srgb, var(--text) 15%, transparent);

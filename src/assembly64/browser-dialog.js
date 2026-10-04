@@ -8,6 +8,7 @@ import { openDetailsDialog } from './details-dialog.js';
 import { createTypeIcon } from './icons.js';
 import { createDownloadProgress } from './progress.js';
 import { CHARTS } from './controller.js';
+import { rovingList } from '../ui/roving-list.js';
 
 function nameDialog(title, initial, submit) {
   const dialog = createDialog(title);
@@ -74,6 +75,7 @@ export function openBrowserDialog(controller, store, perform, { view = 'results'
   const chips = el('div', null, { class: 'mb-active-filters', 'aria-label': 'Active filters' });
   const status = el('p', '', { class: 'mb-status', role: 'status', 'aria-live': 'polite' });
   const results = el('div', null, { class: 'mb-results', 'aria-label': 'Search results' });
+  rovingList(results, '.mb-result');   // one Tab stop; arrow keys move through the results
   const more = button('LOAD MORE ↓', () => controller.search(true), { class: 'btn mb-more' });
   main.append(resultHeader, chartPicker, chips, status, results, more); layout.append(sidebar, main);
   const footer = el('div', null, { class: 'mb-browser-footer' });

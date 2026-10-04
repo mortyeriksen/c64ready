@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: How the 1541 disk drive emulation works: its own 6502 and VIAs, the GCR read and write engine, the IEC bus, and fast loading versus true drive emulation. -->
 
 # 1541 Disk Drive (`src/drive1541.js` + `src/gcr.js` + `src/media/d64.js` + `src/media/g64.js` + `src/6522.js`): Architecture Overview
 

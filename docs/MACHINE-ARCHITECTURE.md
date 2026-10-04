@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: How the emulated C64 is wired together: the master-cycle ordering, bus arbitration, interrupts, the 1541 and tape coupling, and the load paths. -->
 
 # C64 Machine (`src/machine.js`): Architecture Overview
 

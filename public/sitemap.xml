@@ -17,23 +17,43 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/about.html</loc>
-    <lastmod>2026-09-04</lastmod>
+    <lastmod>2026-10-04</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/getting-started.html</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/user-guide.html</loc>
     <lastmod>2026-10-04</lastmod>
   </url>
   <url>
-    <loc>https://c64ready.com/docs/user-guide-cli.html</loc>
-    <lastmod>2026-10-02</lastmod>
+    <loc>https://c64ready.com/docs/guide-interface.html</loc>
+    <lastmod>2026-10-04</lastmod>
+  </url>
+  <url>
+    <loc>https://c64ready.com/docs/guide-media.html</loc>
+    <lastmod>2026-10-04</lastmod>
+  </url>
+  <url>
+    <loc>https://c64ready.com/docs/guide-input.html</loc>
+    <lastmod>2026-10-04</lastmod>
+  </url>
+  <url>
+    <loc>https://c64ready.com/docs/guide-looks.html</loc>
+    <lastmod>2026-10-04</lastmod>
+  </url>
+  <url>
+    <loc>https://c64ready.com/docs/guide-options.html</loc>
+    <lastmod>2026-10-04</lastmod>
+  </url>
+  <url>
+    <loc>https://c64ready.com/docs/guide-cli.html</loc>
+    <lastmod>2026-10-04</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/specifications.html</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/features.html</loc>
@@ -45,11 +65,11 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/component-status.html</loc>
-    <lastmod>2026-10-02</lastmod>
+    <lastmod>2026-10-04</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/architecture.html</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/machine-architecture.html</loc>
@@ -57,35 +77,35 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/cpu-architecture.html</loc>
-    <lastmod>2026-10-01</lastmod>
+    <lastmod>2026-10-04</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/vic2-architecture.html</loc>
-    <lastmod>2026-10-02</lastmod>
+    <lastmod>2026-10-04</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/sid-architecture.html</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/memory-architecture.html</loc>
-    <lastmod>2026-10-01</lastmod>
+    <lastmod>2026-10-04</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/drive-architecture.html</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-04</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/datasette-architecture.html</loc>
-    <lastmod>2026-09-15</lastmod>
+    <lastmod>2026-10-04</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/retrovibes-architecture.html</loc>
-    <lastmod>2026-09-21</lastmod>
+    <lastmod>2026-10-04</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/performance-analysis.html</loc>
-    <lastmod>2026-10-02</lastmod>
+    <lastmod>2026-10-04</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/testing.html</loc>

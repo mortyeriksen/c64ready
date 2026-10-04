@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: Where the emulator stands against real Commodore 64 and 1541 hardware, subsystem by subsystem, with known gaps called out. -->
 
 # Component status
 

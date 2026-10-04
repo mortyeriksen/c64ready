@@ -98,7 +98,7 @@ Two-SID files use their header address and chip models, with SID 1 on the left
 and SID 2 on the right. `--model` overrides both models. `sid2prg` reports the
 second address required by the exported program.
 Rendering is PAL, through the player's Safe view and the emulator's reSID engine.
-The [CLI guide](https://github.com/mortyeriksen/c64ready/blob/main/docs/USER-GUIDE-CLI.md#sid-music-player-programs-and-audio)
+The [CLI guide](https://github.com/mortyeriksen/c64ready/blob/main/docs/GUIDE-CLI.md#sid-music-player-programs-and-audio)
 details the options and supported tunes.
 
 ## The ROMs
@@ -130,7 +130,7 @@ site.
 
 ## More
 
-The [full user guide](https://github.com/mortyeriksen/c64ready/blob/main/docs/USER-GUIDE-CLI.md) walks every command with real captured
+The [full user guide](https://github.com/mortyeriksen/c64ready/blob/main/docs/GUIDE-CLI.md) walks every command with real captured
 output, and the [specifications](https://github.com/mortyeriksen/c64ready/blob/main/docs/SPECIFICATIONS.md) credit the format references and
 source material the tool is built on.
 

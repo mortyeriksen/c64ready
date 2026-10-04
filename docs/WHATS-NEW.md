@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: What changed in each release of C64 READY., in plain language, newest first. -->
 
 # What's New
 
@@ -8,65 +9,51 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
-## Next release
+## 2026.10.2 — October 4, 2026
 
-- **Light mode.** The interface now comes in dark and light, and follows your
-  system's setting unless you pick one. The new button in the header switches
-  between dark, light and following the system, and so does **APPEARANCE** in
-  Options ▸ Theme. The screen, the CRT looks, the splash and Retro Vibes look
-  the same in both.
-- **Themes.** Pick the interface's colours in Options ▸ Theme: **Classic**
-  as before, **GEOS** in the black and white of the C64's own desktop,
-  **Breadbin** in the beige and brown of the machine itself with its rainbow
-  stripe, **Phosphor** in amber monitor glow or on green-bar printer paper,
-  **Out Run** in eighties sunset neon, **Commando** in sand, muzzle flash,
-  khaki and olive drab, or your own, imported from a theme file. Each
-  built-in theme also lays a faint pattern on the page behind the panels,
-  from Classic's subtle grid to GEOS's desktop dither and Phosphor's
-  green-bar paper. In the
-  Breadbin, Phosphor, Out Run and Commando light modes the main actions,
-  **LOAD ANY**, drive 8's **LOAD** and Assembly64's **EXPLORE**, stand out
-  from the other buttons. **EXPORT** saves
-  the current one as a complete file to start from. **Cmd+Shift+Y** (**Ctrl+Shift+Y** on Windows and Linux)
-  switches to the next theme.
-- **A cleaner header.** The tagline under the logo is gone, and the logo now
-  sits on one line with the buttons beside it.
-- **Keys that look like keys.** The joystick keys in Control Ports and the
-  keys in **KEY MAP** are now plain, neutral keys instead of coloured boxes,
-  so they no longer look like the buttons around them. Point at a joystick key
-  to see what it does: hold it to push the joystick that way.
-- **A sharper logo.** The CRT lines in the C64 READY. logo now run through the
-  letters only, and the glow around them is gone, so the edges stay crisp. The
-  logo also follows the CRT settings panel: its scanline, tone and hum sliders
-  change the logo along with the picture.
-- **Panels keep their look while you drag them.** A panel being dragged no
-  longer shifts its title or moves the controls in its header, and its buttons
-  keep their colours.
-- **Media load, reordered.** **LOAD ANY** and **LOAD LIB** now sit on the
-  first row, with **LOAD STATE** and **SAVE STATE** below.
-- **Scrollbars you can see.** Dialogs, the disk directories and Assembly64's
-  quick results keep their scrollbar showing while there is more to scroll to,
-  instead of only while you scroll. A directory that fits shows none, and the
-  🔍 moves aside when one does.
-- **Tape sound and scope wait for a tape.** The Datasette's 🔊 and scope are
-  greyed out until there is a tape in a running machine.
-- **LOAD ANY works with the machine off.** It powers the C64 on and runs the
-  file, as dropping one on the screen does, instead of only caching it.
-- **The "Load faster?" question comes back.** Loading a `.prg` with True Drive
-  Emulation on asks again whether to turn it off. Saying no, or closing the
-  question, now lasts only until you reload the page or turn TDE on again.
-- **Full-memory PRGs start.** A `.prg` that fills memory through the
-  `$D000` to `$DFFF` area, like the uncrunched OneLoad64 games, is now put
-  straight into memory instead of loaded from a disk. Before, Commando and
-  others like it played their music over a black screen.
-- **No second download.** **LOAD** in Assembly64 opens a file you already
-  saved to Library from there instead of downloading it again.
+The interface comes in dark and light, with six built-in themes and your own
+from a theme file. Everything now works from the keyboard, and the User Guide
+is split into topic pages.
+
+- **Light mode and themes.** The interface follows your system's dark or
+  light setting, or stays on one you pick with the new button in the header or
+  **APPEARANCE** in Options ▸ Theme. **Classic**, **GEOS**, **Breadbin**,
+  **Phosphor**, **Out Run** and **Commando** are built in, each in dark and
+  light with a faint pattern of its own on the page, and you can import your
+  own as a theme file. **EXPORT** saves the current one as a file to start
+  from, and **Cmd+Shift+Y** (**Ctrl+Shift+Y** on Windows and Linux) switches
+  to the next. The screen, the CRT looks and Retro Vibes look the same in all
+  of them, and the docs follow the same dark or light setting.
+- **Keyboard and accessibility.** Tab reaches every control and Enter or Space
+  presses it; lists like the Library and the drive directories move with the
+  arrow keys. The C64 gets the keyboard while its screen has focus, and Tab no
+  longer types INST/DEL. Screen readers get clearer labels, and all text in
+  Classic meets 4.5:1 contrast.
 - **Assembly64 charts.** The Assembly64 Browser has a **Charts** tab between
   Explore and Favorites: the top-rated demos, one-file demos, games, music,
-  graphics and tools, ranked by CSDb visitors' votes.
-- **Inserted, not loaded.** With AUTORUN off, a disk or `.prg` put in a
-  drive now says it was inserted. Nothing is loaded until you type `LOAD`.
-
+  graphics and tools, ranked by CSDb visitors' votes. **LOAD** opens a file you
+  already saved to the Library instead of downloading it again.
+- **The User Guide, in topics.** A short opening page and six topic pages, the
+  command line among them, with links to the next. Links to the old pages still
+  land on the right section.
+- **A cleaner header and logo.** The tagline under the logo is gone and the
+  logo lines up with the buttons. Its CRT lines run through the letters only,
+  so the edges stay crisp, and it follows the CRT settings panel.
+- **Keys that look like keys.** The joystick keys in Control Ports and the keys
+  in **KEY MAP** are plain, neutral keys, so they no longer pass for buttons.
+  Point at a joystick key to see what it does.
+- **LOAD ANY works with the machine off.** It powers the C64 on and runs the
+  file, as dropping one on the screen does. With AUTORUN off, a disk or `.prg`
+  now says it was inserted, and nothing loads until you type `LOAD`.
+- **Full-memory PRGs start.** A `.prg` that fills memory through the `$D000` to
+  `$DFFF` area, like the uncrunched OneLoad64 games, now goes straight into
+  memory. Before, Commando and others like it played their music over a black
+  screen.
+- **Smaller fixes.** **LOAD ANY** and **LOAD LIB** now sit on the first row of
+  Media load. A dragged panel keeps its look. Scrollbars stay visible while
+  there is more to scroll to. The Datasette's sound and scope are greyed out
+  until a tape is in. The "Load faster?" question comes back after a reload or
+  when TDE is turned on again.
 ---
 
 ## 2026.10.1 — October 2, 2026

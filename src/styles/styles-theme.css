@@ -32,17 +32,17 @@
   --field-bg-hover: #1e2840;
   --button-bg: #1a1a30;       /* a .btn's face and labels: by default the same as */
   --button-text: #ccd0ec;     /* control-bg, text, dim and the accents, so a theme */
-  --button-dim: #8a8ab5;      /* only sets them to part buttons from fields; the */
+  --button-dim: #8e8eb7;      /* only sets them to part buttons from fields; the */
   --button-accent: #9f9df2;   /* accent a step lighter, legible as the hover label */
-  --button-accent2: #b362c4;
+  --button-accent2: #b565c5;
   --button-green: #8fe985;
   --button-amber: #e6dd6b;
   --button-red: #d76b70;
   --primary-bg: #1a1a30;      /* a primary button (LOAD ANY, disk LOAD, EXPLORE): */
   --primary-text: #ccd0ec;    /* by default the same as the button colours and */
-  --primary-dim: #8a8ab5;     /* border, so a theme only sets them to make its */
+  --primary-dim: #8e8eb7;     /* border, so a theme only sets them to make its */
   --primary-accent: #9f9df2;  /* few main actions stand out */
-  --primary-accent2: #b362c4;
+  --primary-accent2: #b565c5;
   --primary-green: #8fe985;
   --primary-amber: #e6dd6b;
   --primary-red: #d76b70;
@@ -60,15 +60,15 @@
 
   /* ── Text ──────────────────────────────────────────────────────────── */
   --text: #ccd0ec;            /* light grey (VIC #15) with a blue cast */
-  --dim: #8a8ab5;             /* grey (VIC #12) toward blue, light enough for 4.5:1 */
+  --dim: #8e8eb7;             /* grey (VIC #12) toward blue, light enough for 4.5:1 */
   --text-dim: #8a8aa8;        /* secondary lines in the library and lists */
   --text-bright: #fff;        /* hover and pressed labels */
-  --on-accent: #fff;          /* label on a filled accent button, in both modes */
+  --on-accent: #070a1c;       /* label on a filled accent button: dark ink, as white fails 4.5:1 on the light blue */
   --button-ink: #07071a;      /* label on a light filled button */
   --warn-text: #e6c46b;
 
   /* ── Accents and signals ───────────────────────────────────────────── */
-  --accent: #706deb;          /* C64 light blue (VIC #14), boot-screen text */
+  --accent: #7471ec;          /* C64 light blue (VIC #14), a touch lifted for 4.5:1 on the panels */
   --accent2: #b362c4;         /* C64 purple (VIC #4), lifted for legibility */
   --accent-bright: #dff4ff;   /* near-white tint of --accent */
   --accent-soft: #a9a6f2;
@@ -157,7 +157,7 @@
   --a64-subtle: #989ec4;
   --a64-link: #c6b5ff;
   --a64-primary-border: #908df5;
-  --a64-primary-hover: #5c58c7;
+  --a64-primary-hover: #908df0;
   --a64-text-button: #b4b2ff;
   --a64-text-button-hover: #e2e1ff;
   --a64-line: #4b4d88;
@@ -249,6 +249,7 @@
   --warn-text: #7a5d00;
 
   /* ── Accents and signals ─────────────────────────────────────────────── */
+  --on-accent: #ffffff;
   --accent: #4c49c0;
   --accent2: #8a3a9c;
   --accent-bright: #12143a;

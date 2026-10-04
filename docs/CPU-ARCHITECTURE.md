@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: How the MOS 6510 CPU emulation works: the cycle-accurate microop engine, addressing modes, interrupts, illegal opcodes and decimal mode. -->
 
 # 6510 CPU (`src/cpu.js`): Architecture Overview
 

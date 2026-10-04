@@ -11,6 +11,7 @@
 // Core lifecycle/audio/pref helpers are dependency-injected via initMedia(deps)
 // so this module never imports main.js (keeps the module graph acyclic).
 
+import { rovingList, rovingListKey } from './ui/roving-list.js';
 import { createOpenMedia } from './media/open.js';
 import { createDiskCompatibilityPrompt } from './media/disk-compatibility.js';
 import {
@@ -212,7 +213,7 @@ async function _renderLibrary() {
     const name = _libEscapeHtml(e.name);
     return `<div class="lib-row" data-id="${_libEscapeHtml(e.id)}" title="Load ${name}">
         <span class="lib-type lib-type-${e.type}">${e.type.toUpperCase()}</span>
-        <span class="lib-name">${name}</span>
+        <span class="lib-name" role="button" tabindex="-1" aria-label="Load ${name}">${name}</span>
         <span class="lib-meta">${_libFormatSize(e.size)}<span class="lib-date" title="${_libEscapeHtml(whenAbs)}"> · ${_libEscapeHtml(whenRel)}</span></span>
         <button class="lib-del" data-del="${_libEscapeHtml(e.id)}" title="Remove from library" aria-label="Remove">✕</button>
       </div>`;
@@ -335,6 +336,12 @@ if (libraryImport && libraryImportInput) {
     setStatus(`Library import: ${summary}`, 'idle');
   });
 }
+// The Library, the save states and the drive directories are lists of rows: one
+// Tab stop each, the arrow keys moving through them (ui/roving-list.js).
+if (libraryListEl) rovingList(libraryListEl, '.lib-row');
+if (stateListEl) rovingList(stateListEl, '.lib-row');
+for (const ui of [DRIVE8_UI, DRIVE9_UI]) if (ui.dirEl) rovingList(ui.dirEl, '.d64-loadable');
+
 if (libraryListEl) {
   libraryListEl.addEventListener('click', async e => {
     const del = e.target.closest('[data-del]');
@@ -359,7 +366,7 @@ if (libraryListEl) {
 // reach the filter input — so we stopImmediatePropagation on every key without
 // preventDefault. Escape is escape-stack.js's, and never arrives here.
 document.addEventListener('keydown', e => {
-  if (!_libraryIsOpen()) return;
+  if (!_libraryIsOpen() || rovingListKey(e)) return;   // the list moves its own focus
   e.stopImmediatePropagation();
 }, { capture: true });
 
@@ -640,7 +647,7 @@ async function _renderStateList() {
       : `<span style="display:inline-block;width:48px;height:30px;background:#111;border:1px solid var(--border);border-radius:3px;margin-right:8px;flex:0 0 auto"></span>`;
     return `<div class="lib-row" data-id="${_libEscapeHtml(e.id)}" title="Restore ${name}">
         ${thumb}
-        <span class="lib-name">${name}</span>
+        <span class="lib-name" role="button" tabindex="-1" aria-label="Restore ${name}">${name}</span>
         <span class="lib-meta">${_libFormatSize(e.size)}<span class="lib-date" title="${_libEscapeHtml(whenAbs)}"> · ${_libEscapeHtml(whenRel)}</span></span>
         <button class="lib-del lib-rename" data-rename="${_libEscapeHtml(e.id)}" title="Rename save state" aria-label="Rename">✎</button>
         <button class="lib-del lib-export" data-export="${_libEscapeHtml(e.id)}" title="Export this state to a c64emu file" aria-label="Export">⤓</button>
@@ -772,7 +779,7 @@ if (stateListEl) {
 // Keep keystrokes out of the C64 while the state modal is open. Escape is
 // escape-stack.js's.
 document.addEventListener('keydown', e => {
-  if (!_stateDialogIsOpen()) return;
+  if (!_stateDialogIsOpen() || rovingListKey(e)) return;   // the list moves its own focus
   e.stopImmediatePropagation();
 }, { capture: true });
 
@@ -2776,6 +2783,11 @@ function showD64Directory(disk, ui = DRIVE8_UI) {
       el.append(blocks, fname, type);
       if (loadable && c64.ready) {
         el.title = 'Click to LOAD and RUN';
+        el.setAttribute('role', 'button');
+        el.setAttribute('tabindex', '-1');
+        // The name is drawn as PETSCII; its printable characters label the row.
+        const label = String(entry.name).replace(/[^\x20-\x7e]/g, '').trim() || 'file';
+        el.setAttribute('aria-label', `LOAD and RUN ${label}, ${entry.type}`);
         el.addEventListener('click', () => loadD64Entry(entry, disk));
       }
       ui.dirEl.appendChild(el);

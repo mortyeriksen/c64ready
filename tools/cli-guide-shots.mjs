@@ -1,4 +1,4 @@
-// Regenerate the terminal examples in docs/USER-GUIDE-CLI.md from real runs.
+// Regenerate the terminal examples in docs/GUIDE-CLI.md from real runs.
 //
 //   node tools/cli-guide-shots.mjs [filter]
 //
@@ -22,7 +22,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const LAB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const GUIDE = path.join(LAB, 'docs/USER-GUIDE-CLI.md');
+const GUIDE = path.join(LAB, 'docs/GUIDE-CLI.md');
 const CLI = path.join(LAB, 'cli/c64rdy.mjs');
 const WORK = path.join(LAB, 'tools/guide-shots-work');
 

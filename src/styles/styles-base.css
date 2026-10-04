@@ -49,6 +49,19 @@ body {
   }
 }
 
+/* Text for assistive technology only: read out, not shown. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Our own tooltip, drawn from data-tip (src/ui/tooltips.js). Placed by transform
    from the top-left corner, so no layout work per move. Above everything —
    controls inside a dialog have tips too. */

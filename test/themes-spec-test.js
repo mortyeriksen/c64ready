@@ -153,6 +153,20 @@ const hoverLegible = (label, mode, own) => {
   }
 };
 for (const mode of ['dark', 'light']) hoverLegible('Classic', mode, {});
+// Classic's own text colours on its panels, the labels on its filled accent
+// buttons (at rest and on hover) and the LOAD-type button labels.
+for (const mode of ['dark', 'light']) {
+  const c = sheetModes[mode];
+  for (const fg of ['text', 'dim', 'text-dim', 'accent', 'green', 'amber', 'red', 'info']) {
+    const r = contrast(c[fg], c['panel-bg']);
+    expect(r >= 4.5, `Classic ${mode}: ${fg} on panel-bg is ${r.toFixed(2)}:1, under 4.5`);
+  }
+  for (const [what, fg, bg] of [['on-accent on accent', 'on-accent', 'accent'], ['on-accent on the primary hover', 'on-accent', 'a64-primary-hover'],
+    ['button-accent2 on button-bg', 'button-accent2', 'button-bg']]) {
+    const r = contrast(c[fg], c[bg]);
+    expect(r >= 4.5, `Classic ${mode}: ${what} is ${r.toFixed(2)}:1, under 4.5`);
+  }
+}
 for (const [label, source] of [['GEOS', GEOS_THEME], ['Breadbin', BREADBIN_THEME], ['Phosphor', PHOSPHOR_THEME], ['Out Run', OUTRUN_THEME], ['Commando', COMMANDO_THEME]]) {
   const v = validateTheme(source);
   expect(v.theme && themeModes(v.theme) === 'both', `the built-in ${label} theme is valid with both modes (${v.error})`);

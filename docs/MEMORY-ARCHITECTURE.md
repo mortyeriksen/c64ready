@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: How the bank-switched memory of the C64 is emulated: fast page dispatch, the 6510 port and PLA banking, I/O routing, colour RAM and cartridges. -->
 
 # Memory (`src/memory.js`): Architecture Overview
 

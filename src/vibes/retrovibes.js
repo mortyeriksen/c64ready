@@ -1482,6 +1482,8 @@ export class ModelViewer {
     // handler could never express.
     this._escapeLayer ??= { close: () => this.close(), isOpen: () => this.isOpen() };
     pushEscapeLayer(this._escapeLayer);
+    // Where focus was, to give it back on close (the VIBES button, from the keyboard).
+    this._opener = document.activeElement;
     this._applyStudio(this._studioWanted);   // Studio mode, if that's how it was left
     if (this.onShow) this.onShow();
     // Pause + mute the machine up front: GL init, model load, scene build and the
@@ -1539,6 +1541,16 @@ export class ModelViewer {
     if (this.overlay.contains(document.activeElement)) document.activeElement.blur();
     this.overlay.hidden = true;
     this.overlay.setAttribute('aria-hidden', 'true');
+    // Give focus back to where it was, now and again once fullscreen has gone
+    // (leaving fullscreen drops focus to the page).
+    const opener = this._opener;
+    this._opener = null;
+    const giveBack = () => {
+      if (opener?.isConnected && opener !== document.body && !this.overlay.contains(opener)
+        && (document.activeElement === document.body || !document.activeElement)) opener.focus({ preventScroll: true });
+    };
+    giveBack();
+    if (document.fullscreenElement) document.addEventListener('fullscreenchange', giveBack, { once: true });
     restoreTouchControls(this.touchControls, this._touchControlsHome);
     this._touchControlsHome = null;
     // Leave native fullscreen if we're still the fullscreen element (i.e. closed

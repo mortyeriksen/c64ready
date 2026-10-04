@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: How the SID 6581 and 8580 sound is emulated: voices, envelopes, the analog filter, digis, and the audio worklet beside the cycle-exact shadow voices. -->
 
 # SID 6581/8580 (`src/sid/sid-voice.js` + `src/sid/sid-worklet.js`): Architecture Overview
 

@@ -7,7 +7,7 @@ import { singleLoadableFile } from '../media/formats.js';
 import { createFavoriteIcon } from './icons.js';
 import { defaultSort } from './query.js';
 import { createDownloadProgress } from './progress.js';
-import { canvas } from '../ui/dom.js';
+import { rovingList } from '../ui/roving-list.js';
 
 export function createAssembly64Control(root, controller, store, perform) {
   let browser, availableFields = controller.fields, request, generation = 0, items = [], busy = false, quickCategory = 'demos', quickSource = '', lastQuickSearch = null;
@@ -24,6 +24,7 @@ export function createAssembly64Control(root, controller, store, perform) {
   const panel = el('div', null, { class: 'mb-quick-panel', hidden: '' });
   const status = el('p', '', { class: 'mb-quick-status', role: 'status', 'aria-live': 'polite' });
   const results = el('div', null, { class: 'mb-quick-results', 'aria-label': 'Quick search results' });
+  rovingList(results, '.mb-quick-result');   // one Tab stop; arrow keys move through the results
   const progress = createDownloadProgress({ card: true });
   const refine = button('REFINE SEARCH', () => open('results', true), { class: 'btn mb-refine', 'aria-haspopup': 'dialog' });
   const clear = button('CLEAR', () => {
@@ -155,12 +156,9 @@ export function createAssembly64Control(root, controller, store, perform) {
   const stopKeys = event => {
     if (event.key === 'Tab' || event.key === 'Shift' || event.target === input || event.target === producer) event.stopPropagation();
   };
-  const releaseFocus = event => {
-    if (event.target.closest('button') || (event.type === 'change' && event.target.matches('select'))) canvas.focus({ preventScroll: true });
-  };
+  // A mouse click here hands the keyboard back to the screen; input.js does
+  // that for the whole page.
   root.addEventListener('keydown', stopKeys);
-  root.addEventListener('click', releaseFocus, true);
-  root.addEventListener('change', releaseFocus, true);
   const unsubscribe = controller.subscribe(() => {
     if (availableFields !== controller.fields) { availableFields = controller.fields; syncFilters(); }
     hint.hidden = controller.online(); hint.textContent = controller.online() ? '' : 'Offline · bookmarks available';
@@ -177,8 +175,6 @@ export function createAssembly64Control(root, controller, store, perform) {
       cancelQuick(); browser?.close(); unsubscribe(); controller.dispose();
       window.removeEventListener('online', network); window.removeEventListener('offline', network);
       root.removeEventListener('keydown', stopKeys);
-      root.removeEventListener('click', releaseFocus, true);
-      root.removeEventListener('change', releaseFocus, true);
     },
   };
 }

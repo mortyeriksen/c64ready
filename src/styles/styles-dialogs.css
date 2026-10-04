@@ -929,20 +929,21 @@ body.powered-on .keymap-grid .kbd-tap.kbd-pressed:hover {
   display: none;
 }
 
+/* A file-picker label drawn as a button, so it takes the button colours. */
 .rom-file-btn {
   font-size: 0.65rem;
   padding: 3px 8px;
   border-radius: 4px;
   border: 1px solid var(--border);
-  background: var(--control-bg);
-  color: var(--accent);
+  background: var(--button-bg);
+  color: var(--button-accent);
   cursor: pointer;
   font-family: 'Share Tech Mono', monospace;
   transition: background 0.15s;
 }
 
 .rom-file-btn:hover {
-  background: color-mix(in srgb, var(--accent) 22%, var(--control-bg));
+  background: color-mix(in srgb, var(--button-accent) 22%, var(--button-bg));
 }
 
 input[type="file"] {

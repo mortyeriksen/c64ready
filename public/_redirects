@@ -15,3 +15,8 @@ https://c64ready.netlify.app/*  https://c64ready.com/:splat  301!
 # page held in an older precache still requests it over the network. Keep the old
 # name resolving until those clients have taken an update.
 /guide/datasette-loading.gif  /guide/datasette-loading.webp  301
+
+# The CLI guide became a topic page of the User Guide. Its heading ids did not
+# change, and a browser keeps the #fragment across the redirect.
+/docs/user-guide-cli.html  /docs/guide-cli.html  301
+/docs/user-guide-cli       /docs/guide-cli.html  301

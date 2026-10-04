@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: A Commodore 64 that boots in your browser: from a blank screen to a running game or demo in a few minutes, and the settings worth knowing. -->
 
 # Getting Started
 
@@ -62,20 +63,20 @@ picture of one.
 ## 3. Load a program
 
 Drag any supported file onto the screen and it goes to the right place, or use
-**▶ LOAD ANY** on the [Media load](USER-GUIDE.md#media-load) card.
+**▶ LOAD ANY** on the [Media load](GUIDE-MEDIA.md#media-load) card.
 
 | Format | What happens |
 |--------|--------------|
-| `.prg` | Normally written onto a disk of its own in drive 8. A memory image covering `$D000` to `$DFFF` goes straight into RAM. See [Loading a .prg](USER-GUIDE.md#loading-a-prg) for autorun and the fallback without a 1541 ROM. |
-| `.d64` `.g64` | The emulator types `LOAD"*",8,1` and `RUN`. A `.g64` holds the raw tracks of a copy-protected original and turns TDE on. See [Disk drive 8](USER-GUIDE.md#disk-drive-8). |
+| `.prg` | Normally written onto a disk of its own in drive 8. A memory image covering `$D000` to `$DFFF` goes straight into RAM. See [Loading a .prg](GUIDE-MEDIA.md#loading-a-prg) for autorun and the fallback without a 1541 ROM. |
+| `.d64` `.g64` | The emulator types `LOAD"*",8,1` and `RUN`. A `.g64` holds the raw tracks of a copy-protected original and turns TDE on. See [Disk drive 8](GUIDE-MEDIA.md#disk-drive-8). |
 | `.nbz` | A nibbler dump. It becomes a `.g64` on the way in and loads like one. |
 | `.d71` | A double-sided 1571 disk, served by the virtual drive. Inserting it turns TDE off for that drive; use `LOAD"*",8,1` and `RUN`. |
 | `.d81` | A 1581 disk, served by the emulator itself: inserting it turns TDE off for that drive, then `LOAD"*",8,1` and `RUN` as for a `.d64`. |
-| `.crt` | The [cartridge](USER-GUIDE.md#cartridge) takes over at once, or on the next power-on if inserted while off. |
-| `.tap` `.wav` `.dmp` | Becomes a tape in the [Datasette](USER-GUIDE.md#datasette): type `LOAD`, then press **▶ PLAY**. |
+| `.crt` | The [cartridge](GUIDE-MEDIA.md#cartridge) takes over at once, or on the next power-on if inserted while off. |
+| `.tap` `.wav` `.dmp` | Becomes a tape in the [Datasette](GUIDE-MEDIA.md#datasette): type `LOAD`, then press **▶ PLAY**. |
 | `.t64` | An archive of ready programs, not a tape: the program you pick loads as a `.prg` would. Almost every archive holds exactly one. |
-| `.sid` | A tune, wrapped in a player that runs on the C64. See [Playing a .sid tune](USER-GUIDE.md#playing-a-sid-tune). |
-| `.reu` | Fills the [RAM Expansion](USER-GUIDE.md#ram-expansion). |
+| `.sid` | A tune, wrapped in a player that runs on the C64. See [Playing a .sid tune](GUIDE-MEDIA.md#playing-a-sid-tune). |
+| `.reu` | Fills the [RAM Expansion](GUIDE-MEDIA.md#ram-expansion). |
 
 **AUTORUN**, on by default, starts disk loads and runs BASIC programs, including
 machine-code programs with a BASIC `SYS` stub. A PRG loaded through drive 8
@@ -93,7 +94,7 @@ The drive card lists the disk's directory: click any program to load just that
 one, or press **🔍** to see the filename artwork many demos hide there.
 
 Everything you open is remembered. **📂 LOAD LIB** relaunches it with one click,
-and moves the whole [library](USER-GUIDE.md#library-dialog) between browsers.
+and moves the whole [library](GUIDE-MEDIA.md#library-dialog) between browsers.
 
 ---
 
@@ -124,7 +125,7 @@ matrix. A few keys are remapped so the C64-only ones are reachable:
 | `F12` | RESTORE (RUN/STOP + RESTORE resets BASIC) |
 
 Not sure where a symbol lives? **KEY MAP** shows a clickable on-screen
-keyboard, and the [Key Map reference](USER-GUIDE.md#key-map) lists the full
+keyboard, and the [Key Map reference](GUIDE-INTERFACE.md#key-map) lists the full
 mapping.
 Need to get a BASIC listing in quickly? **📋 PASTE** types your clipboard into
 the machine.
@@ -134,13 +135,13 @@ the machine.
 ## 5. Play with a joystick, mouse, or paddle
 
 The C64 has two control ports. Assign each on the
-[Control Ports](USER-GUIDE.md#control-ports) card:
+[Control Ports](GUIDE-INPUT.md#control-ports) card:
 
 - **Joystick**: a USB or Bluetooth gamepad. Browsers only reveal a pad once it
   sends input, so press a button first, then pick which pad drives which port.
-- **[Touch Joystick](USER-GUIDE.md#touch-joystick)** (phones and tablets): a
+- **[Touch Joystick](GUIDE-INPUT.md#touch-joystick)** (phones and tablets): a
   stick lower left, two buttons lower right.
-- **[Key Joystick 1 / 2](USER-GUIDE.md#key-joystick)**: two keyboard sticks, so
+- **[Key Joystick 1 / 2](GUIDE-INPUT.md#key-joystick)**: two keyboard sticks, so
   two people can share a keyboard. **1** is the arrow keys with **J** / **K** to
   fire, on Port 2 where most games expect it; **2** is WASD with **C** / **V**.
 - **Mouse (1351)**: the proportional GEOS-style mouse. Click the screen to
@@ -170,14 +171,14 @@ freeze.
 
 ## 7. Make it look and sound right
 
-On the [Controls](USER-GUIDE.md#controls) card, **SIZE** cycles
+On the [Controls](GUIDE-INTERFACE.md#controls) card, **SIZE** cycles
 **1X / 2X / 2.5X / 3X / MAX** and **⛶ FULL** goes fullscreen, always keeping the
 C64's own proportions. **VIBES** opens
-[Retro Vibes](USER-GUIDE.md#retro-vibes) full-screen: a 3D C64 whose TV plays the
+[Retro Vibes](GUIDE-LOOKS.md#retro-vibes) full-screen: a 3D C64 whose TV plays the
 live picture, with **🎬** to cycle scenes and **🥽 Enter VR** if you have a
 headset.
 
-In [⚙ OPTIONS](USER-GUIDE.md#options):
+In [⚙ OPTIONS](GUIDE-OPTIONS.md#options):
 
 - **Display**: **🖥 CRT** cycles the display looks, from scanlines to a rolling
   mains-hum bar. **ATTRACT MODE** toggles the powered-off animation.
@@ -202,7 +203,7 @@ tricks behave like the real thing. It needs the 1541 ROM from
 
 Off, you get the fast built-in load: instant, fine for plain games, but no SAVE
 and no fastloaders. The toggle is on
-[Disk drive 8](USER-GUIDE.md#disk-drive-8).
+[Disk drive 8](GUIDE-MEDIA.md#disk-drive-8).
 
 ---
 
@@ -212,7 +213,7 @@ The emulator is a Progressive Web App: choose **Add to Home Screen** in your
 browser's menu to run it like a native app, offline included.
 
 Tap the screen to bring up the device keyboard, assign
-[Touch Joystick](USER-GUIDE.md#touch-joystick) on the Control Ports card to play,
+[Touch Joystick](GUIDE-INPUT.md#touch-joystick) on the Control Ports card to play,
 and turn to landscape with **⛶ FULL** for the biggest picture. Switching away and
 back is safe: the machine pauses and mutes, then resumes where it was with no
 audio blip and no catch-up stutter.

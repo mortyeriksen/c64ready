@@ -118,6 +118,7 @@ Hosted at **[c64ready.com/docs](https://www.c64ready.com/docs/)**; sources in [`
 .
 ├── src/              # the emulator, one module per chip / subsystem
 │   ├── machine.js    # wires the machine together on a PAL master clock
+│   ├── machine-facade.js  # the UI's only way into the machine (the `c64` object)
 │   ├── cpu.js        # 6510 CPU (official + illegal opcodes)
 │   ├── vic2.js       # VIC-II video, raster-level (+ vic2-tables/line/sprites/render.js)
 │   ├── sid/          # SID audio: voices, filter, the audio worklet, the WASM engine

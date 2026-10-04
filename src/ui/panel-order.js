@@ -21,6 +21,7 @@
 // arrays, unit-tested in test/panel-order-spec-test.js with no DOM.
 
 import { pushEscapeLayer, popEscapeLayer } from './escape-stack.js';
+import { rovingList } from './roving-list.js';
 
 export const PANEL_ORDER_KEY = 'c64emu.panelOrder';
 export const PANEL_HIDDEN_KEY = 'c64emu.panelHidden';
@@ -189,6 +190,7 @@ export function initPanelOrder() {
     '<div class="panel-restore-list"></div></div>';
   document.body.appendChild(restoreDialog);
   const restoreList = restoreDialog.querySelector('.panel-restore-list');
+  rovingList(restoreList, '.panel-restore-item');   // one Tab stop; ↑ / ↓ move through the hidden panels
 
   const restoreIsOpen = () => !restoreDialog.hidden;
   const closeRestore = () => {
@@ -212,6 +214,18 @@ export function initPanelOrder() {
     saveHidden();
     syncRestoreUi();
     live.textContent = `${_cardName(card)} shown again`;
+  };
+
+  // Hides a card where it stands, by drop or by Delete on its handle; it keeps
+  // its place in the layout, so the + brings it back where the user left it.
+  const hideCard = (card) => {
+    hidden.add(card.getAttribute('data-panel'));
+    applyHidden();
+    syncFromDom();
+    save();
+    saveHidden();
+    syncRestoreUi();
+    live.textContent = `${_cardName(card)} hidden. The + at the bottom right brings it back.`;
   };
 
   const fillRestoreList = () => {
@@ -325,13 +339,17 @@ export function initPanelOrder() {
     handle.className = 'panel-drag-handle';
     handle.innerHTML = GRIP_SVG;
     handle.setAttribute('aria-label', `Reorder ${_cardName(card)}`);
-    handle.title = 'Drag to reorder — or use the arrow keys';
+    handle.title = 'Drag to reorder or hide. Keys: arrows move, Delete hides';
     // The header itself toggles expand (main.js) or drive-9 power (media.js);
     // the handle lives inside it, so it has to swallow its own events.
     handle.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); });
     header.insertBefore(handle, header.firstChild);
     handles.set(key, handle);
   }
+
+  // The shown cards' handles in reading order, column by column.
+  const handleOrder = () => cols.flatMap(col => shownIn(col).map(card => card.getAttribute('data-panel')))
+    .filter(key => handles.has(key));
 
   const announce = (card) => {
     const col = card.closest('.panel-col');
@@ -372,6 +390,19 @@ export function initPanelOrder() {
       const siblings = shownIn(col);
       const at = siblings.indexOf(card);
       let toCol = c, to = at;
+
+      // Delete (Backspace on a Mac keyboard): hide the panel, and hand focus
+      // to the next handle, or to the + once no panel is left.
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        e.stopPropagation();
+        const order = handleOrder();
+        const i = order.indexOf(key);
+        const next = order[i + 1] ?? order[i - 1] ?? null;
+        hideCard(card);
+        (next ? handles.get(next) : restoreBtn).focus();
+        return;
+      }
 
       if (e.key === 'ArrowUp') to = at - 1;
       else if (e.key === 'ArrowDown') to = at + 1;
@@ -466,13 +497,7 @@ export function initPanelOrder() {
       // Put it back where it was picked up first: hiding a card should not also
       // move it, so unhiding later finds it where the user left it.
       startCol.insertBefore(card, startNext);
-      hidden.add(card.getAttribute('data-panel'));
-      applyHidden();
-      syncFromDom();
-      save();
-      saveHidden();
-      syncRestoreUi();
-      live.textContent = `${_cardName(card)} hidden — Options ▸ Display ▸ RESET PANELS brings it back`;
+      hideCard(card);
       if (hadFocus) handle.focus();
       return;
     }

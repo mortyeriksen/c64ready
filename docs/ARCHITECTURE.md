@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: A top-down map of the whole emulator: its components, how they are wired, the threading model, and the video, audio, disk and input data flows. -->
 
 # C64 Emulator Architecture (Master Overview)
 
@@ -35,6 +36,9 @@ This is the index document; each subsystem has its own deep-dive:
  │ BROWSER MAIN THREAD                                                         │
  │                                                                             │
  │   main.js  ── entry/orchestrator (UI: input/media/dialogs/dom/state/debug)  │
+ │     │                                                                       │
+ │     ▼                                                                       │
+ │   machine-facade.js  ── `c64`: the UI's only way into the machine           │
  │     │                                                                       │
  │     │ runFrame()  (once per rAF ≈ 50 Hz)                                    │
  │     ▼                                                                       │
@@ -114,6 +118,16 @@ imports and wires them, injecting the core hooks each needs through `initInput()
 module graph stays acyclic. Shared, reassigned singletons live in `state.js` as
 ES-module live bindings (read directly, written through setters); every DOM
 handle lives in `dom.js`.
+
+The UI never touches a chip. Every module reaches the machine through
+**`machine-facade.js`**, the `c64` live binding in `state.js` (rebuilt with each
+machine): commands for loading, the drives, the tape, the REU and the input
+ports, read-only views of the tape, drives and REU, and the console tools
+under `c64.debug`. Device protocols that run on the machine's clock, such as
+the NEOS mouse's strobe sequencer, live in the machine itself. The boundary is
+what would let the machine move to another language or a worker without
+touching the UI; `test/machine-facade-spec-test.js` fails if a UI module
+reaches past it. See the [machine orchestrator](MACHINE-ARCHITECTURE.md).
 
 The load-bearing modules: **`main.js`** owns the machine lifecycle, the rAF
 frame loop + framebuffer blit, and the auto-load sequencer; **`input.js`** owns
@@ -207,11 +221,13 @@ the [1541 drive](DRIVE-ARCHITECTURE.md).
 
 ### Input  (keyboard / joystick / paddle)
 ```
- DOM key / gamepad / mouse events (input.js)
+ DOM key / gamepad / mouse events (input.js) ──► c64 facade
    ──► CIA1 keyboard matrix  (Port A col select → Port B row read)
    ──► joyPort1/joyPort2 bytes  ANDed into CIA1 $DC01/$DC00 by Memory
    ──► paddle X/Y → SID POTX/POTY (512-cycle sample-and-hold)
    ──► CIA1 PB4 / joystick-1 fire → VIC light-pen pin
+   ──► NEOS mouse: motion and buttons in; the machine's own strobe
+       sequencer answers CIA1 port writes, and its right button drives POTX
 ```
 
 ---
@@ -313,7 +329,8 @@ Why the timing is this fussy, and how it is kept honest:
   **keyboard / joystick / gamepad / mouse** → `input.js`; **file & state loading,
   snapshots, disk directory** → `media.js`; **confirm/prompt dialogs** →
   `dialogs.js`; **DOM refs** → `dom.js`; **shared runtime state** → `state.js`;
-  **console debug tools** → `debug.js`.
+  **console debug tools** → `debug.js`; **the UI's way into the machine** →
+  `machine-facade.js`.
 - **CIA timers / keyboard / TOD** → `cia.js`. **SID synthesis** → `sid-worklet.js`
   / `sid-voice.js`. **Tape** → `datasette.js`.
 ```

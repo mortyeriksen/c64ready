@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: C64 READY. is a Commodore 64 rebuilt from the silicon up that runs in your browser: what it stands for, how it started, and who made it. -->
 
 # About C64 READY.
 
@@ -7,14 +8,14 @@ Switch it on and it's the 80s again: the blue boot screen, the blinking cursor, 
 
 It's a Commodore 64 rebuilt from the silicon up, running right in your browser. No plugins, nothing to install. Just open it and play.
 
-### What it stands for
+## What it stands for
 
 - **Easy, never bloated.** It should feel like flipping a switch, not flying a plane.
 - **Faithful enough to run anything.** If a real breadbin runs it, so does this.
 - **Runs anywhere.** Desktop or phone, online or offline, and it installs as its own app if you want.
 - **Serious emulation, retro vibes.** Cycle-exact silicon underneath, built for the sheer joy of it.
 
-### What it does
+## What it does
 
 - **Runs the demos that stump other emulators.** The wildest custom fastloaders load and run, cycle for cycle. → [the 1541 drive](/docs/drive-architecture.html)
 - **Backed by 2,400+ labeled tests**, covering the CPU, VIC-II, SID, CIA, PLA, drive, datasette, cartridges, input, save states, and integration edge cases. → [the test suite](/docs/testing.html)
@@ -24,11 +25,11 @@ It's a Commodore 64 rebuilt from the silicon up, running right in your browser. 
 
 Curious how it all works? The [technical docs](/docs/) go chip by chip.
 
-### Retro Vibes
+## Retro Vibes
 
 Step into an 80s bedroom bathed in synthwave light, your C64 humming on the desk with the demo playing live on its 1702 monitor. It's the emulator, but make it a scene, and you can slip on a headset and pull up a chair, because it runs in VR, too. → [Retro Vibes](/docs/retrovibes-architecture.html)
 
-### How it started
+## How it started
 
 It began as a plan to drop a SID tune into my retro game, [Cosmic Bounce](https://www.cosmicbounce.xyz) (which already had a MOD player). The SID player came together fast, and then the obvious-in-hindsight question hit: *could I build the whole machine in a browser?* A breadbin's worth of tokens and late nights later, here we are.
 
@@ -38,15 +39,15 @@ I **love** this machine: the blocky charset, the PETSCII art, the rasterbar demo
 
 Full references and acknowledgements are in [Specifications, source material and credits](/docs/specifications.html).
 
-### Known issues
+## Known issues
 
 It's a work in progress: a few small visual glitches remain, and there's more performance to squeeze out. Nearly everything runs faithfully, but now and then you may spot something off. The current list lives in the [known-issues doc](/docs/known-issues.html). The code lives on [GitHub](https://github.com/mortyeriksen/c64ready); please [file an issue](https://github.com/mortyeriksen/c64ready/issues) for anything you run into.
 
-### Privacy
+## Privacy
 
 Everything runs in your browser. Your ROMs, disks, tapes, cartridges and save states stay in the browser's own storage and are never uploaded. There are no cookies and no third-party scripts. The only thing counted is a few anonymous page hits the app makes, once per launch or ROM setup. Those hits let the hosting service's server-side statistics show how many sessions run installed or with ROMs; they carry no data and no identifier.
 
-### About the author
+## About the author
 
 Hi, I'm Morten (RetroMorty). Back in the 90s I ran with the PC demo scene in the group **Twilight Zone**; under **Twilight Zone Software** we built the game [Interpose](https://www.facebook.com/interposegame), where I was project manager and programmer, years that left me fluent in x86 assembly and passingly dangerous in C64 assembly. In 2000 I founded [Enonic](https://www.enonic.com), where I'm still CEO today.
 
@@ -54,6 +55,6 @@ The love never left: three C64s, a Commodore 1084S monitor, and a good stash of 
 
 Follow C64 READY. on [Facebook](https://www.facebook.com/c64ready) and [YouTube](https://www.youtube.com/@c64ready), contact me on [LinkedIn](https://www.linkedin.com/in/morten/), or email [mortyeriksen@gmail.com](mailto:mortyeriksen@gmail.com).
 
-### License and source
+## License and source
 
 C64 READY. is free software under the [GNU General Public License, version 3 or later](/docs/license.html), distributed without warranty; see the GPL for copying and modification rights. The [full source](https://github.com/mortyeriksen/c64ready) lives on GitHub, and the third-party credits, licenses, and trademark disclaimer are collected in the [notice](/docs/notice.html).

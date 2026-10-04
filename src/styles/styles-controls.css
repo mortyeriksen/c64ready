@@ -231,10 +231,11 @@ body.powered-on #btn-power {
   box-shadow: 0 0 10px color-mix(in srgb, var(--green) 30%, transparent);
 }
 
+/* A light tint: the green label must stay 4.5:1 on it in every theme. */
 body.powered-on #btn-power:hover:not(:disabled) {
   color: var(--green);
   border-color: var(--green);
-  background: color-mix(in srgb, var(--green) 20%, var(--control-bg));
+  background: color-mix(in srgb, var(--green) 8%, var(--control-bg));
 }
 
 /* Inline SVG button glyph (e.g. the POWER symbol). Used instead of the Unicode

@@ -1,7 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: Everything C64 READY. supports, seen from the user's side: file formats, control port devices, display and sound options, saving, and installing as an app. -->
 
-# Features
+# Feature list
 
 Everything the emulator supports, seen from the user's side, not the internals.
 This is the checklist: the file formats it loads, the devices you can plug into
@@ -42,7 +43,7 @@ installs as an app. For a step-by-step walkthrough see the
   is written onto a disk of its own in drive 8, so it shows in the directory,
   loads again, and exports as a `.d64`, without resetting the machine. Without
   the drive ROM it loads directly into RAM, resetting first if the machine has
-  already been used. See [Loading a .prg](USER-GUIDE.md#loading-a-prg) for how
+  already been used. See [Loading a .prg](GUIDE-MEDIA.md#loading-a-prg) for how
   programs start.
 - **`.d64` disk images**: 35-, 40- and 42-track floppies, with directory
   listing and wildcard loading, and **read/write**: programs can `SAVE` to them.
@@ -80,7 +81,7 @@ installs as an app. For a step-by-step walkthrough see the
   author and year, the song and how long it has been playing, an oscilloscope,
   and a view of all three voices. Two-SID tunes have two stacked, half-height
   scopes in Safe view. See
-  [Playing a .sid tune](USER-GUIDE.md#playing-a-sid-tune).
+  [Playing a .sid tune](GUIDE-MEDIA.md#playing-a-sid-tune).
 - **`.reu` expansion-RAM images**: load a RAM Expansion Unit's contents, and
   save them back out.
 - **Drag-and-drop**: drop any supported file on the screen and it goes to the
@@ -155,7 +156,7 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   just the filenames, so the PETSCII artwork many demos hide in their directory
   reads clearly. The names are tinted as a **C64 raster rainbow**, a continuous
   colour sweep through the hues of your selected palette (see
-  [Directory zoom](USER-GUIDE.md#directory-zoom)).
+  [Directory zoom](GUIDE-INTERFACE.md#directory-zoom)).
 - **True Drive Emulation (TDE)**, on by default: a real emulated 1541 (its own
   CPU + DOS) for fastloaders, cracked intros, demos, and copy-protected disks.
 - **Disk I/O with TDE off**: a built-in drive answers the KERNAL's file and
@@ -210,7 +211,7 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   when the tape itself proves the fix, and every proved file is written back at
   clean pulse widths. Nothing is invented: a file that cannot be proved is left
   as it is and marked in the listing (the method is in the
-  [user guide](USER-GUIDE.md#datasette)). On the eight worn cassettes this was
+  [user guide](GUIDE-MEDIA.md#datasette)). On the eight worn cassettes this was
   built against, 121 of 130 programs load, up from 66. Recordings are read in
   pieces, so a long side fits in a phone's memory.
 
@@ -251,7 +252,7 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **Themes**: Classic, GEOS, Breadbin, Phosphor, Out Run and Commando built
   in, and your own as a JSON file of colours and an optional page pattern,
   with a dark mode, a light mode or both; export any theme as a complete
-  starting point (see [Themes](USER-GUIDE.md#themes)).
+  starting point (see [Themes](GUIDE-LOOKS.md#themes)).
 - **FPS and per-frame timer** readout in the header.
 
 ## Sound
@@ -297,7 +298,7 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   effects. Opened with the **VIBES** button in Controls; **Esc** / ✕ returns.
   **Cmd+Shift+X** / **Ctrl+Shift+X** is Studio mode, stripping the scene to the
   machine and the C64 READY. logo for screenshots and video (see
-  [Retro Vibes](USER-GUIDE.md#retro-vibes)).
+  [Retro Vibes](GUIDE-LOOKS.md#retro-vibes)).
 - **VR (WebXR), experimental**: on a device with a headset the 3D viewer offers
   an **🥽 Enter VR** mode: the scene in stereo with head tracking. Its limits
   are noted in [Known Issues](KNOWN-ISSUES.md#vr-webxr-experimental).
@@ -305,12 +306,12 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   **● RECORD** button in Controls: everything on screen, fullscreen and Retro
   Vibes included, with the emulator's own audio, saved as `c64ready-<date>.mp4`.
   Browser support and the resolution setting are in the
-  [user guide](USER-GUIDE.md#recording).
+  [user guide](GUIDE-LOOKS.md#recording).
 - **Rearrangeable side panel**: drag the control cards into whatever order and
   columns suit you, hide the ones you never use, and the browser remembers the
   arrangement; the handles work from the keyboard too, and **Options ▸ Display**
   resets everything (see
-  [Rearranging the interface](USER-GUIDE.md#rearranging-the-interface)).
+  [Rearranging the interface](GUIDE-INTERFACE.md#rearranging-the-interface)).
 - **VIBES button demo**: a small pixel demo runs inside the VIBES button itself;
   **Cmd+Shift+Z** / **Ctrl+Shift+Z** zooms it to ten times the size. Switch it off in
   Options ▸ Other.
@@ -328,7 +329,7 @@ converts, inspects, repairs and runs cassettes, cartridges and disks in
 batches: a shelf of `.wav` recordings into mended `.tap` files in one command,
 formats converted in every honest direction, or every program on a tape side
 booted headless and tiled into one captioned sheet. Node 20.19 or newer,
-no dependencies; the [CLI guide](USER-GUIDE-CLI.md) walks every command.
+no dependencies; the [CLI guide](GUIDE-CLI.md) walks every command.
 
 `sid2prg` wraps SID tunes with the same C64 music player as the browser UI.
 `sid2wav` renders a selected song as 16-bit WAV audio (mono for one SID, stereo for two), with duration,

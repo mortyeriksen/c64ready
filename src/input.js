@@ -30,14 +30,41 @@ import {
   dropSoftKeyboardFocus, isTouchCapable, resolveTouchStickInto,
 } from './ui/touch-joystick.js';
 
+// The C64 has the keyboard while its screen has focus, or nothing does yet (a
+// page just loaded); also the touch keyboard's input, and the KEY MAP dialog,
+// which lights its keys as they are typed. Anywhere else the keys are the
+// page's: Tab moves on, Enter and Space press the focused button, arrows work
+// the focused control.
+function c64HasKeyboard() {
+  const el = document.activeElement;
+  return !el || el === document.body || el === document.documentElement || el === canvas || el === mobileKbd
+    || !!(keymapModal && !keymapModal.hidden && keymapModal.contains(el));
+}
+
 const keyboardFocusHint = document.getElementById('keyboard-focus-hint');
 function updateKeyboardFocusHint() {
   if (!keyboardFocusHint) return;
-  const target = document.activeElement;
-  const field = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
-  const dialog = target?.closest('[role="dialog"], dialog[open]');
-  keyboardFocusHint.hidden = document.hasFocus() && (target === mobileKbd || !(field || dialog));
+  keyboardFocusHint.hidden = document.hasFocus() && c64HasKeyboard();
 }
+
+// A mouse or touch click on a button, or a pick from a menu, hands the keyboard
+// back to the screen, so typing straight after clicking LOAD or POWER reaches
+// the C64. Focus moved by the keyboard stays where it was put. Dialogs keep
+// their own focus.
+let _lastInputPointer = false;
+document.addEventListener('pointerdown', () => { _lastInputPointer = true; }, true);
+document.addEventListener('keydown', () => { _lastInputPointer = false; }, true);
+const _giveBackKeyboard = (target) => {
+  if (!_lastInputPointer || !target?.closest) return;
+  if (target.closest('[role="dialog"], dialog, .modal-backdrop, .mb-overlay')) return;
+  if (!target.closest('.main-wrap, body > header')) return;
+  if (target.matches('input:not([type="checkbox"]):not([type="file"]), textarea') || target.isContentEditable) return;
+  canvas.focus({ preventScroll: true });
+};
+document.addEventListener('click', (e) => {
+  if (e.target.closest?.('button, a[href], [role="button"], label')) _giveBackKeyboard(e.target);
+}, true);
+document.addEventListener('change', (e) => { if (e.target.matches?.('select')) _giveBackKeyboard(e.target); }, true);
 document.addEventListener('focusin', updateKeyboardFocusHint);
 document.addEventListener('focusout', () => queueMicrotask(updateKeyboardFocusHint));
 window.addEventListener('focus', updateKeyboardFocusHint);
@@ -514,7 +541,7 @@ function _renderPortDetail(p) {
       const lbl = _joyKeyLabel(code);
       const inner = lbl === glyph ? glyph : glyph + ' ' + lbl;
       const what = { up: 'up', down: 'down', left: 'left', right: 'right', fireA: 'fire', fireB: 'fire 2' }[dir];
-      return `<kbd class="kbd cp-joy-dir" data-joy-dir="${dir}" role="button" aria-label="joystick ${dir}" title="Hold to press joystick ${what}">${inner}</kbd>`;
+      return `<kbd class="kbd cp-joy-dir" data-joy-dir="${dir}" role="button" tabindex="0" aria-label="joystick ${what}" title="Hold to press joystick ${what}">${inner}</kbd>`;
     };
     // The wrapper becomes display:contents inside the wrapping flex detail, so
     // every chip and the redefine link participate in the same row/column gaps.
@@ -792,6 +819,29 @@ for (const p of [1, 2]) {
   el.addEventListener('pointerup', releaseChip);
   el.addEventListener('pointercancel', releaseChip);
   el.addEventListener('lostpointercapture', releaseChip);
+  // From the keyboard: Enter or Space on a focused chip holds it until the key
+  // comes up, or until focus leaves the chip.
+  let keyHeldChip = null;
+  const isPressKey = e => e.key === 'Enter' || e.key === ' ';
+  el.addEventListener('keydown', e => {
+    const chip = e.target.closest?.('.cp-joy-dir');
+    if (!chip || !isPressKey(e) || e.altKey || e.ctrlKey || e.metaKey) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.repeat || keyHeldChip) return;
+    keyHeldChip = chip;
+    setChip(chip, true);
+  });
+  el.addEventListener('keyup', e => {
+    if (!keyHeldChip || !isPressKey(e)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setChip(keyHeldChip, false);
+    keyHeldChip = null;
+  });
+  el.addEventListener('focusout', () => {
+    if (keyHeldChip) { setChip(keyHeldChip, false); keyHeldChip = null; }
+  });
 }
 for (const p of [1, 2]) {
   const d = cpGamepad[p];
@@ -1129,7 +1179,7 @@ function _buildKeymapGrid() {
   }
 
   // Special keys keep the per-row "host = C64 face" rendering because the
-  // mapping is non-obvious (F9 = RUN/STOP, Tab = INST/DEL, F11 = CLR/HOME, …).
+  // mapping is non-obvious (F9 = RUN/STOP, Backspace = INST/DEL, F11 = CLR/HOME, …).
   // Letters, digits, and symbols are identity-mapped on the C64 (typing 'A'
   // produces 'A', typing '*' produces '*'), so they get a flat list of
   // supported characters under their own heading instead of N redundant rows.
@@ -1863,6 +1913,7 @@ document.addEventListener('keydown', e => {
   if (e.metaKey) return;
 
   if (!running) return;
+  if (!c64HasKeyboard()) return;
 
   // Divert keys bound to any plugged-in key joystick (each has its own
   // bindings; a key shared by both drives both). Only the mapped keys are

@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
+<!-- description: How to run the tests of C64 READY., what the suite covers, the diagnostic and trace tools, and cross-checking against the VICE emulator. -->
 
 # The test suite
 

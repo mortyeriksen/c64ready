@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
-// Capture UI screenshots for the User Guide (docs/USER-GUIDE.md).
+// Capture UI screenshots for the User Guide (docs/USER-GUIDE.md and its
+// docs/GUIDE-*.md topic pages).
 //
 // Drives the LIVE dev server (http://localhost:5173) in headless Chromium via
 // Playwright, boots the machine (ROMs auto-load from /roms/), then screenshots

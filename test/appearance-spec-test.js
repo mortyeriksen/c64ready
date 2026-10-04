@@ -9,6 +9,9 @@
 //      change what is on screen.
 //   4. The inline script in index.html, which runs before first paint, picks
 //      the same mode as resolveMode() for every stored value and OS setting.
+//   5. The docs follow the same setting in Classic's two modes (no themes):
+//      their scripts (tools/build-docs.mjs) use the same storage key, pick the
+//      same mode before first paint, and cycle the button in the same order.
 import fs from 'fs';
 import path from 'path';
 import vm from 'vm';
@@ -71,4 +74,28 @@ for (const stored of [null, 'dark', 'light', 'system', 'junk']) {
   }
 }
 
-console.log('ok - appearance: parse, resolve, cycle, and the pre-paint script agree');
+// 5. The docs' copy of the setting.
+const build = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'tools', 'build-docs.mjs'), 'utf8');
+const prepaint = build.match(/const APPEARANCE_PREPAINT = `([\s\S]*?)`;/)[1];
+const button = build.match(/const APPEARANCE_BUTTON = `([\s\S]*?)`;/)[1];
+expect(prepaint.includes(`'${APPEARANCE_KEY}'`) && button.includes(`'${APPEARANCE_KEY}'`), `the docs read and write ${APPEARANCE_KEY}`);
+for (const stored of [null, 'dark', 'light', 'system', 'junk']) {
+  for (const osDark of [true, false]) {
+    const attrs = {};
+    vm.runInNewContext(prepaint, {
+      localStorage: { getItem: () => stored },
+      window: { matchMedia: () => ({ matches: osDark }) },
+      document: { documentElement: { setAttribute: (k, v) => { attrs[k] = v; }, style: {} } },
+    });
+    const want = resolveMode(parseAppearance(stored), osDark);
+    expect(attrs['data-mode'] === want, `docs pre-paint: stored ${stored}, OS ${osDark ? 'dark' : 'light'} → ${want} (got ${attrs['data-mode']})`);
+  }
+}
+const docsNext = vm.runInNewContext(`${button.match(/function docsNext[\s\S]*?\n    }/)[0]}; docsNext`);
+for (const now of ['system', 'dark', 'light']) {
+  for (const osDark of [true, false]) {
+    expect(docsNext(now, osDark) === nextAppearance(now, osDark), `docs button: ${now} on a ${osDark ? 'dark' : 'light'} OS goes to ${nextAppearance(now, osDark)}`);
+  }
+}
+
+console.log('ok - appearance: parse, resolve, cycle, the pre-paint script, and the docs agree');

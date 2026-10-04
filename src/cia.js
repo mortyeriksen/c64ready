@@ -10,10 +10,11 @@
 // Row = CIA1 Port B bit# (input, active-low = key pressed)
 //
 // Special keys mapped to function-key row:
-//   Tab → INST/DEL    F9 → RUN/STOP    F10 → Commodore
+//   Backspace/Delete → INST/DEL    F9 → RUN/STOP    F10 → Commodore
 //   F11 → CLR/HOME    F12 → RESTORE (NMI, handled in main.js, NOT in matrix)
 export const KEY_MAP = {
-  'Backspace':     [0, 0], 'Delete':       [0, 0], 'Tab':       [0, 0],
+  // No Tab: the C64 has none, so Tab stays the browser's, moving focus.
+  'Backspace':     [0, 0], 'Delete':       [0, 0],
   'Enter':         [0, 1], 'ArrowRight':   [0, 2],
   'F7':            [0, 3], 'F1':           [0, 4],
   'F3':            [0, 5], 'F5':           [0, 6],
