@@ -20,12 +20,17 @@ The version you are running is shown at the bottom of the About dialog.
   **Breadbin** in the beige and brown of the machine itself with its rainbow
   stripe, **Phosphor** in amber monitor glow or on green-bar printer paper,
   **Out Run** in eighties sunset neon, **Commando** in sand, muzzle flash,
-  khaki and olive drab, or your own, imported from a theme file. In the
+  khaki and olive drab, or your own, imported from a theme file. Each
+  built-in theme also lays a faint pattern on the page behind the panels,
+  from Classic's subtle grid to GEOS's desktop dither and Phosphor's
+  green-bar paper. In the
   Breadbin, Phosphor, Out Run and Commando light modes the main actions,
   **LOAD ANY**, drive 8's **LOAD** and Assembly64's **EXPLORE**, stand out
-  from the other buttons. **EXPORT** saves the current one as a complete file
-  to start from. **Cmd+Shift+Y** (**Ctrl+Shift+Y** on Windows and Linux)
+  from the other buttons. **EXPORT** saves
+  the current one as a complete file to start from. **Cmd+Shift+Y** (**Ctrl+Shift+Y** on Windows and Linux)
   switches to the next theme.
+- **A cleaner header.** The tagline under the logo is gone, and the logo now
+  sits on one line with the buttons beside it.
 - **Keys that look like keys.** The joystick keys in Control Ports and the
   keys in **KEY MAP** are now plain, neutral keys instead of coloured boxes,
   so they no longer look like the buttons around them. Point at a joystick key

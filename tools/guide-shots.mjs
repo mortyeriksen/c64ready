@@ -25,10 +25,11 @@
 // The script captures 22 UI shots: overview, overview-running, the main feature
 // cards, the modals, the CRT settings panel, directory zoom, Retro Vibes, and
 // the SID player. It pre-seeds localStorage for reproducibility, including
-// hiding the PWA card and forcing the lighter VIBES model for software WebGL,
-// and loads the app with ?CRT_SHADER_SOFTWARE=1 so the CRT looks are the
-// shader's (what a real GPU shows) rather than the CSS fallback headless
-// Chromium's software WebGL would otherwise get.
+// hiding the PWA card and pinning the lighter VIBES model, and loads the app
+// with ?CRT_SHADER_SOFTWARE=1 so the CRT looks are always the shader's (what a
+// real GPU shows), even when the browser falls back to software WebGL. The
+// browser renders on the GPU when there is one (tools/shot-browser.mjs), and a
+// slow step prints a warning.
 //
 // FULL REGENERATION of public/guide/ — start your Vite first, then, in order:
 //   node tools/guide-shots.mjs                     20 shots (above)
@@ -46,7 +47,7 @@
 // takes GUIDE_OUT to write elsewhere, so a trial run leaves public/ untouched.
 // tools/pick-frames.mjs dumps a
 // per-second burst of a demo when a specific overview-running frame is wanted.
-import { chromium } from 'playwright';
+import { launchShotBrowser, reportRenderer, slowWarning } from './shot-browser.mjs';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -83,16 +84,17 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const done = [];
 const skipped = [];
 
-const browser = await chromium.launch();               // headless by default
+const browser = await launchShotBrowser();             // headless, on the GPU when there is one
 const ctx = await browser.newContext({ colorScheme: 'dark',
   viewport: { width: 1460, height: 1180 },
   deviceScaleFactor: 2,                                 // crisp retina PNGs
   reducedMotion: 'reduce',                              // freeze CRT roll / animations
 });
 // Pre-seed localStorage before the app runs: hide the PWA install card (it
-// otherwise pops in at the top of the side panel after ~2.5s), force the
-// lighter VIBES model (the AUTO/desktop 4K GLB is slow to load + render in
-// software WebGL), and open Retro Vibes on the 80s Bedroom, which is the scene
+// otherwise pops in at the top of the side panel after ~2.5s), pin the lighter
+// VIBES model (the shots have always shown it, and the AUTO/desktop 4K GLB is
+// slow to load + render if the browser falls back to software WebGL), and open
+// Retro Vibes on the 80s Bedroom, which is the scene
 // the guide's lead image shows. Seeding the remembered index rather than
 // clicking 🎬 keeps the default camera, so the framing matches every other
 // scene's hero pane.
@@ -234,6 +236,7 @@ async function closeModal(sel) {
 console.log(`\nGuide screenshots → ${OUT}\n  base=${BASE}  disk=${hasDisk ? DISK : '(none)'}`);
 
 await page.goto(`${BASE}/?CRT_SHADER_SOFTWARE=1`, { waitUntil: 'networkidle' });
+await reportRenderer(page);
 
 // ROMs auto-load from /roms/ → POWER enables. Dismiss the Setup dialog if
 // it popped (only happens when no ROMs are found on the server).
@@ -395,7 +398,9 @@ try {
 
 // ── Retro Vibes 3D overlay ──────────────────────────────────────────────
 console.log('\n[retro vibes]');
+let vibesDone = () => {};
 if (want('retro-vibes')) try {
+  vibesDone = slowWarning('The Retro Vibes shot', 15);
   await click('#btn-vibes');
   // Wait until the loader overlay is hidden (_setLoading(null) → display:none).
   await page.waitForFunction(() => {
@@ -406,7 +411,9 @@ if (want('retro-vibes')) try {
   await shotPage('retro-vibes', false, 180000);
   await page.keyboard.press('Escape');
   await sleep(600);
+  vibesDone();
 } catch (e) {
+  vibesDone();
   skipped.push('retro-vibes');
   console.error('  ✗ retro-vibes —', e.message.split('\n')[0]);
 }
@@ -452,6 +459,7 @@ if (hasDisk && (want('drive8-loaded') || want('directory-zoom'))) {
 // starts).
 console.log('\n[in action]');
 if (want('overview-running') && fs.existsSync(RASTER)) {
+  const runningDone = slowWarning('The overview-running shot', 70, 2);   // most of it is a timed 58 s wait
   try {
     try { await click('#btn-d64-eject'); await sleep(400); } catch {}
     await click('#btn-reset');
@@ -476,7 +484,9 @@ if (want('overview-running') && fs.existsSync(RASTER)) {
     await sleep(2500);                                 // autoload + RUN hand off to the demo
     await sleep(58000);                                // ~58 s in — "PROJECT" logo over the raster bars
     await shotCropped('overview-running');
+    runningDone();
   } catch (e) {
+    runningDone();
     skipped.push('overview-running');
     console.error('  ✗ overview-running —', e.message.split('\n')[0]);
   }

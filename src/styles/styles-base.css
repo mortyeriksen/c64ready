@@ -31,6 +31,22 @@ body {
   min-height: 100vh;      /* fallback for engines without dvh */
   min-height: 100dvh;     /* iOS: exclude the dynamic toolbar so the page doesn't overflow */
   background: radial-gradient(ellipse at 50% 0%, var(--page-glow) 0%, var(--crt-bg) 62%);
+  /* A theme's page pattern over the glow (themeCss sets the two variables). */
+  background-image: var(--page-pattern), radial-gradient(ellipse at 50% 0%, var(--page-glow) 0%, var(--crt-bg) 62%);
+  background-size: var(--page-pattern-size), auto;
+}
+
+/* Classic's page pattern, a large faint grid (CLASSIC_LOOK in src/ui/themes.js).
+   A theme sets its own, or none; a system asking for more contrast gets none. */
+:root {
+  --page-pattern: linear-gradient(var(--pattern-ink) 1px, transparent 1px), linear-gradient(90deg, var(--pattern-ink) 1px, transparent 1px);
+  --page-pattern-size: 48px 48px, 48px 48px;
+}
+@media (prefers-contrast: more) {
+  :root:root:root:root {
+    --page-pattern: none;
+    --page-pattern-size: auto;
+  }
 }
 
 /* Our own tooltip, drawn from data-tip (src/ui/tooltips.js). Placed by transform

@@ -3,14 +3,15 @@
 // src/ui/themes/commando.js — the built-in Commando theme, after the game. Dark
 // mode is the dirt road at night, sand on brown with muzzle-flash orange; light
 // mode is khaki drill outlined in olive drab, the muzzle flash as its accent
-// and olive main buttons, the logo blocks in camouflage. Colours only, in the
-// c64ready-theme/1 format (see src/ui/themes.js).
+// and olive main buttons, the logo blocks in camouflage; dots on the page. In
+// the c64ready-theme/2 format (see src/ui/themes.js).
 export const COMMANDO_THEME = {
-  format: 'c64ready-theme/1',
+  format: 'c64ready-theme/2',
   name: 'Commando',
   author: 'C64 READY.',
   modes: {
     light: {
+      'pattern-ink': 'rgba(61, 68, 24, 0.07)',
       'crt-bg': '#c6ca9e',
       'page-glow': '#d8dbb6',
       'ui-bg': '#e2e4c8',
@@ -133,6 +134,7 @@ export const COMMANDO_THEME = {
       'primary-border': '#46521c',
     },
     dark: {
+      'pattern-ink': 'rgba(241, 226, 189, 0.07)',
       'crt-bg': '#17130c',
       'page-glow': '#3a2a12',
       'ui-bg': '#1b160e',
@@ -246,5 +248,9 @@ export const COMMANDO_THEME = {
       'a64-progress-stripe': '#ff8f2e',
       'a64-counter': '#c2ad85',
     },
+  },
+  look: {
+    dark: { pattern: 'dots', size: 'medium' },
+    light: { pattern: 'dots', size: 'medium' },
   },
 };

@@ -10,10 +10,8 @@ header {
   max-width: 1460px;
   display: flex;
   justify-content: space-between;
-  /* Bottom-align the two children: the ABOUT/DOCS links column is shorter
-     than the logo block (big "C64 READY." + tagline below), so flex-end
-     drops the buttons' lower edge level with the tagline's bottom. */
-  align-items: flex-end;
+  /* The logo and the ABOUT/DOCS links share one centre line. */
+  align-items: center;
   padding-bottom: 16px;
 }
 
@@ -34,7 +32,7 @@ header {
 .logo-text {
   display: flex;
   align-items: flex-end;   /* bottom-align the text with the (smaller) blocks */
-  align-self: flex-start;  /* don't stretch to the column width (the wider tagline below) — keep the box hugging the glyphs so the CRT scanline/hum overlays (inset:0) cover the logo, not empty space to the right */
+  align-self: flex-start;  /* keep the box hugging the glyphs so the CRT scanline/hum overlays (inset:0) cover the logo, not empty space to the right */
   gap: 2px;
   font-family: 'PetMe64', 'Share Tech Mono', monospace;
   font-size: clamp(0.62rem, 3vw, 1.26rem);  /* desktop max reduced 10% (1.4→1.26rem); shrinks on mobile */
@@ -236,13 +234,6 @@ body.crt-hum .logo-text::before,
   }
 }
 
-.logo p {
-  font-size: clamp(0.7rem, 2.4vw, 1.13rem);
-  color: var(--dim);
-  font-family: 'Share Tech Mono', monospace;
-  margin-top: 7px;
-}
-
 .tagline-prompt {
   color: var(--accent);
   margin-right: 4px;
@@ -276,7 +267,7 @@ body.crt-hum .logo-text::before,
   font-family: 'Share Tech Mono', monospace;
   font-size: 0.65rem;
   letter-spacing: 2px;
-  color: var(--accent);
+  color: var(--button-accent);    /* drawn as an outlined button, so a button's label colour */
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 6px;

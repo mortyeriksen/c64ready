@@ -4,14 +4,15 @@
 // mode is the beige case outlined in the dark brown of the keys, with the main
 // buttons as brown keys; dark mode the brown keyboard with cream legends. The
 // accents come from the rainbow stripe on the badge, and the logo blocks run
-// red, orange, yellow. Colours only, in the c64ready-theme/1 format (see
-// src/ui/themes.js).
+// red, orange, yellow; a woven crosshatch on the page. In the c64ready-theme/2
+// format (see src/ui/themes.js).
 export const BREADBIN_THEME = {
-  format: 'c64ready-theme/1',
+  format: 'c64ready-theme/2',
   name: 'Breadbin',
   author: 'C64 READY.',
   modes: {
     light: {
+      'pattern-ink': 'rgba(74, 58, 44, 0.08)',
       'crt-bg': '#d6cbb2',
       'page-glow': '#e8dfcb',
       'ui-bg': '#e9e1cf',
@@ -134,6 +135,7 @@ export const BREADBIN_THEME = {
       'primary-border': '#3f3024',
     },
     dark: {
+      'pattern-ink': 'rgba(236, 227, 207, 0.05)',
       'crt-bg': '#18130f',
       'page-glow': '#2c221b',
       'ui-bg': '#1f1914',
@@ -247,5 +249,9 @@ export const BREADBIN_THEME = {
       'a64-progress-stripe': '#ef8f3d',
       'a64-counter': '#b3a48c',
     },
+  },
+  look: {
+    dark: { pattern: 'weave', size: 'medium' },
+    light: { pattern: 'weave', size: 'medium' },
   },
 };

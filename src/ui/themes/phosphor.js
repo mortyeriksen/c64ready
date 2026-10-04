@@ -3,13 +3,15 @@
 // src/ui/themes/phosphor.js — the built-in Phosphor theme: dark mode is an amber
 // monitor, amber on black; light mode is the printer listing, black ribbon ink
 // on white paper over a green-bar page, ruled in green, with green main
-// buttons. Colours only, in the c64ready-theme/1 format (see src/ui/themes.js).
+// buttons. Scanlines on the page in dark mode, green-bar bands in light. In
+// the c64ready-theme/2 format (see src/ui/themes.js).
 export const PHOSPHOR_THEME = {
-  format: 'c64ready-theme/1',
+  format: 'c64ready-theme/2',
   name: 'Phosphor',
   author: 'C64 READY.',
   modes: {
     light: {
+      'pattern-ink': 'rgba(46, 122, 60, 0.09)',
       'crt-bg': '#cfe5c9',
       'page-glow': '#e1f0dc',
       'ui-bg': '#e3f1de',
@@ -132,6 +134,7 @@ export const PHOSPHOR_THEME = {
       'primary-border': '#1a5a2a',
     },
     dark: {
+      'pattern-ink': 'rgba(255, 184, 77, 0.05)',
       'crt-bg': '#0b0904',
       'page-glow': '#2a1d08',
       'ui-bg': '#100c06',
@@ -244,5 +247,9 @@ export const PHOSPHOR_THEME = {
       'a64-progress-stripe': '#ffcf6e',
       'a64-counter': '#c99a4c',
     },
+  },
+  look: {
+    dark: { pattern: 'scanlines', size: 'small' },
+    light: { pattern: 'bars', size: 'large' },
   },
 };

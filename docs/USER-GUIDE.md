@@ -85,8 +85,11 @@ centres the picture on the whole screen with bars around it.
 
 ## Themes
 
-A theme sets the interface's colours. **Classic** is the default, and five
-more are built in. The gallery below shows each in dark mode on the left and
+A theme sets the interface's colours, and can lay a faint pattern on the page
+behind the panels. **Classic** is the default, and five more are built in.
+Each has a pattern of its own: Classic a large, subtle grid, GEOS a dither
+like its desktop, Breadbin a woven crosshatch, Phosphor scanlines in dark
+mode and green-bar paper in light, Out Run a finer grid and Commando dots. The gallery below shows each in dark mode on the left and
 light mode on the right; step through it with **Previous** and **Next**. The screen, the CRT looks, the splash and Retro Vibes keep their
 own colours whatever the theme, and you can import your own too.
 
@@ -127,13 +130,14 @@ leaves them out exports without them, so they keep following its other
 colours as you edit.
 
 A theme file is JSON. Here is the start of one, with Classic's colours; the
-`…` lines stand for the rest. A complete file has 154 colours per mode, 137
-without the button colours, but a theme only needs the ones it changes.
+`…` lines stand for the rest. A complete file has 155 colours per mode, 137
+without the button colours and the pattern ink, but a theme only needs the
+ones it changes.
 Export Classic to get the whole file to edit.
 
 ```jsonc
 {
-  "format": "c64ready-theme/1",
+  "format": "c64ready-theme/2",
   "name": "My theme",
   "author": "optional",
   "modes": {
@@ -165,6 +169,9 @@ Export Classic to get the whole file to edit.
       "red": "#b8323b",
       …
     }
+  },
+  "look": {
+    "dark": { "pattern": "grid", "size": "medium" }
   }
 }
 ```
@@ -189,7 +196,16 @@ Export Classic to get the whole file to edit.
   **KEY MAP**, are neutral tints of the theme's `text` colour. `kbd-bg`,
   `kbd-border`, `kbd-hover` and `kbd-ink` no longer change anything; a theme
   that sets them still imports.
-- **Checks**: a file with an unknown name, a value that is not a colour, or a
+- **Page pattern**: the optional `look` names a pattern for each mode, drawn
+  on the page behind the panels: `dither`, `bars`, `scanlines`, `grid`,
+  `dots`, `weave` or `none`, with a `size` of `small`, `medium` (the default)
+  or `large`. It is drawn in `pattern-ink`, which has to be faint, an alpha of
+  0.15 or less such as `rgba(0, 0, 0, 0.08)`, so the header text over it stays
+  readable; left out, the pattern uses the theme's `text` colour at 0.07. On
+  a system set to ask for more contrast the page stays plain. A file in the
+  older `c64ready-theme/1` format still imports, with no pattern.
+- **Checks**: a file with an unknown name, a value that is not a colour, a
+  pattern or size that is not on the list, an ink stronger than 0.15, or a
   missing `name` or `modes` is refused, and the message says which. Importing a
   file with the same name as an imported theme replaces it.
 

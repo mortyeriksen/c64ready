@@ -8,7 +8,8 @@
 // Drives the LIVE dev server (http://localhost:5173) in headless Chromium via
 // Playwright, exactly like tools/guide-shots.mjs — same localStorage seeding, so
 // the splash and PWA card stay out of frame and Retro Vibes uses the lighter
-// model that software WebGL can render.
+// model. The browser renders on the GPU when there is one
+// (tools/shot-browser.mjs), and a shot that runs long prints a warning.
 //
 //   node tools/brand-shots.mjs [baseURL] [outSuffix]
 //
@@ -22,7 +23,7 @@
 // BRAND_ONLY=og,vibes (env, comma-separated) captures a subset.
 // HERO=az,el,dist (env, degrees + distance multiplier) overrides the camera pose
 // while dialling a new one in; SCENE=n does the same for the Retro Vibes scene.
-import { chromium } from 'playwright';
+import { launchShotBrowser, reportRenderer, slowWarning } from './shot-browser.mjs';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -78,7 +79,7 @@ const SHOTS = {
   vibes:    { out: 'screens/c64rdy-3d-vibes',   width: 1000, height: 628,  scale: 2, vibes: true,
               suffix: '-v4', scene: 2, webp: 2000 },
   emulator: { out: 'screens/c64rdy-emulator',   width: 1512, height: 813,  scale: 2, vibes: false,
-              suffix: '-v5' },
+              suffix: '-v6' },
   // Splash card art: it sits in the landing page's own card, captioned there, so
   // it carries no lockup and no viewer chrome — and it moves in close, because at
   // card size the whole desk would read as clutter around a tiny screen. Nearly
@@ -89,7 +90,8 @@ const SHOTS = {
               hero: { az: -4, el: 10, distMul: 0.65 } },
 };
 
-const browser = await chromium.launch();
+const browser = await launchShotBrowser();
+let rendererReported = false;
 const done = [];
 
 for (const [name, s] of Object.entries(SHOTS)) {
@@ -114,6 +116,8 @@ for (const [name, s] of Object.entries(SHOTS)) {
   const page = await ctx.newPage();
   page.on('pageerror', e => console.error('  page error:', e.message));
   await page.goto(BASE, { waitUntil: 'networkidle' });
+  if (!rendererReported) { await reportRenderer(page); rendererReported = true; }
+  const shotDone = slowWarning(`The ${name} shot`, s.vibes ? 25 : 10);
   await page.waitForSelector('#screen', { timeout: 20000 });
   // Power on: these shots are of a running machine, not a dark screen.
   await page.waitForSelector('#btn-power:not([disabled])', { timeout: 20000 });
@@ -198,6 +202,7 @@ for (const [name, s] of Object.entries(SHOTS)) {
   }
   console.log(`  ✓ ${name.padEnd(9)} ${size}  ${String(kb).padStart(5)} KB  → ${rel}`);
   done.push(rel);
+  shotDone();
   await ctx.close();
 }
 

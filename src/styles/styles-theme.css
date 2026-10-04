@@ -23,6 +23,7 @@
   /* ── Page and surfaces ─────────────────────────────────────────────── */
   --crt-bg: #070a1c;          /* the dark room the monitor glows in (blue-black) */
   --page-glow: #15184a;       /* top of the page's radial glow */
+  --pattern-ink: rgba(112, 109, 235, 0.08); /* the page pattern: Classic's grid, or a theme's */
   --ui-bg: #0b0e24;
   --panel-bg: #11142e;        /* deep VIC-blue shadow */
   --border: #2c2f63;          /* blue (VIC #6) at low intensity */
@@ -31,7 +32,7 @@
   --field-bg-hover: #1e2840;
   --button-bg: #1a1a30;       /* a .btn's face and labels: by default the same as */
   --button-text: #ccd0ec;     /* control-bg, text, dim and the accents, so a theme */
-  --button-dim: #6e6ea4;      /* only sets them to part buttons from fields; the */
+  --button-dim: #8a8ab5;      /* only sets them to part buttons from fields; the */
   --button-accent: #9f9df2;   /* accent a step lighter, legible as the hover label */
   --button-accent2: #b362c4;
   --button-green: #8fe985;
@@ -39,7 +40,7 @@
   --button-red: #d76b70;
   --primary-bg: #1a1a30;      /* a primary button (LOAD ANY, disk LOAD, EXPLORE): */
   --primary-text: #ccd0ec;    /* by default the same as the button colours and */
-  --primary-dim: #6e6ea4;     /* border, so a theme only sets them to make its */
+  --primary-dim: #8a8ab5;     /* border, so a theme only sets them to make its */
   --primary-accent: #9f9df2;  /* few main actions stand out */
   --primary-accent2: #b362c4;
   --primary-green: #8fe985;
@@ -59,7 +60,7 @@
 
   /* ── Text ──────────────────────────────────────────────────────────── */
   --text: #ccd0ec;            /* light grey (VIC #15) with a blue cast */
-  --dim: #6e6ea4;             /* grey (VIC #12) toward blue */
+  --dim: #8a8ab5;             /* grey (VIC #12) toward blue, light enough for 4.5:1 */
   --text-dim: #8a8aa8;        /* secondary lines in the library and lists */
   --text-bright: #fff;        /* hover and pressed labels */
   --on-accent: #fff;          /* label on a filled accent button, in both modes */
@@ -207,6 +208,7 @@
   /* ── Page and surfaces ───────────────────────────────────────────────── */
   --crt-bg: #e8e9f3;
   --page-glow: #d8d9f2;
+  --pattern-ink: rgba(76, 73, 192, 0.07);
   --ui-bg: #f4f5fb;
   --panel-bg: #ffffff;
   --border: #cfd2e7;
@@ -214,7 +216,7 @@
   --field-bg-hover: #dedff2;
   --button-bg: #eef0f8;
   --button-text: #23264d;
-  --button-dim: #5f6390;
+  --button-dim: #53567d;
   --button-accent: #4846b8;
   --button-accent2: #8a3a9c;
   --button-green: #2a7337;
@@ -222,7 +224,7 @@
   --button-red: #b8323b;
   --primary-bg: #eef0f8;
   --primary-text: #23264d;
-  --primary-dim: #5f6390;
+  --primary-dim: #53567d;
   --primary-accent: #4846b8;
   --primary-accent2: #8a3a9c;
   --primary-green: #2a7337;
@@ -240,7 +242,7 @@
   --highlight: #ffffff;
   /* ── Text ────────────────────────────────────────────────────────────── */
   --text: #23264d;
-  --dim: #5f6390;
+  --dim: #53567d;
   --text-dim: #5d6189;
   --text-bright: #12143a;
   --button-ink: #ffffff;

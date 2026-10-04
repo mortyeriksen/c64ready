@@ -3,14 +3,15 @@
 // src/ui/themes/outrun.js — the built-in Out Run theme, the sunset over the
 // road: dark mode has the horizon glowing magenta at the top of the page, neon
 // pink edges, sun yellow and grid cyan; light mode is the sunset sky, pink to
-// orange, with lilac panels, magenta edges and purple main buttons. Colours
-// only, in the c64ready-theme/1 format (see src/ui/themes.js).
+// orange, with lilac panels, magenta edges and purple main buttons. A grid on
+// the page in both. In the c64ready-theme/2 format (see src/ui/themes.js).
 export const OUTRUN_THEME = {
-  format: 'c64ready-theme/1',
+  format: 'c64ready-theme/2',
   name: 'Out Run',
   author: 'C64 READY.',
   modes: {
     light: {
+      'pattern-ink': 'rgba(184, 15, 99, 0.06)',
       'crt-bg': '#ffa27e',
       'page-glow': '#ff86b4',
       'ui-bg': '#f3e4fb',
@@ -133,6 +134,7 @@ export const OUTRUN_THEME = {
       'primary-border': '#5a1a9a',
     },
     dark: {
+      'pattern-ink': 'rgba(255, 79, 180, 0.05)',
       'crt-bg': '#10031f',
       'page-glow': '#7a174a',
       'ui-bg': '#14052a',
@@ -152,7 +154,7 @@ export const OUTRUN_THEME = {
       'shadow': '#000000',
       'highlight': '#fff4dc',
       'text': '#ffeaf6',
-      'dim': '#d39ad2',
+      'dim': '#d7a4d7',
       'text-dim': '#dba7d8',
       'text-bright': '#ffffff',
       'on-accent': '#10031f',
@@ -185,7 +187,7 @@ export const OUTRUN_THEME = {
       'kbd-hover': '#462444',
       'kbd-ink': '#1d1610',
       'dir-text': '#ffeaf6',
-      'dir-dim': '#d39ad2',
+      'dir-dim': '#d7a4d7',
       'scope-bg': '#14052a',
       'scope-grid': 'rgba(255, 193, 46, 0.22)',
       'scope-trace': '#5cffa1',
@@ -245,5 +247,9 @@ export const OUTRUN_THEME = {
       'a64-progress-stripe': '#ffc12e',
       'a64-counter': '#dba7d8',
     },
+  },
+  look: {
+    dark: { pattern: 'grid', size: 'medium' },
+    light: { pattern: 'grid', size: 'medium' },
   },
 };

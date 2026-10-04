@@ -5,10 +5,11 @@
 // monitor. ROM requests (/roms/*.bin) are answered by this harness from the
 // repo-root roms/ dir via route interception — nothing needs to be in dist.
 // Usage: node tools/vibes-guide-shots.mjs <baseURL> <outDir> [slug...]
-// Naming one or more scene slugs shoots only those. Worth having because a full
-// run under software GL can stall on an animated scene and never reach the later
-// ones, so re-shooting a single scene should not depend on the five before it.
-import { chromium } from 'playwright';
+// Naming one or more scene slugs shoots only those, so re-shooting a single scene
+// does not depend on the five before it. The browser renders on the GPU when
+// there is one (see shot-browser.mjs); under software GL a full run can stall on
+// an animated scene, and a step that runs long prints a warning.
+import { launchShotBrowser, reportRenderer, slowWarning } from './shot-browser.mjs';
 import fs from 'node:fs';
 import { collectionDir } from '../test/external-assets.js';
 
@@ -17,9 +18,7 @@ const out = (process.argv[3] || collectionDir('vibes-guide-work')).replace(/\/$/
 const SLUGS = ['synthwave', 'starry-plain', 'spotlight', 'ikplus', '80s-bedroom'];
 const ROM_DIR = new URL('../roms/', import.meta.url).pathname;
 
-const browser = await chromium.launch({
-  args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
-});
+const browser = await launchShotBrowser();
 // Block the PWA service worker (its app-shell fallback would answer
 // /roms/*.bin with index.html) and serve the ROMs straight from the
 // repo-root roms/ dir — works against dev server and preview alike.
@@ -43,6 +42,8 @@ const page = await ctx.newPage();
 page.on('pageerror', (e) => console.log('[pageerror]', e.message));
 
 await page.goto(base, { waitUntil: 'load' });
+await reportRenderer(page);
+const enterDone = slowWarning('Booting and opening Retro Vibes', 25);
 await page.waitForTimeout(1500);
 // ROMs autoload from /roms/*.bin, so the setup modal should stay hidden; make sure.
 await page.evaluate(() => { const m = document.getElementById('setup-modal'); if (m) m.hidden = true; });
@@ -58,6 +59,7 @@ await page.waitForTimeout(7000);
 await page.click('#btn-vibes');
 await page.waitForFunction(() => window.modelViewer?.scene?.children.length > 0, null, { timeout: 60000 });
 await page.waitForTimeout(9000);
+enterDone();
 
 // Remember the default (hero) camera so every scene starts identically.
 await page.evaluate(() => {
@@ -96,6 +98,7 @@ const PICK = want.length ? want.map((s) => {
 }) : SLUGS.map((_, i) => i);
 
 for (const n of PICK) {
+  const sceneDone = slowWarning(`The ${SLUGS[n]} scene`, 12);
   await page.evaluate((i) => window.modelViewer._applyScene(i), n);
   await page.waitForTimeout(3000);   // scene build + water/shadows settle
   for (const mode of ['hero', 'close', 'low']) {
@@ -108,5 +111,6 @@ for (const n of PICK) {
     await page.screenshot({ path: `${out}/${SLUGS[n]}-${mode}.png` });
     console.log('saved', `${out}/${SLUGS[n]}-${mode}.png`);
   }
+  sceneDone();
 }
 await browser.close();

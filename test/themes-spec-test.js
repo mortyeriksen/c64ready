@@ -1,4 +1,4 @@
-// Colour themes: the c64ready-theme/1 format, the built-in themes, and the
+// Colour themes: the c64ready-theme/2 format, the built-in themes, and the
 // stored theme the page applies before first paint.
 //
 // Rules checked:
@@ -22,6 +22,7 @@ import { fileURLToPath } from 'url';
 import {
   THEME_FORMAT, THEME_TOKENS, THEME_CSS_KEY, THEME_MODES_KEY, MAX_THEME_BYTES,
   parseTheme, validateTheme, themeModes, themeCss, parseStoredThemes, exportTheme, isThemeColour, withButtonColours,
+  PATTERN_NAMES, CLASSIC_LOOK, patternLayers, colourAlpha, MAX_INK_ALPHA,
 } from '../src/ui/themes.js';
 import { GEOS_THEME } from '../src/ui/themes/geos.js';
 import { BREADBIN_THEME } from '../src/ui/themes/breadbin.js';
@@ -110,9 +111,9 @@ const classic = { dark: {}, light: {} };
 for (const t of THEME_TOKENS) { classic.dark[t] = '#111111'; classic.light[t] = '#eeeeee'; }
 const exported = exportTheme({ name: 'Test', theme: darkOnly }, classic);
 expect(exported.format === THEME_FORMAT && Object.keys(exported.modes).join() === 'dark', 'export keeps the modes the theme has');
-const derived = THEME_TOKENS.filter((t) => (t.startsWith('button-') && t !== 'button-ink') || t.startsWith('primary-'));
+const derived = THEME_TOKENS.filter((t) => (t.startsWith('button-') && t !== 'button-ink') || t.startsWith('primary-') || t === 'pattern-ink');
 expect(Object.keys(exported.modes.dark).length === THEME_TOKENS.length - derived.length && exported.modes.dark.text === '#fff' && exported.modes.dark.border === '#111111',
-  "export fills every token but the derived button ones, the theme's own over Classic's");
+  "export fills every token but the derived button ones and the pattern ink, the theme's own over Classic's");
 expect(derived.every((t) => !(t in exported.modes.dark)),
   'export leaves out the button and primary colours the theme leaves out, so they keep following their source');
 const ownButtons = exportTheme({ name: 'Own', theme: parseTheme(T({ dark: { 'button-bg': '#c00' } })).theme }, classic);
@@ -138,7 +139,7 @@ const lum = (h) => {
 const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 const mixIn = (a, b, t) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - t) + parseInt(b.slice(i, i + 2), 16) * t).toString(16).padStart(2, '0')).join('');
 // Classic's colours per mode, the fallback for any colour a theme leaves out.
-const sheetMode = (block) => Object.fromEntries([...block.matchAll(/\n {2}--([a-z0-9-]+):\s*(#[0-9a-f]{6})/g)].map((m) => [m[1], m[2]]));
+const sheetMode = (block) => Object.fromEntries([...block.matchAll(/\n {2}--([a-z0-9-]+):\s*(#[0-9a-f]{6}|rgba\([^)]*\))/g)].map((m) => [m[1], m[2]]));
 const sheetModes = { dark: sheetMode(darkBlock), light: sheetMode(themeSheet.slice(themeSheet.indexOf(':root[data-mode="light"]'))) };
 // On hover a button's label turns to the accent over the accent mixed into its
 // face (styles-controls.css), or over accent2 for the LOAD-type buttons
@@ -181,6 +182,79 @@ for (const [label, source] of [['GEOS', GEOS_THEME], ['Breadbin', BREADBIN_THEME
   }
 }
 
+// 8b. Page patterns: a theme's "look" names one per mode from a fixed list; the
+// app owns every recipe, so a file carries no CSS, and the ink stays faint.
+{
+  const L = (look, modes = { dark: { text: '#ffffff' }, light: { text: '#000000' } }) => T(modes, { look });
+  const ok = parseTheme(L({ dark: { pattern: 'grid', size: 'large' }, light: { pattern: 'dots' } }));
+  expect(ok.theme && ok.theme.look.dark.pattern === 'grid' && ok.theme.look.dark.size === 'large' && ok.theme.look.light.pattern === 'dots',
+    `a look with a pattern per mode is kept (${JSON.stringify(ok)})`);
+  expect(parseTheme(JSON.stringify({ format: 'c64ready-theme/1', name: 'Old', modes: { dark: { text: '#fff' } } })).theme,
+    'a c64ready-theme/1 file still imports');
+  rejects(L({ dark: { pattern: 'url(x)' } }), '"pattern"', 'a pattern outside the list is refused');
+  rejects(L({ dark: { pattern: 'grid', size: 'huge' } }), '"size"', 'a size outside the list is refused');
+  rejects(L({ dark: { pattern: 'grid', css: 'x' } }), 'Unknown setting', 'any other look setting is refused');
+  rejects(L({ dim: { pattern: 'grid' } }), 'Unknown mode', 'a look for an unknown mode is refused');
+  rejects(L('grid'), '"look"', 'a look that is not an object is refused');
+  expect(!parseTheme(L({ light: { pattern: 'grid' } }, { dark: { text: '#fff' } })).theme.look, 'a look for a mode the theme lacks is dropped');
+  expect(!parseTheme(L({ dark: { pattern: 'none' } })).theme.look, 'a look of no pattern is no look');
+  rejects(T({ dark: { 'pattern-ink': 'rgba(0, 0, 0, 0.5)' } }), 'too strong', 'a strong pattern ink is refused');
+  rejects(T({ dark: { 'pattern-ink': '#000000' } }), 'too strong', 'an opaque pattern ink is refused');
+  expect(parseTheme(T({ dark: { 'pattern-ink': 'rgba(0, 0, 0, 0.1)' } })).theme, 'a faint pattern ink is fine');
+  expect(colourAlpha('#0000001a') < 0.11 && colourAlpha('rgba(1,2,3,10%)') === 0.1 && colourAlpha('#abc') === 1, 'colourAlpha reads hex, rgba and percent alpha');
+  const lenient = validateTheme({ format: THEME_FORMAT, name: 'L', modes: { dark: { text: '#fff', 'pattern-ink': '#000' } }, look: { dark: { pattern: 'nope' }, x: 1 } }, { lenient: true });
+  expect(lenient.theme && !lenient.theme.look && !('pattern-ink' in lenient.theme.modes.dark), 'a stored theme drops a look or ink it cannot use instead of being dropped');
+
+  const css = themeCss(ok.theme);
+  const recipe = patternLayers('grid', 'large');
+  expect(css.includes(`--page-pattern: ${recipe.image};`) && css.includes(`--page-pattern-size: ${recipe.size};`),
+    `themeCss writes the named recipe for the mode (${css})`);
+  expect(css.includes('--pattern-ink: rgba(255, 255, 255, 0.07);'), 'a pattern with no ink is drawn in the theme\'s text colour, faintly');
+  const values = [...css.matchAll(/--page-pattern: ([^;]*);/g)].map((m) => m[1]);
+  const recipes = new Set(PATTERN_NAMES.flatMap((n) => ['small', 'medium', 'large'].map((s) => patternLayers(n, s)?.image)).filter(Boolean));
+  expect(values.length === 2 && values.every((v) => recipes.has(v)), 'themeCss only ever writes recipes from the list');
+  expect(themeCss(parseTheme(T({ dark: { text: '#fff' } })).theme).includes('--page-pattern: none;'), 'a theme with no look turns Classic\'s pattern off');
+  const base = fs.readFileSync(path.join(root, 'src', 'styles', 'styles-base.css'), 'utf8');
+  const classicGrid = patternLayers(CLASSIC_LOOK.dark.pattern, CLASSIC_LOOK.dark.size);
+  expect(base.includes(`--page-pattern: ${classicGrid.image};`) && base.includes(`--page-pattern-size: ${classicGrid.size};`),
+    "styles-base.css's default pattern is Classic's look");
+  expect(exportTheme({ name: 'Classic', theme: null }, classic).look?.light?.pattern === 'grid', "exporting Classic keeps its grid");
+  for (const n of PATTERN_NAMES) expect(n === 'none' ? !patternLayers(n) : patternLayers(n).image.split('gradient(').length - 1 === patternLayers(n).size.split(',').length,
+    `the ${n} recipe gives one size per layer`);
+
+  const exp = exportTheme({ name: 'P', theme: ok.theme }, classic);
+  expect(exp.format === THEME_FORMAT && exp.look?.dark?.pattern === 'grid' && !('pattern-ink' in exp.modes.dark), 'export keeps the look, and leaves a derived ink out');
+  expect(themeCss(parseTheme(JSON.stringify(exp)).theme) === themeCss(parseTheme(JSON.stringify(exportTheme({ name: 'P', theme: parseTheme(JSON.stringify(exp)).theme }, classic))).theme),
+    'a theme with a look exports and imports again unchanged');
+
+  // Header text sits on the page, over the pattern: it stays legible over the
+  // worst of the page (its glow or its base) with the ink laid on top.
+  const over = (bg, ink) => {
+    const m = ink.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/);
+    return m ? mixIn(bg, '#' + [m[1], m[2], m[3]].map((x) => (+x).toString(16).padStart(2, '0')).join(''), +m[4]) : bg;
+  };
+  for (const [label, source] of [['Classic', null], ['GEOS', GEOS_THEME], ['Breadbin', BREADBIN_THEME], ['Phosphor', PHOSPHOR_THEME], ['Out Run', OUTRUN_THEME], ['Commando', COMMANDO_THEME]]) {
+    const t = source ? validateTheme(source).theme : { look: CLASSIC_LOOK, modes: { dark: {}, light: {} } };
+    expect(t.look && t.look.dark && t.look.light, `${label} has a page pattern in both modes`);
+    for (const mode of ['dark', 'light']) {
+      const s = { ...sheetModes[mode], ...t.modes[mode] };
+      expect(colourAlpha(s['pattern-ink']) <= MAX_INK_ALPHA, `${label} ${mode}: its ink is faint enough`);
+      // Dim text sits on the page (the drop hint under the screen); the header
+      // links are outlined buttons, labelled in the button accent (the theme's
+      // own when it sets none).
+      const link = { ...sheetModes[mode], ...withButtonColours(t.modes[mode]) }['button-accent'];
+      for (const page of ['crt-bg', 'page-glow']) {
+        for (const [fg, colour] of [['text', s.text], ['dim', s.dim], ['link', link]]) {
+          for (const [where, bg] of [['between', s[page]], ['over', over(s[page], s['pattern-ink'])]]) {
+            const r = contrast(colour, bg);
+            expect(r >= 4.5, `${label} ${mode}: ${fg} ${where} its pattern on ${page} is ${r.toFixed(2)}:1, under 4.5`);
+          }
+        }
+      }
+    }
+  }
+}
+
 // 9. The pre-paint script.
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).find((s) => s.includes(THEME_CSS_KEY));
@@ -207,4 +281,4 @@ for (const [storedCss, pinned, osDark, appearance, wantMode] of [
   expect(!pinned || attrs['data-theme-modes'] === pinned, 'pre-paint: a one-mode theme is marked as such');
 }
 
-console.log(`ok - themes: format, colours only, modes, rules, storage, export, ${THEME_TOKENS.length} tokens, built-in themes, pre-paint`);
+console.log(`ok - themes: format, colours only, modes, rules, storage, export, ${THEME_TOKENS.length} tokens, built-in themes, page patterns, pre-paint`);

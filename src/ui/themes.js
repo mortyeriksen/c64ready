@@ -3,21 +3,25 @@
 // src/ui/themes.js — colour themes: the built-in ones, the ones a user imports
 // as JSON, and which one is in use.
 //
-// A theme is a JSON file in the c64ready-theme/1 format:
+// A theme is a JSON file in the c64ready-theme/2 format (/1 files, which have
+// no "look", import as they are):
 //
 //   {
-//     "format": "c64ready-theme/1",
+//     "format": "c64ready-theme/2",
 //     "name": "GEOS",
 //     "author": "optional",
 //     "modes": {
 //       "dark":  { "panel-bg": "#000000", "text": "#f2f2f2", ... },
 //       "light": { "panel-bg": "#ffffff", "text": "#111111", ... }
-//     }
+//     },
+//     "look": { "dark": { "pattern": "dither", "size": "small" } }
 //   }
 //
-// The keys are the tokens of styles-theme.css (THEME_TOKENS) and every value is
-// a plain colour: #rgb, #rgba, #rrggbb, #rrggbbaa, rgb() or rgba(). Nothing else
-// is accepted, so a file cannot reach outside the colours. A theme needs at
+// The keys of a mode are the tokens of styles-theme.css (THEME_TOKENS) and every
+// value is a plain colour: #rgb, #rgba, #rrggbb, #rrggbbaa, rgb() or rgba(). The
+// optional "look" names a page pattern per mode from PATTERNS; the recipes are
+// the app's, and pattern-ink must stay faint (MAX_INK_ALPHA). Nothing else is
+// accepted, so a file cannot reach outside the colours and the named patterns. A theme needs at
 // least one mode; a mode it leaves out uses its other mode (the appearance
 // switch then has nothing to switch), and a token a mode leaves out keeps the
 // Classic value for that mode.
@@ -35,7 +39,8 @@ import { PHOSPHOR_THEME } from './themes/phosphor.js';
 import { OUTRUN_THEME } from './themes/outrun.js';
 import { COMMANDO_THEME } from './themes/commando.js';
 
-export const THEME_FORMAT = 'c64ready-theme/1';
+export const THEME_FORMAT = 'c64ready-theme/2';
+const THEME_FORMATS = ['c64ready-theme/1', THEME_FORMAT]; // /1 files import as they are
 export const THEME_KEY = 'c64emu.theme';            // id of the theme in use; none = Classic
 export const THEMES_KEY = 'c64emu.themes';          // imported themes, validated
 export const THEME_CSS_KEY = 'c64emu.themeCss';     // the active theme's rules, for first paint
@@ -46,7 +51,7 @@ export const MAX_THEME_NAME = 40;
 // Every token a theme may set, in styles-theme.css order (the theme-tokens spec
 // test keeps the two lists equal).
 export const THEME_TOKENS = [
-  'crt-bg', 'page-glow', 'ui-bg', 'panel-bg', 'border', 'monitor-border', 'control-bg', 'field-bg-hover',
+  'crt-bg', 'page-glow', 'pattern-ink', 'ui-bg', 'panel-bg', 'border', 'monitor-border', 'control-bg', 'field-bg-hover',
   'button-bg', 'button-text', 'button-dim', 'button-accent', 'button-accent2', 'button-green',
   'button-amber', 'button-red', 'primary-bg', 'primary-text', 'primary-dim', 'primary-accent',
   'primary-accent2', 'primary-green', 'primary-amber', 'primary-red', 'primary-border',
@@ -83,6 +88,83 @@ export const isThemeColour = (v) => typeof v === 'string' && v.length <= 40 && C
 
 const fail = (error) => ({ error });
 
+// Page patterns. A theme names one per mode in its "look"; the app owns every
+// recipe, so a theme file carries no CSS. Each recipe is drawn in
+// var(--pattern-ink) behind the panels (body's --page-pattern layer, over the
+// page glow) and returns the layers' images and their sizes, one per layer.
+export const PATTERN_SIZES = ['small', 'medium', 'large'];
+const PATTERNS = {
+  none: null,
+  // A checkerboard, like the GEOS desktop.
+  dither: (n) => ({ image: 'repeating-conic-gradient(var(--pattern-ink) 0 25%, transparent 0 50%)', size: `${2 * n}px ${2 * n}px` }),
+  // Wide horizontal bands, like green-bar printer paper.
+  bars: (n) => ({ image: 'linear-gradient(var(--pattern-ink) 50%, transparent 50%)', size: `100% ${24 * n}px` }),
+  // Thin horizontal lines, like a monitor's scanlines.
+  scanlines: (n) => ({ image: 'linear-gradient(var(--pattern-ink) 1px, transparent 1px)', size: `100% ${n + 1}px` }),
+  // A square grid of thin lines.
+  grid: (n) => ({
+    image: 'linear-gradient(var(--pattern-ink) 1px, transparent 1px), linear-gradient(90deg, var(--pattern-ink) 1px, transparent 1px)',
+    size: `${16 * n}px ${16 * n}px, ${16 * n}px ${16 * n}px`,
+  }),
+  // A grid of small dots.
+  dots: (n) => ({ image: 'radial-gradient(circle, var(--pattern-ink) 1px, transparent 1.5px)', size: `${6 * n}px ${6 * n}px` }),
+  // Fine diagonal crosshatch, like a woven or textured surface.
+  weave: (n) => ({
+    image: `repeating-linear-gradient(45deg, var(--pattern-ink) 0 1px, transparent 1px ${5 * n}px), repeating-linear-gradient(-45deg, var(--pattern-ink) 0 1px, transparent 1px ${5 * n}px)`,
+    size: 'auto, auto',
+  }),
+};
+export const PATTERN_NAMES = Object.keys(PATTERNS);
+// Classic's own pattern: a large, faint grid. It is the stylesheet's default
+// (styles-base.css, kept equal to this recipe by the themes test), so Classic
+// injects nothing; a theme whose look names no pattern sets it back to none.
+export const CLASSIC_LOOK = { dark: { pattern: 'grid', size: 'large' }, light: { pattern: 'grid', size: 'large' } };
+const SIZE_STEP = { small: 1, medium: 2, large: 3 };
+export const patternLayers = (pattern, size = 'medium') => (PATTERNS[pattern] ? PATTERNS[pattern](SIZE_STEP[size] ?? 2) : null);
+
+// The ink sits under the header text on the page, so it has to stay faint.
+export const MAX_INK_ALPHA = 0.15;
+export function colourAlpha(v) {
+  const s = v.trim().toLowerCase();
+  if (s.startsWith('#')) {
+    const h = s.slice(1);
+    if (h.length === 4) return parseInt(h[3] + h[3], 16) / 255;
+    if (h.length === 8) return parseInt(h.slice(6), 16) / 255;
+    return 1;
+  }
+  const m = s.match(/^rgba\(.*,\s*([\d.]+)(%?)\s*\)$/);
+  if (!m) return 1;
+  return m[2] ? parseFloat(m[1]) / 100 : parseFloat(m[1]);
+}
+
+// A theme's "look": per mode, a page pattern and its size. Returns { look }
+// with only what is valid kept, or { error }. Lenient drops what it cannot use.
+function validateLook(obj, modes, lenient) {
+  if (obj === undefined) return { look: null };
+  const bad = (error) => (lenient ? { look: null } : fail(error));
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return bad('"look" should be an object with "dark", "light" or both.');
+  const look = {};
+  for (const [mode, set] of Object.entries(obj)) {
+    if (mode !== 'dark' && mode !== 'light') { if (lenient) continue; return fail(`Unknown mode "${mode}" in "look": its modes are "dark" and "light".`); }
+    if (!set || typeof set !== 'object' || Array.isArray(set)) { if (lenient) continue; return fail(`"look" mode "${mode}" should be an object.`); }
+    const out = {};
+    for (const [key, value] of Object.entries(set)) {
+      if (key === 'pattern') {
+        if (!PATTERN_NAMES.includes(value)) { if (lenient) continue; return fail(`"pattern" in "look" mode "${mode}" should be one of ${PATTERN_NAMES.join(', ')}.`); }
+        out.pattern = value;
+      } else if (key === 'size') {
+        if (!PATTERN_SIZES.includes(value)) { if (lenient) continue; return fail(`"size" in "look" mode "${mode}" should be one of ${PATTERN_SIZES.join(', ')}.`); }
+        out.size = value;
+      } else if (!lenient) {
+        return fail(`Unknown setting "${key}" in "look" mode "${mode}": a look has "pattern" and "size".`);
+      }
+    }
+    // A look for a mode the theme does not have has nothing to apply to.
+    if (modes[mode] && out.pattern && out.pattern !== 'none') look[mode] = out;
+  }
+  return { look: Object.keys(look).length ? look : null };
+}
+
 // Check a theme object (already JSON-parsed). Returns { theme } with only the
 // known fields kept, or { error } with a sentence saying what to fix.
 // `lenient` skips colours this build does not know instead of refusing the
@@ -90,7 +172,7 @@ const fail = (error) => ({ error });
 // costs that colour, not the whole theme.
 export function validateTheme(obj, { lenient = false } = {}) {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return fail('The file is not a theme: it should be a JSON object.');
-  if (obj.format !== THEME_FORMAT) return fail(`The file is not a C64 READY. theme: "format" should be "${THEME_FORMAT}".`);
+  if (!THEME_FORMATS.includes(obj.format)) return fail(`The file is not a C64 READY. theme: "format" should be "${THEME_FORMAT}".`);
   const name = typeof obj.name === 'string' ? obj.name.trim() : '';
   if (!name) return fail('The theme needs a "name".');
   if (name.length > MAX_THEME_NAME) return fail(`The theme's name is too long: ${MAX_THEME_NAME} characters at most.`);
@@ -112,12 +194,18 @@ export function validateTheme(obj, { lenient = false } = {}) {
         return fail(`Unknown colour "${token}" in mode "${mode}". Export the Classic theme to see every colour a theme can set.`);
       }
       if (!isThemeColour(value)) return fail(`"${token}" in mode "${mode}" is not a colour: use #rrggbb, #rgb, rgb() or rgba().`);
+      if (token === 'pattern-ink' && colourAlpha(value) > MAX_INK_ALPHA) {
+        if (lenient) continue;
+        return fail(`"pattern-ink" in mode "${mode}" is too strong for text to stay readable over it: give it an alpha of ${MAX_INK_ALPHA} or less, as in rgba(0, 0, 0, 0.1).`);
+      }
       out[token] = value.trim();
     }
     modes[mode] = out;
   }
   if (!modes.dark && !modes.light) return fail('The theme needs at least one mode: "dark" or "light".');
-  return { theme: { name, author, modes } };
+  const { look, error } = validateLook(obj.look, modes, lenient);
+  if (error) return fail(error);
+  return { theme: { name, author, modes, ...(look ? { look } : {}) } };
 }
 
 export function parseTheme(text) {
@@ -157,10 +245,24 @@ export function themeModes(theme) {
 // wherever the style element lands in <head>. The dark colours also go to the
 // monitor (its frame, the touch controls), which stays dark in light mode and
 // otherwise keeps Classic's; the splash keeps Classic's whatever the theme.
+const DEFAULT_INK_ALPHA = 0.07;
 export function themeCss(theme) {
   if (!theme) return '';
   return ['dark', 'light'].filter((m) => theme.modes[m]).map((m) => {
-    const decls = Object.entries(withButtonColours(theme.modes[m])).map(([k, v]) => `--${k}: ${v};`).join(' ');
+    const set = withButtonColours(theme.modes[m]);
+    const layers = patternLayers(theme.look?.[m]?.pattern, theme.look?.[m]?.size);
+    if (layers) {
+      // A pattern with no ink of its own is drawn in the theme's text colour, faintly.
+      if (!set['pattern-ink'] && /^#[0-9a-f]{6}$/i.test(set.text || '')) {
+        set['pattern-ink'] = `rgba(${[1, 3, 5].map((i) => parseInt(set.text.slice(i, i + 2), 16)).join(', ')}, ${DEFAULT_INK_ALPHA})`;
+      }
+      set['page-pattern'] = layers.image;
+      set['page-pattern-size'] = layers.size;
+    } else {
+      set['page-pattern'] = 'none';
+      set['page-pattern-size'] = 'auto';
+    }
+    const decls = Object.entries(set).map(([k, v]) => `--${k}: ${v};`).join(' ');
     const sel = m === 'dark' ? `:root:root[data-mode="dark"], :root:root .c64-monitor.mode-dark` : `:root:root[data-mode="light"]`;
     return `${sel} { ${decls} }`;
   }).join('\n');
@@ -205,11 +307,14 @@ export function exportTheme(entry, classic) {
     if (!has[m]) continue;
     modes[m] = {};
     for (const t of THEME_TOKENS) {
-      if (t in BUTTON_SOURCES && has[m][t] === undefined) continue;
+      if ((t in BUTTON_SOURCES || t === 'pattern-ink') && has[m][t] === undefined) continue;
       modes[m][t] = has[m][t] ?? classic[m][t];
     }
   }
-  return { format: THEME_FORMAT, name: entry.name, ...(entry.theme?.author ? { author: entry.theme.author } : {}), modes };
+  const own = entry.theme ? entry.theme.look : CLASSIC_LOOK;
+  const look = own ? Object.fromEntries(Object.entries(own).filter(([m]) => modes[m])) : null;
+  return { format: THEME_FORMAT, name: entry.name, ...(entry.theme?.author ? { author: entry.theme.author } : {}), modes,
+    ...(look && Object.keys(look).length ? { look } : {}) };
 }
 
 // ── In the page ─────────────────────────────────────────────────────────────
