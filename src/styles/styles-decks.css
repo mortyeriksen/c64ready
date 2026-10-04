@@ -937,13 +937,16 @@
   color: var(--text);
 }
 
+/* A key label: neutral, a faint tint of the text colour with no outline, so it
+   never reads as a button. Keys that can be pressed (the joystick keys in
+   Control Ports, the keys in KEY MAP) add a hairline and a hover; see
+   styles-ports.css and styles-dialogs.css. */
 .kbd {
   display: inline-block;
   padding: 0px 5px;
-  border: 1px solid var(--kbd-border);
   border-radius: 3px;
-  background: var(--kbd-bg);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--text) 9%, transparent);
+  color: var(--text);
   font-size: 0.58rem;
 }
 

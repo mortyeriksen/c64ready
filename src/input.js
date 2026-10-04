@@ -4,14 +4,14 @@
 // paddle), the on-screen Key Map keyboard, the joystick-key redefine dialog, and
 // the physical keyboard → C64 matrix bridge.
 //
-// Reads the live machine + running flag from state.js and drives the emulator's
-// joyPort/paddle/cia1 inputs. Two core hooks (downloadSnapshot for the debug-
-// snapshot shortcut, and clearing the paste buffer on blur) are
-// dependency-injected via initInput(deps), so this module never imports main.js
-// (keeps the module graph acyclic).
+// Reads the machine facade (c64) + running flag from state.js and drives the
+// emulator's control ports, pot lines and keyboard matrix through it. Two core
+// hooks (downloadSnapshot for the debug-snapshot shortcut, and clearing the
+// paste buffer on blur) are dependency-injected via initInput(deps), so this
+// module never imports main.js (keeps the module graph acyclic).
 //
-// Exports installNeosHook (re-run after each machine build), updateJoyPorts (the
-// per-frame poll), and _releaseAllLatched (used on power-off / reset / state load).
+// Exports updateJoyPorts (the per-frame poll, also run after each machine
+// build) and _releaseAllLatched (used on power-off / reset / state load).
 
 import {
   canvas, swapPortsBtn, cpDeviceSelects, cpIndicators, cpDetails, cpGamepadRows, cpGamepad,
@@ -21,7 +21,7 @@ import {
   btnJoykeysAll, btnJoykeysReset, btnJoykeysDone, btnJoykeysClose,
 } from './ui/dom.js';
 import { pushEscapeLayer, popEscapeLayer } from './ui/escape-stack.js';
-import { machine, running } from './state.js';
+import { c64, running } from './state.js';
 import { KEY_MAP, CHAR_MAP } from './cia.js';
 import { MatrixKeyOwnership } from './input-key-ownership.js';
 import { appAccel } from './app-accel.js';
@@ -318,50 +318,15 @@ function pollGamepads() {
   if (portDevice[2] === 'joystick') _pollGamepadPort(2, gamepads);
 }
 
-// ── NEOS mouse state (per-port). Logic lives in ./control-port.js. ──────────
-const neosState = {
-  1: ControlPort.createNeosState(),
-  2: ControlPort.createNeosState(),
-};
+// ── NEOS mouse ──────────────────────────────────────────────────────────────
+// The machine owns the per-port protocol state and runs the strobe sequencer on
+// CIA1 port writes (C64Machine.setNeosPort). This side plugs the mouse in or
+// out to match portDevice and reports host motion and buttons.
 
-function _neosResetPort(p) { ControlPort.neosResetPort(neosState[p]); }
+function _neosResetPort(p) { c64?.neosResetPort(p); }
 
-function _neosByte(p) {
-  const cia = machine?.cia1;
-  if (!cia) return 0xFF;
-  const ddr = (p === 2) ? cia.portADir : cia.portBDir;
-  return ControlPort.neosByte(neosState[p], ddr);
-}
-
-function _neosCheckStrobe(p) {
-  const cia = machine?.cia1;
-  if (!cia) return;
-  const isPortA = (p === 2);
-  const ddr = isPortA ? cia.portADir : cia.portBDir;
-  const out = isPortA ? cia.portA    : cia.portB;
-  ControlPort.neosCheckStrobe(neosState[p], ddr, out, machine.sidCycleCounter);
-}
-
-// Install hooks on CIA1 PRA + PRB writes. Both fire on data-register and
-// DDR writes — see cia.js:330–353.
-export function installNeosHook() {
-  if (!machine?.cia1) return;
-  const prevA = machine.cia1.writePortA;
-  machine.cia1.writePortA = (val, viaDir, oldDdra) => {
-    if (prevA) prevA(val, viaDir, oldDdra);
-    if (portDevice[2] === 'mouseNeos') {
-      _neosCheckStrobe(2);
-      machine.joyPort2 = _neosByte(2);
-    }
-  };
-  const prevB = machine.cia1.writePortB;
-  machine.cia1.writePortB = (val) => {
-    if (prevB) prevB(val);
-    if (portDevice[1] === 'mouseNeos') {
-      _neosCheckStrobe(1);
-      machine.joyPort1 = _neosByte(1);
-    }
-  };
+function _syncNeosPorts() {
+  for (const p of [1, 2]) c64.setNeosPort(p, portDevice[p] === 'mouseNeos');
 }
 
 // Resolve a port's directional state given its device assignment. Pure
@@ -381,7 +346,7 @@ function _portDirs(p) {
 // its own encoding (nibble-multiplexed signed deltas + fire); everything
 // else goes through the standard 5-bit joystick layout.
 function _portByte(p) {
-  if (portDevice[p] === 'mouseNeos') return _neosByte(p);
+  if (portDevice[p] === 'mouseNeos') return c64 ? c64.neosPortByte(p) : 0xFF;
   return ControlPort.portByte(
     portDevice[p],
     gamepadState[p],
@@ -400,8 +365,7 @@ function _renderIndicator(p, byte = _portByte(p)) {
   const dev = portDevice[p];
   let text, active;
   if (dev === 'mouseNeos') {
-    const s = neosState[p];
-    active = !!(s.leftBtn || s.rightBtn);
+    active = !!c64?.neosButtonsDown(p);
     text = active ? '●' : '';
   } else {
     text = ControlPort.byteIndicatorText(byte);
@@ -417,40 +381,23 @@ function _renderIndicator(p, byte = _portByte(p)) {
   }
 }
 
-// NEOS reports its RIGHT button on POTX ($D419) and nowhere else. The pin map
-// at the top of the reference driver (mouse/neos/neosmouse.s in VICE's
-// testprogs) lists pins 1-4 and 6 for the directions and fire, and pin 9
-// (potx) for the RMB — there is no POTY line on the device.
-//
-// Both reference drivers read it as `lda $D419 / cmp #$FF`, taking carry set —
-// exactly $FF — to mean pressed, so this is a whole-byte value and not a bit
-// within a pot reading. POTY is left open.
-function _applyNeosPotxOverride() {
-  if (!machine) return;
-  if (!anyPortIs('mouseNeos')) {
-    machine.potXOverride = null;   // clear when NEOS is deselected
-    return;
-  }
-  const rmb = neosState[1].rightBtn || neosState[2].rightBtn;
-  machine.potXOverride = ControlPort.neosPotX(rmb);
-}
-
 export function updateJoyPorts() {
   _syncTouchControls();
   pollGamepads();
+  if (c64) _syncNeosPorts();
   const b1 = _portByte(1);
   const b2 = _portByte(2);
-  if (machine) {
-    machine.joyPort1 = b1;
-    machine.joyPort2 = b2;
+  if (c64) {
+    c64.setJoystick(1, b1);
+    c64.setJoystick(2, b2);
     // Whether a device reports a POSITION on the pot pins: paddle and 1351 do.
     // Everything else leaves them open, so $D419/$D41A read $FF and
     // paddle-detection routines conclude "no paddle". NEOS is not here because
-    // it reports no position — it drives POTX directly through potXOverride
-    // below. Re-asserted every frame, which also covers port changes, port
-    // swaps and a freshly created machine.
-    machine.potConnected = anyPortIs('paddle') || anyPortIs('mouse1351');
-    _applyNeosPotxOverride();
+    // it reports no position: the machine drives POTX from its right button.
+    // Re-asserted every frame, which also covers port changes, port swaps and
+    // a freshly created machine.
+    c64.setPotConnected(anyPortIs('paddle') || anyPortIs('mouse1351'));
+    c64.applyNeosPotX();
   }
   _renderIndicator(1, b1);
   _renderIndicator(2, b2);
@@ -500,13 +447,13 @@ function _releaseKbdJoyMatrix() {
   for (const j of [1, 2]) {
     for (const dir of JOY_KEY_DIRS) kbdJoyState[j][dir] = false;
   }
-  if (!machine?.cia1) return;
-  machine.cia1.setKey(0, 2, false);
-  machine.cia1.setKey(0, 7, false);
-  machine.cia1.setKey(1, 4, false);
-  machine.cia1.setKey(2, 7, false);
+  if (!c64) return;
+  c64.setKey(0, 2, false);
+  c64.setKey(0, 7, false);
+  c64.setKey(1, 4, false);
+  c64.setKey(2, 7, false);
   if (arrowShiftActive.ArrowLeft || arrowShiftActive.ArrowUp) {
-    machine.cia1.setKey(1, 7, false);
+    c64.setKey(1, 7, false);
     arrowShiftActive.ArrowLeft = false;
     arrowShiftActive.ArrowUp = false;
   }
@@ -566,7 +513,8 @@ function _renderPortDetail(p) {
     const chip = (glyph, code, dir) => {
       const lbl = _joyKeyLabel(code);
       const inner = lbl === glyph ? glyph : glyph + ' ' + lbl;
-      return `<kbd class="kbd cp-joy-dir" data-joy-dir="${dir}" role="button" aria-label="joystick ${dir}">${inner}</kbd>`;
+      const what = { up: 'up', down: 'down', left: 'left', right: 'right', fireA: 'fire', fireB: 'fire 2' }[dir];
+      return `<kbd class="kbd cp-joy-dir" data-joy-dir="${dir}" role="button" aria-label="joystick ${dir}" title="Hold to press joystick ${what}">${inner}</kbd>`;
     };
     // The wrapper becomes display:contents inside the wrapping flex detail, so
     // every chip and the redefine link participate in the same row/column gaps.
@@ -1054,7 +1002,6 @@ window.addEventListener('gamepaddisconnected', pollGamepadConnections);
 setInterval(pollGamepadConnections, 300);
 refreshGamepadSelects();
 applyPortDevices();
-installNeosHook();
 
 // ── Key Map modal ────────────────────────────────────────────────────────
 // Label each [col,row] matrix slot with its C64 face name.
@@ -1312,15 +1259,15 @@ function _refreshLatchVisuals() {
 }
 
 function _toggleLatch(code) {
-  if (!machine?.cia1) return;
+  if (!c64) return;
   if (_latchedModifiers.has(code)) {
     const { col, row } = _latchedModifiers.get(code);
-    machine.cia1.setKey(col, row, false);
+    c64.setKey(col, row, false);
     _latchedModifiers.delete(code);
   } else {
     const pos = KEY_MAP[code];
     if (!pos) return;
-    machine.cia1.setKey(pos[0], pos[1], true);
+    c64.setKey(pos[0], pos[1], true);
     _latchedModifiers.set(code, { col: pos[0], row: pos[1] });
   }
   _refreshLatchVisuals();
@@ -1328,9 +1275,9 @@ function _toggleLatch(code) {
 }
 
 export function _releaseAllLatched() {
-  if (machine?.cia1) {
+  if (c64) {
     for (const { col, row } of _latchedModifiers.values()) {
-      machine.cia1.setKey(col, row, false);
+      c64.setKey(col, row, false);
     }
   }
   _latchedModifiers.clear();
@@ -1339,7 +1286,6 @@ export function _releaseAllLatched() {
   // machine.sidCycleCounter. That clock restarts at 0 on a hard reset or a new
   // machine, so the per-port state goes with it.
   for (const p of [1, 2]) _neosResetPort(p);
-  if (machine) machine.potXOverride = null;
   _releaseTouchControls();
   _syncTouchControls();
   _refreshLatchVisuals();
@@ -1347,9 +1293,9 @@ export function _releaseAllLatched() {
 }
 
 function _matrixTap(col, row) {
-  if (!machine?.cia1) return;
-  machine.cia1.setKey(col, row, true);
-  setTimeout(() => machine.cia1.setKey(col, row, false), KEYMAP_TAP_HOLD_MS);
+  if (!c64) return;
+  c64.setKey(col, row, true);
+  setTimeout(() => c64.setKey(col, row, false), KEYMAP_TAP_HOLD_MS);
 }
 
 // Tap a CHAR_MAP entry. We force C64 Shift to whatever the symbol requires
@@ -1360,28 +1306,28 @@ function _matrixTap(col, row) {
 // latch is the user's intent (they're typing a shifted graphic char), and
 // the post-tap auto-release will clear it.
 function _symbolTap({ col, row, shift }) {
-  if (!machine?.cia1) return;
+  if (!c64) return;
   if (_latchedModifiers.size > 0) {
-    machine.cia1.setKey(col, row, true);
-    setTimeout(() => machine.cia1.setKey(col, row, false), KEYMAP_TAP_HOLD_MS);
+    c64.setKey(col, row, true);
+    setTimeout(() => c64.setKey(col, row, false), KEYMAP_TAP_HOLD_MS);
     return;
   }
-  const lShift = machine.cia1.isKeyDown(1, 7);
-  const rShift = machine.cia1.isKeyDown(6, 4);
+  const lShift = c64.isKeyDown(1, 7);
+  const rShift = c64.isKeyDown(6, 4);
   const anyShift = lShift || rShift;
   let pressedShift = false, releasedL = false, releasedR = false;
   if (shift && !anyShift) {
-    machine.cia1.setKey(1, 7, true); pressedShift = true;
+    c64.setKey(1, 7, true); pressedShift = true;
   } else if (!shift && anyShift) {
-    if (lShift) { machine.cia1.setKey(1, 7, false); releasedL = true; }
-    if (rShift) { machine.cia1.setKey(6, 4, false); releasedR = true; }
+    if (lShift) { c64.setKey(1, 7, false); releasedL = true; }
+    if (rShift) { c64.setKey(6, 4, false); releasedR = true; }
   }
-  machine.cia1.setKey(col, row, true);
+  c64.setKey(col, row, true);
   setTimeout(() => {
-    machine.cia1.setKey(col, row, false);
-    if (pressedShift) machine.cia1.setKey(1, 7, false);
-    if (releasedL)    machine.cia1.setKey(1, 7, true);
-    if (releasedR)    machine.cia1.setKey(6, 4, true);
+    c64.setKey(col, row, false);
+    if (pressedShift) c64.setKey(1, 7, false);
+    if (releasedL)    c64.setKey(1, 7, true);
+    if (releasedR)    c64.setKey(6, 4, true);
   }, KEYMAP_TAP_HOLD_MS);
 }
 
@@ -1401,11 +1347,11 @@ function _sendCharTap(ch) {
 }
 
 function _sendCodeTap(code) {
-  if (!machine) return;
+  if (!c64) return;
   // F12 = RESTORE — NMI pulse, not a matrix key.
   if (code === 'F12') {
-    machine.setRestoreNmiLine(true);
-    setTimeout(() => machine?.setRestoreNmiLine(false), KEYMAP_TAP_HOLD_MS);
+    c64.setRestore(true);
+    setTimeout(() => c64?.setRestore(false), KEYMAP_TAP_HOLD_MS);
     return;
   }
   // F2/F4/F6/F8 = SHIFT + F1/F3/F5/F7 on the C64.
@@ -1413,22 +1359,22 @@ function _sendCodeTap(code) {
   if (shiftedFn[code]) {
     const pos = KEY_MAP[shiftedFn[code]];
     if (!pos) return;
-    machine.cia1.setKey(1, 7, true);
-    machine.cia1.setKey(pos[0], pos[1], true);
+    c64.setKey(1, 7, true);
+    c64.setKey(pos[0], pos[1], true);
     setTimeout(() => {
-      machine.cia1.setKey(pos[0], pos[1], false);
-      machine.cia1.setKey(1, 7, false);
+      c64.setKey(pos[0], pos[1], false);
+      c64.setKey(1, 7, false);
     }, KEYMAP_TAP_HOLD_MS);
     return;
   }
   // Arrow Left/Up on the C64 are SHIFT + CRSR Right/Down.
   if (code === 'ArrowLeft' || code === 'ArrowUp') {
     const pos = code === 'ArrowLeft' ? [0, 2] : [0, 7];
-    machine.cia1.setKey(1, 7, true);
-    machine.cia1.setKey(pos[0], pos[1], true);
+    c64.setKey(1, 7, true);
+    c64.setKey(pos[0], pos[1], true);
     setTimeout(() => {
-      machine.cia1.setKey(pos[0], pos[1], false);
-      machine.cia1.setKey(1, 7, false);
+      c64.setKey(pos[0], pos[1], false);
+      c64.setKey(1, 7, false);
     }, KEYMAP_TAP_HOLD_MS);
     return;
   }
@@ -1475,7 +1421,7 @@ function _pumpSoftKeys() {
 // Entry point for the mobile soft keyboard (main.js): enqueue an insert and drain
 // it through the matrix one key at a time.
 export function softKeyboardInput(str) {
-  if (!str || !machine?.cia1) return;
+  if (!str || !c64) return;
   for (const ch of str) _softKeyQueue.push(ch);
   if (!_softKeyPumping) _pumpSoftKeys();
 }
@@ -1495,7 +1441,7 @@ for (let i = 0; i < 26; i++) {
 // URL. Returns null if the ROM hasn't been loaded yet — the caller retries
 // the next time Shift is held.
 function _renderCharRomGlyph(screenCode, scale = 3) {
-  const rom = machine?.mem?.charRom;
+  const rom = c64?.charRom();
   if (!rom) return null;
   const offset = screenCode * 8;
   if (offset + 8 > rom.length) return null;
@@ -1873,7 +1819,7 @@ registerAppShortcut({
 // Developer-only; on the same chord as the rest.
 registerAppShortcut({
   code: 'KeyS', label: 'Debug snapshot',
-  run: () => { if (machine) downloadSnapshot(); },
+  run: () => { if (c64) downloadSnapshot(); },
 });
 
 if (APP_SHORTCUTS.some(s => RESERVED_CODES.has(s.code))) {
@@ -1950,21 +1896,21 @@ document.addEventListener('keydown', e => {
   // arrives before AltGraph is set, but no emulator frame runs between the two
   // synthesised keydowns, so the C64 never samples that transient press.
   if (IS_WINDOWS && e.getModifierState && e.getModifierState('AltGraph')) {
-    machine.cia1.setKey(7, 2, false);
+    c64.setKey(7, 2, false);
     if (e.code === 'ControlLeft' || e.code === 'ControlRight' ||
         e.code === 'AltLeft'     || e.code === 'AltRight') return;
   }
 
   // arrow left/up require SHIFT simulation on C64
   if (e.code === 'ArrowLeft') {
-    machine.cia1.setKey(0, 2, true); // CRSR RIGHT
-    if (!machine.cia1.isKeyDown(1, 7)) machine.cia1.setKey(1, 7, true); // simulate shift
+    c64.setKey(0, 2, true); // CRSR RIGHT
+    if (!c64.isKeyDown(1, 7)) c64.setKey(1, 7, true); // simulate shift
     arrowShiftActive.ArrowLeft = true;
     e.preventDefault(); return;
   }
   if (e.code === 'ArrowUp') {
-    machine.cia1.setKey(0, 7, true); // CRSR DOWN
-    if (!machine.cia1.isKeyDown(1, 7)) machine.cia1.setKey(1, 7, true);
+    c64.setKey(0, 7, true); // CRSR DOWN
+    if (!c64.isKeyDown(1, 7)) c64.setKey(1, 7, true);
     arrowShiftActive.ArrowUp = true;
     e.preventDefault(); return;
   }
@@ -1972,7 +1918,7 @@ document.addEventListener('keydown', e => {
   // F12 = RESTORE — NMI pulse (not a keyboard-matrix key on real silicon).
   // Press asserts NMI; release deasserts. The CPU latches on the rising edge.
   if (e.code === 'F12') {
-    machine.setRestoreNmiLine(true);
+    c64.setRestore(true);
     e.preventDefault();
     return;
   }
@@ -1980,8 +1926,8 @@ document.addEventListener('keydown', e => {
   // F2/F4/F6/F8 = shifted F1/F3/F5/F7
   const shiftedFn = { 'F2': 'F1', 'F4': 'F3', 'F6': 'F5', 'F8': 'F7' };
   if (shiftedFn[e.code]) {
-    machine.cia1.setKey(1, 7, true); // SHIFT
-    machine.cia1.setKey(...KEY_MAP[shiftedFn[e.code]], true);
+    c64.setKey(1, 7, true); // SHIFT
+    c64.setKey(...KEY_MAP[shiftedFn[e.code]], true);
     e.preventDefault(); return;
   }
 
@@ -1995,19 +1941,19 @@ document.addEventListener('keydown', e => {
   // Shift toggles mid-press).
   if (e.key && e.key.length === 1 && CHAR_MAP[e.key]) {
     const { col, row, shift } = CHAR_MAP[e.key];
-    const lShiftDown = machine.cia1.isKeyDown(1, 7);
-    const rShiftDown = machine.cia1.isKeyDown(6, 4);
+    const lShiftDown = c64.isKeyDown(1, 7);
+    const rShiftDown = c64.isKeyDown(6, 4);
     const shiftDown = lShiftDown || rShiftDown;
     let pressedLShift = false;
     let releasedLShift = false;
     let releasedRShift = false;
     if (shift && !shiftDown) {
-      machine.cia1.setKey(1, 7, true); pressedLShift = true;
+      c64.setKey(1, 7, true); pressedLShift = true;
     } else if (!shift && shiftDown) {
-      if (lShiftDown) { machine.cia1.setKey(1, 7, false); releasedLShift = true; }
-      if (rShiftDown) { machine.cia1.setKey(6, 4, false); releasedRShift = true; }
+      if (lShiftDown) { c64.setKey(1, 7, false); releasedLShift = true; }
+      if (rShiftDown) { c64.setKey(6, 4, false); releasedRShift = true; }
     }
-    machine.cia1.setKey(col, row, true);
+    c64.setKey(col, row, true);
     activeCharPresses[e.code] = { col, row, pressedLShift, releasedLShift, releasedRShift };
     e.preventDefault();
     return;
@@ -2016,7 +1962,7 @@ document.addEventListener('keydown', e => {
   const pos = KEY_MAP[e.code];
   if (pos) {
     activeMatrixPresses.claim(e.code);
-    machine.cia1.setKey(pos[0], pos[1], true);
+    c64.setKey(pos[0], pos[1], true);
     e.preventDefault();
   }
 });
@@ -2044,27 +1990,27 @@ document.addEventListener('keyup', e => {
   }
 
   if (e.code === 'ArrowLeft') {
-    machine.cia1.setKey(0, 2, false);
-    if (arrowShiftActive.ArrowLeft) { machine.cia1.setKey(1, 7, false); arrowShiftActive.ArrowLeft = false; }
+    c64.setKey(0, 2, false);
+    if (arrowShiftActive.ArrowLeft) { c64.setKey(1, 7, false); arrowShiftActive.ArrowLeft = false; }
     e.preventDefault(); return;
   }
   if (e.code === 'ArrowUp') {
-    machine.cia1.setKey(0, 7, false);
-    if (arrowShiftActive.ArrowUp) { machine.cia1.setKey(1, 7, false); arrowShiftActive.ArrowUp = false; }
+    c64.setKey(0, 7, false);
+    if (arrowShiftActive.ArrowUp) { c64.setKey(1, 7, false); arrowShiftActive.ArrowUp = false; }
     e.preventDefault(); return;
   }
 
   // F12 (RESTORE) keyup: deassert NMI line.
   if (e.code === 'F12') {
-    machine.setRestoreNmiLine(false);
+    c64.setRestore(false);
     e.preventDefault();
     return;
   }
 
   const shiftedFn = { 'F2': 'F1', 'F4': 'F3', 'F6': 'F5', 'F8': 'F7' };
   if (shiftedFn[e.code]) {
-    machine.cia1.setKey(1, 7, false);
-    machine.cia1.setKey(...KEY_MAP[shiftedFn[e.code]], false);
+    c64.setKey(1, 7, false);
+    c64.setKey(...KEY_MAP[shiftedFn[e.code]], false);
     e.preventDefault(); return;
   }
 
@@ -2077,15 +2023,15 @@ document.addEventListener('keyup', e => {
   const state = activeCharPresses[e.code];
   if (state) {
     delete activeCharPresses[e.code];
-    machine.cia1.setKey(state.col, state.row, false);
+    c64.setKey(state.col, state.row, false);
     if (state.pressedLShift && !e.shiftKey) {
-      machine.cia1.setKey(1, 7, false);
+      c64.setKey(1, 7, false);
     }
     if (state.releasedLShift && e.shiftKey) {
-      machine.cia1.setKey(1, 7, true);
+      c64.setKey(1, 7, true);
     }
     if (state.releasedRShift && e.shiftKey) {
-      machine.cia1.setKey(6, 4, true);
+      c64.setKey(6, 4, true);
     }
     e.preventDefault();
     return;
@@ -2093,7 +2039,7 @@ document.addEventListener('keyup', e => {
 
   const pos = KEY_MAP[e.code];
   if (pos && activeMatrixPresses.release(e.code)) {
-    machine.cia1.setKey(pos[0], pos[1], false);
+    c64.setKey(pos[0], pos[1], false);
     e.preventDefault();
   }
 });
@@ -2104,11 +2050,11 @@ window.addEventListener('blur', () => {
   // symbol (e.g. Cmd+Tab during '(') doesn't leave the base key or our
   // synthesised Shift latched on the C64 matrix. We never *re-press* shift
   // here — host modifiers are by definition released across a blur.
-  if (machine?.cia1) {
+  if (c64) {
     for (const code of Object.keys(activeCharPresses)) {
       const state = activeCharPresses[code];
-      machine.cia1.setKey(state.col, state.row, false);
-      if (state.pressedLShift) machine.cia1.setKey(1, 7, false);
+      c64.setKey(state.col, state.row, false);
+      if (state.pressedLShift) c64.setKey(1, 7, false);
       delete activeCharPresses[code];
     }
     // A blur guarantees no keyup will arrive for keys pressed before it (the OS
@@ -2119,7 +2065,7 @@ window.addEventListener('blur', () => {
     // Control keyup, leaving CTRL [7,2] held — which silently breaks loaders that
     // poll the col-7 row with an exact compare (the "hit space" bug). Joystick
     // input lives in joyPort1/2 (re-derived each frame), so this doesn't touch it.
-    machine.cia1.matrix.fill(0xFF);
+    c64.releaseAllKeys();
   }
   // Also drop any on-screen-modifier latches; the user is no longer driving
   // the dialog and a stuck SHIFT/CTRL/C= would confuse the next session.
@@ -2140,7 +2086,7 @@ window.addEventListener('blur', () => {
 //   • Mouse (1351) — pointer-locked. movementX/Y wrap mod 256 into paddleX/Y;
 //     a 1351 driver reads signed deltas off the POT register.
 //   • Mouse (NEOS) — pointer-locked. Deltas accumulate per port and are
-//     nibble-multiplexed onto the joystick byte; see installNeosHook.
+//     nibble-multiplexed onto the joystick byte by the machine (setNeosPort).
 //   • Paddle — unlocked. Absolute canvas position maps to paddleX/Y.
 //
 // Joystick / Key Joystick / None: mouse input is fully inert.
@@ -2165,7 +2111,7 @@ let _m1351FracY = 0;
 const _NEOS_SENSITIVITY  = _MOUSE_SENSITIVITY * 0.6;
 
 canvas.addEventListener('mousemove', e => {
-  if (!machine) return;
+  if (!c64) return;
   if (!anyMouseLike()) return;
 
   if (document.pointerLockElement === canvas) {
@@ -2187,8 +2133,7 @@ canvas.addEventListener('mousemove', e => {
       _m1351FracX -= ux;
       _m1351FracY -= uy;
       const S = ControlPort.M1351_POT_STEP;
-      machine.paddleX = (machine.paddleX + ux * S) & 0xFF;
-      machine.paddleY = (machine.paddleY - uy * S) & 0xFF;
+      c64.setPaddles((c64.paddleX + ux * S) & 0xFF, (c64.paddleY - uy * S) & 0xFF);
     }
     // NEOS: independent sensitivity + frac accumulator. The snapshot inside
     // _neosCheckStrobe clamps to ±127, so we accumulate raw deltas here.
@@ -2200,9 +2145,7 @@ canvas.addEventListener('mousemove', e => {
       _neosFracX -= ndx;
       _neosFracY -= ndy;
       for (const p of [1, 2]) {
-        if (portDevice[p] !== 'mouseNeos') continue;
-        neosState[p].pendingDX -= ndx;
-        neosState[p].pendingDY -= ndy;
+        if (portDevice[p] === 'mouseNeos') c64.neosMove(p, ndx, ndy);
       }
     }
     // Paddle: a single paddle knob = one axis. We drive POTX only; POTY is
@@ -2210,7 +2153,7 @@ canvas.addEventListener('mousemove', e => {
     // POTX rises as the knob turns counter-clockwise, so moving the host
     // mouse right needs to decrease POTX for the bat to track direction.
     if (anyPortIs('paddle')) {
-      machine.paddleX = Math.max(0, Math.min(255, (machine.paddleX | 0) - dx));
+      c64.setPaddles(Math.max(0, Math.min(255, (c64.paddleX | 0) - dx)), c64.paddleY);
     }
   }
 });
@@ -2236,8 +2179,7 @@ function _syncNeosButtons() {
   if (!anyPortIs('mouseNeos')) return;
   for (const p of [1, 2]) {
     if (portDevice[p] !== 'mouseNeos') continue;
-    neosState[p].leftBtn  = mouseButtons.left;
-    neosState[p].rightBtn = mouseButtons.right;
+    c64?.setNeosButtons(p, mouseButtons.left, mouseButtons.right);
   }
 }
 

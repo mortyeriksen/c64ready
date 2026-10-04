@@ -60,6 +60,8 @@ export function sampleMedia(type) {
     bytes.set([9, 128, 9, 128, 0xc3, 0xc2, 0xcd, 0x38, 0x30, 0x4c, 9, 128], 80);
     return bytes;
   }
+  // A release note riding along with the media: no loader takes it.
+  if (type === 'txt') return new TextEncoder().encode('Lab fixture release notes.\n');
   return new Uint8Array([0x50, 0x53, 0x49, 0x44]);
 }
 export const fixturePresets = [
@@ -78,7 +80,7 @@ export const fixtureItems = Array.from({ length: 27 }, (_, i) => ({
   kind: ['Demo', 'Game', 'Utility'][i % 3], source: 'Lab', year: 2024 + i % 3, rating: 5 + (i % 5),
   updated: `2026-09-${String(1 + i).padStart(2, '0')}`, group: 'C64 READY', handle: 'Lab',
   description: 'Generated lab fixture. No Assembly64 connection. The PRG prints a message; disk wraps that PRG; cartridge loops; tape contains four test pulses.',
-  files: (i === 0 ? ['prg', 'd64', 'crt', 'tap', 'sid', 'reu'] : i === 1 ? ['d64', 'sid'] : i === 9 ? ['sid'] : i === 8 ? ['reu'] : [['prg', 'd64', 'crt', 'tap'][i % 4]])
+  files: (i === 0 ? ['prg', 'd64', 'crt', 'tap', 'sid', 'reu'] : i === 1 ? ['d64', 'txt'] : i === 9 ? ['sid'] : i === 8 ? ['reu'] : [['prg', 'd64', 'crt', 'tap'][i % 4]])
     .map(type => ({ id: type, path: `browser-sample.${type}`, size: sampleMedia(type).length })),
 }));
 

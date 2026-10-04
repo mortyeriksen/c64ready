@@ -271,7 +271,7 @@ test('Quick format lookup fetches entries without a metadata request', async () 
   const fixtures = createFixtureTransport({ delayMs: 0 });
   const controller = new Assembly64Controller({ requestIntervalMs: 0, transport: (url, init) => { requested.push(new URL(url).pathname); return fixtures(url, init); } });
   const files = await controller.getFiles(normalizeItem({ id: 'lab-1', category: 1 }));
-  assert.deepEqual([requested, files.map(file => file.mediaType)], [['/leet/search/entries/lab-1/1'], ['d64', 'sid']]);
+  assert.deepEqual([requested, files.map(file => file.mediaType)], [['/leet/search/entries/lab-1/1'], ['d64', 'txt']]);
 });
 
 for (const name of ['', '   ']) {

@@ -104,11 +104,12 @@ export async function checkQuickSearch(page) {
   await input.fill('Sample 09');
   await input.press('Enter');
   await control.getByText('1 result', { exact: true }).waitFor();
-  assert.equal(await rows.locator('.btn').isVisible(), false, 'SID-only quick results have no action button');
+  await rows.getByRole('button', { name: 'LOAD SID — Sample 09', exact: true }).waitFor();
+  assert.equal(await rows.locator('.btn').isVisible(), true, 'SID-only quick results offer a one-click Load');
   await rows.locator('.mb-title').click();
   const music = page.getByRole('dialog', { name: 'Sample 09', exact: true });
   await music.getByRole('button', { name: 'DOWNLOAD', exact: true }).waitFor();
-  assert.equal(await music.getByRole('button', { name: 'LOAD', exact: true }).count(), 0, 'SID-only releases open details without an emulator Load action');
+  assert.equal(await music.getByRole('button', { name: 'LOAD', exact: true }).count(), 1, 'SID-only releases offer an emulator Load action in their details');
   await page.keyboard.press('Escape');
   await input.fill('no-such-release');
   await input.press('Enter');

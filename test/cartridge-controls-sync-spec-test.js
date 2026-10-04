@@ -21,7 +21,7 @@ const powerOn = main.match(/async function _powerOn\(\) \{([\s\S]*?)\n\}\n/)?.[1
 
 expect(powerOn.length > 0, '_powerOn() found in main.js');
 expect(
-  /const enabled = !!machine\?\.ready && running;/.test(media),
+  /const enabled = !!c64\?\.ready && running;/.test(media),
   'cartridge controls gate on both machine.ready and running'
 );
 expect(

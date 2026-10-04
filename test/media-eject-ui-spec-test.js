@@ -23,11 +23,11 @@ expect(
   'Drive 9 EJECT follows its current disk or inserted UI state'
 );
 expect(
-  /function _syncCRTEjectButton\(\)[\s\S]*?machine\?\.mem\?\.cartridge, _cachedCartData, crtDropzone/.test(media),
+  /function _syncCRTEjectButton\(\)[\s\S]*?c64\?\.cartridgeInserted, _cachedCartData, crtDropzone/.test(media),
   'Cartridge EJECT follows its live, cached, or inserted UI state'
 );
 expect(
-  /function _syncTapEjectButton\(\)[\s\S]*?machine\?\.datasette\?\.hasMedia, _cachedTapData, tapeDropzone/.test(media),
+  /function _syncTapEjectButton\(\)[\s\S]*?c64\?\.tape\?\.hasMedia, _cachedTapData, tapeDropzone/.test(media),
   'Datasette EJECT follows its live, cached, or inserted UI state'
 );
 expect(

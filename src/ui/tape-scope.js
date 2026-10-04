@@ -13,7 +13,7 @@
 import { tapeScopeBtn, tapescopeModal, tapescopeCanvas, tapescopeClose,
          tapescopeState, tapescopeDetail } from './dom.js';
 import { pushEscapeLayer, popEscapeLayer } from './escape-stack.js';
-import { machine } from '../state.js';
+import { c64 } from '../state.js';
 import { themeColor } from './appearance.js';
 
 const CPU_HZ = 985248;
@@ -76,7 +76,7 @@ function draw() {
   raf = requestAnimationFrame(draw);
 
   const ctx = tapescopeCanvas?.getContext('2d');
-  const ds = machine?.datasette;
+  const ds = c64?.tape;
   if (!ctx) return;
   const w = tapescopeCanvas.width, h = tapescopeCanvas.height;
   ctx.fillStyle = BG;

@@ -100,8 +100,13 @@ With `npm run dev -- --host 127.0.0.1 --port 5173` running, use
 `-- --api-load` to audit request counts or `-- --details` for release links and
 file actions. Add `-- --tde` for focused checks of the D64 compatibility prompt,
 including both drive file pickers, acceptance, decline and loading with TDE
-already enabled. The harness needs Chrome and local ROMs in
-`roms/`; it mocks Assembly64 and makes no live catalog requests.
+already enabled. The full run also drives the NEOS mouse from the UI side
+(`neos-check.mjs`): the port select plugs it into the machine, the buttons
+reach it and POTX, motion reaches it under pointer lock, and it follows a port
+swap and a RESET. The harness needs Chrome and local ROMs in
+`roms/`; it mocks Assembly64 and makes no live catalog requests. With the dev
+server on `localhost` instead of 127.0.0.1, pass
+`node test/assembly64/browser-check.mjs --url=http://localhost:5173`.
 Use `-- --url=http://127.0.0.1:5174` to select another local port.
 
 After `npm run build`, run `npm run preview -- --host 127.0.0.1 --port 4173`
@@ -329,8 +334,9 @@ helpers and live model toggles for triaging behaviour in the browser.
 
 ## Debug console (DevTools)
 
-The running machine is the `machine` global (`window.machine`); the trace and
-inspection helpers below are `c64Trace` / `c64Vic` / `c64Bus`.
+The running machine is the `machine` global (`window.machine`), and the UI
+facade over it is `window.c64`; the trace and inspection helpers below are
+`c64Trace` / `c64Vic` / `c64Bus`.
 
 ```js
 // Machine lifecycle. softReset = a /RESET-line pulse: preserves RAM (the KERNAL
@@ -344,12 +350,6 @@ machine.reset()                          // cold boot / power cycle (regenerates
 // VIC frame trace: enrich the debug snapshot with whole-frame + per-raster
 // data (see "VIC frame trace and state snapshots" below for workflow + perf).
 c64Trace.enable() / .disable() / .status()
-
-// Raster-scroller jitter capture: per-frame IRQ-accept / soft-vec entry / $F7
-// / $D020 / $D021 / $D012 / BA-AEC-release cycles across N frames, with
-// frame-to-frame variance analysis. Auto-downloads a JSON report on dump.
-c64Trace.jitterStart(60)        // arm an N-frame capture, then let the demo run
-c64Trace.jitterDump()           // print + download the report (also returns raw)
 
 // SID write trace: capture every SID register write for inspection
 c64Trace.sidStart(20000)       // capture next N writes

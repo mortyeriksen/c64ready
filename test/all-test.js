@@ -46,6 +46,7 @@ const TESTS = [
   'test/crt-panel-spec-test.js',
   'test/crt-shader-gate-spec-test.js',
   'test/machine-api-spec-test.js',
+  'test/machine-facade-spec-test.js',
   'test/vibes-btn-patterns-spec-test.js',
   'test/vibes-screen-light-spec-test.js',
   'test/vibes-render-cache-test.js',

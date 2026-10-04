@@ -47,7 +47,7 @@ export function createAssembly64Control(root, controller, store, perform) {
     if (!browser || browser.closed) browser = openBrowserDialog(controller, store, perform, { view });
     if (view === 'results') controller.search();
   }
-  const browse = button('EXPLORE', () => open(), { class: 'btn', 'aria-haspopup': 'dialog' });
+  const browse = button('EXPLORE', () => open(), { class: 'btn btn-primary', 'aria-haspopup': 'dialog' });
   const favorite = button('FAVORITES', () => open('favorites'), { class: 'btn', 'aria-haspopup': 'dialog' });
   favorite.prepend(createFavoriteIcon());
   const navigation = el('div', null, { class: 'mb-launcher-navigation' }); navigation.append(browse, favorite);

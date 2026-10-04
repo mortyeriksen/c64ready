@@ -62,6 +62,7 @@ callbacks:
 | `vic2.ram / colorRam / charRom / cia2 / cpu / memory` | VIC fetches from RAM/color-RAM/char-ROM, reads the VIC bank from CIA2, drives the shared open-bus latch in Memory |
 | `cia2.writePortA / readPortA` | IEC bus serialization + VIC bank selection (see §6) |
 | `cia1.writePortB` → `_updateLightpen` | CIA1 PB4 / joystick-1 fire drive the VIC light-pen pin |
+| `cia1.writePortA/B` → `_neosStrobe` | only for a port with a NEOS mouse plugged in: the FIRE-bit strobe steps its nibble sequencer (see §10) |
 | `cia1/cia2/vic2.irqHandler` | feed the per-source interrupt delay pipeline (see §5) |
 | `cpu.onInterruptAccept` | diagnostic; forwards accept events to the VIC frame trace |
 | `datasette.flagCallback` → `cia1.setFlag` | tape pulse edges raise the CIA1 FLAG line |
@@ -333,6 +334,23 @@ the Bank-1 `$6800` shadow.
 by `input.js` from keyboard/gamepad/mouse), the light-pen node (`_updateLightpen`
 combining CIA1 PB4 and joystick-1 fire), and the paddle X/Y feeding the POT
 sample-hold.
+
+**The UI facade.** UI modules (`main.js`, `media.js`, `input.js`, `debug.js`
+and the rest) drive the machine only through `machine-facade.js`, the `c64`
+binding in `state.js`, rebuilt with every machine. It forwards the load, tape,
+disk, cartridge, REU, savestate, video and audio calls; exposes the tape deck,
+the drives and the REU as read-only views whose getters read the live chip; and
+keeps console tooling under `c64.debug`. No UI code holds a chip object or runs
+inside the cycle loop; `test/machine-facade-spec-test.js` fails if a UI module
+reaches past the facade.
+
+The **NEOS mouse** runs inside the machine, because its protocol reacts to
+every CIA1 port write. `setNeosPort(port, on)` plugs one in (port 2 strobes on
+PRA, port 1 on PRB); each data or DDR write to that register then advances the
+sequencer in `control-port.js` and rewrites the port's joystick byte at once.
+The UI only reports host motion (`neosMove`) and buttons (`setNeosButtons`); the
+right button sets `potXOverride`. NEOS state is not part of a savestate, and
+`input.js` resets it (`neosResetPort`) on power-off, reset and state load.
 
 **Memory map & banking live in `memory.js`**, not here. `_rebuildMemoryMap()`
 builds per-page read/write tables from the 6510 port ($01) LORAM/HIRAM/CHAREN

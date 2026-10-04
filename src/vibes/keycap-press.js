@@ -13,7 +13,8 @@
 //   3. the `this._keycap = attachKeycapPresses(...)` block in retrovibes.js's
 //      model-load callback, and
 //   4. the `this._keycap?.update()` call in retrovibes.js's _loop().
-// Nothing else references it; it reads live key state off window.machine.
+// Nothing else references it; it reads live key state off window.c64 (the
+// machine facade).
 // ============================================================================
 
 // Each entry: the C64 keyboard-matrix position (col,row — see the C64_KEY_LABELS
@@ -133,13 +134,13 @@ export function attachKeycapPresses(keyboardMesh) {
 
   return {
     update() {
-      const m = (typeof window !== 'undefined') ? window.machine : null;
-      if (!m || !m.cia1 || typeof m.cia1.isKeyDown !== 'function') return;
+      const m = (typeof window !== 'undefined') ? window.c64 : null;
+      if (!m || typeof m.isKeyDown !== 'function') return;
       let changed = false;
       for (let k = 0; k < keys.length; k++) {
         const key = keys[k];
         if (key.verts.length === 0) continue;
-        const target = m.cia1.isKeyDown(key.col, key.row) ? TRAVEL : 0;
+        const target = m.isKeyDown(key.col, key.row) ? TRAVEL : 0;
         if (key.cur === target) continue;             // settled — skip
         key.cur += (target - key.cur) * LERP;
         if (Math.abs(target - key.cur) < 1e-4) key.cur = target;

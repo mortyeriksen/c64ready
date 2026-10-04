@@ -15,11 +15,19 @@
 // timers) stay in main.js; media-domain caches (currentD64, drive9*, cached
 // cart/tape) are owned and exported by media.js.
 
+import { MachineFacade } from './machine-facade.js';
+
 // The emulator machine + ROM loader. Created in main.js (cold boot and every
-// _createAndWireMachine); read pervasively by input.js and media.js.
+// _createAndWireMachine). UI modules drive it only through `c64`, the facade
+// over the same machine (machine-facade.js), rebuilt with it. `machine` itself
+// stays exported for the DevTools console and the browser checks.
 export let machine = null;
+export let c64 = null;
 export let loader = null;
-export function setMachine(m) { machine = m; }
+export function setMachine(m) {
+  machine = m;
+  c64 = m ? new MachineFacade(m) : null;
+}
 export function setLoader(l)  { loader = l; }
 
 // SID AudioWorkletNode. Created in main.js initAudio(); read by media.js when

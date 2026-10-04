@@ -29,7 +29,7 @@ import { createCrtPanel } from './ui/crt-panel.js';
 import sidWorkletUrl   from './sid/sid-worklet.js?worker&url';
 import { registerSW }  from 'virtual:pwa-register';
 import {
-  machine, loader, sidNode, running, _pristineBoot, _hasBeenReady,
+  machine, c64, loader, sidNode, running, _pristineBoot, _hasBeenReady,
   setMachine, setLoader, setSidNode, setRunning, setPristineBoot, setHasBeenReady,
 } from './state.js';
 import { registerAudioContext } from './debug.js';
@@ -42,7 +42,7 @@ import {
   _cachedTapDeck, _restoreDeck,
 } from './media.js';
 import { initializeAssembly64 } from './assembly64/start.js';
-import { initInput, updateJoyPorts, installNeosHook, _releaseAllLatched, softKeyboardInput } from './input.js';
+import { initInput, updateJoyPorts, _releaseAllLatched, softKeyboardInput } from './input.js';
 import { pushEscapeLayer, popEscapeLayer } from './ui/escape-stack.js';
 import { createAvMarker, avMarkerEnabled } from './av-marker.js';
 import { SoftKeyboardInsertState } from './input-key-ownership.js';
@@ -329,8 +329,9 @@ canvas.style.cursor = 'pointer';
 try {
   setMachine(new C64Machine());
   setLoader(new ROMLoader());
-  // Expose to DevTools console for ad-hoc debugging (sidTraceStart, etc.).
-  if (typeof window !== 'undefined') window.machine = machine;
+  // Expose to DevTools console for ad-hoc debugging (sidTraceStart, etc.);
+  // window.c64 is the UI facade over it.
+  if (typeof window !== 'undefined') { window.machine = machine; window.c64 = c64; }
 } catch (err) {
   console.error("Critical Init Error:", err);
   const status = document.getElementById('status');
@@ -464,7 +465,7 @@ const sid2Address = document.getElementById('sid2-address');
 
 function _syncSidControls() {
   const config = sidSessionConfig?.second ?? secondSidPref;
-  if (sidToggleBtn) sidToggleBtn.textContent = `SID: ${(machine?.sidIs8580 ?? sidSessionConfig?.primary ?? is8580) ? '8580' : '6581'}`;
+  if (sidToggleBtn) sidToggleBtn.textContent = `SID: ${(c64?.sidIs8580 ?? sidSessionConfig?.primary ?? is8580) ? '8580' : '6581'}`;
   if (sid2Toggle) {
     sid2Toggle.textContent = `SID2: ${config.enabled ? (config.is8580 ? '8580' : '6581') : 'OFF'}`;
     sid2Toggle.setAttribute('aria-pressed', String(config.enabled));
@@ -481,18 +482,18 @@ function _validateSecondSid(config) {
   if (!config.enabled) return;
   if (config.address >= 0xDF00 && reuEnabled) throw new Error('Second SID in $DF00-$DFFF conflicts with RAM Expansion.');
   if (config.address >= 0xDE00 && _cachedCartData) throw new Error('Second SID in $DE00-$DFFF requires an empty cartridge slot.');
-  machine?.mem.validateSecondSidAddress(config.address);
+  c64?.validateSecondSidAddress(config.address);
 }
 
 function _changeSecondSid(change) {
   const config = { ...(sidSessionConfig?.second ?? secondSidPref), ...change };
   try {
     _validateSecondSid(config);
-    machine?.configureSecondSid(config);
+    c64?.configureSecondSid(config);
     secondSidPref = config;
     if (sidSessionConfig) sidSessionConfig.second = config;
     try { localStorage.setItem('c64emu.secondSid', JSON.stringify(config)); } catch {}
-    if (sidNode && machine) sidNode.port.postMessage({ type: 'second', secondSid: machine.secondSidConfig() });
+    if (sidNode && c64) sidNode.port.postMessage({ type: 'second', secondSid: c64.secondSidConfig() });
   } catch (error) { setStatus(error.message, 'error'); }
   _syncSidControls();
 }
@@ -521,11 +522,11 @@ function configureSidTune(tune) {
     address: tune.secondSidAddress || secondSidPref.address,
     is8580: tune.secondChip === 1 ? false : tune.secondChip === 2 ? true : primary } : secondSidPref;
   _validateSecondSid(second);
-  machine?.configureSecondSid(second);
+  c64?.configureSecondSid(second);
   sidSessionConfig = tune ? { primary, second } : null;
-  machine?.setSidModel(primary);
+  c64?.setSidModel(primary);
   if (sidNode) {
-    sidNode.port.postMessage({ type: 'second', secondSid: machine.secondSidConfig() });
+    sidNode.port.postMessage({ type: 'second', secondSid: c64.secondSidConfig() });
     sidNode.port.postMessage({ type: 'model', is8580: primary });
   }
   _syncSidControls();
@@ -624,7 +625,7 @@ function queuePastedTextAndReport(text) {
 
 function flushKeyboardPasteQueue() {
   if (!running || !pendingPasteText) return;
-  const accepted = machine.bufferKeyboardText(pendingPasteText);
+  const accepted = c64.bufferKeyboardText(pendingPasteText);
   if (accepted > 0) {
     pendingPasteText = pendingPasteText.slice(accepted);
   }
@@ -634,7 +635,7 @@ if (sidToggleBtn) {
   // Sync the button label with the persisted preference at startup.
   sidToggleBtn.textContent = `SID: ${sidVariantPref}`;
   sidToggleBtn.addEventListener('click', () => {
-    is8580 = !(machine?.sidIs8580 ?? is8580);
+    is8580 = !(c64?.sidIs8580 ?? is8580);
     if (sidSessionConfig) sidSessionConfig.primary = is8580;
     sidVariantPref = is8580 ? '8580' : '6581';
     sidToggleBtn.textContent = `SID: ${sidVariantPref}`;
@@ -643,7 +644,7 @@ if (sidToggleBtn) {
     if (sidNode) {
       sidNode.port.postMessage({ type: 'model', is8580 });
     }
-    machine?.setSidModel?.(is8580);
+    c64?.setSidModel?.(is8580);
     try { localStorage.setItem('c64emu.sidVariant', sidVariantPref); } catch {}
   });
 }
@@ -661,7 +662,7 @@ if (vicToggleBtn) {
     const idx = VIC_VARIANTS.indexOf(vicVariantPref);
     const next = VIC_VARIANTS[(idx + 1) % VIC_VARIANTS.length];
     vicVariantPref = next;
-    if (machine?.vic2) machine.vic2.vicVariant = next;
+    if (c64) c64.vicVariant = next;
     vicToggleBtn.textContent = `VIC: ${next}`;
     try { localStorage.setItem('c64emu.vicVariant', next); } catch {}
   });
@@ -947,7 +948,7 @@ if (runBackgroundBtn) {
 // Apply the persisted VIC variant to a freshly-created C64Machine. Called
 // after `new C64Machine()` on both initial boot and every POWER ON.
 function _applyVicVariantPref() {
-  if (machine?.vic2) machine.vic2.vicVariant = vicVariantPref;
+  if (c64) c64.vicVariant = vicVariantPref;
 }
 _applyVicVariantPref();
 
@@ -957,8 +958,8 @@ _applyVicVariantPref();
 // rejects the machine even when the user selected 8580. Called after every
 // `new C64Machine()` and on toggle, mirroring the worklet's `model` message.
 function _applySidVariantPref() {
-  machine?.setSidModel?.(sidSessionConfig?.primary ?? is8580);
-  machine?.configureSecondSid(sidSessionConfig?.second ?? secondSidPref);
+  c64?.setSidModel?.(sidSessionConfig?.primary ?? is8580);
+  c64?.configureSecondSid(sidSessionConfig?.second ?? secondSidPref);
   _syncSidControls();
 }
 _applySidVariantPref();
@@ -995,14 +996,14 @@ function _applyTde(on) {
   tdeEnabled = !!on;
   if (tdeEnabled) rearmPrgTdeOffer();
   try { localStorage.setItem('c64emu.tde', tdeEnabled ? 'on' : 'off'); } catch {}
-  machine?.setTrueDrive(tdeEnabled);
+  c64?.setTrueDrive(tdeEnabled);
   _syncTdeBtn();
 }
 
 // Only enabled after 1541.bin loads.
 if (tdeToggleBtn) {
   tdeToggleBtn.addEventListener('click', () => {
-    if (!machine?.drive1541) return;
+    if (!c64?.drive(8)) return;
     _applyTde(!tdeEnabled);
   });
 }
@@ -1090,12 +1091,12 @@ initPanelOrder();
 
 loader.bindInputs(kernalInput, basicInput, charInput, drive1541Input);
 loader.onReady(roms => {
-  machine.loadROMs(roms);
+  c64.loadROMs(roms);
 
   let tdeStatus = '';
   if (roms.drive1541) {
-    machine.attachDrive(roms.drive1541);
-    machine.setTrueDrive(tdeEnabled);
+    c64.attachDrive(roms.drive1541);
+    c64.setTrueDrive(tdeEnabled);
     tdeStatus = ` (1541 ROM ready, TDE ${tdeEnabled ? 'on' : 'off'})`;
     if (tdeToggleBtn) {
       tdeToggleBtn.disabled = false;
@@ -1128,9 +1129,9 @@ if (drive1541Input) {
       updateRomStatus();
       // If the machine is already booted, attach the drive now so the user
       // doesn't have to reload the page after dropping in 1541.bin.
-      if (loader.drive1541 && machine?.ready && !machine.drive1541) {
-        machine.attachDrive(loader.drive1541);
-        machine.setTrueDrive(tdeEnabled);
+      if (loader.drive1541 && c64?.ready && !c64.drive(8)) {
+        c64.attachDrive(loader.drive1541);
+        c64.setTrueDrive(tdeEnabled);
         if (tdeToggleBtn) {
           tdeToggleBtn.disabled = false;
           _syncTdeBtn();
@@ -1224,13 +1225,13 @@ if (romClearBtn) {
 // once at audio init, then again after a power-on (which creates a new
 // C64Machine with a fresh SharedArrayBuffer).
 function wireSidToMachine() {
-  if (sidNode && machine?.sidShared) {
-    sidNode.port.postMessage({ type: 'init', shared: machine.sidShared, is8580: machine.sidIs8580, engine: sidEngine, secondSid: machine.secondSidConfig() });
+  if (sidNode && c64?.sidShared) {
+    sidNode.port.postMessage({ type: 'init', shared: c64.sidShared, is8580: c64.sidIs8580, engine: sidEngine, secondSid: c64.secondSidConfig() });
   }
 }
 
 function resetSidWorklet() {
-  if (sidNode) sidNode.port.postMessage({ type: 'reset', is8580: machine?.sidIs8580 ?? is8580 });
+  if (sidNode) sidNode.port.postMessage({ type: 'reset', is8580: c64?.sidIs8580 ?? is8580 });
 }
 
 // Signed ppm for the diag line's clock-drift figures; a missing measurement
@@ -1386,7 +1387,7 @@ function _redriveTick() {
 
 function rafLoop(timestamp) {
   _scheduleTick();
-  if (collisionIndicator) collisionIndicator.update(timestamp, machine?.vic2._collisionOverlay);
+  if (collisionIndicator) collisionIndicator.update(timestamp, c64?.collisionOverlay());
   if (!running || paused) return;
 
   if (lastTime === 0) lastTime = timestamp;
@@ -1444,11 +1445,11 @@ function rafLoop(timestamp) {
     flushKeyboardPasteQueue();
     if (SHOW_FRAME_TIME) {
       const t0 = performance.now();
-      machine.runFrame();
+      c64.runFrame();
       frameComputeAccum += performance.now() - t0;
       frameComputeCount++;
     } else {
-      machine.runFrame();
+      c64.runFrame();
     }
     // Drive sounds edge-sample motor/half-track per emulated frame (a seek can
     // step several half-tracks within one rAF tick, so this must stay in the
@@ -1457,7 +1458,7 @@ function rafLoop(timestamp) {
     // is bypassed entirely rather than paying a per-frame call + guard.
     if (driveSounds) updateDriveSounds();
     // Null unless the tape speaker is on, so the common case pays nothing.
-    if (tapeSound) tapeSound.update(machine?.datasette);
+    if (tapeSound) tapeSound.update(c64?.tape);
     timeAccumulator -= IDEAL_DELTA;
     framesThisTick++;
   }
@@ -1475,9 +1476,9 @@ function rafLoop(timestamp) {
   if (_autoSeq) _serviceAutoLoad();
 
   if (frameExecuted) {
-    if (collisionIndicator) collisionIndicator.update(timestamp, machine.vic2._collisionOverlay);
-    if (presenter) presenter.present(machine.vic2.presentationBuffer());
-    else machine.vic2.blit(ctx);
+    if (collisionIndicator) collisionIndicator.update(timestamp, c64.collisionOverlay());
+    if (presenter) presenter.present(c64.presentationBuffer());
+    else c64.blit(ctx);
 
     // A/V clapper: off by default. avMarkerEnabled() is a session boolean only
     // (no per-frame storage/URL). Instance exists only while on.
@@ -1556,7 +1557,7 @@ let _autoWaitUntil = 0;  // { wait }: performance.now() deadline, 0 = not starte
 // cursor-blink/input mode active ($CC=0), and cold-start has set TXTTAB to
 // $0801 ($2C hi byte = $08). True exactly at READY, stays true while idle.
 function _basicReady() {
-  const r = machine?.mem?.ram;
+  const r = c64?.ram();
   return !!r && r[0x00C6] === 0 && r[0x00CC] === 0 && r[0x002C] === 0x08;
 }
 
@@ -1574,14 +1575,14 @@ function _queueAutoLoad(steps) {
 // Advance the pending auto-load one step per RAF tick. Called after the frame
 // catch-up loop so it observes post-frame BASIC state.
 function _serviceAutoLoad() {
-  if (!_autoSeq || !machine?.ready) return;
+  if (!_autoSeq || !c64?.ready) return;
   if (_autoBudget-- <= 0) { _autoSeq = null; return; }   // stuck (e.g. ?FILE NOT FOUND) — give up quietly
   const step = _autoSeq[0];
   if (step.ready) {
     if (_basicReady()) _autoSeq.shift();
   } else if (step.type !== undefined) {
     if (_autoTypeRest === '') _autoTypeRest = step.type;
-    _autoTypeRest = _autoTypeRest.slice(machine.bufferKeyboardText(_autoTypeRest));
+    _autoTypeRest = _autoTypeRest.slice(c64.bufferKeyboardText(_autoTypeRest));
     if (_autoTypeRest === '') _autoSeq.shift();
   } else if (step.loadDone) {
     // A LOAD has finished once BASIC has left the READY prompt to load (the
@@ -1613,7 +1614,7 @@ function _serviceAutoLoad() {
 // Watch the 1541 for motor / stepper transitions and emit sounds accordingly.
 function updateDriveSounds() {
   if (!driveSounds) return;
-  const drv = machine.drive1541;
+  const drv = c64.drive(8);
   if (!drv) return;
 
   // Motor on/off edge
@@ -1657,12 +1658,12 @@ function _createAndWireMachine({ keepKey = true } = {}) {
   // the motor with nothing to stop it, so the tape crawls on for ever behind a
   // READY prompt. Pressing PLAY and *then* switching on is a person's own doing,
   // and the flow this exists for; RESET is not.
-  const deck = machine?.datasette?.hasMedia
-    ? { key: machine.datasette.key, seconds: machine.datasette.elapsedSeconds }
+  const deck = c64?.tape.hasMedia
+    ? { key: c64.tape.key, seconds: c64.tape.elapsedSeconds }
     : _cachedTapDeck;
   setMachine(new C64Machine());
-  if (typeof window !== 'undefined') window.machine = machine;
-  machine.loadROMs({
+  if (typeof window !== 'undefined') { window.machine = machine; window.c64 = c64; }
+  c64.loadROMs({
     kernal:  loader.kernal,
     basic:   loader.basic,
     charRom: loader.charRom,
@@ -1672,13 +1673,13 @@ function _createAndWireMachine({ keepKey = true } = {}) {
   // so a re-created machine would have onLoadTrap = null).
   // Closure guards on `driveSounds` at call time, so it works regardless of
   // whether drive sound was on at power-on (it's toggleable live in Settings).
-  machine.onLoadTrap = (dev) => {
+  c64.onLoadTrap = (dev) => {
     driveSounds && driveSounds.simulateLoad();
     if (dev === 9) _flashDrive9Led();
   };
-  machine.onTrapDiskWrite = noteTrapDiskWrite;
-  // Re-install the NEOS-mouse CIA1 hook on the freshly constructed machine.
-  installNeosHook();
+  c64.onTrapDiskWrite = noteTrapDiskWrite;
+  // Push the control-port devices (incl. a NEOS mouse) to the new machine.
+  updateJoyPorts();
   // Re-apply persisted VIC/SID variants and resync the toggle labels.
   _applyVicVariantPref();
   _applySidVariantPref();
@@ -1687,17 +1688,17 @@ function _createAndWireMachine({ keepKey = true } = {}) {
   // Re-attach drive ROM + TDE if it was loaded (TDE boots the drive to its
   // DOS idle scheduler so the first LOAD finds it listening for ATN).
   if (loader.drive1541) {
-    machine.attachDrive(loader.drive1541);
-    machine.setTrueDrive(tdeEnabled);
+    c64.attachDrive(loader.drive1541);
+    c64.setTrueDrive(tdeEnabled);
   }
   // Re-attach disk image if it was inserted.
-  if (currentD64) machine.setD64(currentD64);
+  if (currentD64) c64.setD64(currentD64);
   // Re-apply the secondary device-9 drive (on/off + its disk + its TDE) on the
   // fresh machine, mirroring how the primary drive is restored above.
-  machine.setDrive9Enabled(drive9Enabled);
-  if (currentD64Drive9) machine.setD64Drive9(currentD64Drive9);
+  c64.setDrive9Enabled(drive9Enabled);
+  if (currentD64Drive9) c64.setD64Drive9(currentD64Drive9);
   if (drive9Enabled && drive9TdeEnabled && loader.drive1541) {
-    machine.attachDrive9(loader.drive1541);   // real device-9 1541 on the bus
+    c64.attachDrive9(loader.drive1541);   // real device-9 1541 on the bus
   }
   _syncDrive9TdeBtn();
   // Re-fit the RAM Expansion unit. Its RAM comes up blank here; a state load
@@ -1705,7 +1706,7 @@ function _createAndWireMachine({ keepKey = true } = {}) {
   _applyReu();
   // Re-apply cartridge if one was loaded; refresh UI label.
   if (_cachedCartData) {
-    const info = machine.loadCartridge(_cachedCartData);
+    const info = c64.loadCartridge(_cachedCartData);
     _onCRTLoaded(info);
     resetSidWorklet();
   }
@@ -1713,8 +1714,8 @@ function _createAndWireMachine({ keepKey = true } = {}) {
   // tape captured off a live deck carries its write-protect state with it, so a
   // reset mid-recording doesn't silently re-protect the tape.
   if (_cachedTapData) {
-    machine.loadTap(_cachedTapData);
-    if (_cachedTapProtected !== null) machine.setTapeWriteProtected(_cachedTapProtected);
+    c64.loadTap(_cachedTapData);
+    if (_cachedTapProtected !== null) c64.setTapeWriteProtected(_cachedTapProtected);
     _onTapLoaded(_cachedTapName);
     // _onTapLoaded is written for a tape going in fresh — counter to zero, keys
     // up — so the deck's own state goes back on afterwards.
@@ -2348,9 +2349,9 @@ async function _ensureModelViewer() {
     // its texture when the buffer reference changes). 384×272 = vic2 canvas.
     const screenFrame = { data: null, width: 384, height: 272 };
     mv.setScreenProvider(() => {
-      const vic = machine && machine.vic2;
-      if (!running || !vic || !vic.frameBuffer) return null;
-      screenFrame.data = vic.frameBuffer;
+      const frame = running && c64 ? c64.frameBuffer() : null;
+      if (!frame) return null;
+      screenFrame.data = frame;
       return screenFrame;
     });
     // Double-click in the 3D scene powers on (the power button's full boot path).
@@ -2363,7 +2364,7 @@ async function _ensureModelViewer() {
     // 1541's green LED), and the 1541's red LED from the drive read/activity
     // indicator (same signal as the device-8 drive LED in the controls section).
     mv.setPowerProvider(() => running);
-    mv.setDriveActiveProvider(() => !!machine?.drive1541?.ledOn || drive9LedActive());
+    mv.setDriveActiveProvider(() => !!c64?.drive(8)?.ledOn || drive9LedActive());
     mv.setTouchControls(touchControls);
     // Pause + mute the machine while the viewer loads (open) and tears down
     // (close), so those main-thread stalls don't underrun the SID ring.
@@ -3070,7 +3071,7 @@ initMedia({
   getSecondSidConfig: () => sidSessionConfig?.second ?? secondSidPref,
   configureSidTune,
   syncSidState: () => {
-    sidSessionConfig = { primary: machine.sidIs8580, second: machine.secondSidConfig() };
+    sidSessionConfig = { primary: c64.sidIs8580, second: c64.secondSidConfig() };
     wireSidToMachine();
     _syncSidControls();
   },

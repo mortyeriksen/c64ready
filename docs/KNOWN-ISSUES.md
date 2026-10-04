@@ -7,6 +7,9 @@ What is missing, approximate or still rough in C64 READY. For what works, see
 the [Features](FEATURES.md) overview; for how each chip stands against the real
 hardware, see [Component status](COMPONENT-STATUS.md).
 
+Found something broken? Note the demo and where it breaks, and
+[open an issue on GitHub](https://github.com/mortyeriksen/c64ready/issues).
+
 ---
 
 ## Open demo bugs
@@ -18,9 +21,6 @@ hardware, see [Component status](COMPONENT-STATUS.md).
 - **NTSC-only productions won't run**: the machine is PAL.
 - On **slower phones and tablets**, the heaviest demos may drop visible frames
   or slow down.
-
-Found something broken? Note the demo and where it breaks, and
-[open an issue on GitHub](https://github.com/mortyeriksen/c64ready/issues).
 
 ## Graphics boundaries with cartridges or tracing
 

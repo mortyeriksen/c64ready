@@ -16,6 +16,9 @@ import { REU, REU_DEFAULT_MODEL } from './reu.js';
 import { parseCRT } from './media/crt.js';
 import { createCartridgeFromCRT } from './cartridges/registry.js';
 import { makeVoiceTrio, computeSyncPulses } from './sid/sid-voice.js';
+import {
+  createNeosState, neosResetPort, neosByte, neosCheckStrobe, neosPotX,
+} from './control-port.js';
 
 // SharedArrayBuffer ring buffer layout:
 // SharedArrayBuffer layout (Int32-indexed):
@@ -419,7 +422,16 @@ export class C64Machine {
       const joyFireLow = (this.joyPort1 & 0x10) === 0;
       this.vic2.setLightpenLevel(ciaPin4High && !joyFireLow ? 1 : 0);
     };
-    this.cia1.writePortB = () => this._updateLightpen();
+    // NEOS mouse. Its strobe line is the FIRE bit of the port's CIA1 register
+    // (port 2 = PRA, port 1 = PRB), so every data or DDR write to that register
+    // can advance the mouse's nibble sequencer and change what the port reads.
+    // A port's state is null unless a NEOS mouse is plugged in (setNeosPort).
+    this.neosPorts = { 1: null, 2: null };
+    this.cia1.writePortA = () => { if (this.neosPorts[2]) this._neosStrobe(2); };
+    this.cia1.writePortB = () => {
+      this._updateLightpen();
+      if (this.neosPorts[1]) this._neosStrobe(1);
+    };
 
     // SharedArrayBuffer for SID audio worklet.
     //   sidCtrl[0] = writeIdx, [1] = readIdx, [2] = OSC3 (unused), [3] = ENV3 (unused).
@@ -577,6 +589,72 @@ export class C64Machine {
 
   setRestoreNmiLine(asserted) {
     this._setNmiSource('restore', asserted);
+  }
+
+  // ── NEOS mouse (protocol in control-port.js) ─────────────────────────────
+  // Plugging a mouse in or out starts that port from a fresh sequencer state.
+  setNeosPort(port, on) {
+    if (!!this.neosPorts[port] === !!on) return;
+    this.neosPorts[port] = on ? createNeosState() : null;
+    this.applyNeosPotX();
+  }
+
+  // The sequencer's idle detection stamps edges with sidCycleCounter, which
+  // restarts at 0 on a hard reset, so callers reset the ports along with it.
+  neosResetPort(port) {
+    const s = this.neosPorts[port];
+    if (!s) return;
+    neosResetPort(s);
+    this.applyNeosPotX();
+  }
+
+  // Host motion in mouse units, right and down positive. NEOS reports the
+  // opposite sign, and the next snapshot clamps each axis to ±127.
+  neosMove(port, dx, dy) {
+    const s = this.neosPorts[port];
+    if (!s) return;
+    s.pendingDX -= dx;
+    s.pendingDY -= dy;
+  }
+
+  setNeosButtons(port, left, right) {
+    const s = this.neosPorts[port];
+    if (!s) return;
+    s.leftBtn = !!left;
+    s.rightBtn = !!right;
+    this.applyNeosPotX();
+  }
+
+  neosButtonsDown(port) {
+    const s = this.neosPorts[port];
+    return !!(s && (s.leftBtn || s.rightBtn));
+  }
+
+  // The active-low byte a NEOS port drives onto $DC00/$DC01 right now.
+  neosPortByte(port) {
+    const s = this.neosPorts[port];
+    if (!s) return 0xFF;
+    return neosByte(s, port === 2 ? this.cia1.portADir : this.cia1.portBDir);
+  }
+
+  _neosStrobe(port) {
+    const s = this.neosPorts[port];
+    const isPortA = port === 2;
+    const ddr = isPortA ? this.cia1.portADir : this.cia1.portBDir;
+    const out = isPortA ? this.cia1.portA : this.cia1.portB;
+    neosCheckStrobe(s, ddr, out, this.sidCycleCounter);
+    if (isPortA) this.joyPort2 = neosByte(s, ddr);
+    else this.joyPort1 = neosByte(s, ddr);
+  }
+
+  // NEOS wires its right button to POTX as a whole-byte value (neosPotX).
+  // With no NEOS mouse plugged in nothing overrides POTX. Re-asserted by the UI
+  // every frame, so a restored state's saved override gives way to the mouse
+  // that is actually plugged in now.
+  applyNeosPotX() {
+    const p1 = this.neosPorts[1], p2 = this.neosPorts[2];
+    if (!p1 && !p2) { this.potXOverride = null; return; }
+    this.potXOverride = neosPotX(!!(p1?.rightBtn || p2?.rightBtn));
   }
 
   _sampleCpuInterrupts() {

@@ -102,31 +102,34 @@ own colours whatever the theme, and you can import your own too.
 
 **Breadbin**: The machine itself: brown keys in dark mode, the beige case in light.
 
-![Breadbin: brown keyboard with cream text in dark mode, the beige case in light mode, orange and blue accents in both.](/guide/theme-breadbin.webp)
+![Breadbin: brown keyboard with cream text and orange accents in dark mode, the beige case outlined in key brown with red and blue accents in light mode.](/guide/theme-breadbin.webp)
 
 **Phosphor**: An amber monitor in dark mode, green-bar printer paper in light.
 
-![Phosphor: amber on black in dark mode, black ink on pale green paper in light mode.](/guide/theme-phosphor.webp)
+![Phosphor: amber on black in dark mode, black ink on white paper ruled in green over a green-bar page in light mode.](/guide/theme-phosphor.webp)
 
-**Out Run**: The sunset over the road: neon night in dark mode, a coral sky in light.
+**Out Run**: The sunset over the road: neon night in dark mode, a pink and orange sky in light.
 
-![Out Run: a magenta horizon glow over violet night with yellow and cyan accents in dark mode, a coral sunset sky in light mode.](/guide/theme-outrun.webp)
+![Out Run: a magenta horizon glow over violet night with yellow and cyan accents in dark mode, a pink-to-orange sunset sky with lilac panels and magenta edges in light mode.](/guide/theme-outrun.webp)
 
 **Commando**: Night road and muzzle flash in dark mode, khaki and olive drab in light.
 
-![Commando: sand on dark brown with orange accents in dark mode, khaki and olive drab in light mode.](/guide/theme-commando.webp)
+![Commando: sand on dark brown with orange accents in dark mode, khaki outlined in olive drab with muzzle-flash orange accents in light mode.](/guide/theme-commando.webp)
 
 <!-- /gallery -->
 
 Pick one with **THEME** in [Options ▸ Theme](#theme). **IMPORT** loads a theme
 file, which then stays in this browser; **REMOVE** takes an imported one
 out again. **EXPORT** saves the current theme with every colour filled in,
-so exporting Classic gives you a complete file to start your own from.
+so exporting Classic gives you a complete file to start your own from. The
+one exception is the button colours (see **Buttons** below): a theme that
+leaves them out exports without them, so they keep following its other
+colours as you edit.
 
 A theme file is JSON. Here is the start of one, with Classic's colours; the
-`…` lines stand for the rest. A complete file has 137 colours per mode, but a
-theme only needs the ones it changes. Export Classic to get the whole file to
-edit.
+`…` lines stand for the rest. A complete file has 154 colours per mode, 137
+without the button colours, but a theme only needs the ones it changes.
+Export Classic to get the whole file to edit.
 
 ```jsonc
 {
@@ -172,6 +175,20 @@ edit.
   file lists them all), and each value a plain colour: `#rgb`, `#rrggbb`,
   `#rrggbbaa`, `rgb()` or `rgba()`. Any colour you leave out keeps its Classic
   value for that mode.
+- **Buttons**: buttons have colours of their own, `button-bg` for the face and
+  `button-text`, `button-dim`, `button-accent`, `button-accent2`,
+  `button-green`, `button-amber` and `button-red` for the labels. Leave them
+  out and buttons use the theme's `control-bg`, `text`, `dim` and accent
+  colours, the same as the fields; set them to give buttons a look of their
+  own. The main actions, **LOAD ANY**, drive 8's **LOAD** and Assembly64's
+  **EXPLORE**, have a set of their own again, `primary-bg`, `primary-text`,
+  `primary-dim`, `primary-accent`, `primary-accent2`, `primary-green`,
+  `primary-amber`, `primary-red` and `primary-border`; left out, they are the
+  button colours and the border.
+- **Keys**: key labels, and the keys you can press in Control Ports and
+  **KEY MAP**, are neutral tints of the theme's `text` colour. `kbd-bg`,
+  `kbd-border`, `kbd-hover` and `kbd-ink` no longer change anything; a theme
+  that sets them still imports.
 - **Checks**: a file with an unknown name, a value that is not a colour, or a
   missing `name` or `modes` is refused, and the message says which. Importing a
   file with the same name as an imported theme replaces it.

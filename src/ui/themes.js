@@ -47,6 +47,9 @@ export const MAX_THEME_NAME = 40;
 // test keeps the two lists equal).
 export const THEME_TOKENS = [
   'crt-bg', 'page-glow', 'ui-bg', 'panel-bg', 'border', 'monitor-border', 'control-bg', 'field-bg-hover',
+  'button-bg', 'button-text', 'button-dim', 'button-accent', 'button-accent2', 'button-green',
+  'button-amber', 'button-red', 'primary-bg', 'primary-text', 'primary-dim', 'primary-accent',
+  'primary-accent2', 'primary-green', 'primary-amber', 'primary-red', 'primary-border',
   'menu-bg', 'status-bg', 'dropzone-border', 'row-hover', 'dir-row-hover', 'scrollbar-thumb',
   'backdrop', 'scrim', 'shadow', 'highlight', 'text', 'dim', 'text-dim', 'text-bright',
   'on-accent', 'button-ink', 'warn-text', 'accent', 'accent2', 'accent-bright', 'accent-soft',
@@ -125,6 +128,25 @@ export function parseTheme(text) {
   return validateTheme(obj);
 }
 
+// A button colour a theme leaves out is the theme's own general colour, and a
+// primary button colour its button colour (the border its border), so a theme
+// that does not part buttons from fields looks as it always did. In order:
+// the primary colours read the button colours filled before them.
+const BUTTON_SOURCES = {
+  'button-bg': 'control-bg', 'button-text': 'text', 'button-dim': 'dim', 'button-accent': 'accent',
+  'button-accent2': 'accent2', 'button-green': 'green', 'button-amber': 'amber', 'button-red': 'red',
+  'primary-bg': 'button-bg', 'primary-text': 'button-text', 'primary-dim': 'button-dim',
+  'primary-accent': 'button-accent', 'primary-accent2': 'button-accent2', 'primary-green': 'button-green',
+  'primary-amber': 'button-amber', 'primary-red': 'button-red', 'primary-border': 'border',
+};
+export function withButtonColours(set) {
+  const out = { ...set };
+  for (const [button, source] of Object.entries(BUTTON_SOURCES)) {
+    if (out[button] === undefined && out[source] !== undefined) out[button] = out[source];
+  }
+  return out;
+}
+
 // 'both', or the one mode a theme has (the appearance is then pinned to it).
 export function themeModes(theme) {
   if (!theme || (theme.modes.dark && theme.modes.light)) return 'both';
@@ -138,7 +160,7 @@ export function themeModes(theme) {
 export function themeCss(theme) {
   if (!theme) return '';
   return ['dark', 'light'].filter((m) => theme.modes[m]).map((m) => {
-    const decls = Object.entries(theme.modes[m]).map(([k, v]) => `--${k}: ${v};`).join(' ');
+    const decls = Object.entries(withButtonColours(theme.modes[m])).map(([k, v]) => `--${k}: ${v};`).join(' ');
     const sel = m === 'dark' ? `:root:root[data-mode="dark"], :root:root .c64-monitor.mode-dark` : `:root:root[data-mode="light"]`;
     return `${sel} { ${decls} }`;
   }).join('\n');
@@ -173,14 +195,19 @@ export function parseStoredThemes(raw) {
 }
 
 // The file Export saves: the theme with every token in both modes it has, the
-// gaps filled from Classic, so it is complete and ready to edit.
+// gaps filled from Classic, so it is ready to edit. A button or primary colour
+// the theme leaves out stays out: it follows the colour it derives from, and
+// writing it down would cut it off from later edits to that colour.
 export function exportTheme(entry, classic) {
   const modes = {};
   const has = entry.theme ? entry.theme.modes : { dark: {}, light: {} };
   for (const m of ['dark', 'light']) {
     if (!has[m]) continue;
     modes[m] = {};
-    for (const t of THEME_TOKENS) modes[m][t] = has[m][t] ?? classic[m][t];
+    for (const t of THEME_TOKENS) {
+      if (t in BUTTON_SOURCES && has[m][t] === undefined) continue;
+      modes[m][t] = has[m][t] ?? classic[m][t];
+    }
   }
   return { format: THEME_FORMAT, name: entry.name, ...(entry.theme?.author ? { author: entry.theme.author } : {}), modes };
 }

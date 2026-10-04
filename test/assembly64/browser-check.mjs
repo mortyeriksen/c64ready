@@ -212,6 +212,9 @@ try {
   assert.equal(await catalog.locator('.mb-result').first().getByRole('button', { name: 'VIEW', exact: true }).evaluate(node => node === document.activeElement), true, 'Closing details restores focus to its VIEW button');
   const { checkKeyboard } = await import('./keyboard-check.mjs');
   await checkKeyboard(page);
+  const { checkNeos } = await import('./neos-check.mjs');
+  await checkNeos(page);
+  assert.deepEqual(errors, [], 'NEOS mouse checks have no browser runtime errors');
   await checkTde(page);
   await page.reload({ waitUntil: 'networkidle' });
   await control.getByRole('button', { name: 'FAVORITES', exact: true }).click();

@@ -24,7 +24,7 @@ import {
 import { reuModel, REU_MODELS, REU_DEFAULT_MODEL } from './reu.js';
 import { pushEscapeLayer, popEscapeLayer } from './ui/escape-stack.js';
 import {
-  machine, loader, sidNode, running, _pristineBoot,
+  c64, loader, sidNode, running, _pristineBoot,
   setRunning, setPristineBoot, setHasBeenReady,
 } from './state.js';
 import { confirmDialog, promptDialog } from './ui/dialogs.js';
@@ -84,12 +84,12 @@ function _clearCachedTap() {
 // insert time — a disk survives because its image object is the live one. Carries
 // the write-protect state too, so recording can continue after a reset.
 export function _cacheTapeFromDeck() {
-  const ds = machine?.datasette;
-  if (!machine?.ready || !ds?.hasMedia) return;
+  const ds = c64?.tape;
+  if (!c64?.ready || !ds?.hasMedia) return;
   const name = _cachedTapName || 'tape.tap';
   const wp = ds.writeProtected;
   const deck = { key: ds.key, seconds: ds.elapsedSeconds };
-  _cacheTap(machine.exportTapBytes(), name);
+  _cacheTap(c64.exportTapBytes(), name);
   _cachedTapProtected = wp;
   _cachedTapDeck = deck;
 }
@@ -105,10 +105,10 @@ export function _cacheTapeFromDeck() {
  * caused the rebuild.
  */
 export function _restoreDeck({ key, seconds }) {
-  const ds = machine?.datasette;
+  const ds = c64?.tape;
   if (!ds?.hasMedia) return;
-  if (seconds > 0) machine.seekTapeSeconds(seconds);
-  if (key === 'PLAY') machine.setTapeKey('PLAY');
+  if (seconds > 0) c64.seekTapeSeconds(seconds);
+  if (key === 'PLAY') c64.setTapeKey('PLAY');
   _refreshTapeReadout(ds);
   _syncTapeButtons();
 }
@@ -128,13 +128,13 @@ function _syncD64Drive9EjectButton() {
 }
 function _syncCRTEjectButton() {
   if (crtEjectBtn) {
-    crtEjectBtn.disabled = !_mediaInserted(machine?.mem?.cartridge, _cachedCartData, crtDropzone);
+    crtEjectBtn.disabled = !_mediaInserted(c64?.cartridgeInserted, _cachedCartData, crtDropzone);
   }
 }
 function _syncTapEjectButton() {
   if (tapEjectBtn) {
     tapEjectBtn.disabled = !_mediaInserted(
-      machine?.datasette?.hasMedia, _cachedTapData, tapeDropzone
+      c64?.tape?.hasMedia, _cachedTapData, tapeDropzone
     );
   }
 }
@@ -378,14 +378,14 @@ document.addEventListener('keydown', e => {
 function _frameToCanvas() {
   const fc = document.createElement('canvas');
   fc.width = CANVAS_W; fc.height = CANVAS_H;
-  fc.getContext('2d').putImageData(new ImageData(machine.vic2.frameBuffer, CANVAS_W, CANVAS_H), 0, 0);
+  fc.getContext('2d').putImageData(new ImageData(c64.frameBuffer(), CANVAS_W, CANVAS_H), 0, 0);
   return fc;
 }
 
 // A small downscaled PNG of the current frame, used as the slot's preview.
 function _stateThumbnail() {
   try {
-    if (!machine) return null;
+    if (!c64) return null;
     const tw = 96, th = Math.max(1, Math.round(CANVAS_H / CANVAS_W * tw));
     const tc = document.createElement('canvas');
     tc.width = tw; tc.height = th;
@@ -399,12 +399,12 @@ function _stateThumbnail() {
 function _stateMediaBlock() {
   // Fold any pending 1541 head writes into the images first, so the snapshot
   // captures the disk exactly as the running program has written it.
-  machine?.commitDriveWrites?.();
+  c64?.commitDriveWrites?.();
   // Same for tape: a recording in progress lives in the deck's buffer, so take
   // the bytes from the datasette rather than the cache the file was loaded from.
   // The datasette's own state reports the head at the end of those bytes.
-  const tap = machine?.ready && machine.datasette?.hasMedia
-    ? machine.exportTapBytes()
+  const tap = c64?.ready && c64.tape?.hasMedia
+    ? c64.exportTapBytes()
     : (_cachedTapData ? _cachedTapData.slice() : null);
   return {
     d64: currentD64 ? currentD64.img.slice() : null,
@@ -413,8 +413,8 @@ function _stateMediaBlock() {
     crt: _cachedCartData ? _cachedCartData.slice() : null,
     tap,
     tapName: _cachedTapName || null,
-    vicVariant: machine?.vic2?.vicVariant || getVicVariantPref(),
-    sidIs8580: !!(machine && machine.sidIs8580),
+    vicVariant: c64?.vicVariant || getVicVariantPref(),
+    sidIs8580: !!(c64 && c64.sidIs8580),
     // The fitted unit only — expansion RAM itself rides in the machine
     // snapshot, so the fresh machine just needs the right model in place
     // before the restore fills it.
@@ -424,7 +424,7 @@ function _stateMediaBlock() {
 }
 
 async function _saveState() {
-  if (!running || !machine?.ready) {
+  if (!running || !c64?.ready) {
     setStatus('Power on a program first to save its state', 'error');
     return;
   }
@@ -434,7 +434,7 @@ async function _saveState() {
   // snapshot is an atomic, stable image regardless.
   let st, thumb;
   try {
-    st = machine.serializeState();   // quiesces to an instruction boundary
+    st = c64.serializeState();   // quiesces to an instruction boundary
     st.media = _stateMediaBlock();
     thumb = _stateThumbnail();
   } catch (err) {
@@ -542,7 +542,7 @@ async function _loadState(entry) {
   _createAndWireMachine();
   if (sidNode) sidNode.port.postMessage({ type: 'model', is8580: getIs8580() });
   try {
-    machine.restoreState(st);
+    c64.restoreState(st);
     syncSidState();
   } catch (err) {
     console.error('restore failed:', err);
@@ -801,10 +801,10 @@ function _startLoadedPRG(addr, autorun = getAutorunEnabled()) {
   if (!autorun) return null;
   _leavePristineBoot();
   if (addr === 0x0801) {
-    machine.injectRun();
+    c64.injectRun();
     return 'RUN';
   }
-  machine.injectSys(addr);
+  c64.injectSys(addr);
   return `SYS ${addr}`;
 }
 
@@ -899,10 +899,10 @@ function _injectPRGImage(data, verb, autorun) {
     { ready: true },
     { run: () => {
         _leavePristineBoot();
-        const addr = machine.loadPRG(data);
+        const addr = c64.loadPRG(data);
         let started = null;
         if (prgSetsIrqVector(data)) started = 'starts itself';
-        else if (autorun && prgAutostart(data)) { machine.injectRun(); started = 'RUN'; }
+        else if (autorun && prgAutostart(data)) { c64.injectRun(); started = 'RUN'; }
         _reportPrgLoaded(addr, started, `${verb} straight into RAM`);
       } },
   ]);
@@ -923,14 +923,14 @@ async function _insertPRG(data, verb = 'loaded', fileName = '', { autorun = getA
   if (prgCoversIO(data)) { _injectPRGImage(data, verb, autorun); return; }
   // No drive to put a disk in (1541 ROM missing) — fall back to dropping the
   // bytes straight into RAM. That needs a clean machine, so it keeps the reset.
-  const disk = machine?.drive1541 ? createPRGDisk(fileName || 'PROGRAM', data) : null;
+  const disk = c64?.drive(8) ? createPRGDisk(fileName || 'PROGRAM', data) : null;
   if (!disk) {
     const alreadyClean = _pristineBoot;   // capture before _hardReset() flips it back on
     if (!alreadyClean && !_hardReset()) return;
     _queueAutoLoad([
       { ready: true },
       { run: () => {
-          const addr = machine.loadPRG(data);
+          const addr = c64.loadPRG(data);
           _reportPrgLoaded(addr, autorun ? _startLoadedPRG(addr, autorun) : null, verb);
         } },
     ]);
@@ -988,7 +988,7 @@ function _autoLoadTape(playDelayMs = 0) {
   // before we auto-press PLAY — used by library loads, which otherwise jump
   // straight from the closing dialog into a loading tape.
   if (playDelayMs > 0) steps.push({ wait: playDelayMs });
-  steps.push({ run: () => machine.setTapePlayPressed(true) });
+  steps.push({ run: () => c64.setTapePlayPressed(true) });
   _queueAutoLoad(steps);
   setStatus('AUTORUN: LOAD + PLAY…', 'running');
 }
@@ -1095,7 +1095,7 @@ export function _onCRTLoaded(info) {
 export function _syncCartridgeControls() {
   const hasReset = !!_currentCartInfo?.hasReset;
   const hasFreeze = !!_currentCartInfo?.hasFreeze;
-  const enabled = !!machine?.ready && running;
+  const enabled = !!c64?.ready && running;
   _setElementVisible(crtResetBtn, hasReset);
   _setElementVisible(crtFreezeBtn, hasFreeze);
   if (crtResetBtn) crtResetBtn.disabled = !enabled;
@@ -1104,8 +1104,8 @@ export function _syncCartridgeControls() {
 }
 
 function _holdCartridgeFreeze() {
-  if (_cartridgeFreezeHeld || crtFreezeBtn?.disabled || !machine?.ready) return;
-  _cartridgeFreezeHeld = machine.setCartridgeFreeze(true);
+  if (_cartridgeFreezeHeld || crtFreezeBtn?.disabled || !c64?.ready) return;
+  _cartridgeFreezeHeld = c64.setCartridgeFreeze(true);
   if (_cartridgeFreezeHeld) {
     crtFreezeBtn?.classList.add('active');
     crtFreezeBtn?.setAttribute('aria-pressed', 'true');
@@ -1115,7 +1115,7 @@ function _holdCartridgeFreeze() {
 
 function _releaseCartridgeFreeze() {
   if (!_cartridgeFreezeHeld) return;
-  machine?.setCartridgeFreeze(false);
+  c64?.setCartridgeFreeze(false);
   _cartridgeFreezeHeld = false;
   crtFreezeBtn?.classList.remove('active');
   crtFreezeBtn?.setAttribute('aria-pressed', 'false');
@@ -1135,16 +1135,16 @@ function _forgetCartridgeUi() {
 
 function _ejectCRT() {
   _releaseCartridgeFreeze();
-  if (machine?.ready) machine.ejectCartridge();
-  if (machine?.ready) resetSidWorklet();
+  if (c64?.ready) c64.ejectCartridge();
+  if (c64?.ready) resetSidWorklet();
   _clearCachedCart();
   if (crtLabel) crtLabel.textContent = '';
   if (crtDropzone) crtDropzone.classList.remove('loaded');
   _syncCRTEjectButton();
   _currentCartInfo = null;
   _syncCartridgeControls();
-  setStatus('Cartridge ejected' + (machine?.ready ? ' – Reset' : ''),
-    machine?.ready ? 'running' : 'idle');
+  setStatus('Cartridge ejected' + (c64?.ready ? ' – Reset' : ''),
+    c64?.ready ? 'running' : 'idle');
 }
 
 // Load a cart from raw bytes. Caches the data and applies to the live
@@ -1154,8 +1154,8 @@ function _applyCart(data) {
   const second = getSecondSidConfig?.();
   if (second?.enabled && second.address >= 0xDE00) throw new Error('Cartridge conflicts with the second SID expansion address.');
   _cacheCart(data);
-  if (machine?.ready) {
-    const info = machine.loadCartridge(data);
+  if (c64?.ready) {
+    const info = c64.loadCartridge(data);
     _leavePristineBoot();
     _onCRTLoaded(info);
     resetSidWorklet();
@@ -1199,7 +1199,7 @@ if (crtEjectBtn) {
 if (crtResetBtn) {
   crtResetBtn.addEventListener('click', () => {
     _releaseCartridgeFreeze();
-    if (!machine?.resetCartridge()) return;
+    if (!c64?.resetCartridge()) return;
     resetSidWorklet();
     setStatus(`${_currentCartInfo?.name ?? 'Cartridge'}: RESET`, 'running');
     canvas.focus();
@@ -1233,28 +1233,28 @@ if (crtFreezeBtn) {
 // ── D64 loader ───────────────────────────────────────────────────────────────
 function _onD64Loaded(disk) {
   currentD64 = disk;
-  if (machine?.ready) machine.setD64(disk);
+  if (c64?.ready) c64.setD64(disk);
   showD64Directory(disk);
   _expandPanelOf(driveDropzone);
   _syncD64EjectButton();
   _syncWriteButtons();
-  const suffix = machine?.ready ? '' : ' (cached — applies on POWER ON)';
-  setStatus(`${_diskType(disk).toUpperCase()}: "${disk.diskName}" inserted${suffix}`, machine?.ready ? 'running' : 'idle');
+  const suffix = c64?.ready ? '' : ' (cached — applies on POWER ON)';
+  setStatus(`${_diskType(disk).toUpperCase()}: "${disk.diskName}" inserted${suffix}`, c64?.ready ? 'running' : 'idle');
 }
 
 function _ejectD64() {
   // Save any pending writes before the disk leaves the drive.
-  machine?.commitDriveWrites?.();
+  c64?.commitDriveWrites?.();
   _persistDirtyDisk(currentD64);
   currentD64 = null;
-  if (machine?.ready) machine.setD64(null);
+  if (c64?.ready) c64.setD64(null);
   if (driveEmptyHint) driveEmptyHint.style.display = '';
   _setElementVisible(driveLoaded, false);
   if (driveDropzone)  driveDropzone.classList.remove('loaded');
   if (d64DirEl)       d64DirEl.innerHTML = '';
   _syncD64EjectButton();
   _syncWriteButtons();
-  setStatus('Disk ejected', machine?.ready ? 'running' : 'idle');
+  setStatus('Disk ejected', c64?.ready ? 'running' : 'idle');
 }
 
 // Insert a disk image (no reset — continues from the current state). With
@@ -1271,7 +1271,7 @@ function _ejectD64() {
 // hand.
 const DISK_SWAP_EJECT_MS = 700;
 async function _loadDisk(disk, { autorun = true, startCmd = 'RUN\r', respectPreference = true } = {}) {
-  if (currentD64 && machine?.ready) {
+  if (currentD64 && c64?.ready) {
     _ejectD64();                          // eject the installed disk now
     await new Promise(resolve => setTimeout(resolve, DISK_SWAP_EJECT_MS));
     _attachDisk(disk, autorun, startCmd, respectPreference);
@@ -1326,9 +1326,9 @@ if (d64EjectBtn) {
 // Descriptors so the two drives share one set of handlers. `get()` reads the
 // live mounted D64; `drive()` is the 1541 that owns the write head.
 const WRITE_DRIVES = [
-  { num: 8, get: () => currentD64,       drive: () => machine?.drive1541,
+  { num: 8, get: () => currentD64,       drive: () => c64?.drive(8),
     newBtn: d64NewBtn, wpBtn: d64WpBtn, formatBtn: d64FormatBtn, exportBtn: d64ExportBtn },
-  { num: 9, get: () => currentD64Drive9, drive: () => machine?.drive1541b,
+  { num: 9, get: () => currentD64Drive9, drive: () => c64?.drive(9),
     newBtn: DRIVE9_UI.newBtn, wpBtn: DRIVE9_UI.wpBtn, formatBtn: DRIVE9_UI.formatBtn, exportBtn: DRIVE9_UI.exportBtn },
 ];
 
@@ -1399,7 +1399,7 @@ function _toggleWriteProtect(d) {
   _syncWriteButtons();
   setStatus(
     `Drive ${d.num}: ${nextProtected ? 'disk write-protected' : 'writing enabled'}`,
-    machine?.ready ? 'running' : 'idle');
+    c64?.ready ? 'running' : 'idle');
 }
 
 // Download the current image as its own format (.d64, .d71, .d81 or .g64), folding any
@@ -1407,7 +1407,7 @@ function _toggleWriteProtect(d) {
 function _exportDisk(d) {
   const disk = d.get();
   if (!disk) return;
-  machine?.commitDriveWrites?.();
+  c64?.commitDriveWrites?.();
   const name = _diskExportName(disk);
   const blob = new Blob([disk.img], { type: 'application/octet-stream' });
   const url = URL.createObjectURL(blob);
@@ -1417,7 +1417,7 @@ function _exportDisk(d) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   disk.dirty = false;      // exported — nothing new to download until the next write
   _syncWriteButtons();
-  setStatus(`Exported → ${name}`, machine?.ready ? 'running' : 'idle');
+  setStatus(`Exported → ${name}`, c64?.ready ? 'running' : 'idle');
 }
 
 // Create a fresh blank formatted disk and mount it (write-enabled + dirty).
@@ -1432,7 +1432,7 @@ function _newDisk(d) {
   disk.diskName = ''; disk.diskId = ''; disk.dosType = '';
   _mountDisk(d.num, disk);
   setStatus(`Drive ${d.num}: inserted a blank unformatted disk — FORMAT it to use`,
-    machine?.ready ? 'running' : 'idle');
+    c64?.ready ? 'running' : 'idle');
 }
 
 // Instant JS-level format: wipe the mounted disk to an empty formatted image.
@@ -1461,7 +1461,7 @@ async function _formatDisk(d) {
   _libRemember(kind, fresh._libName, fresh.img.slice());
   fresh.dirty = false;   // just persisted to the Library — not "unsaved"
   _mountDisk(d.num, fresh);
-  setStatus(`Drive ${d.num}: formatted "${fresh.diskName}"`, machine?.ready ? 'running' : 'idle');
+  setStatus(`Drive ${d.num}: formatted "${fresh.diskName}"`, c64?.ready ? 'running' : 'idle');
 }
 
 for (const d of WRITE_DRIVES) {
@@ -1504,13 +1504,13 @@ function _refreshDiskDirectory(disk, ui) {
 // UNCOMMITTED writes, so it settles in one pass and doesn't hammer IndexedDB.
 let _diskSaveQuiet = 0;
 function _tickDiskWriteState(live) {
-  if (!machine?.ready || !live) return;
-  if (!machine.hasUnsavedDiskWrites?.()) { _diskSaveQuiet = 0; return; }
-  const active = !!machine.drive1541?.ledOn || !!machine.drive1541b?.ledOn;
+  if (!c64?.ready || !live) return;
+  if (!c64.hasUnsavedDiskWrites?.()) { _diskSaveQuiet = 0; return; }
+  const active = !!c64.drive(8)?.ledOn || !!c64.drive(9)?.ledOn;
   if (active) { _diskSaveQuiet = 0; return; }   // still writing — wait for quiet
   if (++_diskSaveQuiet >= 45) {                 // ~0.75 s of drive quiet
     _diskSaveQuiet = 0;
-    const wrote = machine.commitDriveWrites?.() || 0;
+    const wrote = c64.commitDriveWrites?.() || 0;
     if (wrote > 0) {
       _refreshDiskDirectory(currentD64, DRIVE8_UI);
       _refreshDiskDirectory(currentD64Drive9, DRIVE9_UI);
@@ -1592,7 +1592,7 @@ export function _flashDrive9Led() {
 export function drive9LedActive() {
   let flash = false;
   try { flash = performance.now() < drive9LedUntil; } catch { flash = false; }
-  return !!(machine?.drive1541b?.ledOn) || flash;
+  return !!(c64?.drive(9)?.ledOn) || flash;
 }
 
 // `autorun` is opt-in: only a disk the user just inserted starts itself. The
@@ -1600,28 +1600,28 @@ export function drive9LedActive() {
 // draws.
 function _onD64Drive9Loaded(disk, { autorun = false, startCmd = 'RUN\r' } = {}) {
   currentD64Drive9 = disk;
-  if (machine?.ready) machine.setD64Drive9(disk);
+  if (c64?.ready) c64.setD64Drive9(disk);
   showD64Directory(disk, DRIVE9_UI);
   _expandPanelOf(DRIVE9_UI.deck);
   _syncD64Drive9EjectButton();
   _syncWriteButtons();
   if (autorun && running && getAutorunEnabled()) { _autoLoadDisk(startCmd, 9); return; }
-  const suffix = machine?.ready ? '' : ' (cached — applies on POWER ON)';
-  setStatus(`Drive 9: "${disk.diskName}" inserted${suffix}`, machine?.ready ? 'running' : 'idle');
+  const suffix = c64?.ready ? '' : ' (cached — applies on POWER ON)';
+  setStatus(`Drive 9: "${disk.diskName}" inserted${suffix}`, c64?.ready ? 'running' : 'idle');
 }
 
 function _ejectD64Drive9() {
-  machine?.commitDriveWrites?.();
+  c64?.commitDriveWrites?.();
   _persistDirtyDisk(currentD64Drive9);
   currentD64Drive9 = null;
-  if (machine?.ready) machine.setD64Drive9(null);
+  if (c64?.ready) c64.setD64Drive9(null);
   if (DRIVE9_UI.emptyHint) DRIVE9_UI.emptyHint.style.display = '';
   _setElementVisible(DRIVE9_UI.loadedEl, false);
   if (DRIVE9_UI.dropzone)  DRIVE9_UI.dropzone.classList.remove('loaded');
   if (DRIVE9_UI.dirEl)     DRIVE9_UI.dirEl.innerHTML = '';
   _syncD64Drive9EjectButton();
   _syncWriteButtons();
-  setStatus('Drive 9: disk ejected', machine?.ready ? 'running' : 'idle');
+  setStatus('Drive 9: disk ejected', c64?.ready ? 'running' : 'idle');
 }
 
 // Flip device 9 on/off. When on, the drive deck is revealed (and the card
@@ -1639,7 +1639,7 @@ function _setDrive9Power(on, { persist = true } = {}) {
   } else {
     _collapsePanelOf(DRIVE9_UI.deck);   // deck is hidden when off — collapse the empty body
   }
-  if (machine?.ready) machine.setDrive9Enabled(drive9Enabled);
+  if (c64?.ready) c64.setDrive9Enabled(drive9Enabled);
   _applyDrive9Tde();   // power-off tears down a running TDE drive; power-on may bring it up
   if (persist) { try { localStorage.setItem('c64emu.drive9', drive9Enabled ? 'on' : 'off'); } catch {} }
 }
@@ -1659,9 +1659,9 @@ export function _syncDrive9TdeBtn() {
 // machine all hold; otherwise device 9 falls back to its trap-served mode.
 export function _applyDrive9Tde() {
   const active = drive9TdeEnabled && drive9Enabled && !!loader?.drive1541;
-  if (machine?.ready) {
-    if (active) machine.attachDrive9(loader.drive1541);
-    else        machine.detachDrive9();
+  if (c64?.ready) {
+    if (active) c64.attachDrive9(loader.drive1541);
+    else        c64.detachDrive9();
   }
   _syncDrive9TdeBtn();
 }
@@ -1764,9 +1764,9 @@ let _reuImageName = null;
 // Expansion RAM is not media: there is no cached image to re-present, so a
 // fresh machine simply gets an empty unit of the chosen model.
 export function _applyReu() {
-  if (machine?.ready) {
-    if (reuEnabled) machine.attachReu(reuUnit);
-    else machine.detachReu();
+  if (c64?.ready) {
+    if (reuEnabled) c64.attachReu(reuUnit);
+    else c64.detachReu();
   }
   _syncReuUI();
 }
@@ -1793,7 +1793,7 @@ let _reuLedTick = -1;
 function _updateReuLed(now) {
   const led = REU_UI.led;
   if (!led) return;
-  const reu = machine?.ready ? machine.reu : null;
+  const reu = c64?.ready ? c64.reu : null;
   if (reu && reu.activityTick !== _reuLedTick) {
     if (_reuLedTick >= 0) _reuLedUntil = now + 220;
     _reuLedTick = reu.activityTick;
@@ -1817,7 +1817,7 @@ function _setReuPower(on, { persist = true } = {}) {
   // not a user action and has no business writing the status line.
   if (persist) {
     try { localStorage.setItem('c64emu.reu', reuEnabled ? 'on' : 'off'); } catch {}
-    if (reuEnabled && !machine?.ready) {
+    if (reuEnabled && !c64?.ready) {
       setStatus('RAM Expansion fitted — applies on POWER ON', 'idle');
     }
   }
@@ -1892,7 +1892,7 @@ function _loadReuImage(data, name) {
   }
   if (!reuEnabled) _setReuPower(true);
   else _applyReu();                  // re-fit if the unit just changed
-  const reu = machine?.ready ? machine.reu : null;
+  const reu = c64?.ready ? c64.reu : null;
   if (!reu) {
     setStatus('RAM Expansion: POWER ON before loading an image', 'error');
     return false;
@@ -1919,7 +1919,7 @@ if (REU_UI.loadBtn && REU_UI.fileInput) {
 
 if (REU_UI.exportBtn) {
   REU_UI.exportBtn.addEventListener('click', () => {
-    const reu = machine?.ready ? machine.reu : null;
+    const reu = c64?.ready ? c64.reu : null;
     if (!reu) { setStatus('RAM Expansion: nothing to export', 'error'); return; }
     const name = `${reuModel(reuUnit).label.toLowerCase().replace(/\s+/g, '')}.reu`;
     const blob = new Blob([reu.ram], { type: 'application/octet-stream' });
@@ -1934,7 +1934,7 @@ if (REU_UI.exportBtn) {
 
 if (REU_UI.blankBtn) {
   REU_UI.blankBtn.addEventListener('click', async () => {
-    const reu = machine?.ready ? machine.reu : null;
+    const reu = c64?.ready ? c64.reu : null;
     if (!reu) { setStatus('RAM Expansion: nothing to blank', 'error'); return; }
     const ok = await confirmDialog('Wipe expansion RAM back to all zeroes?',
       { title: 'Blank expansion RAM', okLabel: 'BLANK' });
@@ -1949,7 +1949,7 @@ if (REU_UI.blankBtn) {
 // ── TAP (Datasette) loader ───────────────────────────────────────────────────
 function _applyTap(data, name) {
   _cacheTap(data, name);
-  if (machine?.ready) machine.loadTap(data);
+  if (c64?.ready) c64.loadTap(data);
   _onTapLoaded(name, data);
 }
 
@@ -2085,7 +2085,7 @@ async function _loadTape(data, name, { playDelayMs = 0, autorun = getAutorunEnab
     _tapeUnconfirmed = tape.unconfirmed || [];
     _tapeDamaged = tape.damagedNames;
     setStatus(`${/\.dmp$/i.test(tape.from) ? 'DMP' : 'WAV'} "${tape.from}" → tape · ${tape.note}${_tapeHint()}`,
-      tape.bad ? 'error' : machine?.ready ? 'running' : 'idle');
+      tape.bad ? 'error' : c64?.ready ? 'running' : 'idle');
   }
   if (running && autorun) _autoLoadTape(playDelayMs);
 }
@@ -2118,8 +2118,8 @@ export function _onTapLoaded(name, data) {
     tapeBar.style.width = '0%';
     tapeBar.classList.remove('at-end', 'recording');
   }
-  if (tapeTime && machine?.datasette) {
-    tapeTime.textContent = _fmtTime(0, machine.datasette.durationSeconds);
+  if (tapeTime && c64?.tape) {
+    tapeTime.textContent = _fmtTime(0, c64.tape.durationSeconds);
   }
   if (tapeCounter) tapeCounter.textContent = '000';
   _tapeRepairs = [];
@@ -2129,13 +2129,13 @@ export function _onTapLoaded(name, data) {
   _tapeDamaged = data ? _tapeDamagedNames(data) : [];
   if (tapeDropzone) tapeDropzone.classList.add('loaded');
   _expandPanelOf(tapeDropzone);
-  if (machine?.ready) machine.setTapeKey('STOP');
+  if (c64?.ready) c64.setTapeKey('STOP');
   setStatus(`TAP: "${name}"${_tapeDamaged.length ? ' · errors detected' : ''}${_tapeHint()}`,
-    _tapeDamaged.length ? 'error' : machine?.ready ? 'running' : 'idle');
+    _tapeDamaged.length ? 'error' : c64?.ready ? 'running' : 'idle');
 }
 
 // What to do next with a tape that has just gone in, or why nothing happens yet.
-const _tapeHint = () => (machine?.ready
+const _tapeHint = () => (c64?.ready
   ? ' — type LOAD then click PLAY'
   : ' (cached — applies on POWER ON)');
 
@@ -2164,8 +2164,8 @@ const MOMENTARY_KEYS = new Set(['REW', 'FF']);
 
 function _wireLatchingKey(btn, key) {
   btn.addEventListener('click', () => {
-    if (key !== 'STOP' && !machine?.datasette?.hasMedia) return;
-    if (!machine.setTapeKey(key)) {
+    if (key !== 'STOP' && !c64?.tape?.hasMedia) return;
+    if (!c64.setTapeKey(key)) {
       // Only RECORD refuses, and only for the tabs.
       setStatus('Tape is write-protected — click the padlock to enable writing', 'error');
       return;
@@ -2177,17 +2177,17 @@ function _wireLatchingKey(btn, key) {
 
 function _wireMomentaryKey(btn, key) {
   const press = (e) => {
-    if (!machine?.datasette?.hasMedia) return;
+    if (!c64?.tape?.hasMedia) return;
     // Capture so the release still lands here if the finger slides off the key.
     try { btn.setPointerCapture(e.pointerId); } catch { /* not captured */ }
-    if (machine.setTapeKey(key)) _syncTapeButtons();
+    if (c64.setTapeKey(key)) _syncTapeButtons();
     e.preventDefault();          // no focus steal, no text selection, no page pan
   };
   // Release only OUR key: winding into the end of the tape already parked the
   // transport (see _wind), and a key pressed since then isn't ours to drop.
   const release = () => {
-    if (machine?.datasette?.key !== key) return;
-    machine.setTapeKey('STOP');
+    if (c64?.tape?.key !== key) return;
+    c64.setTapeKey('STOP');
     _syncTapeButtons();
   };
   btn.addEventListener('pointerdown', press);
@@ -2198,8 +2198,8 @@ function _wireMomentaryKey(btn, key) {
   // be dead to anyone not using a pointer, since there is no click to latch.
   btn.addEventListener('keydown', (e) => {
     if ((e.key !== 'Enter' && e.key !== ' ') || e.repeat) return;
-    if (!machine?.datasette?.hasMedia) return;
-    if (machine.setTapeKey(key)) _syncTapeButtons();
+    if (!c64?.tape?.hasMedia) return;
+    if (c64.setTapeKey(key)) _syncTapeButtons();
     e.preventDefault();
   });
   btn.addEventListener('keyup', (e) => {
@@ -2220,11 +2220,11 @@ for (const [getBtn, key] of TAPE_KEYS) {
 // shortcut past a minute of winding.
 if (tapStartBtn) {
   tapStartBtn.addEventListener('click', () => {
-    if (!machine.datasette.hasMedia) return;
-    machine.rewindTape();
+    if (!c64.tape.hasMedia) return;
+    c64.rewindTape();
     if (tapeBar)  { tapeBar.style.width = '0%'; tapeBar.classList.remove('at-end'); }
     if (tapLabel) tapLabel.textContent = tapLabel.textContent.replace(/ \[END\]$/, '');
-    if (tapeTime) tapeTime.textContent = _fmtTime(0, machine.datasette.durationSeconds);
+    if (tapeTime) tapeTime.textContent = _fmtTime(0, c64.tape.durationSeconds);
     _syncTapeButtons();
   });
 }
@@ -2308,23 +2308,23 @@ function _refreshTapeReadout(ds) {
 // cannot move the head mid-write either, and doing it here would splice what is
 // being written.
 function _seekTapeTo(fraction) {
-  _moveTapeHead(() => machine.seekTapeFraction(fraction));
+  _moveTapeHead(() => c64.seekTapeFraction(fraction));
 }
 
 /** Seek to a tape time. The listing knows when a file starts, not where. */
 function _seekTapeToSeconds(seconds) {
-  _moveTapeHead(() => machine.seekTapeSeconds(seconds));
+  _moveTapeHead(() => c64.seekTapeSeconds(seconds));
 }
 
 function _moveTapeHead(move) {
-  const ds = machine?.datasette;
-  if (!machine?.ready || !ds?.hasMedia) return;
+  const ds = c64?.tape;
+  if (!c64?.ready || !ds?.hasMedia) return;
   // A tape under a pressed key is moving past the head, so the key comes up
   // before the head moves — which is what a user would otherwise do by hand, and
   // what commits an open recording rather than splicing into the middle of one.
   if (ds.playPressed) {
     const wasRecording = ds.recording;
-    machine.setTapeKey('STOP');
+    c64.setTapeKey('STOP');
     _syncTapeButtons();
     if (wasRecording) setStatus('Recording stopped — the tape moved', 'running');
   }
@@ -2348,14 +2348,14 @@ if (tapeBarWrap) {
   // there: the elapsed half of "time / total" tracks the pointer. Leaving puts
   // the real position back.
   const _previewTime = (clientX) => {
-    const ds = machine?.datasette;
+    const ds = c64?.tape;
     if (!tapeTime || !ds?.hasMedia || ds.recording) return;   // nothing to preview mid-write
     _tapeTimeHover = true;
     tapeTime.textContent = _fmtTime(ds.secondsAtFraction(_fractionAt(clientX)), ds.durationSeconds);
   };
   const _restoreTime = () => {
     _tapeTimeHover = false;
-    const ds = machine?.datasette;
+    const ds = c64?.tape;
     if (ds?.hasMedia) _refreshTapeReadout(ds);
   };
 
@@ -2374,7 +2374,7 @@ if (tapeBarWrap) {
   // A finger has no hover, so the readout snaps back when it lifts.
   tapeBarWrap.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') _restoreTime(); });
   tapeBarWrap.addEventListener('keydown', (e) => {
-    const ds = machine?.datasette;
+    const ds = c64?.tape;
     if (!ds?.hasMedia) return;
     const step = e.shiftKey ? 0.1 : 0.02;
     const at = ds.positionFraction;
@@ -2396,14 +2396,14 @@ if (tapNewBtn) {
     const name = await _promptTapeName();
     if (name == null) return;
     const file = `${name}.tap`;
-    if (machine?.ready) {
-      machine.newBlankTape();
-      _cacheTap(machine.exportTapBytes(), file);
+    if (c64?.ready) {
+      c64.newBlankTape();
+      _cacheTap(c64.exportTapBytes(), file);
     } else {
       _cacheTap(blankTapBytes(), file);
     }
     _onTapLoaded(file);
-    if (machine?.ready) {
+    if (c64?.ready) {
       setStatus(`Blank tape “${name}” inserted — press REC, then SAVE from the C64`, 'running');
     }
   });
@@ -2414,14 +2414,14 @@ if (tapNewBtn) {
 if (tapWpBtn) {
   tapWpBtn.innerHTML = LOCK_CLOSED_SVG + LOCK_OPEN_SVG;
   tapWpBtn.addEventListener('click', () => {
-    const ds = machine?.datasette;
+    const ds = c64?.tape;
     if (!ds?.hasMedia) return;
     const next = !ds.writeProtected;
-    if (next && ds.recording) machine.setTapeKey('STOP');   // tabs out mid-write
-    machine.setTapeWriteProtected(next);
+    if (next && ds.recording) c64.setTapeKey('STOP');   // tabs out mid-write
+    c64.setTapeWriteProtected(next);
     _syncTapeButtons();
     setStatus(next ? 'Tape write-protected' : 'Tape write-enabled',
-      machine?.ready ? 'running' : 'idle');
+      c64?.ready ? 'running' : 'idle');
   });
 }
 
@@ -2429,8 +2429,8 @@ if (tapWpBtn) {
 // image — if a tape is in the deck it can be downloaded, recorded onto or not.
 if (tapExportBtn) {
   tapExportBtn.addEventListener('click', () => {
-    const ds = machine?.datasette;
-    const bytes = ds?.hasMedia ? machine.exportTapBytes() : _cachedTapData;
+    const ds = c64?.tape;
+    const bytes = ds?.hasMedia ? c64.exportTapBytes() : _cachedTapData;
     if (!bytes) return;
     const base = (_cachedTapName || 'tape').replace(/\.tap$/i, '');
     const name = `${base}.tap`;
@@ -2440,9 +2440,9 @@ if (tapExportBtn) {
     a.href = url; a.download = name;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    if (ds) ds.dirty = false;   // exported — the recording is safely on disk now
+    if (ds) ds.markSaved();   // exported — the recording is safely on disk now
     _syncTapeButtons();
-    setStatus(`Exported → ${name}`, machine?.ready ? 'running' : 'idle');
+    setStatus(`Exported → ${name}`, c64?.ready ? 'running' : 'idle');
   });
 }
 
@@ -2451,8 +2451,8 @@ if (tapExportBtn) {
 // import came from.
 if (tapExportWavBtn) {
   tapExportWavBtn.addEventListener('click', () => {
-    const ds = machine?.datasette;
-    const bytes = ds?.hasMedia ? machine.exportTapBytes() : _cachedTapData;
+    const ds = c64?.tape;
+    const bytes = ds?.hasMedia ? c64.exportTapBytes() : _cachedTapData;
     if (!bytes || bytes.length <= 20) return;
     const version = bytes[12];
     const size = bytes[16] | (bytes[17] << 8) | (bytes[18] << 16) | (bytes[19] << 24);
@@ -2473,7 +2473,7 @@ if (tapExportWavBtn) {
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     setStatus(`Exported → ${name}${truncated ? ' (tape longer than the export cap)' : ''}`,
-      machine?.ready ? 'running' : 'idle');
+      c64?.ready ? 'running' : 'idle');
   });
 }
 
@@ -2481,8 +2481,8 @@ if (tapExportWavBtn) {
 // Exported so power on/off can re-sync the whole deck in one call.
 let _lastTapeKey = null;
 export function _syncTapeButtons() {
-  const ds = machine?.datasette;
-  const live = !!machine?.ready;
+  const ds = c64?.tape;
+  const live = !!c64?.ready;
   const has = !!ds?.hasMedia;
   // BLANK is a media-insert button, not a transport key: like LOAD it stays
   // available while powered off (main.js enables it once the ROMs are in).
@@ -2529,7 +2529,7 @@ function _ejectTap() {
   // A tape with writes on it that were never exported is worth keeping: fold it
   // into the Library before the media goes away, same as a dirty disk.
   _persistDirtyTape();
-  if (machine?.ready) { machine.setTapeKey('STOP'); machine.ejectTape(); }
+  if (c64?.ready) { c64.setTapeKey('STOP'); c64.ejectTape(); }
   _clearCachedTap();
   if (tapLabel)    tapLabel.textContent = 'click LOAD or drop a .tap onto the screen';
   if (tapeDropzone) tapeDropzone.classList.remove('loaded');
@@ -2542,16 +2542,16 @@ function _ejectTap() {
   }
   if (tapeTime)    tapeTime.textContent = '—';
   if (tapeCounter) tapeCounter.textContent = '000';
-  setStatus('Tape ejected', machine?.ready ? 'running' : 'idle');
+  setStatus('Tape ejected', c64?.ready ? 'running' : 'idle');
 }
 
 // Persist a recorded tape to the Library (best-effort). Does NOT clear `dirty` —
 // that gates the .tap export button and is cleared only by exporting.
 function _persistDirtyTape() {
-  const ds = machine?.datasette;
+  const ds = c64?.tape;
   if (!ds?.dirty || !ds.hasMedia) return;
   const base = (_cachedTapName || 'tape').replace(/\.tap$/i, '');
-  _libRemember('tap', `${base}.tap`, machine.exportTapBytes());
+  _libRemember('tap', `${base}.tap`, c64.exportTapBytes());
 }
 
 // Per-frame: once the deck has been quiet for ~0.75 s after recording, fold the
@@ -2559,8 +2559,8 @@ function _persistDirtyTape() {
 // path (_tickDiskWriteState) and is likewise triggered only by unsaved writes.
 let _tapeSaveQuiet = 0;
 function _tickTapeWriteState(live) {
-  const ds = machine?.datasette;
-  if (!machine?.ready || !live || !machine.hasUnsavedTapeWrites?.()) {
+  const ds = c64?.tape;
+  if (!c64?.ready || !live || !c64.hasUnsavedTapeWrites?.()) {
     _tapeSaveQuiet = 0;
     return;
   }
@@ -2578,18 +2578,18 @@ if (tapEjectBtn) tapEjectBtn.addEventListener('click', _ejectTap);
 // even when the rAF loop is bailed, so a paused machine must be told to stop it
 // explicitly (motorOn/playPressed don't change on pause).
 export function updateMediaIndicators(live = true) {
-  if (!machine) return;
-  const ds = machine.datasette;
+  if (!c64) return;
+  const ds = c64.tape;
 
   // Drive LED
-  if (driveLed) driveLed.classList.toggle('active', !!(machine.drive1541?.ledOn));
+  if (driveLed) driveLed.classList.toggle('active', !!(c64.drive(8)?.ledOn));
 
   // Drive-9 LED: reflects the real drive's LED when TDE is on, otherwise a
   // brief flash on each trap-served device-9 load.
   if (DRIVE9_UI.led) {
     let lit;
     try { lit = performance.now() < drive9LedUntil; } catch { lit = false; }
-    DRIVE9_UI.led.classList.toggle('active', !!(machine.drive1541b?.ledOn) || lit);
+    DRIVE9_UI.led.classList.toggle('active', !!(c64.drive(9)?.ledOn) || lit);
   }
 
   // RAM Expansion activity light.
@@ -2624,7 +2624,7 @@ export function updateMediaIndicators(live = true) {
   // is exempt: a blank tape is "at end" from the first cycle, and RECORD is
   // precisely how you get past that.
   if (ds?.atEnd && ds?.playPressed && !ds.recording) {
-    machine.setTapeKey('STOP');
+    c64.setTapeKey('STOP');
     _syncTapeButtons();
     if (tapeBar) tapeBar.classList.add('at-end');
     if (tapLabel && !/ \[END\]$/.test(tapLabel.textContent)) {
@@ -2774,7 +2774,7 @@ function showD64Directory(disk, ui = DRIVE8_UI) {
       type.className = 'd64-type';
       type.textContent = entry.type;
       el.append(blocks, fname, type);
-      if (loadable && machine.ready) {
+      if (loadable && c64.ready) {
         el.title = 'Click to LOAD and RUN';
         el.addEventListener('click', () => loadD64Entry(entry, disk));
       }
@@ -2799,7 +2799,7 @@ function showD64Directory(disk, ui = DRIVE8_UI) {
 // A name full of PETSCII art can't be typed between quotes; those fall back to
 // reading the file straight into RAM, which is how every entry used to load.
 function loadD64Entry(entry, disk = currentD64) {
-  if (!disk || !machine.ready) return;
+  if (!disk || !c64.ready) return;
   const data = disk.loadFile(entry.name);
   if (!data || data.length < 2) {
     setStatus(`Failed to load "${entry.name}"`, 'error');
@@ -2812,7 +2812,7 @@ function loadD64Entry(entry, disk = currentD64) {
   const typeable = /^[A-Z0-9 .,+*/#$%&()<>=?!:;@-]{1,16}$/.test(entry.name);
 
   if (!typeable) {
-    const at = machine.loadPRG(data);
+    const at = c64.loadPRG(data);
     const started = _startLoadedPRG(at);
     setStatus(`Loaded "${entry.name}" @ $${at.toString(16).toUpperCase()}` +
       (started ? ` – ${started}` : ` — ${at === 0x0801 ? 'type RUN' : `type SYS ${at}`}`),
@@ -3030,7 +3030,7 @@ _wireDirZoom(DRIVE9_UI);
 if (tapeDirZoomBtn) tapeDirZoomBtn.addEventListener('click', _showTapeDirectory);
 
 function _showTapeDirectory() {
-  const ds = machine?.datasette;
+  const ds = c64?.tape;
   if (!ds?.hasMedia || !tapedirModal) return;
   const bytes = ds.exportTapBytes().subarray(20);
   const opts = { version: ds.tapVersion, zeroGapCycles: ds.zeroGapCycles };
@@ -3288,7 +3288,7 @@ document.addEventListener('keydown', e => {
 
 export function downloadSnapshot() {
   try {
-    const snap = machine.snapshot();
+    const snap = c64.snapshot();
     // Attach the most recent rendered frame as a PNG dataURL so we can
     // inspect exactly what the renderer produced. Sourced from the
     // framebuffer (via _frameToCanvas — the #screen canvas itself is not
@@ -3375,7 +3375,7 @@ const _prepareD64 = createDiskCompatibilityPrompt({
   enabled: drive => drive === 9 ? drive9TdeEnabled : getTdeEnabled?.(),
   available: () => !!loader?.drive1541,
   confirm: confirmDialog,
-  notify: text => setStatus(text, machine?.ready ? 'running' : 'idle'),
+  notify: text => setStatus(text, c64?.ready ? 'running' : 'idle'),
   enable: drive => {
     if (drive === 8) setTdeEnabled(true);
     else {
@@ -3424,7 +3424,7 @@ export const openMedia = createOpenMedia({
     if (targetDrive === 8) await _loadDisk(disk, { autorun, respectPreference: false });
     else {
       _setDrive9Power(true);
-      if (currentD64Drive9 && machine?.ready) {
+      if (currentD64Drive9 && c64?.ready) {
         _ejectD64Drive9();
         await new Promise(resolve => setTimeout(resolve, DISK_SWAP_EJECT_MS));
       }

@@ -21,7 +21,7 @@ import vm from 'vm';
 import { fileURLToPath } from 'url';
 import {
   THEME_FORMAT, THEME_TOKENS, THEME_CSS_KEY, THEME_MODES_KEY, MAX_THEME_BYTES,
-  parseTheme, validateTheme, themeModes, themeCss, parseStoredThemes, exportTheme, isThemeColour,
+  parseTheme, validateTheme, themeModes, themeCss, parseStoredThemes, exportTheme, isThemeColour, withButtonColours,
 } from '../src/ui/themes.js';
 import { GEOS_THEME } from '../src/ui/themes/geos.js';
 import { BREADBIN_THEME } from '../src/ui/themes/breadbin.js';
@@ -74,8 +74,20 @@ expect(resolveMode('light', true, 'both') === 'light', 'a two-mode theme leaves 
 
 // 4. The rules.
 const css = themeCss(both);
-expect(css.includes(':root:root[data-mode="dark"], :root:root .c64-monitor.mode-dark { --text: #fff; }') && css.includes(':root:root[data-mode="light"] { --text: #000; }'),
+expect(css.includes(':root:root[data-mode="dark"], :root:root .c64-monitor.mode-dark { --text: #fff;') && css.includes(':root:root[data-mode="light"] { --text: #000;'),
   `each mode's colours under its own selector, dark also for the monitor (${css})`);
+// A theme that does not set button colours gets its own general ones on its
+// buttons, never Classic's; one that sets them keeps them.
+expect(css.includes('--button-text: #fff;') && css.includes('--button-text: #000;'),
+  `a button colour the theme leaves out is its own general colour (${css})`);
+const parted = themeCss(parseTheme(T({ light: { text: '#000', 'button-text': '#fff', 'control-bg': '#eee', 'button-bg': '#c00' } })).theme);
+expect(parted.includes('--button-text: #fff;') && parted.includes('--button-bg: #c00;') && parted.includes('--control-bg: #eee;'),
+  `a theme can part buttons from fields (${parted})`);
+const primary = themeCss(parseTheme(T({ light: { 'button-bg': '#c00', border: '#111111' } })).theme);
+expect(primary.includes('--primary-bg: #c00;') && primary.includes('--primary-border: #111111;'),
+  `a primary button colour the theme leaves out is its button colour, the border its border (${primary})`);
+expect(!themeCss(parseTheme(T({ light: { border: '#000' } })).theme).includes('--button-'),
+  'a button colour whose general colour the theme leaves out stays Classic\'s');
 expect(themeCss(null) === '', 'Classic injects nothing');
 
 // 5. Stored themes.
@@ -98,9 +110,17 @@ const classic = { dark: {}, light: {} };
 for (const t of THEME_TOKENS) { classic.dark[t] = '#111111'; classic.light[t] = '#eeeeee'; }
 const exported = exportTheme({ name: 'Test', theme: darkOnly }, classic);
 expect(exported.format === THEME_FORMAT && Object.keys(exported.modes).join() === 'dark', 'export keeps the modes the theme has');
-expect(Object.keys(exported.modes.dark).length === THEME_TOKENS.length && exported.modes.dark.text === '#fff' && exported.modes.dark.border === '#111111',
-  "export fills every token, the theme's own over Classic's");
+const derived = THEME_TOKENS.filter((t) => (t.startsWith('button-') && t !== 'button-ink') || t.startsWith('primary-'));
+expect(Object.keys(exported.modes.dark).length === THEME_TOKENS.length - derived.length && exported.modes.dark.text === '#fff' && exported.modes.dark.border === '#111111',
+  "export fills every token but the derived button ones, the theme's own over Classic's");
+expect(derived.every((t) => !(t in exported.modes.dark)),
+  'export leaves out the button and primary colours the theme leaves out, so they keep following their source');
+const ownButtons = exportTheme({ name: 'Own', theme: parseTheme(T({ dark: { 'button-bg': '#c00' } })).theme }, classic);
+expect(ownButtons.modes.dark['button-bg'] === '#c00' && !('button-text' in ownButtons.modes.dark), 'export keeps a button colour the theme sets itself');
 expect(parseTheme(JSON.stringify(exported)).theme, 'an exported theme imports again');
+const reimported = parseTheme(JSON.stringify(exported)).theme;
+expect(themeCss(reimported) === themeCss(parseTheme(JSON.stringify(exportTheme({ name: 'Test', theme: reimported }, classic))).theme),
+  'export and import again gives the same colours');
 const classicExport = exportTheme({ name: 'Classic', theme: null }, classic);
 expect(classicExport.modes.dark && classicExport.modes.light, 'Classic exports both modes, as the template for new themes');
 
@@ -116,6 +136,22 @@ const lum = (h) => {
   return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 };
 const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+const mixIn = (a, b, t) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - t) + parseInt(b.slice(i, i + 2), 16) * t).toString(16).padStart(2, '0')).join('');
+// Classic's colours per mode, the fallback for any colour a theme leaves out.
+const sheetMode = (block) => Object.fromEntries([...block.matchAll(/\n {2}--([a-z0-9-]+):\s*(#[0-9a-f]{6})/g)].map((m) => [m[1], m[2]]));
+const sheetModes = { dark: sheetMode(darkBlock), light: sheetMode(themeSheet.slice(themeSheet.indexOf(':root[data-mode="light"]'))) };
+// On hover a button's label turns to the accent over the accent mixed into its
+// face (styles-controls.css), or over accent2 for the LOAD-type buttons
+// (styles-decks.css); both stay legible, in Classic and in every built-in.
+const hoverLegible = (label, mode, own) => {
+  const s = { ...sheetModes[mode], ...withButtonColours(own) };
+  const face = s['button-bg'], acc = s['button-accent'];
+  for (const [name, bg] of [['accent hover', mixIn(face, acc, 0.22)], ['accent2 hover', mixIn(face, s['button-accent2'], 0.22)]]) {
+    const r = contrast(acc, bg);
+    expect(r >= 4.5, `${label} ${mode}: the label on a button's ${name} is ${r.toFixed(2)}:1, under 4.5`);
+  }
+};
+for (const mode of ['dark', 'light']) hoverLegible('Classic', mode, {});
 for (const [label, source] of [['GEOS', GEOS_THEME], ['Breadbin', BREADBIN_THEME], ['Phosphor', PHOSPHOR_THEME], ['Out Run', OUTRUN_THEME], ['Commando', COMMANDO_THEME]]) {
   const v = validateTheme(source);
   expect(v.theme && themeModes(v.theme) === 'both', `the built-in ${label} theme is valid with both modes (${v.error})`);
@@ -124,6 +160,23 @@ for (const [label, source] of [['GEOS', GEOS_THEME], ['Breadbin', BREADBIN_THEME
       if (!m[fg] || !m['panel-bg']) continue;
       const r = contrast(m[fg], m['panel-bg']);
       expect(r >= 4.5, `${label} ${mode}: ${fg} on panel-bg is ${r.toFixed(2)}:1, under 4.5`);
+    }
+    hoverLegible(label, mode, m);
+    // A theme that gives buttons their own face keeps every button label legible on it.
+    if (m['button-bg']) {
+      for (const fg of ['button-text', 'button-dim', 'button-accent', 'button-accent2', 'button-green', 'button-amber', 'button-red']) {
+        if (!m[fg]) continue;
+        const r = contrast(m[fg], m['button-bg']);
+        expect(r >= 4.5, `${label} ${mode}: ${fg} on button-bg is ${r.toFixed(2)}:1, under 4.5`);
+      }
+    }
+    // And the same for its primary buttons.
+    if (m['primary-bg']) {
+      for (const fg of ['primary-text', 'primary-dim', 'primary-accent', 'primary-accent2', 'primary-green', 'primary-amber', 'primary-red']) {
+        if (!m[fg]) continue;
+        const r = contrast(m[fg], m['primary-bg']);
+        expect(r >= 4.5, `${label} ${mode}: ${fg} on primary-bg is ${r.toFixed(2)}:1, under 4.5`);
+      }
     }
   }
 }

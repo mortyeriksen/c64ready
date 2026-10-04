@@ -158,6 +158,34 @@
   letter-spacing: 1px;
 }
 
+/* Inside a button the general colours are its own: the button-* tokens, which
+   equal the general ones unless a theme parts buttons from fields. The
+   Assembly64 primary button keeps the accent fill it pairs with on-accent. */
+.btn:not(.mb-primary) {
+  --control-bg: var(--button-bg);
+  --text: var(--button-text);
+  --dim: var(--button-dim);
+  --accent: var(--button-accent);
+  --accent2: var(--button-accent2);
+  --green: var(--button-green);
+  --amber: var(--button-amber);
+  --red: var(--button-red);
+}
+
+/* A primary button reads the primary-* colours as its button colours and
+   border; they equal the button ones unless a theme sets them. */
+.btn.btn-primary {
+  --button-bg: var(--primary-bg);
+  --button-text: var(--primary-text);
+  --button-dim: var(--primary-dim);
+  --button-accent: var(--primary-accent);
+  --button-accent2: var(--primary-accent2);
+  --button-green: var(--primary-green);
+  --button-amber: var(--primary-amber);
+  --button-red: var(--primary-red);
+  --border: var(--primary-border);
+}
+
 .btn:hover:not(:disabled) {
   border-color: var(--accent);
   color: var(--accent);

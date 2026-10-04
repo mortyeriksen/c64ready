@@ -29,6 +29,23 @@
   --monitor-border: #2c2f63;  /* the frame round the screen (dark mode; light mode hides it) */
   --control-bg: #1a1a30;      /* buttons, fields, rows: the base every hover tint mixes into */
   --field-bg-hover: #1e2840;
+  --button-bg: #1a1a30;       /* a .btn's face and labels: by default the same as */
+  --button-text: #ccd0ec;     /* control-bg, text, dim and the accents, so a theme */
+  --button-dim: #6e6ea4;      /* only sets them to part buttons from fields; the */
+  --button-accent: #9f9df2;   /* accent a step lighter, legible as the hover label */
+  --button-accent2: #b362c4;
+  --button-green: #8fe985;
+  --button-amber: #e6dd6b;
+  --button-red: #d76b70;
+  --primary-bg: #1a1a30;      /* a primary button (LOAD ANY, disk LOAD, EXPLORE): */
+  --primary-text: #ccd0ec;    /* by default the same as the button colours and */
+  --primary-dim: #6e6ea4;     /* border, so a theme only sets them to make its */
+  --primary-accent: #9f9df2;  /* few main actions stand out */
+  --primary-accent2: #b362c4;
+  --primary-green: #8fe985;
+  --primary-amber: #e6dd6b;
+  --primary-red: #d76b70;
+  --primary-border: #2c2f63;
   --menu-bg: #16162a;         /* drop-down trigger and list */
   --status-bg: #0e0e1c;
   --dropzone-border: #2a3a5a;
@@ -80,10 +97,10 @@
   --zoom-btn-bg: #141428;
   --zoom-btn-hover: #1e1e3a;
   --dirzoom-bg: #0b0b18;
-  --kbd-bg: #1a1a2e;
-  --kbd-border: #333355;
-  --kbd-hover: #2a2a4a;
-  --kbd-ink: #1a1a2e;         /* label on a pressed or latched key */
+  --kbd-bg: #1a1a2e;          /* the four kbd colours are no longer drawn: keys */
+  --kbd-border: #333355;      /* are neutral tints of --text. Kept so a theme */
+  --kbd-hover: #2a2a4a;       /* file that sets them still imports */
+  --kbd-ink: #1a1a2e;
   --vibes-text: #ffdcfa;
   --vibes-bg-1: #2a1145;
   --vibes-bg-2: #3a1550;
@@ -195,6 +212,23 @@
   --border: #cfd2e7;
   --control-bg: #eef0f8;
   --field-bg-hover: #dedff2;
+  --button-bg: #eef0f8;
+  --button-text: #23264d;
+  --button-dim: #5f6390;
+  --button-accent: #4846b8;
+  --button-accent2: #8a3a9c;
+  --button-green: #2a7337;
+  --button-amber: #7a5d00;
+  --button-red: #b8323b;
+  --primary-bg: #eef0f8;
+  --primary-text: #23264d;
+  --primary-dim: #5f6390;
+  --primary-accent: #4846b8;
+  --primary-accent2: #8a3a9c;
+  --primary-green: #2a7337;
+  --primary-amber: #7a5d00;
+  --primary-red: #b8323b;
+  --primary-border: #cfd2e7;
   --menu-bg: #ffffff;
   --dropzone-border: #cfd2e7;
   --row-hover: #dedff2;

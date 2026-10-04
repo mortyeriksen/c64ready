@@ -24,7 +24,7 @@
 // avMarkerEnabled() must stay a single boolean read — the rAF loop calls it every
 // presented frame.
 
-import { machine } from './state.js';
+import { c64 } from './state.js';
 
 const PERIOD_MS = 10000;
 const FIRST_MS = 1000;
@@ -79,8 +79,8 @@ export function createAvMarker({ doc = document } = {}) {
   };
 
   const write = (pairs) => {
-    if (!machine?._sidWrite) return false;
-    for (const [reg, val] of pairs) machine._sidWrite(reg, val);
+    if (!c64) return false;
+    for (const [reg, val] of pairs) c64.writeSid(reg, val);
     return true;
   };
 

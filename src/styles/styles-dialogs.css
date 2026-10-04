@@ -811,7 +811,10 @@
   cursor: not-allowed;
   opacity: 0.4;
   user-select: none;
-  transition: background 0.08s ease, border-color 0.08s ease, opacity 0.15s ease;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 22%, transparent);
+  transition: background 0.08s ease, box-shadow 0.08s ease, opacity 0.15s ease;
 }
 
 body.powered-on .keymap-grid .kbd-tap {
@@ -820,13 +823,7 @@ body.powered-on .keymap-grid .kbd-tap {
 }
 
 body.powered-on .keymap-grid .kbd-tap:hover {
-  background: var(--kbd-hover);
-  border-color: var(--accent);
-}
-
-body.powered-on .keymap-grid .kbd-tap:active {
-  background: var(--accent);
-  color: var(--kbd-ink);
+  background: color-mix(in srgb, var(--text) 15%, transparent);
 }
 
 /* Shifted-label swap: when Shift is held (physical or latched), each
@@ -858,14 +855,13 @@ body.shift-held .keymap-grid .kbd-tap .kbd-shifted {
    cleared by the next non-modifier tap or another click), and also as
    a transient flash on any tapped key so the user gets clear feedback
    that the click registered. */
+body.powered-on .keymap-grid .kbd-tap:active,
 body.powered-on .keymap-grid .kbd-tap.kbd-latched,
 body.powered-on .keymap-grid .kbd-tap.kbd-latched:hover,
 body.powered-on .keymap-grid .kbd-tap.kbd-pressed,
 body.powered-on .keymap-grid .kbd-tap.kbd-pressed:hover {
-  background: var(--accent);
-  color: var(--kbd-ink);
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent) inset;
+  background: color-mix(in srgb, var(--text) 28%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 40%, transparent);
 }
 
 .keymap-symbols-note {

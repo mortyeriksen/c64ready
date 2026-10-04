@@ -84,7 +84,7 @@ expect(
 );
 
 // ── One place changes the setting, and switching it on re-arms ─────────────
-expect(applyTde !== '' && /machine\?\.setTrueDrive\(tdeEnabled\)/.test(applyTde)
+expect(applyTde !== '' && /c64\?\.setTrueDrive\(tdeEnabled\)/.test(applyTde)
   && /localStorage\.setItem\('c64emu\.tde'/.test(applyTde) && /_syncTdeBtn\(\)/.test(applyTde),
   'One function applies a TDE choice: the machine, the stored preference and the button label');
 expect(
