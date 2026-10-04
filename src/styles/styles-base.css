@@ -49,6 +49,18 @@ body {
   }
 }
 
+/* Keyboard focus: one ring, in the theme's accent, on every control without a
+   ring of its own (the browser's default ring is its own blue, whatever the
+   theme). --focus-ring is taken at the root, so a button's remapped accent
+   (the button-* colours, white on a primary button) never reaches it. */
+:root {
+  --focus-ring: var(--accent);
+}
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 /* Text for assistive technology only: read out, not shown. */
 .sr-only {
   position: absolute;

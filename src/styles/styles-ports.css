@@ -75,7 +75,7 @@
 
 /* From the keyboard, a ring like the other controls' focus. */
 .cp-device-select:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -288,7 +288,7 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 22%, transparent);
 }
 .cp-joy-keys .kbd.cp-joy-dir:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 .cp-joy-keys .kbd.cp-joy-dir:hover {
