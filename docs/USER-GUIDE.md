@@ -108,3 +108,18 @@ moves from the screen to the rest of the interface, where **Enter** and
 **Space** press the focused button and the keys stay with it; click the screen,
 or Tab back to it, to type on the C64 again. A mouse click on a button hands the
 keyboard straight back to the screen.
+
+### Keyboard and accessibility
+
+Every control can be reached and used without a mouse. **Tab** and
+**Shift+Tab** move between controls, and **Enter** or **Space** presses the
+focused one. A list, such as the Library or a drive directory, is a single Tab
+stop: the arrow keys move inside it, **Home** and **End** jump to its first or
+last row, and Tab leaves it. Every control has a name a screen reader can
+announce, and all text in the Classic theme meets 4.5:1 contrast.
+
+**Safari:** by default, Safari's Tab key skips buttons and links and stops only
+at text fields, so most of the interface can't be reached. To change that, open
+**Safari ▸ Settings ▸ Advanced** and turn on **Press Tab to highlight each item
+on a webpage**. Or press **Option+Tab** instead of Tab, which reaches every
+control without the setting.

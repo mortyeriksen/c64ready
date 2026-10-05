@@ -9,6 +9,20 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
+## Next release
+
+- **Focus ring in the theme's colour.** Tabbing to a control now outlines it in
+  the theme's accent instead of the browser's blue.
+- **A better-looking 80s Bedroom.** The [80s Bedroom](GUIDE-LOOKS.md#scenes)
+  scene has been rebuilt as a fully modelled room: draped curtains and duvet,
+  period props, wood and fabric you can see the grain of, and soft light that
+  bounces around the room from the desk lamp, the lava lamp and the half moon
+  outside. It loads together with the computer, so you no longer see a dark
+  room first, and the **3D MODEL** setting in Options picks a lighter or more
+  detailed room, just as it does for the computer.
+
+---
+
 ## 2026.10.2 — October 4, 2026
 
 The interface comes in dark and light, with six built-in themes and your own
