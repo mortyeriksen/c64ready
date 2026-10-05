@@ -40,7 +40,9 @@ lazy-imports the module, builds the `ModelViewer` once, then calls `open()`:
 - The overlay is unhidden and `overlay.requestFullscreen()` is requested inside the
   click gesture (true fullscreen past the browser chrome); it falls back to the CSS
   full-viewport overlay if the browser refuses.
-- `_loadModel()` loads the GLB (§8), then the render loop starts via
+- `_loadModel()` loads the GLB (§8) while the current scene's optional
+  `preload()` fetches its own files (the 80s Bedroom's room, §5), and waits for
+  both, so the C64 never appears in an empty scene. The render loop then starts via
   `renderer.setAnimationLoop(this._loop)`, a WebXR-compatible loop that also drives
   the per-eye frames while presenting.
 
@@ -179,14 +181,52 @@ the index.
 | 1 | **Starry Plain** | dark Tron-grid plain: scanner ripple, star layers, a procedural Milky-Way band, shooting stars | basic; raw tone map |
 | 2 | **Spotlight** | near-black studio: overhead spotlight, beam dust, screen-coloured CRT spill | **full composer** (bloom dialled near-off + grade + SMAA) |
 | 3 | **IK+ Sunset** | stone courtyard at dusk: torii and low sun over reflective water, autumn maple, layered headlands | **full composer** (bloom + warm halation + dusk split-tone grade); cool-shadow sunset IBL via `envMap`; ACES exposure 0.66, purple haze fog |
-| 4 | **80s Bedroom** | messy teenager's bedroom at night: amber desk-lamp pool, live monitor spill, moon shaft, posters, wood-grain CRT, drifting dust | **full composer** (bloom + amber halation + teal/amber grade) |
+| 4 | **80s Bedroom** | modelled teenager's bedroom at night (a GLB, below): amber desk lamp, lava lamp, live monitor spill, a flickering wood-grain TV, a half moon through the blinds, a moonbeam, a lit landing | **full composer** (bloom + amber halation + teal/amber grade) |
 
 Scenes flagged `basic` render with a plain `renderer.render` and bypass the composer;
 the **bloom + grade + SMAA** pipeline runs for the non-basic scenes
 (**Spotlight**, **IK+ Sunset**, **80s Bedroom**), while Synthwave and Starry Plain further use raw tone mapping and
 bake their glow into their own shaders. Backdrop gradients are cached equirect
-`CanvasTexture`s; the procedural props (room textures, star sprites, sunset sky/sun,
-water normal map, checker floor) are built once and cached at module level.
+`CanvasTexture`s; the procedural props (star sprites, sunset sky/sun, water
+normal map, checker floor) are built once and cached at module level.
+
+### The 80s Bedroom
+
+The bedroom is the one scene built from a model file rather than code:
+`public/bedroom.glb`, modelled in Blender, with the C64 placed by the viewer as
+in every scene and the room fitted around it (carpet 0.72 m below the model,
+`R * 1.04` world units per metre, the room 6 cm behind the model's centre so the
+monitor's cables lie on the desk). `vibes-scene-bedroom.js` loads it.
+
+- **Two builds.** `bedroom.glb` (~3.5 MB) and `bedroom_small.glb` (~1.3 MB,
+  512 px textures, lighter cloth) follow **3D MODEL** like the C64 model does
+  (§8), through `wantsLargeModels()`. Both are meshopt-compressed and decoded by
+  three's `MeshoptDecoder`; Draco is never used.
+- **Loaded with the model.** The scene's `preload()` fetches and parses the room
+  once per file and hands the result to `build()`, so opening the viewer on the
+  bedroom shows room and computer together. Switching to it with the 🎬 button
+  keeps the current scene on screen until the room is ready and then swaps
+  whole; `LOADING SCENE…` appears only if that takes longer than 300 ms. Clicks
+  while it loads step on to the next scene.
+- **Markers, not coordinates.** The file carries named empty nodes
+  (`Room_Origin`, `Light_Lamp`, `Light_TV`, `Light_Clock`, `Light_Lava`,
+  `Light_Moon_Target`, `Light_Landing`, `Beam_Start`/`Beam_End` and the like) and
+  the scene places its real-time lights on them, so the layout lives only in
+  the model.
+- **Baked bounce, live direct light.** Room surfaces carry a second UV set
+  (`uv1`) into one lightmap, `bedroom_light.webp` (or `bedroom_light_small.webp`),
+  holding Cycles' indirect diffuse light; `Room_Origin`'s
+  `extras.lightmapScale` restores its range. Direct light stays real-time, so the
+  lamp, lava lamp, alarm clock, TV and moon still flicker, move and cast
+  shadows. The TV's light sits below the desktop so the desk's top never catches
+  it.
+- **Single-pass transparency.** Transparent double-sided materials (cassette
+  cases, the smoked window) get `forceSinglePass`. three.js otherwise draws them
+  in two passes by flipping `material.side`, which re-checks the shader program
+  and re-uploads every light uniform on each pass of every frame.
+- **Offline.** The service worker serves the GLBs and lightmaps cache-first from
+  the model cache (`c64emu-models-v1`) under fixed names, so replacing one of
+  these files needs that cache's name bumped in `src/sw.js`.
 
 Bedroom and Spotlight set `staticShadows`. `vibes-shadow-cache.js` watches the
 casters, their ancestors, shadow lights and light targets. Transforms, visibility,
@@ -276,7 +316,8 @@ under `c64emu.vibesModel`, read fresh on each open. **SMALL** (default) forces
 the light build and **LARGE** the 4K build. **AUTO** defers to
 `autoWantsLargeModel()`: 4K only when the longest screen dimension is ≥ 1024 CSS
 px **and** the device is not touch (`navigator.maxTouchPoints > 0` /
-`ontouchstart`), so phones and tablets get the light asset. The path is resolved
+`ontouchstart`), so phones and tablets get the light asset. The same choice,
+read through `wantsLargeModels()`, picks the 80s Bedroom's room files (§5). The path is resolved
 against Vite's `BASE_URL` so it stays correct under a
 non-root deploy. `GLTFLoader` reports load progress into the overlay's
 `LOADING MODEL…` label.
@@ -338,6 +379,9 @@ loop is already stopped.
 - **Every heavy transition runs inside the busy hooks** (open, close, scene
   swap, VR entry); an unpaused machine would starve the SID worklet's ring and
   the sound would jerk (§9).
+- **Transparent double-sided materials in a loaded room get `forceSinglePass`**:
+  otherwise three.js re-checks their programs and re-uploads all light uniforms
+  every frame (§5).
 - **VR skips the composer** (plain render + a hemisphere fill light), and the
   desktop camera pose is restored synchronously on session end; a headset pose
   is never persisted (§7).
