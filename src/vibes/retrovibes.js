@@ -29,7 +29,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
 import { attachKeycapPresses } from './keycap-press.js';   // [removable prototype]
 import { hostTouchControls, restoreTouchControls } from '../ui/touch-joystick.js';
-import { bgTexture } from './vibes-scene-common.js';
+import { bgTexture, wantsLargeModels } from './vibes-scene-common.js';
 import { sampleScreenLight } from './vibes-screen-light.js';
 import { ShadowCache } from './vibes-shadow-cache.js';
 import { scene as sceneSynthwave } from './vibes-scene-synthwave.js';
@@ -100,31 +100,10 @@ const GradeShader = {
 // root; BASE_URL keeps the path correct under a non-root deploy base (guarded so
 // a non-Vite context never throws).
 const MODEL_BASE = ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/');
-// Touch devices (phones AND tablets) never get the heavy 4K model: a large
-// tablet like an iPad reports a longest dimension >= 1024 but has neither the
-// GPU nor the memory headroom the desktop 4K asset assumes.
-const IS_TOUCH_DEVICE = (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0)
-    || (typeof window !== 'undefined' && 'ontouchstart' in window);
-// Whether the AUTOMATIC choice wants the heavy 4K model. A desktop-sized screen is
-// a decent proxy for "has the GPU/memory for it": phones (even hi-DPI) report a
-// longest CSS dimension well under 1024, and tablets are excluded via the touch
-// check above. This is a model selector, not a screen query.
-function autoWantsLargeModel() {
-  return (typeof window !== 'undefined' && window.screen)
-    ? Math.max(window.screen.width, window.screen.height) >= 1024 && !IS_TOUCH_DEVICE
-    : true;
-}
-// User override for the 3D model (Options ▸ Display ▸ 3D MODEL SIZE): 'small'
-// (default — the light 18 MB model, safe on every device), 'auto' (pick by
-// device: the 4K model on desktop, light on phones/tablets), or 'large' (force
-// the 4K model). Read FRESH at load time so changing it and reopening the viewer
-// picks up the new choice. Written by main.js.
-const VIBES_MODEL_KEY = 'c64emu.vibesModel';
+// Options ▸ Display ▸ 3D MODEL picks the size (vibes-scene-common.js), and
+// the 80s Bedroom's room follows the same choice.
 function resolveModelUrl() {
-  let pref = 'small';
-  try { pref = localStorage.getItem(VIBES_MODEL_KEY) || 'small'; } catch { /* storage off */ }
-  const large = pref === 'large' ? true : (pref === 'auto' ? autoWantsLargeModel() : false);
-  return MODEL_BASE + (large ? 'commodore_64_4k.glb' : 'commodore_64.glb');
+  return MODEL_BASE + (wantsLargeModels() ? 'commodore_64_4k.glb' : 'commodore_64.glb');
 }
 
 // Persisted camera view (position + orbit target) so the scene reopens where
@@ -689,9 +668,13 @@ export class ModelViewer {
     this._setLoading('LOADING MODEL…');
 
     const modelUrl = resolveModelUrl();   // honour the Options ▸ Display model override
+    // A scene whose room is a file (80s Bedroom) loads it alongside the
+    // model, and the scene appears once both are in: the computer never sits
+    // alone in a dark room waiting for its surroundings.
+    const sceneReady = SCENES[this._sceneIndex].preload?.() ?? Promise.resolve();
     new GLTFLoader().load(
       modelUrl,
-      (gltf) => {
+      (gltf) => sceneReady.then(() => {
         // The viewer may have been closed while the (large) model was loading —
         // _teardownGL then nulled this.scene. Drop the late result on the floor.
         if (!this.scene) { this._loading = false; return; }
@@ -715,7 +698,7 @@ export class ModelViewer {
         this._loading = false;
         if (this._vrBtn) this._vrBtn.disabled = false;   // model framed → VR is now 1:1 with the 3D view
         this._setLoading(null);
-      },
+      }),
       (ev) => {
         if (ev && ev.lengthComputable && ev.total) {
           const pct = Math.round((ev.loaded / ev.total) * 100);
@@ -1004,11 +987,34 @@ export class ModelViewer {
 
   // Advance to the next scene (wraps). Wired to the bottom-right scene button.
   nextScene() {
+    // A scene with a room file to load keeps the current one on screen until
+    // the room is in, then swaps whole. Clicks while it loads step further on.
+    const i = (this._pendingScene ?? this._sceneIndex) + 1;
+    const ready = SCENES[i % SCENES.length].preload?.();
+    if (!ready) {
+      if (this._pendingScene != null) this._setLoading(null);   // skipped past one still loading
+      this._pendingScene = null;
+      this._swapScene(i);
+      return;
+    }
+    // The label shows only for a real wait: a room already downloaded is in
+    // well before anyone could read it.
+    this._pendingScene = i;
+    const label = setTimeout(() => { if (this._pendingScene === i) this._setLoading('LOADING SCENE…'); }, 300);
+    ready.then(() => {
+      clearTimeout(label);
+      if (this._pendingScene !== i) return;   // clicked on, or closed meanwhile
+      this._pendingScene = null;
+      this._setLoading(null);
+      if (this.scene) this._swapScene(i);
+    });
+  }
+  _swapScene(i) {
     // Pause + mute across the swap: tearing down the old scene and building the
     // new one (plus its first shader compile) stalls the main thread. _loop
     // resumes once the new scene is fully ready (see its busy-exit logic).
     this._enterBusy();
-    this._applyScene(this._sceneIndex + 1);
+    this._applyScene(i);
   }
 
   // Frame the monitor head-on and as large as it will go — the ⛶ fullscreen
@@ -1523,6 +1529,7 @@ export class ModelViewer {
     this._applyStudio(false);
     if (this._escapeLayer) popEscapeLayer(this._escapeLayer);
     if (this.overlay.hidden) return;   // idempotent — ✕, Esc, and fullscreenchange can all call this
+    this._pendingScene = null;          // a scene still loading is not switched to after a reopen
     this._camTween = null;             // drop any in-flight fullscreen-framer glide
     if (this._xrSession) {
       try { this._xrSession.end(); } catch { /* ignore */ }

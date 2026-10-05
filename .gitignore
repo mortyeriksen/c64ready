@@ -30,3 +30,6 @@ investigation/
 *.c64states
 *.c64state
 *.glb
+# The 80s Bedroom's room is our own model, small enough to keep in the repository.
+!public/bedroom.glb
+!public/bedroom_small.glb

@@ -141,7 +141,8 @@ self.addEventListener('fetch', (event) => {
   // and cached the same way — the first docs page that shows one pays for it, and
   // it is offline from then on. Bump GUIDE_CACHE when a shot is replaced, since
   // the filenames are stable (tools/guide-shots.mjs overwrites them in place).
-  if (/\.glb$/i.test(url.pathname) || url.pathname.startsWith('/guide/')) {
+  // The 80s Bedroom's lightmap images go with its GLB into the model bucket.
+  if (/\.glb$/i.test(url.pathname) || /\/bedroom_light[^/]*\.webp$/i.test(url.pathname) || url.pathname.startsWith('/guide/')) {
     const bucket = url.pathname.startsWith('/guide/') ? GUIDE_CACHE : MODEL_CACHE;
     event.respondWith((async () => {
       const cache = await caches.open(bucket);

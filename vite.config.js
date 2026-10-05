@@ -96,6 +96,9 @@ export default defineConfig({
           '**/roms/**',
           // Docs-only and huge; runtime-cached on first view (see /guide/ in src/sw.js).
           '**/guide/**',
+          // The 80s Bedroom's lightmaps travel with its GLB: runtime-cached with
+          // the 3D models (see src/sw.js), only for viewers who open that scene.
+          '**/bedroom_light*',
           // Splash art and the teaser loop: the splash shows once, on a first visit,
           // which is online by definition.
           '**/screens/splash-*',
