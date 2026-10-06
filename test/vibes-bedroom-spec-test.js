@@ -24,7 +24,7 @@ assert.equal(glb.readUInt32LE(16), 0x4e4f534a, 'the first GLB chunk is JSON');
 const json = JSON.parse(glb.subarray(20, 20 + glb.readUInt32LE(12)).toString('utf8'));
 
 const names = new Set(json.nodes.map((n) => n.name));
-for (const marker of ['Room Origin', 'Light Lamp', 'Light Lamp Target', 'Light Moon', 'Light Moon Target', 'Light Landing', 'Light Landing Target', 'Light TV', 'Light Clock', 'Light Lava', 'Beam Start', 'Beam End']) {
+for (const marker of ['Room Origin', 'Light Lamp', 'Light Lamp Target', 'Light Moon', 'Light Moon Target', 'Light TV', 'Light Clock', 'Light Lava', 'Beam Start', 'Beam End']) {
   assert.ok(names.has(marker), `the room model has the "${marker}" marker the scene places by`);
 }
 for (const node of ['TV Screen', 'TV Overlay', 'Outside Sky', 'Lamp Shade', 'Lamp Bulb']) {

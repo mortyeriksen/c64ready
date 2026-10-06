@@ -113,9 +113,9 @@ export function makeTvScanner(doc, w, h) {
 // per metre).
 //
 // The file carries named marker nodes, so the lights follow the room instead of
-// repeating its layout here: "Room Origin" (the carpet centre), "Light Lamp",
-// "Light Moon", "Light Landing" (each with a "... Target"), "Light TV",
-// "Light Clock", "Light Lava", and "Beam Start" / "Beam End" for the moonbeam.
+// repeating its layout here: "Room Origin" (the carpet centre), "Light Lamp"
+// and "Light Moon" (each with a "... Target"), "Light TV", "Light Clock",
+// "Light Lava", and "Beam Start" / "Beam End" for the moonbeam.
 // GLTFLoader turns their spaces into underscores.
 //
 // Bounce light is baked: the room's surfaces carry a second UV set (uv1) into
@@ -219,7 +219,8 @@ function moonBeam(start, end, r0, r1) {
 export const scene = {
   // The earlier procedural room's practical lights, quoted per square metre (IL)
   // with decay 2: amber desk lamp, moonlight through the blinds, the flickering
-  // TV, a red clock, the lava lamp, and a warm landing light through the door.
+  // TV, a red clock and the lava lamp. The warm landing light through the door
+  // is in the baked lightmap.
   // Shadows are static and cached. The viewer awaits preload() before build(),
   // so the room is parsed by then; it still attaches a microtask after build()
   // returns (before the next frame), inside a shadow-casting holder, so
@@ -260,14 +261,8 @@ export const scene = {
     moon.castShadow = true;
     moon.shadow.mapSize.set(1024, 1024); moon.shadow.bias = -0.003; moon.shadow.radius = 0.75;
     moon.shadow.camera.near = R * 0.5; moon.shadow.camera.far = R * 40;
-    // The landing light reaches the bedroom only through the doorway: a spot
-    // aimed in through it, its shadow keeping the walls opaque. A short-range
-    // fill lights the landing itself.
-    const landing = new THREE.SpotLight(0xffb070, 1.6 * IL, R * 14, 0.75, 0.6, 2);
-    landing.castShadow = true;
-    landing.shadow.mapSize.set(512, 512); landing.shadow.bias = -0.002; landing.shadow.radius = 2;
-    landing.shadow.camera.near = R * 0.2; landing.shadow.camera.far = R * 14;
-    const landingFill = new THREE.PointLight(0xffb070, 0.5 * IL, R * 1.6, 2);
+    // The landing light through the doorway is baked into the lightmap, direct
+    // light and all: it never changes, and every light here costs every pixel.
     // The desktop returns a small warm bounce onto the keyboard and clutter.
     // It hangs halfway down the lamp's beam: any lower and it burns a hot
     // spot into the monitor's side.
@@ -275,9 +270,9 @@ export const scene = {
     const tv = new THREE.PointLight(0x8fcfe5, 0, R * 8, 2);
     const clock = new THREE.PointLight(0xff3020, 0.075 * IL, R * 2.5, 2);
     const lava = new THREE.PointLight(0xff7a45, 0.04 * IL, R * 2.5, 2);
-    const lights = [lamp, lampBounce, moon, landing, landingFill, tv, clock, lava];
+    const lights = [lamp, lampBounce, moon, tv, clock, lava];
     for (const l of lights) l.visible = false;
-    g.add(lamp, lamp.target, lampBounce, moon, moon.target, landing, landing.target, landingFill, tv, clock, lava);
+    g.add(lamp, lamp.target, lampBounce, moon, moon.target, tv, clock, lava);
 
     // The TV's picture is the earlier procedural room's: a static backdrop and a
     // scanner sprite blitted at its sweep position, redrawn in animate().
@@ -317,10 +312,6 @@ export const scene = {
         // bedroom's moon is from its 3.6 m.
         const d = moon.position.distanceTo(moon.target.position) / S;
         moon.intensity = 14 * IL * (d / 3.6) * (d / 3.6);
-      }
-      if (at('Light_Landing', landing.position)) {
-        at('Light_Landing_Target', landing.target.position);
-        landingFill.position.copy(landing.position);
       }
       const b0 = new THREE.Vector3(), b1 = new THREE.Vector3();
       if (at('Beam_Start', b0) && at('Beam_End', b1)) g.add(moonBeam(b0, b1, 0.32 * S, 0.5 * S));
