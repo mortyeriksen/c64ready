@@ -28,7 +28,7 @@ precache(self.__WB_MANIFEST);
 // Runtime caches (see the fetch handler below): the lazy-loaded 3D-viewer model
 // GLBs, and the guide screenshots the docs embed. Versioned so bumping a suffix
 // drops stale copies on activate.
-const MODEL_CACHE = 'c64emu-models-v1';
+const MODEL_CACHE = 'c64emu-models-v2';
 const GUIDE_CACHE = 'c64emu-guide-v2';
 const RUNTIME_CACHES = [MODEL_CACHE, GUIDE_CACHE];
 

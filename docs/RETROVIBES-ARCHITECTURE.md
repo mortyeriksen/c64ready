@@ -225,7 +225,7 @@ monitor's cables lie on the desk). `vibes-scene-bedroom.js` loads it.
   in two passes by flipping `material.side`, which re-checks the shader program
   and re-uploads every light uniform on each pass of every frame.
 - **Offline.** The service worker serves the GLBs and lightmaps cache-first from
-  the model cache (`c64emu-models-v1`) under fixed names, so replacing one of
+  the model cache (`c64emu-models-v2`) under fixed names, so replacing one of
   these files needs that cache's name bumped in `src/sw.js`.
 
 Bedroom and Spotlight set `staticShadows`. `vibes-shadow-cache.js` watches the
