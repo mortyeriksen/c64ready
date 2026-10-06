@@ -697,7 +697,8 @@ export class ModelViewer {
         this._modelLoaded = true;
         this._loading = false;
         if (this._vrBtn) this._vrBtn.disabled = false;   // model framed → VR is now 1:1 with the 3D view
-        this._setLoading(null);
+        this._setLoading('LOADING SCENE…');
+        this._readyScene().then((current) => { if (current) this._setLoading(null); });
       }),
       (ev) => {
         if (ev && ev.lengthComputable && ev.total) {
@@ -990,31 +991,59 @@ export class ModelViewer {
     // A scene with a room file to load keeps the current one on screen until
     // the room is in, then swaps whole. Clicks while it loads step further on.
     const i = (this._pendingScene ?? this._sceneIndex) + 1;
-    const ready = SCENES[i % SCENES.length].preload?.();
-    if (!ready) {
-      if (this._pendingScene != null) this._setLoading(null);   // skipped past one still loading
-      this._pendingScene = null;
-      this._swapScene(i);
-      return;
-    }
-    // The label shows only for a real wait: a room already downloaded is in
-    // well before anyone could read it.
     this._pendingScene = i;
-    const label = setTimeout(() => { if (this._pendingScene === i) this._setLoading('LOADING SCENE…'); }, 300);
+    this._armSceneLabel();
+    const ready = SCENES[i % SCENES.length].preload?.() ?? Promise.resolve();
     ready.then(() => {
-      clearTimeout(label);
       if (this._pendingScene !== i) return;   // clicked on, or closed meanwhile
       this._pendingScene = null;
-      this._setLoading(null);
       if (this.scene) this._swapScene(i);
     });
   }
   _swapScene(i) {
     // Pause + mute across the swap: tearing down the old scene and building the
-    // new one (plus its first shader compile) stalls the main thread. _loop
-    // resumes once the new scene is fully ready (see its busy-exit logic).
+    // new one stalls the main thread. _loop resumes once the new scene is fully
+    // ready (see its busy-exit logic).
     this._enterBusy();
     this._applyScene(i);
+    this._readyScene().then((current) => { if (current) this._disarmSceneLabel(); });
+  }
+
+  // "LOADING SCENE…" shows only for a real wait (preload and compile): a scene
+  // that is ready at once is in before anyone could read it.
+  _armSceneLabel() {
+    clearTimeout(this._sceneLabelTimer);
+    this._sceneLabelTimer = setTimeout(() => { this._sceneLabelShown = true; this._setLoading('LOADING SCENE…'); }, 300);
+  }
+  _disarmSceneLabel() {
+    clearTimeout(this._sceneLabelTimer);
+    this._sceneLabelTimer = null;
+    if (this._sceneLabelShown) this._setLoading(null);
+    this._sceneLabelShown = false;
+  }
+
+  // Compile the just-built scene's shaders before it is drawn. compileAsync
+  // hands them to the browser's compiler threads (KHR_parallel_shader_compile),
+  // so the page keeps running while they build; meanwhile _loop draws nothing
+  // and the canvas keeps its last frame. The compile targets what the scene is
+  // drawn into (the composer's buffer, or the screen for basic scenes), since
+  // a program differs between the two. Resolves true unless a newer scene, or
+  // a close, took over meanwhile.
+  _readyScene() {
+    const token = (this._compileToken = (this._compileToken || 0) + 1);
+    this._holdRender = true;
+    return Promise.resolve(this._sceneBuilt).catch(() => {}).then(() => {
+      if (token !== this._compileToken || !this.scene) return null;
+      const r = this.renderer, prev = r.getRenderTarget();
+      r.setRenderTarget(this._composer && !this._sceneBasic ? this._composer.readBuffer : null);
+      try { return r.compileAsync(this.scene, this.camera).catch(() => {}); }
+      catch { return null; }
+      finally { r.setRenderTarget(prev); }
+    }).then(() => {
+      if (token !== this._compileToken) return false;
+      this._holdRender = false;
+      return true;
+    });
   }
 
   // Frame the monitor head-on and as large as it will go — the ⛶ fullscreen
@@ -1191,7 +1220,9 @@ export class ModelViewer {
       };
     }
     const g = new THREE.Group();
-    def.build(g, { sphere, box, screen });
+    // A scene that loads its contents (the 80s Bedroom's room) returns a
+    // promise that settles once they are in; _readyScene waits for it.
+    this._sceneBuilt = def.build(g, { sphere, box, screen });
     this.scene.add(g);
     this._sceneGroup = g;
     this._sceneAnimate = def.animate || null;
@@ -1424,7 +1455,10 @@ export class ModelViewer {
       if (this._camTween) this._updateCamTween();
       else this.controls.update();
     }
-    if (presenting) {
+    if (this._holdRender && !presenting) {
+      // The next scene's shaders are compiling (_readyScene): draw nothing, so
+      // the canvas keeps its last frame and no draw waits on a compile.
+    } else if (presenting) {
       // WebXR renders per-eye to the XR framebuffer; EffectComposer isn't
       // XR-compatible, so VR always uses a plain render (no bloom/grade).
       this.renderer.render(this.scene, this.camera);
@@ -1444,7 +1478,7 @@ export class ModelViewer {
     // cap is a post-load safety net; closing the viewer always resumes anyway.
     if (this._busy) {
       this._framesSinceOpen++;
-      if (this._modelLoaded) this._sceneReadyFrames++;
+      if (this._modelLoaded && !this._holdRender) this._sceneReadyFrames++;
       const resizeSettled = (this._framesSinceOpen - this._lastResizeFrame) >= 2;
       const ready = this._modelLoaded && this._sceneReadyFrames >= 2 && resizeSettled;
       if (ready || this._sceneReadyFrames >= 180) this._exitBusy();
@@ -1530,6 +1564,9 @@ export class ModelViewer {
     if (this._escapeLayer) popEscapeLayer(this._escapeLayer);
     if (this.overlay.hidden) return;   // idempotent — ✕, Esc, and fullscreenchange can all call this
     this._pendingScene = null;          // a scene still loading is not switched to after a reopen
+    this._compileToken = (this._compileToken || 0) + 1;   // drop a compile still in flight
+    this._holdRender = false;
+    clearTimeout(this._sceneLabelTimer); this._sceneLabelShown = false;
     this._camTween = null;             // drop any in-flight fullscreen-framer glide
     if (this._xrSession) {
       try { this._xrSession.end(); } catch { /* ignore */ }

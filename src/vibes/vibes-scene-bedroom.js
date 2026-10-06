@@ -159,6 +159,9 @@ function fetchLightmap(url) {
 }
 // The room and its lightmap, parsed: a fresh copy per build, since the viewer
 // disposes a scene's meshes when it switches away.
+// The meshes decode on the main thread, in tens of milliseconds. Not in
+// MeshoptDecoder's workers: Safari will not start them from their blob URL on
+// this cross-origin-isolated page, and the decode would never finish.
 function loadRoom(files) {
   return Promise.all([
     fetchOnce(files.room, 'buffer').then((bytes) => new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes, BASE)),   // quantised, meshopt-compressed meshes
@@ -223,7 +226,9 @@ export const scene = {
   // revealing it marks the cached maps dirty once.
   name: '80s Bedroom', css: 'scene-bedroom', envInt: 0.07, exposure: 1.2,
   staticShadows: true,
-  bloom: { strength: 0.5, radius: 0.85, threshold: 0.9 },
+  // The live CRT picture tops out at 1.0, so a threshold of 1.0 keeps it crisp
+  // while the lamp, lava lamp and clock, brighter than that, still glow.
+  bloom: { strength: 0.5, radius: 0.85, threshold: 1.0 },
   grade: { aberration: 0.0003, vignette: 0.24, grain: 0.012, split: 0.5, shadow: [0.88, 0.98, 1.10], highlight: [1.09, 1.00, 0.88] },
   screenOff: true,
   halation: [[1, 1, 1], [1, 0.95, 0.90], [1, 0.86, 0.75], [1, 0.77, 0.60], [1, 0.70, 0.50]],
@@ -293,7 +298,8 @@ export const scene = {
     const files = roomFiles();
     const load = prepared?.room === files.room ? prepared.load : loadRoom(files);
     prepared = null;
-    load.then(([gltf, lightmap]) => {
+    // Returned, so the viewer compiles the scene once the room is in.
+    return load.then(([gltf, lightmap]) => {
       const room = gltf.scene;
       if (!g.parent) { disposeTree(room); if (lightmap) lightmap.dispose(); tvMat.dispose(); crtTex.dispose(); return; }   // switched away while loading
       const k = S / FILE_UNITS_PER_M;
