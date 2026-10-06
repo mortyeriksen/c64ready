@@ -1012,7 +1012,7 @@ unpacker unpacks, and never into the input's own folder.
 | `t642d64` | — |
 | `t642prg` | `-d <dir>` where the files land (`--out-dir` too) |
 | `t642tap` | `--roms <dir>` |
-| `disk2t64` | |
+| `disk2t64` | — |
 | `disk2d81` | `-o <file>` or `--out-dir <dir>`, `--force` to replace an output |
 | `nbz2g64` | — (writes `<name>.g64`) |
 | `dmp2tap` | — |
@@ -1021,7 +1021,7 @@ unpacker unpacks, and never into the input's own folder.
 | `prg2d64` | — |
 | `prg2crt` | — |
 | `prg2tap` | `--name NAME` the name the tape carries · `--roms <dir>` |
-| `prg2turbo` | `--name NAME` (one input) · `--loader <installer.prg>` a self-loading tape · `--drive [--save-with '<cmd>']` write via the tool's own saver · `--roms <dir>` (with `--loader`/`--drive`) |
+| `prg2turbo` | `--name NAME` (one input) · `--loader <installer.prg>` a self-loading tape · `--format <turbo-tape-64\|grl-supertape>` name the loader's format, skipping the probe · `--trust` skip the probe outright · `--drive [--save-with '<cmd>']` write via the tool's own saver · `--roms <dir>` (with `--loader`/`--format`/`--drive`) |
 | `tap2d64` | `--file NAME` one program only · `--jobs <n>` threads · `--roms <dir>` |
 | `tap2prg` | `--file NAME` one program only · `-d <dir>` where the files land (`--out-dir` too) · `--via-machine` load them rather than decode, with `--jobs <n>` and `--roms <dir>` |
 | `tap2t64` | `--file NAME` one program only |
