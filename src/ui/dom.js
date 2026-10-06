@@ -172,7 +172,7 @@ export const sizeBtn       = document.getElementById('btn-size');
 export const crtEffectBtn  = document.getElementById('btn-crt-effect');
 export const crtSettingsBtn = document.getElementById('btn-crt-settings');
 
-export const _logoText = document.querySelector('.logo-text');
+export const _logoText = document.querySelector('header .logo-text');   // the splash has one too
 
 export const driveSoundToggleBtn = document.getElementById('btn-drivesound-toggle');
 export const sidEngineToggleBtn = document.getElementById('btn-sidengine-toggle');

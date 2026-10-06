@@ -13,11 +13,11 @@
    Not themed, and so written as plain colours where they are used: the monitor
    and the CRT looks drawn over the picture (black glass, scanlines, shine, hum),
    the scanline overlays on the logo, the collision badge on the screen, the
-   splash's video frame, and the Retro Vibes 3D scenes, which carry their own
-   per-scene palettes. */
+   splash (Phosphor's colours in either mode, and its video frame), and the
+   Retro Vibes 3D scenes, which carry their own per-scene palettes. */
 
 /* Dark mode: the default values, and what .mode-dark areas keep in light mode
-   (the monitor and the splash). */
+   (the monitor). */
 :root,
 .mode-dark {
   /* ── Page and surfaces ─────────────────────────────────────────────── */
@@ -79,12 +79,8 @@
   --red: #d76b70;             /* C64 light red (VIC #10) */
   --info: #4fc3f7;            /* drop-down highlight and help panels */
   --on-green-ink: #06110b;    /* label on a lit green key */
-  --power: #a9ff9f;           /* the splash's power button */
-  --power-hover: #c6ffbf;
-  --power-ink: #08240c;
 
   /* ── Logo ──────────────────────────────────────────────────────────── */
-  --logo-drop: #07071a;       /* the hard 2px shadow under the splash heading */
   --logo-ramp-4: #9b98ff;     /* shading blocks, brightest to darkest */
   --logo-ramp-2: #5a57b8;
   --logo-ramp-1: #43407c;
@@ -142,11 +138,6 @@
      gradient to Oklab interpolation and draw the lines differently. */
   --credits-scanline: rgba(112, 109, 235, 0.04);
 
-  /* ── Splash ────────────────────────────────────────────────────────── */
-  --splash-screen: #2e2c9b;   /* the C64 screen inside the splash frame */
-  --splash-card-text: #b9bcf4;
-  --splash-phone: #0e1033;
-
   /* ── Assembly64 ────────────────────────────────────────────────────── */
   --a64-row-hover: #191d40;
   --a64-highlight: #bcbaff;
@@ -203,7 +194,7 @@
 /* Light mode: "Paper". A cool lavender-grey page, white panels, and the indigo
    accent darkened for contrast on white. Only what differs from dark mode is
    listed: the media-type chips read on either and keep their colours, and the
-   touch joystick and the splash sit in .mode-dark areas. */
+   touch joystick sits in a .mode-dark area. */
 :root[data-mode="light"] {
   /* ── Page and surfaces ───────────────────────────────────────────────── */
   --crt-bg: #e8e9f3;

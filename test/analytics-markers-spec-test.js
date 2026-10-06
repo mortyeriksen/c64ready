@@ -1,5 +1,6 @@
 // Analytics-marker spec: the network-only pages the app pings for server-side
-// stats (/pwa.html, /pwa-installed.html, /roms-loaded.html, /roms-vice.html).
+// stats (/pwa.html, /pwa-installed.html, /roms-loaded.html, /roms-vice.html,
+// /returned.html, and /roms-theme-<id>.html for the theme in use).
 //
 // A marker only works if THREE things agree, and nothing else notices when they
 // drift apart: the page exists in public/, the service worker passes it through
@@ -43,6 +44,16 @@ for (const [, path] of main.matchAll(/fetch\('(\/[a-z0-9-]+\.html)'([^)]*)\)/g))
   const call = main.slice(main.indexOf(`fetch('${path}'`));
   expect(/cache: 'no-store'/.test(call.slice(0, 120)),
     `${path}: the beacon must fetch with cache: 'no-store'`);
+}
+
+// The theme beacon has a marker for every built-in theme, plus one for all
+// imported themes, so no session with ROMs goes uncounted.
+const { BUILTIN_THEMES } = await import('../src/ui/themes.js');
+const themeMap = main.match(/_ROM_THEME_MARKERS = \{([^}]*)\}/);
+const themeKeys = themeMap ? [...themeMap[1].matchAll(/(\w+): '\/roms-theme-(\w+)\.html'/g)].map((m) => (m[1] === m[2] ? m[1] : null)) : [];
+for (const id of [...BUILTIN_THEMES.map((b) => b.id), 'custom']) {
+  expect(themeKeys.includes(id), `/roms-theme-${id}.html: main.js maps the "${id}" theme to its marker`);
+  expect(markers.includes(`/roms-theme-${id}.html`), `/roms-theme-${id}.html: the sw passes it through (ANALYTICS_MARKERS)`);
 }
 
 if (failures) {

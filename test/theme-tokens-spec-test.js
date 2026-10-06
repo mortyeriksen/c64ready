@@ -23,15 +23,17 @@ const THEME = 'src/styles/styles-theme.css';
 const SHEETS = [
   'src/styles/styles-base.css', 'src/styles/styles-header.css', 'src/styles/styles-display.css', 'src/styles/styles-dialogs.css',
   'src/styles/styles-controls.css', 'src/styles/styles-decks.css', 'src/styles/styles-ports.css', 'src/vibes/styles-vibes.css',
-  'src/styles/styles-splash.css', 'src/styles/styles-assembly64.css',
+  'src/styles/styles-splash.css', 'src/styles/styles-splash-themes.css', 'src/styles/styles-assembly64.css',
 ];
 
 // Not themed: the monitor and the CRT looks drawn over the picture, the
 // scanline overlays on the logo, the collision badge on the screen, the
-// splash's video frame and scanlines, and the Retro Vibes 3D scenes.
+// splash's per-theme colours (generated from the themes by tools/splash-themes.mjs,
+// kept current by themes-spec-test.js), video frame and scanlines, and the
+// Retro Vibes 3D scenes.
 const FIXED = [
   /\.c64-monitor(?!.*fullscreen)/, /\.crt-bezel/, /\.crt-shine/, /\.crt-roll/, /#fps-counter/, /#build-stamp/,
-  /#collision-indicator/, /\.logo-text( \[data-t\]::after)?$/, /\.logo-text::before/, /\.splash-inner::after/, /\.splash-media$/,
+  /#collision-indicator/, /\.logo-text( \[data-t\]::after)?$/, /\.logo-text::before/, /^(:root\[data-mode="light"\] )?body\[data-splash-theme="[a-z]+"\] #splash$/, /\.splash-inner::after/, /\.splash-media$/,
   /\.model-viewer/, /\.fs-close-btn/,
 ];
 

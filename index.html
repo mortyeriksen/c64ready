@@ -112,8 +112,12 @@
       // the ship switch: true = live (first visits see the splash); set false
       // to dark-launch again (then only ?SPLASH=1 shows it). ?SPLASH=0 always
       // skips; installed-PWA launches and visitors who already dismissed it
-      // (c64emu.splashSeen) never see it.
+      // (c64emu.splashSeen) never see it. The splash wears one of the
+      // built-in themes, picked at random here so it paints in it from the
+      // first frame (SPLASH_THEMES mirrors tools/splash-themes.mjs; the
+      // themes spec test checks).
       var SPLASH_DEFAULT_ON = true;
+      var SPLASH_THEMES = ['classic', 'geos', 'breadbin', 'phosphor', 'outrun', 'commando'];
       var q = null, seen = false, standalone = false;
       try { q = new URLSearchParams(location.search).get('SPLASH'); } catch (e) {}
       try { seen = localStorage.getItem('c64emu.splashSeen') === '1'; } catch (e) {}
@@ -121,18 +125,22 @@
         standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) ||
                      window.navigator.standalone === true;
       } catch (e) {}
-      if (q === '1' || (SPLASH_DEFAULT_ON && q !== '0' && !seen && !standalone))
+      if (q === '1' || (SPLASH_DEFAULT_ON && q !== '0' && !seen && !standalone)) {
         document.body.classList.add('splash-open');
+        document.body.setAttribute('data-splash-theme', SPLASH_THEMES[Math.floor(Math.random() * SPLASH_THEMES.length)]);
+      }
     })();
   </script>
 
-  <section id="splash" class="mode-dark" aria-label="Welcome to C64 READY.">
+  <section id="splash" aria-label="Welcome to C64 READY.">
     <div class="splash-frame">
       <div class="splash-inner">
 
         <div class="splash-brand">
-          <img class="splash-logo-img" src="/logos/c64ready-logo.png" width="1003" height="94"
-            alt="C64 READY.">
+          <div class="logo-text" role="img" aria-label="C64 READY.">
+            <span class="lt-blocks"><span class="b4" data-t="█">█</span><span class="b3" data-t="▓">▓</span><span class="b2" data-t="▒">▒</span><span class="b1" data-t="░">░</span></span>
+            <span class="lt-main"><span class="lt-c64" data-t="C64">C64</span> <span class="lt-ready" data-t="READY.">READY.</span></span>
+          </div>
           <p class="splash-tagline"><span class="tagline-prompt">»</span>Serious emulation, retro vibes.</p>
         </div>
 
@@ -142,9 +150,9 @@
             <p class="splash-sub">Your C64 in the browser. Add your ROMs
               once, then press POWER anytime.</p>
             <ul class="splash-chips">
-              <li>Cycle-exact 6510, VIC-II and SID</li>
+              <li>Cycle-exact 6510, VIC-II and dual SIDs</li>
               <li>True 1541 drive, real fastloaders</li>
-              <li>2,400+ hardware tests</li>
+              <li>Six themes, or bring your own</li>
               <li class="splash-chip-more">Installs as an app, plays offline</li>
             </ul>
             <div class="splash-cta-row">
@@ -181,14 +189,14 @@
           <li class="card-vibes">
             <img src="/screens/splash-vibes.webp" width="800" height="450" loading="lazy"
               alt="The 80s bedroom scene: the 1702 monitor glowing on a lamplit desk beside the C64 and its 1541 drive, the BASIC READY screen on the CRT">
-            <h2>Retro Vibes 3D or VR</h2>
-            <p>Step into an 80s bedroom, your demo playing live on the 1702. More scenes to choose from.</p>
+            <h2>Virtual Breadbin</h2>
+            <p>Step into different scenes and see your demo or game playing live on the 1702.</p>
           </li>
           <li class="card-disks">
             <img src="/guide/drive8-loaded.webp" width="638" height="632" loading="lazy"
               alt="The Disk Drive 8 panel: LOAD, BLANK, FORMAT and .D64 export controls above a directory whose filenames form PETSCII artwork">
             <h2>Real disks, real saves</h2>
-            <p>LOAD, SAVE, format and export .d64s through a true 1541, run copy-protected .g64s, and use 1571 .d71s and 1581 .d81s through the virtual drive. Save states resume anytime.</p>
+            <p>LOAD, SAVE, format and export .d64s through a true 1541, run copy-protected .g64s. Save states resume anytime.</p>
           </li>
           <li class="card-phone">
             <div class="splash-phone">

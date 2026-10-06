@@ -15,6 +15,10 @@
 //      Commando) are valid, have both modes, and
 //      their text colours reach 4.5:1 on the panels they sit on.
 //   9. The inline pre-paint script puts the stored theme in place and pins its mode.
+//  10. The splash wears a random built-in theme: styles-splash-themes.css is
+//      what tools/splash-themes.mjs generates, the inline pick lists every
+//      built-in theme, and each one's splash text keeps 4.5:1 in both modes.
+//      Tokens retired from the format still import.
 import fs from 'fs';
 import path from 'path';
 import vm from 'vm';
@@ -295,4 +299,37 @@ for (const [storedCss, pinned, osDark, appearance, wantMode] of [
   expect(!pinned || attrs['data-theme-modes'] === pinned, 'pre-paint: a one-mode theme is marked as such');
 }
 
-console.log(`ok - themes: format, colours only, modes, rules, storage, export, ${THEME_TOKENS.length} tokens, built-in themes, page patterns, pre-paint`);
+// 10. The splash wears a random built-in theme, in the current mode.
+{
+  const { splashThemesCss, SPLASH_THEME_IDS } = await import('../tools/splash-themes.mjs');
+  const generated = splashThemesCss();
+  const committed = fs.readFileSync(path.join(root, 'src/styles/styles-splash-themes.css'), 'utf8');
+  expect(committed === generated, 'splash: src/styles/styles-splash-themes.css is current (npm run build:splash-themes)');
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const inline = html.match(/var SPLASH_THEMES = \[([^\]]*)\]/);
+  expect(inline && JSON.stringify(inline[1].split(',').map((x) => x.trim().replace(/'/g, ''))) === JSON.stringify(SPLASH_THEME_IDS),
+    `splash: index.html's SPLASH_THEMES lists the built-in themes (${SPLASH_THEME_IDS.join(', ')})`);
+  for (const id of SPLASH_THEME_IDS) {
+    for (const mode of ['dark', 'light']) {
+      const sel = `${mode === 'light' ? ':root[data-mode="light"] ' : ''}body[data-splash-theme="${id}"] #splash {`;
+      const at = generated.indexOf(sel);
+      expect(at >= 0, `splash: ${id} has a ${mode} block`);
+      const long = (v) => (/^#[0-9a-f]{3}$/i.test(v) ? '#' + [...v.slice(1)].map((c) => c + c).join('') : v);
+      const set = Object.fromEntries([...generated.slice(at + sel.length, generated.indexOf('}', at)).matchAll(/--([a-z0-9-]+):\s*([^;]+);/g)]
+        .map((m) => [m[1], long(m[2].trim())]));
+      for (const k of ['text', 'text-dim', 'text-bright']) {
+        const c = contrast(set[k], set['panel-bg']);
+        expect(c >= 4.5, `splash ${id} ${mode}: --${k} reaches 4.5:1 on the panel (${c.toFixed(2)})`);
+      }
+      const p = contrast(set['button-accent'], set['button-bg']);
+      expect(p >= 4.5, `splash ${id} ${mode}: the POWER ON label (button-accent) reaches 4.5:1 on its button (${p.toFixed(2)})`);
+      const badge = contrast(set['on-accent'], set.accent);
+      expect(badge >= 4.5, `splash ${id} ${mode}: the hovered video badge reaches 4.5:1 (${badge.toFixed(2)})`);
+    }
+  }
+  // Tokens retired with the splash's own colours still import from older exports.
+  const old = parseTheme(T({ dark: { text: '#ffffff', 'splash-screen': '#000000', power: '#00ff00' } }));
+  expect(old.theme && !('power' in old.theme.modes.dark), 'retired tokens: a file that still sets them imports without them');
+}
+
+console.log(`ok - themes: format, colours only, modes, rules, storage, export, ${THEME_TOKENS.length} tokens, built-in themes, page patterns, pre-paint, splash`);

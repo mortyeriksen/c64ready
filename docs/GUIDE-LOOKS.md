@@ -14,8 +14,10 @@ behind the panels. **Classic** is the default, and five more are built in.
 Each has a pattern of its own: Classic a large, subtle grid, GEOS a dither
 like its desktop, Breadbin a woven crosshatch, Phosphor scanlines in dark
 mode and green-bar paper in light, Out Run a finer grid and Commando dots. The gallery below shows each in dark mode on the left and
-light mode on the right; step through it with **Previous** and **Next**. The screen, the CRT looks, the splash and Retro Vibes keep their
-own colours whatever the theme, and you can import your own too.
+light mode on the right; step through it with **Previous** and **Next**. The screen, the CRT looks and Retro Vibes keep their
+own colours whatever the theme, and you can import your own too. On a first
+visit, the welcome screen wears one of the built-in themes at random, and the
+app keeps that theme when you leave it.
 
 <!-- gallery themes -->
 

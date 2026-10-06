@@ -18,6 +18,11 @@
 // Dismissal fires a 'c64-splash-dismissed' window event; main.js listens to
 // run what the splash deferred while it covered the screen (the attract
 // demo's lazy three.js import, the PWA install card).
+//
+// The splash wears a built-in theme picked at random pre-paint
+// (body[data-splash-theme]). As it starts to fade, a 'c64-splash-leaving'
+// event carries that theme's id, and src/ui/themes.js makes it the app's
+// theme when none is chosen yet, so the fade lands in the same look.
 import { powerBtn } from './dom.js';
 import { loader } from '../state.js';
 
@@ -67,6 +72,7 @@ function _dismiss({ boot }) {
   try { localStorage.setItem(SPLASH_SEEN_KEY, '1'); } catch { /* private mode — splash just shows again next visit */ }
   document.removeEventListener('keydown', _onKeydown, true);
   if (boot) _pressPowerWhenReady();   // inside the click's user activation — see note above
+  window.dispatchEvent(new CustomEvent('c64-splash-leaving', { detail: { theme: document.body.dataset.splashTheme } }));
   splashEl.classList.add('splash-closing');
   const finish = () => {
     splashTeaser?.pause();   // don't keep decoding video behind the app

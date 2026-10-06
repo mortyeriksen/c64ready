@@ -58,16 +58,16 @@ export const THEME_TOKENS = [
   'menu-bg', 'status-bg', 'dropzone-border', 'row-hover', 'dir-row-hover', 'scrollbar-thumb',
   'backdrop', 'scrim', 'shadow', 'highlight', 'text', 'dim', 'text-dim', 'text-bright',
   'on-accent', 'button-ink', 'warn-text', 'accent', 'accent2', 'accent-bright', 'accent-soft',
-  'accent-pale', 'accent-deep', 'green', 'amber', 'red', 'info', 'on-green-ink', 'power',
-  'power-hover', 'power-ink', 'logo-drop', 'logo-ramp-4', 'logo-ramp-2', 'logo-ramp-1',
+  'accent-pale', 'accent-deep', 'green', 'amber', 'red', 'info', 'on-green-ink',
+  'logo-ramp-4', 'logo-ramp-2', 'logo-ramp-1',
   'key-down-bg', 'led-off', 'tape-motor-on', 'tape-bar-bg', 'tape-bar-hover', 'zoom-btn-bg',
   'zoom-btn-hover', 'dirzoom-bg', 'kbd-bg', 'kbd-border', 'kbd-hover', 'kbd-ink', 'vibes-text',
   'vibes-bg-1', 'vibes-bg-2', 'vibes-bg-3', 'vibes-hover-border', 'vibes-hover-bg-1',
   'vibes-hover-bg-2', 'vibes-hover-bg-3', 'dir-text', 'dir-dim', 'scope-bg', 'scope-grid',
   'scope-trace', 'touch-knob', 'touch-a', 'touch-b', 'touch-active', 'chip-ink', 'type-prg',
   'type-cbm', 'type-turbo', 'type-disk', 'type-crt', 'type-tap', 'type-t64', 'type-sid',
-  'credits-bg-top', 'credits-bg-bottom', 'credits-scanline', 'splash-screen', 'splash-card-text',
-  'splash-phone', 'a64-row-hover', 'a64-highlight', 'a64-meta', 'a64-overlay', 'a64-fact-label',
+  'credits-bg-top', 'credits-bg-bottom', 'credits-scanline',
+  'a64-row-hover', 'a64-highlight', 'a64-meta', 'a64-overlay', 'a64-fact-label',
   'a64-body', 'a64-subtle', 'a64-link', 'a64-primary-border', 'a64-primary-hover',
   'a64-text-button', 'a64-text-button-hover', 'a64-line', 'a64-tagline', 'a64-search-icon',
   'a64-tab-active', 'a64-tab-underline', 'a64-tab-hover', 'a64-sidebar-bg', 'a64-eyebrow',
@@ -79,6 +79,10 @@ export const THEME_TOKENS = [
   'a64-progress-stripe', 'a64-counter',
 ];
 const TOKEN_SET = new Set(THEME_TOKENS);
+// Tokens an earlier build exported, now gone: the splash's own colours, before
+// it took each theme's ordinary tokens. A file that still has them imports
+// without them.
+const RETIRED_TOKENS = new Set(['power', 'power-hover', 'power-ink', 'logo-drop', 'splash-screen', 'splash-card-text', 'splash-phone']);
 
 // Plain colours only. Channels 0–255 (or %), alpha 0–1 (or %).
 const NUM = '\\s*(?:\\d{1,3}(?:\\.\\d+)?%?)\\s*';
@@ -190,7 +194,7 @@ export function validateTheme(obj, { lenient = false } = {}) {
     const out = {};
     for (const [token, value] of Object.entries(set)) {
       if (!TOKEN_SET.has(token)) {
-        if (lenient) continue;
+        if (lenient || RETIRED_TOKENS.has(token)) continue;
         return fail(`Unknown colour "${token}" in mode "${mode}". Export the Classic theme to see every colour a theme can set.`);
       }
       if (!isThemeColour(value)) return fail(`"${token}" in mode "${mode}" is not a colour: use #rrggbb, #rgb, rgb() or rgba().`);
@@ -244,24 +248,31 @@ export function themeModes(theme) {
 // The theme's rules. :root:root outranks styles-theme.css (one :root more)
 // wherever the style element lands in <head>. The dark colours also go to the
 // monitor (its frame, the touch controls), which stays dark in light mode and
-// otherwise keeps Classic's; the splash keeps Classic's whatever the theme.
+// otherwise keeps Classic's. The first-visit splash wears a built-in theme of
+// its own (tools/splash-themes.mjs, from themeModeSet below).
 const DEFAULT_INK_ALPHA = 0.07;
+// One mode's custom properties as the page gets them: the theme's colours,
+// the button colours that follow them, and its page pattern.
+export function themeModeSet(theme, m) {
+  const set = withButtonColours(theme.modes[m]);
+  const layers = patternLayers(theme.look?.[m]?.pattern, theme.look?.[m]?.size);
+  if (layers) {
+    // A pattern with no ink of its own is drawn in the theme's text colour, faintly.
+    if (!set['pattern-ink'] && /^#[0-9a-f]{6}$/i.test(set.text || '')) {
+      set['pattern-ink'] = `rgba(${[1, 3, 5].map((i) => parseInt(set.text.slice(i, i + 2), 16)).join(', ')}, ${DEFAULT_INK_ALPHA})`;
+    }
+    set['page-pattern'] = layers.image;
+    set['page-pattern-size'] = layers.size;
+  } else {
+    set['page-pattern'] = 'none';
+    set['page-pattern-size'] = 'auto';
+  }
+  return set;
+}
 export function themeCss(theme) {
   if (!theme) return '';
   return ['dark', 'light'].filter((m) => theme.modes[m]).map((m) => {
-    const set = withButtonColours(theme.modes[m]);
-    const layers = patternLayers(theme.look?.[m]?.pattern, theme.look?.[m]?.size);
-    if (layers) {
-      // A pattern with no ink of its own is drawn in the theme's text colour, faintly.
-      if (!set['pattern-ink'] && /^#[0-9a-f]{6}$/i.test(set.text || '')) {
-        set['pattern-ink'] = `rgba(${[1, 3, 5].map((i) => parseInt(set.text.slice(i, i + 2), 16)).join(', ')}, ${DEFAULT_INK_ALPHA})`;
-      }
-      set['page-pattern'] = layers.image;
-      set['page-pattern-size'] = layers.size;
-    } else {
-      set['page-pattern'] = 'none';
-      set['page-pattern-size'] = 'auto';
-    }
+    const set = themeModeSet(theme, m);
     const decls = Object.entries(set).map(([k, v]) => `--${k}: ${v};`).join(' ');
     const sel = m === 'dark' ? `:root:root[data-mode="dark"], :root:root .c64-monitor.mode-dark` : `:root:root[data-mode="light"]`;
     return `${sel} { ${decls} }`;
@@ -279,6 +290,9 @@ const BUILTIN = [
   { id: 'outrun', name: 'Out Run', builtin: true, theme: validateTheme(OUTRUN_THEME).theme },
   { id: 'commando', name: 'Commando', builtin: true, theme: validateTheme(COMMANDO_THEME).theme },
 ];
+
+// The built-in themes, in the order THEME steps through them.
+export const BUILTIN_THEMES = BUILTIN;
 
 const slug = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'theme';
 
@@ -432,6 +446,14 @@ export function initThemes({ cycleButton, importButton, exportButton, removeButt
     let id = null; try { id = localStorage.getItem(THEME_KEY); } catch {}
     current = all().find((t) => t.id === id) || CLASSIC;
     apply();
+  });
+
+  // A first visitor leaving the splash keeps the theme it wore (src/ui/splash.js),
+  // unless a theme is already chosen.
+  window.addEventListener('c64-splash-leaving', (e) => {
+    let chosen = null; try { chosen = localStorage.getItem(THEME_KEY); } catch {}
+    const entry = BUILTIN.find((t) => t.id === e.detail?.theme);
+    if (!chosen && entry) select(entry);
   });
 
   apply();

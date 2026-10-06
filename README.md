@@ -170,9 +170,12 @@ dialog and in [Specifications & sources](docs/SPECIFICATIONS.md).
 Everything runs in your browser. ROMs, disks, tapes, cartridges and save states are kept in
 the browser's own storage (localStorage / IndexedDB) and are never uploaded. The site sets no
 cookies and loads no third-party scripts. The only telemetry is a few empty marker pages the
-app requests (`/pwa.html`, `/pwa-installed.html`, `/roms-loaded.html`, `/roms-vice.html`; see
-`src/main.js`) so the host's server-side statistics (Netlify Analytics) can count how many
-sessions run installed or with ROMs. They carry no payload and no identifier.
+app requests (`/pwa.html`, `/pwa-installed.html`, `/roms-loaded.html`, `/roms-vice.html`,
+`/returned.html`, and one `/roms-theme-<theme>.html` per built-in theme plus `custom` for
+imported ones; see `src/main.js`) so the host's server-side statistics (Netlify Analytics)
+can count how many sessions run installed or with ROMs, how many return with their ROMs
+already set up, and which theme people set their ROMs up in. They carry no payload and no
+identifier, and an imported theme's name never leaves the browser.
 
 ## License
 

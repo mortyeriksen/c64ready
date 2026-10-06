@@ -1152,6 +1152,7 @@ async function _runAutoLoad(scanningMsg) {
   updateRomStatus();
   _pingRomsLoaded();
   const cached = loader.cachedCount | 0;
+  if (loaded === 3 && cached >= 3) _pingReturned();
   if (loaded === 3) {
     const suffix = cached > 0 ? ` (${cached} from cache)` : '';
     setStatus(`ROMs ready${suffix} – press POWER ON`, 'ready');
@@ -1159,8 +1160,11 @@ async function _runAutoLoad(scanningMsg) {
     setStatus(`${loaded}/3 ROMs found – load remaining manually`, 'idle');
   } else {
     setStatusAction('Load all three ', 'ROM files', ' to begin', _openSetup);
-    // No ROMs anywhere (cache + server both empty) → open the Setup dialog.
-    _openSetup();
+    // No ROMs anywhere (cache + server both empty) → open the Setup dialog,
+    // once the first-visit splash is gone: opened beneath it, the hidden
+    // dialog would take Escape from the splash.
+    if (splashIsOpen()) window.addEventListener('c64-splash-dismissed', () => _openSetup(), { once: true });
+    else _openSetup();
   }
   // Nothing to boot: swap the boot banner for the Setup one.
   if (loaded < 3 && !running) _showPoweredOffScreen();
@@ -1178,7 +1182,23 @@ async function _runAutoLoad(scanningMsg) {
 // and /roms-vice.html when they came out of a picked VICE folder. Read them as
 // sessions with ROMs, not as people. No ROMs ship with the site, so every count
 // is someone's own files.
+//
+// /roms-theme-<id>.html records the theme in use at the moment the user
+// supplies their ROMs (uploaded or from a VICE folder; not when a later visit
+// restores them from the cache), so it counts ROM set-ups per theme. For a
+// first visitor that is the theme the splash gave them. Imported themes all
+// count as "custom": their names stay in the browser. Separate pages rather
+// than a query parameter, because Top Pages groups by path.
 const _ROM_SOURCE_KEY = 'c64emu.romsSource';
+const _ROM_THEME_MARKERS = {
+  classic: '/roms-theme-classic.html',
+  geos: '/roms-theme-geos.html',
+  breadbin: '/roms-theme-breadbin.html',
+  phosphor: '/roms-theme-phosphor.html',
+  outrun: '/roms-theme-outrun.html',
+  commando: '/roms-theme-commando.html',
+  custom: '/roms-theme-custom.html',
+};
 
 let _romsPinged = false;
 function _pingRomsLoaded() {
@@ -1190,12 +1210,30 @@ function _pingRomsLoaded() {
   if (source === 'vice') fetch('/roms-vice.html', { cache: 'no-store' }).catch(() => {});
 }
 
+// /returned.html: a visit whose ROMs came back out of the browser's cache, so
+// someone who set them up before has returned. Once per page load.
+let _returnedPinged = false;
+function _pingReturned() {
+  if (_returnedPinged) return;
+  _returnedPinged = true;
+  fetch('/returned.html', { cache: 'no-store' }).catch(() => {});
+}
+
+let _romThemePinged = false;
+function _pingRomTheme() {
+  if (_romThemePinged || !loader.allLoaded) return;
+  _romThemePinged = true;
+  const theme = themes.current();
+  fetch(_ROM_THEME_MARKERS[theme.builtin ? theme.id : 'custom'], { cache: 'no-store' }).catch(() => {});
+}
+
 // Remember the route, because a returning visit has no upload to observe: the
 // ROMs come straight back out of the localStorage cache. Last install wins, so
 // re-loading a slot by hand takes the pair back to 'upload'.
 loader.onUserRom = (_key, source) => {
   try { localStorage.setItem(_ROM_SOURCE_KEY, source); } catch {}
   _pingRomsLoaded();
+  _pingRomTheme();
 };
 
 (async () => { await _runAutoLoad('Scanning for ROM files…'); })();

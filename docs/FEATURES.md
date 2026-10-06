@@ -14,7 +14,9 @@ installs as an app. For a step-by-step walkthrough see the
 
 ## App & platform (PWA)
 
-- **First-visit welcome screen**: a one-time splash introduces the emulator;
+- **First-visit welcome screen**: a one-time splash introduces the emulator,
+  in a built-in theme picked at random (in your dark or light mode), which the
+  app then keeps;
   **POWER ON** boots straight into BASIC (and unlocks audio in the same
   click). Dismissing it either way means it never shows again in that
   browser; installed-app launches always skip it. Append `?SPLASH=1` to the

@@ -6,7 +6,7 @@
 // entry at all). 'system' follows the OS colour scheme, live. The resolved mode
 // lands on <html data-mode="dark|light">, which selects the token values in
 // styles-theme.css; elements marked .mode-dark keep the dark values whatever
-// the mode (the monitor, the splash, the machine's own readouts).
+// the mode (the monitor, the machine's own readouts).
 //
 // The inline script at the top of <body> in index.html applies the stored
 // choice before first paint, so a reload never flashes the other mode. It

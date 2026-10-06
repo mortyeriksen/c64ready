@@ -36,7 +36,9 @@ const RUNTIME_CACHES = [MODEL_CACHE, GUIDE_CACHE];
 // Keep in sync with the matching globIgnores in vite.config.js; a marker that
 // lands in the precache is answered from cache and never reaches the host.
 const ANALYTICS_MARKERS = new Set(
-  ['/pwa.html', '/pwa-installed.html', '/roms-loaded.html', '/roms-vice.html']);
+  ['/pwa.html', '/pwa-installed.html', '/roms-loaded.html', '/roms-vice.html', '/returned.html',
+   '/roms-theme-classic.html', '/roms-theme-geos.html', '/roms-theme-breadbin.html', '/roms-theme-phosphor.html',
+   '/roms-theme-outrun.html', '/roms-theme-commando.html', '/roms-theme-custom.html']);
 
 // Prompt-to-update flow: a new SW installs and WAITS (note: NO unconditional
 // skipWaiting on install) so it never swaps code out from under a running
@@ -102,8 +104,10 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/roms/')) return;
 
   // Analytics markers — installed launch (/pwa.html, every launch), new install
-  // (/pwa-installed.html), and ROM setup (/roms-loaded.html, /roms-vice.html),
-  // each once per browser. Never intercept: let them go straight to the network
+  // (/pwa-installed.html, once per browser), sessions with ROMs
+  // (/roms-loaded.html, /roms-vice.html, once per page load), and the theme in
+  // use when the user supplies ROMs (/roms-theme-*.html), and a visit that
+  // restores them from the cache (/returned.html). Never intercept: let them go straight to the network
   // so Netlify's server-side log records the page view rather than the SW
   // answering from cache. None are precached (vite.config globIgnores); offline
   // they just fail silently.
