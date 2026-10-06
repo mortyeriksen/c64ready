@@ -182,7 +182,7 @@ them with **Previous** and **Next**.
 
 **80s Bedroom**: A teenager's bedroom at night, the C64 under an amber lamp.
 
-![Three views of the 80s Bedroom scene: a messy 1980s teenager's bedroom at night: the C64 on a faux-wood desk under an amber lamp, a plaid-duvet bed, venetian blinds, taped-up posters and a corkboard, a wood-grain CRT, a boombox and scattered clutter.](/guide/retro-vibes-80s-bedroom.webp)
+![Three views of the 80s Bedroom scene: a 1980s teenager's bedroom at night, the C64 on a wooden desk under an amber lamp, a plaid-duvet bed, venetian blinds with stars beyond, posters and a corkboard on patterned wallpaper, a wood-grain TV beside the desk and clutter on the floor.](/guide/retro-vibes-80s-bedroom.webp)
 
 <!-- /gallery -->
 

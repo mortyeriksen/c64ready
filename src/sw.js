@@ -29,7 +29,7 @@ precache(self.__WB_MANIFEST);
 // GLBs, and the guide screenshots the docs embed. Versioned so bumping a suffix
 // drops stale copies on activate.
 const MODEL_CACHE = 'c64emu-models-v1';
-const GUIDE_CACHE = 'c64emu-guide-v1';
+const GUIDE_CACHE = 'c64emu-guide-v2';
 const RUNTIME_CACHES = [MODEL_CACHE, GUIDE_CACHE];
 
 // Network-only analytics markers (empty pages in public/, beacons in main.js).

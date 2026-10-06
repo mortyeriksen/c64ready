@@ -100,6 +100,7 @@ const PICK = want.length ? want.map((s) => {
 for (const n of PICK) {
   const sceneDone = slowWarning(`The ${SLUGS[n]} scene`, 12);
   await page.evaluate((i) => window.modelViewer._applyScene(i), n);
+  await page.waitForLoadState('networkidle');   // a scene with a room file fetches it now
   await page.waitForTimeout(3000);   // scene build + water/shadows settle
   for (const mode of ['hero', 'close', 'low']) {
     await setCam(mode);
