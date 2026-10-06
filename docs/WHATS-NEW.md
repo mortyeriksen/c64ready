@@ -20,6 +20,19 @@ The version you are running is shown at the bottom of the About dialog.
   outside. It loads together with the computer, so you no longer see a dark
   room first, and the **3D MODEL** setting in Options picks a lighter or more
   detailed room, just as it does for the computer.
+- **A welcome screen in a random theme.** The welcome screen on a first visit
+  now wears one of the six built-in themes, picked at random, in your dark or
+  light setting, and the app keeps that theme when you power on. You can change
+  it anytime in Options. The welcome screen also shows the same text logo as
+  the header.
+- **A guide to tape restoration.** The new
+  [Tape restoration](TAPE-RESTORATION.md) guide explains how a worn cassette
+  becomes a tape that loads again: what is on a tape, how a recording is read
+  and mended, and how to do it in the emulator and with the command line,
+  with diagrams of each step.
+- **Esc closes the welcome screen.** Before your ROMs were set up, Esc did
+  nothing visible on the welcome screen; it now closes it, and the ROM setup
+  opens after.
 
 ---
 

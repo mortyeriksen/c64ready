@@ -50,6 +50,7 @@ const ORDER = [
   'GUIDE-LOOKS',
   'GUIDE-OPTIONS',
   'GUIDE-CLI',
+  'TAPE-RESTORATION',
   'SPECIFICATIONS',
   'FEATURES',
   'KNOWN-ISSUES',
@@ -71,7 +72,7 @@ const ORDER = [
 // lead the landing page in their own "Overview & guides" band; everything else
 // falls into the "Architecture & internals" grid.
 const GUIDES = new Set([
-  'WHATS-NEW', 'GETTING-STARTED', 'USER-GUIDE', 'FEATURES',
+  'WHATS-NEW', 'GETTING-STARTED', 'USER-GUIDE', 'TAPE-RESTORATION', 'FEATURES',
   'KNOWN-ISSUES', 'SPECIFICATIONS', 'ABOUT',
 ]);
 
@@ -99,6 +100,7 @@ const CARD_TEASERS = {
   specifications: 'The hardware references, tools, and people this emulator is built on.',
   about: "What it is, what it stands for, and who's behind it.",
   'user-guide': 'Every panel, dialog and button, in topics from the interface and media to options and the command line.',
+  'tape-restoration': 'How a worn cassette becomes a tape that loads again.',
 };
 
 const TEXT_DOCS = [
@@ -112,6 +114,11 @@ const TEXT_DOCS = [
 // licence header, <!-- description: ... -->; test/docs-meta-spec-test.js keeps
 // them whole sentences of a preview's length.
 const DESCRIPTION = /^<!--\s*description:\s*([\s\S]*?)\s*-->\s*/;
+// A page may name its share picture on the line after, <!-- share-image:
+// /guide/name.webp -->, where its first picture is not the one: an SVG diagram,
+// which link previews do not show, names a raster copy of itself. Its alt text
+// is the page's own for the picture of the same name.
+const SHARE_IMAGE = /^<!--\s*share-image:\s*(\/\S+)\s*-->\s*/;
 
 // A page's share image: its first picture in a landscape shape a preview card
 // shows whole (width 1.2 to 2 times the height). A page without one uses the
@@ -135,6 +142,14 @@ function imageSize(file) {
     }
   }
   return null;
+}
+function namedShareImage(md, src) {
+  const file = join(ROOT, 'public', src);
+  const size = existsSync(file) && imageSize(file);
+  if (!size) throw new Error(`share-image ${src}: no such raster picture in public/`);
+  const stem = src.replace(/\.[a-z]+$/i, '');
+  const same = [...md.matchAll(/!\[([^\]]*)\]\((\/[^)\s]+)\)/g)].find(([, , s]) => s.replace(/\.[a-z]+$/i, '') === stem);
+  return { url: absoluteUrl(src), alt: same ? same[1] : '', ...size };
 }
 function shareImage(md) {
   for (const [, alt, src] of md.matchAll(/!\[([^\]]*)\]\((\/[^)\s]+)\)/g)) {
@@ -640,6 +655,7 @@ const INDEX_LIST = {
   guides: [
     ['GETTING-STARTED', 'Getting Started', 'from blank screen to a running demo'],
     ['USER-GUIDE', 'User Guide', 'every panel, dialog and button'],
+    ['TAPE-RESTORATION', 'Tape restoration', 'bringing worn cassettes back'],
     ['FEATURES', 'Feature list', 'everything it supports'],
     ['KNOWN-ISSUES', 'Known Issues', 'what is missing or rough'],
     ['WHATS-NEW', "What's New", 'changes in each release'],
@@ -1146,7 +1162,10 @@ export async function buildDocs() {
       .replace(/^<!--\s*SPDX-License-Identifier[\s\S]*?-->\s*<!--\s*Copyright[\s\S]*?-->\s*/, '');
     const described = md.match(DESCRIPTION);
     md = md.replace(DESCRIPTION, '');
-    const meta = { ...extractMeta(md, name), ...(described ? { desc: described[1].replace(/\s+/g, ' ') } : {}), image: shareImage(md) };
+    const shared = md.match(SHARE_IMAGE);
+    md = md.replace(SHARE_IMAGE, '');
+    const meta = { ...extractMeta(md, name), ...(described ? { desc: described[1].replace(/\s+/g, ' ') } : {}),
+      image: shared ? namedShareImage(md, shared[1]) : shareImage(md) };
     let bodyHtml = accessibleMarkup(marked.parse(md));
     bodyHtml = renderGalleries(rewriteDocLinks(bodyHtml));
     if (href === 'about') writeAboutFragment(bodyHtml);

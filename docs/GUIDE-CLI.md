@@ -126,6 +126,8 @@ cannot. Useful flags: `--channel <n|mix|aligned>` to force which reading of a
 stereo transfer is used, `--pre-emphasis <n>` for a treble lift, `--no-mend` /
 `--no-repair` to see the tape exactly as it came, and `--ntsc` (or
 `--cpu-hz <hz>`) when the tape was written for an NTSC machine.
+[Tape restoration](TAPE-RESTORATION.md) explains what happens to a recording
+on the way, and how to read the result.
 
 ## Ask what is on something
 

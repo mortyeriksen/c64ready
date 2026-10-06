@@ -353,8 +353,9 @@ tape's second copy) are played against each other until two agree and the
 file's own checksum passes. Nothing is invented: a file that cannot be proved
 is left alone and struck through in the listing. On the eight worn cassettes
 this was built against, it went from 66 of 129 programs loading to 121 of 130.
-The full method is on the [Datasette architecture](DATASETTE-ARCHITECTURE.md)
-page.
+[Tape restoration](TAPE-RESTORATION.md) explains how it works and how to get
+the most from a transfer; the full method is on the
+[Datasette architecture](DATASETTE-ARCHITECTURE.md) page.
 
 It takes a while (a 30-minute side is a few hundred megabytes of audio, read
 several times over); a dialog says which pass it is on, and the emulator keeps
