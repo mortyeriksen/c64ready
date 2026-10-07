@@ -106,17 +106,20 @@ knowing before you press record.
 
 `.wav` files of 8, 16, 24 or 32-bit PCM and 32 or 64-bit float are read, mono
 or stereo. A **DC2N** `.dmp` dump also works: it captures the pulses directly
-from a real Datasette, so it skips the reading stages and goes straight to
-mending.
+from a real Datasette, so it skips the reading stages. In the emulator it then
+gets the KERNAL repair. The CLI converts it as it is (`tapfix` repairs the
+result).
 
 ---
 
 ## How a recording becomes a tape
 
 Load a `.wav` into the Datasette, or give it to `c64rdy wav2tap`, and it goes
-through seven passes. The emulator's "Reading tape" dialog shows them by name.
+through up to seven stages. The emulator's "Reading tape" dialog shows them by
+name. A mono recording, or one read with `--channel`, skips lining up and
+comparing, and mending only runs when a Turbo Tape 64 file is damaged.
 
-![From a worn cassette to a tape that loads: seven stages in a row (read the recording, measure the signal, find the pulses, line up the channels, compare the readings, mend damaged files, read the directory), and below them a noisy recording with a dropout going in and clean square pulses coming out as a .tap. Every file gets a verdict: readable, mended, unconfirmed or damaged.](/guide/tape-pipeline.svg)
+![From a worn cassette to a tape that loads: seven stages in a row (read the recording, measure the signal, find the pulses, line up the channels, compare the channels, mend damaged files, read the directory), and below them a noisy recording with a dropout going in and clean square pulses coming out as a .tap. Every file gets a verdict: readable, mended, unconfirmed or damaged.](/guide/tape-pipeline.svg)
 
 ### Measuring the signal
 
@@ -158,7 +161,7 @@ plain average listed 1 file of 8, where the lined-up average listed 12 of 14.
 So the decoder measures that delay, lines the channels up, and reads the tape
 four ways: each channel alone, the plain average and the lined-up average.
 
-### Comparing the readings
+### Comparing the channels
 
 Each reading is decoded completely, and the one that reads the most files
 (complete, with checksums that add up) becomes the tape. Nothing is scored by
@@ -204,10 +207,10 @@ A turbo file is written only once, so there is no second copy. The second
 chance is the recording itself: the damaged stretch is read again, in every
 way available.
 
-- **The other channel**, and both averages.
+- **The other channel**, both averages, and the difference between the
+  channels.
 - **Treble lifts** from 1.5 to 5 times, which bring back the edges that
-  spacing loss blurred. On one file, a lift of 3 took 674 unreadable pulses
-  down to 296.
+  spacing loss blurred.
 
 An 8-bit checksum can miss errors, so a passing checksum alone is not enough
 to confirm a recovery. A block is **confirmed** when **two readings agree byte
@@ -220,12 +223,13 @@ spliced together, each cut a safe margin short of its next fault. The
 checksum judges the result, and a splice is always reported as unconfirmed.
 
 Turbo mending applies to Turbo Tape 64 files, and needs a recording to read
-again, so a `.dmp` dump gets the KERNAL repair only.
+again, so in the emulator a `.dmp` dump gets the KERNAL repair only. Other turbo formats are
+not mended.
 
 ### Written back clean
 
-Every block whose bytes check out, mended or not, is rewritten at the exact widths the tape
-uses elsewhere. A lifted or averaged reading shifts widths slightly, and a
+When a recording is mended, every Turbo Tape 64 data block whose bytes check
+out is rewritten at the exact widths the tape uses elsewhere. A lifted or averaged reading shifts widths slightly, and a
 1980s loader has a fixed threshold where the decoder adapts. Rewriting means
 the tape's own loader reads the block as if it were new.
 
@@ -312,7 +316,7 @@ it: `Only one reading vouches for: …`.
 | --- | --- |
 | `--channel <n\|mix\|aligned>` | Use one particular reading of a stereo transfer, instead of the one that reads the most files |
 | `--pre-emphasis <n>` | Lift the treble of the whole recording before reading |
-| `--no-mend` | Skip the turbo re-reading, to see the tape as it came |
+| `--no-mend` | Skip the turbo re-reading and rewrite, to see the tape as it came |
 | `--no-repair` | Skip the KERNAL second-copy repair |
 | `--ntsc` / `--cpu-hz <hz>` | Measure widths for an NTSC machine, or any clock |
 
@@ -413,15 +417,15 @@ the tape and disassembled.
 
 | You see | It means |
 | --- | --- |
-| `ok` | The file decoded whole and its checksum passes |
+| `ok` | The file decoded whole and its checksum passes. For a KERNAL file one good copy is enough, so `loadtest` is the surer check |
 | `N of M files readable.` | M files found, N of them whole |
-| `K mended from a second reading.` | Turbo blocks recovered from another reading, and rewritten |
+| `K mended from a second reading.` | Blocks recovered, from another reading or from the KERNAL's second copy, including unconfirmed ones |
 | `Only one reading vouches for: …` | Put back on one reading's word: unconfirmed |
-| `1 drop, 120 bytes lost` | The signal vanished from the capture, and a stretch of the file is missing |
-| `40 bytes garbled` | The signal was there but unreadable: worth a lift or the other channel |
+| `1 drop, 120 bytes lost` | Turbo files: the signal vanished from the capture, and a stretch of the file is missing |
+| `40 bytes garbled` | Turbo files: the signal was there but unreadable, worth a lift or the other channel |
 | `checksum fails` | Complete, but a bit is wrong somewhere |
 | `cut short` | The file stops before its end: the recording or the tape ends early |
-| *ran 3.1% fast* | The captured pulse timings differ from nominal by 3.1%: usually fine for loading, and worth knowing |
+| *ran 3.1% fast* | The Turbo Tape 64 or Novaload pulses differ from nominal by 3.1%: usually fine for loading, and worth knowing. A KERNAL-only tape gives no figure |
 | A name struck through (emulator) | Not readable whole: hover for the reason |
 
 *Garbled* is the hopeful one: the signal is there, and a different reading
@@ -437,7 +441,7 @@ damage or a playback problem. Another transfer can sometimes recover more.
 | Reads | `.wav`, `.dmp`, `.tap` | `.wav`, `.dmp`, `.tap` |
 | Writes | `.tap`, `.wav` | `.tap`, `.wav`, `.prg`, `.d64`, `.t64` |
 | Machine | PAL | PAL, or NTSC with `--ntsc` |
-| Mending | Always on | On, with `--no-mend` and `--no-repair` to see the tape as it came |
+| Mending | Always on for `.wav` and `.dmp`, not for a loaded `.tap` | On for `.wav`, with `--no-mend` and `--no-repair` to see the tape as it came. `tapfix` repairs a `.tap` |
 | Listen to the tape | 🔊 | `tap2wav`, then play the file |
 | See the pulses | The Tape signal scope | `dir --pulses`, `loader` |
 

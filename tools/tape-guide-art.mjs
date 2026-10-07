@@ -78,10 +78,10 @@ const files = {};
   const W = 1200, H = 675;
   const stages = [
     ['Read', 'the recording'], ['Measure', 'the signal'], ['Find', 'the pulses'], ['Line up', 'the channels'],
-    ['Compare', 'the readings'], ['Mend', 'damaged files'], ['Read', 'the directory'],
+    ['Compare', 'the channels'], ['Mend', 'damaged files'], ['Read', 'the directory'],
   ];
   let body = text(W / 2, 78, 'From a worn cassette to a tape that loads', { size: 34, fill: C.bright, anchor: 'middle', weight: 600 });
-  body += text(W / 2, 116, 'Seven passes, the same in the C64 READY. emulator and in c64rdy wav2tap', { size: 17, fill: C.dim, anchor: 'middle' });
+  body += text(W / 2, 116, 'Seven stages, the same in the C64 READY. emulator and in c64rdy wav2tap', { size: 17, fill: C.dim, anchor: 'middle' });
   const bw = 136, gap = 22, x0 = (W - (stages.length * bw + (stages.length - 1) * gap)) / 2, y = 168;
   stages.forEach(([a, b], i) => {
     const x = x0 + i * (bw + gap);
@@ -114,7 +114,7 @@ const files = {};
   // Verdicts, and the name.
   body += text(W / 2, H - 70, 'Every file gets a verdict:  readable  ·  mended  ·  unconfirmed  ·  damaged', { size: 16, fill: C.text, anchor: 'middle' });
   body += text(W / 2, H - 38, 'C64 READY.  ·  Tape restoration', { size: 14, fill: C.accent, anchor: 'middle', weight: 600 });
-  files['tape-pipeline.svg'] = svg(W, H, 'From a worn cassette to a tape that loads', 'Seven stages in a row: read the recording, measure the signal, find the pulses, line up the channels, compare the readings, mend damaged files, read the directory. Below, a noisy recording with a dropout goes in on the left, and clean square pulses come out on the right as a .tap. Every file gets a verdict: readable, mended, unconfirmed or damaged.', body);
+  files['tape-pipeline.svg'] = svg(W, H, 'From a worn cassette to a tape that loads', 'Seven stages in a row: read the recording, measure the signal, find the pulses, line up the channels, compare the channels, mend damaged files, read the directory. Below, a noisy recording with a dropout goes in on the left, and clean square pulses come out on the right as a .tap. Every file gets a verdict: readable, mended, unconfirmed or damaged.', body);
 }
 
 // 2. Anatomy of a pulse: crossings, the gate, and the KERNAL's three widths.
