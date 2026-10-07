@@ -452,3 +452,63 @@ still load. It just lists as signal no known format reads.
 
 For the full method, with the measurements behind each choice, see the
 [Datasette architecture](DATASETTE-ARCHITECTURE.md#10-the-tape-toolchain) page.
+
+---
+
+## Compared with Audiotap and TAPClean
+
+The long-standing route from a cassette to a clean `.tap` takes two tools.
+[Audiotap](https://sourceforge.net/projects/wav-prg/) turns a recording into
+a `.tap`, and [TAPClean](https://sourceforge.net/projects/tapclean/), which
+grew out of Final TAP (2001), checks and remasters it. Both are still
+maintained. C64 READY. takes a recording to a checked `.tap` in one step,
+for far fewer loader formats.
+
+**Audiotap** reads the recording once. Stereo is mixed down to a single
+channel. It follows each peak and trough and triggers a pulse where the wave
+passes halfway between the last two, so the trigger tracks the level, and
+timing is to the whole sample. For a difficult tape you tune it by hand: the
+sensitivity, a minimum distance between peaks, and whether the waveform is
+inverted. It can also record straight from the sound card.
+
+**TAPClean** starts from that `.tap`. Its strength is breadth: around ninety
+loader scanners, each knowing a format's exact pulse widths, pilots and
+checksums. Optimizing a tape moves every pulse close to one of those widths
+onto it exactly, and tidies pilots, pauses and gaps. It identifies loaders
+and files by CRC-32, so dumps can be compared across collections. A tape with
+read errors is not optimized unless you add `-reckless`, because cleaning can
+only sharpen what the pulses already say.
+
+**C64 READY.** reads the recording several ways and lets the files decide.
+It measures the delay between the two channels by correlating them along the
+tape, to a fraction of a sample, so they can be averaged in step. Centre line
+and level are followed every few milliseconds, and pulses are timed between
+centre crossings placed between samples, which keeps a lopsided wave from
+skewing the widths. There are no settings to tune.
+Its strength is recovery: re-reading damaged Turbo Tape 64 blocks, rebuilding
+KERNAL blocks from their second copy, and checking that each file actually
+loads. It knows far fewer formats, and it leaves the widths of a sound block
+as they were measured, except for the Turbo Tape 64 and KERNAL blocks it
+rewrites.
+
+They combine well: make the `.tap` here, then run TAPClean over it for the
+formats C64 READY. does not recognise.
+
+| | C64 READY. | Audiotap | TAPClean |
+| --- | --- | --- | --- |
+| Job | Recording to checked `.tap`, in one step | Recording to `.tap` | `.tap` to checked, remastered `.tap` |
+| Runs as | The emulator in a browser, and the `c64rdy` command line on Node | A Windows program, plus `audio2tap` and `tap2audio` on the command line | Command line on Windows, Linux and BSD |
+| Reads | `.wav`, DC2N `.dmp`, `.tap` | `.wav` and other audio files, the sound card live, DC2N `.dmp`, `.csw` and `.tap` | `.tap` (version 0 or 1) and DC2N `.dmp` |
+| Stereo | Four readings: each channel, the plain average, and an average with the delay between the channels measured by correlation (to a fraction of a sample, along the tape) and taken out. The one with the most undamaged files wins | Mixed down to one channel | Not applicable |
+| Finding pulses | Centre line and RMS level measured every 3 ms or so. A crossing counts once the swing passes a quarter of the local level, and pulses are timed between centre crossings, placed between samples | Follows peaks and troughs and triggers halfway between the last two, timed to the whole sample. Sensitivity decides which peaks count | Not applicable |
+| Polarity | The pairing of crossings into pulses that gives the fewest distinct widths, chosen again for each stretch between silences of a second or more | Set once for the file, with the inverted waveform option | Not applicable |
+| Settings to tune | None needed. `--channel` and `--pre-emphasis` to override | Sensitivity, minimum peak distance, initial threshold, inverted waveform | Read tolerance with `-tol`, `-skewadapt` for skewed pulses |
+| Machines | C64, PAL (NTSC on the command line) | C64, VIC 20 and C16, PAL or NTSC | C64, VIC 20 and C16, PAL or NTSC |
+| Loader formats | About ten, listed above | None needed: it writes pulses only | Around ninety scanners, many with several variants |
+| Unknown loaders | Kept as pulses. `loader` shows a width histogram and disassembles the loader | Kept as pulses | Kept as pulses and reported as unrecognised |
+| Recovering damaged data | Re-reads damaged Turbo Tape 64 blocks from the other channel, the averages, the difference between the channels and treble lifts, confirmed when two readings agree. Rebuilds KERNAL blocks from their second copy | One reading, no repair | Works only from the pulses in the image. Rebuilds broken pilots and small gaps around pauses, and a few formats' check bytes. Damaged file data is reported, not rebuilt |
+| Cleaning pulses | Only checksum-sound Turbo Tape 64 data blocks and repaired KERNAL blocks are rewritten at exact widths | None: widths are as measured | Every recognised block is snapped to its format's ideal widths |
+| Checking results | Checksums, plus `loadtest`, which loads each file in an emulated C64 | None | Checksums, plus a CRC-32 per file and for the whole tape, for comparing dumps |
+| Writes | `.tap`, `.wav`, `.prg`, `.d64`, `.t64` | `.tap` (version 0, 1 or 2), `.wav`, or plays to the sound card | `.tap` (version 0 or 1), `.wav`, `.au`, `.prg`, text reports |
+| Batch work | Several inputs and wildcards on most commands | Several inputs, joined into one `.tap` | `-b` scans a folder and writes a summary report |
+| Listen and look | 🔊 and a live scope in the Datasette, `dir --pulses` | Plays a `.tap` or `.dmp` to the sound card | Audio export, and a pulse width frequency table in the report |
