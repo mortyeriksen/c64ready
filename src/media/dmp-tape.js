@@ -9,6 +9,8 @@
 // Format per Di Fraia's DC2N documentation (see SPECIFICATIONS.md).
 import { PAL_CPU_HZ } from './tap-audio.js';
 import { encodeTap } from './tap-encode.js';
+import { repairTape } from './tap-repair.js';
+import { cleanTurboTape64 } from './wav-tape.js';
 
 const MAGIC = 'DC2N-TAP-RAW';
 const HEADER_SIZE = 20;
@@ -21,6 +23,35 @@ const MACHINES = ['C64', 'VIC 20', 'C16'];
  *   was taken from
  */
 export function dmpToTap(bytes) {
+  const { pulses, halfWaves, ...about } = dumpPulses(bytes);
+  return { tap: encodeTap(pulses, { version: halfWaves ? 2 : 1 }), pulses: pulses.length, ...about };
+}
+
+/**
+ * A dump made into the tape a loader is best handed, the way a recording is:
+ * Turbo Tape 64 blocks whose checksums pass written back clean, then the
+ * KERNAL's damaged copies rebuilt from the copy that checks out. There is no
+ * recording to read again, so nothing is mended from a second reading. A dump
+ * of half-waves is neither format's shape and comes through as it was.
+ * @param {Uint8Array} bytes  a DC2N dump
+ * @param {{ clean?: boolean, repair?: boolean }} opts  either step can be left out
+ * @returns {{ tap: Uint8Array, pulses: number, seconds: number, machine: string,
+ *   video: string, sampleRate: number, repaired: string[] }}  `repaired` names
+ *   the KERNAL files rebuilt
+ */
+export function restoreDump(bytes, { clean = true, repair = true } = {}) {
+  const { pulses, halfWaves, ...about } = dumpPulses(bytes);
+  if (halfWaves) {
+    return { tap: encodeTap(pulses, { version: 2 }), pulses: pulses.length, ...about, repaired: [] };
+  }
+  const widths = clean ? cleanTurboTape64(pulses).pulses : pulses;
+  const tap = encodeTap(widths, { version: 1 });
+  const fixed = repair ? repairTape(tap) : { tap, repaired: [] };
+  return { tap: fixed.tap, pulses: pulses.length, ...about, repaired: fixed.repaired };
+}
+
+/** The pulses a dump holds, in cycles, and what its header says. */
+function dumpPulses(bytes) {
   if (bytes.length < HEADER_SIZE) throw new Error('Not a DC2N dump');
   for (let i = 0; i < MAGIC.length; i++) {
     if (bytes[i] !== MAGIC.charCodeAt(i)) throw new Error('Not a DC2N dump');
@@ -58,10 +89,5 @@ export function dmpToTap(bytes) {
 
   let total = 0;
   for (const c of pulses) total += c;
-  return {
-    tap: encodeTap(pulses, { version: halfWaves ? 2 : 1 }),
-    pulses: pulses.length,
-    seconds: total / PAL_CPU_HZ,
-    machine, video, sampleRate: rate,
-  };
+  return { pulses, halfWaves, seconds: total / PAL_CPU_HZ, machine, video, sampleRate: rate };
 }

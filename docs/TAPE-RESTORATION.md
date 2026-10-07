@@ -106,9 +106,9 @@ knowing before you press record.
 
 `.wav` files of 8, 16, 24 or 32-bit PCM and 32 or 64-bit float are read, mono
 or stereo. A **DC2N** `.dmp` dump also works: it captures the pulses directly
-from a real Datasette, so it skips the reading stages. In the emulator it then
-gets the KERNAL repair. The CLI converts it as it is (`tapfix` repairs the
-result).
+from a real Datasette, so it skips the reading stages. It then gets the KERNAL
+repair and the clean rewrite of Turbo Tape 64 blocks, in the emulator and in
+the CLI's `dmp2tap` alike.
 
 ---
 
@@ -189,7 +189,10 @@ On load, the C64 reads both, and a damaged repeat can still hang the machine
 or end in `?LOAD ERROR` even when the first copy was fine.
 
 - **If one copy is whole**, the damaged one is written again from it, at full
-  length, so everything after it on the tape stays where it was.
+  length. The silence after it takes up any difference, so everything after it
+  on the tape stays where it was. If a later recording overwrote the end of the
+  copy, the tape grows by the missing time instead, so the next file keeps its
+  whole lead-in.
 - **If both are damaged**, but in different places, they are lined up and
   merged, each lost byte taken from the other copy. The block's own checksum
   decides whether the merge is the real file or is thrown away.
@@ -223,14 +226,16 @@ spliced together, each cut a safe margin short of its next fault. The
 checksum judges the result, and a splice is always reported as unconfirmed.
 
 Turbo mending applies to Turbo Tape 64 files, and needs a recording to read
-again, so in the emulator a `.dmp` dump gets the KERNAL repair only. Other turbo formats are
-not mended.
+again, so a `.dmp` dump gets only the KERNAL repair and the clean rewrite
+below. Other turbo formats are not mended.
 
 ### Written back clean
 
-When a recording is mended, every Turbo Tape 64 data block whose bytes check
-out is rewritten at the exact widths the tape uses elsewhere. A lifted or averaged reading shifts widths slightly, and a
-1980s loader has a fixed threshold where the decoder adapts. Rewriting means
+When a recording or a dump is converted, every Turbo Tape 64 data block whose
+bytes check out is rewritten at the exact widths the tape uses elsewhere. A
+lifted or averaged reading shifts widths slightly, a dump carries its own
+deck's speed and spread, and a 1980s loader has a fixed threshold where the
+decoder adapts. Rewriting means
 the tape's own loader reads the block as if it were new.
 
 ### What it achieves, and what it cannot
@@ -319,6 +324,9 @@ it: `Only one reading vouches for: …`.
 | `--no-mend` | Skip the turbo re-reading and rewrite, to see the tape as it came |
 | `--no-repair` | Skip the KERNAL second-copy repair |
 | `--ntsc` / `--cpu-hz <hz>` | Measure widths for an NTSC machine, or any clock |
+
+`c64rdy dmp2tap` turns a DC2N dump into a `.tap` the same way, and takes
+`--no-mend` (skip the clean rewrite) and `--no-repair` too.
 
 ### See what survived
 
@@ -441,7 +449,7 @@ damage or a playback problem. Another transfer can sometimes recover more.
 | Reads | `.wav`, `.dmp`, `.tap` | `.wav`, `.dmp`, `.tap` |
 | Writes | `.tap`, `.wav` | `.tap`, `.wav`, `.prg`, `.d64`, `.t64` |
 | Machine | PAL | PAL, or NTSC with `--ntsc` |
-| Mending | Always on for `.wav` and `.dmp`, not for a loaded `.tap` | On for `.wav`, with `--no-mend` and `--no-repair` to see the tape as it came. `tapfix` repairs a `.tap` |
+| Mending | Always on for `.wav` and `.dmp`, not for a loaded `.tap` | On for `.wav` and `.dmp`, with `--no-mend` and `--no-repair` to see the tape as it came. `tapfix` repairs a `.tap` |
 | Listen to the tape | 🔊 | `tap2wav`, then play the file |
 | See the pulses | The Tape signal scope | `dir --pulses`, `loader` |
 

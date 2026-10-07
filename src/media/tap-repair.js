@@ -10,8 +10,8 @@
 //
 // Nothing needs inventing to fix it: the first copy carries a checksum, and a
 // checksum that adds up is proof. Where the first copy checks out and the second
-// does not, the second is written again from the first, in place, at the same
-// length a good one would have been.
+// does not, the second is written again from the first, in place, with the
+// silence after it taking up any difference in length.
 //
 // Only the KERNAL's own format, which is the only one with a second copy on the
 // tape. A turbo file writes itself once and is mended a step earlier instead —
@@ -27,6 +27,9 @@ const HEADER_BYTES = 192;
 const COUNTDOWN = 9;
 const ALIGN_BAND = 64;        // how far two copies of a block can drift apart
 const TRAILER_PULSES = 60;
+// Longer than this is silence, not a KERNAL pulse: a gap between blocks, or the
+// end of a transfer that clipped one.
+const SILENCE_CYCLES = 20000;
 const HEADER_SIZE = 20;
 
 const classify = c => (c < SHORT_MAX ? S : c < MEDIUM_MAX ? M : L);
@@ -272,24 +275,50 @@ export function repairTape(tap, { zeroGapCycles = V0_ZERO_GAP_CYCLES } = {}) {
   }
   if (!patches.length) return result;
 
-  // Rewrite in place, one block for one block: the replacement is exactly as long
-  // as a sound copy would have been, so whatever follows keeps its position. A
-  // truncated copy leaves a little of the gap behind it overwritten, which is
-  // silence either way.
+  // Rewrite in place: the replacement goes where the damaged copy was, and runs
+  // to its full length, to the next block, or to the first silence, whichever
+  // comes first. A clipped copy is followed by silence, not by the rest of
+  // itself, and counting past it would write the block over the silence and
+  // into the lead-in of the file after. The new block is at the KERNAL's own
+  // widths, so it rarely lasts exactly as long as the copy it replaces (a deck
+  // that ran slow made every pulse longer), and the silence after it takes up
+  // the difference, so whatever follows keeps its position. Where the silence
+  // is too short, the tape grows there instead: a repeat that a later recording
+  // overwrote needs time the recording no longer has, and taking it from the
+  // silences further on would move every file in between.
   const bytesPerPulse = [];                     // pulse index → byte offset in tapData
   for (let p = 0, n = 0; p < tapData.length; n++) {
     bytesPerPulse[n] = p;
     p += tapData[p] !== 0 ? 1 : 4;
   }
+  const count = bytesPerPulse.length;
+  const starts = blocks.map(x => x.pulse);
   const out = [];
+  let owed = 0;                                 // cycles the tape has gained, to give back
+  const copy = (from, to) => {
+    for (let n = from; n < to; n++) {
+      if (owed && version === 1 && pulses[n] >= SILENCE_CYCLES) {
+        for (const b of longPulse(Math.max(SILENCE_CYCLES, pulses[n] - owed))) out.push(b);
+        owed = 0;
+        continue;
+      }
+      for (const b of tapBytesAt(tapData, bytesPerPulse[n])) out.push(b);
+    }
+  };
   let cursor = 0;                               // pulse index
   for (const patch of patches.sort((a, b) => a.at - b.at)) {
     if (patch.at < cursor) continue;
-    for (let n = cursor; n < patch.at; n++) for (const b of tapBytesAt(tapData, bytesPerPulse[n])) out.push(b);
-    for (const pulse of patch.block) out.push(pulse);   // spread would overflow the stack
-    cursor = Math.min(patch.at + patch.block.length, bytesPerPulse.length);
+    copy(cursor, patch.at);
+    const next = starts.find(p => p > patch.at) ?? count;
+    let end = Math.min(patch.at + patch.block.length, next, count);
+    for (let n = patch.at; n < end; n++) {
+      if (pulses[n] >= SILENCE_CYCLES) { end = n; break; }
+      owed -= pulses[n];
+    }
+    for (const pulse of patch.block) { out.push(pulse); owed += pulse * UNIT; }   // spread would overflow the stack
+    cursor = end;
   }
-  for (let n = cursor; n < bytesPerPulse.length; n++) for (const b of tapBytesAt(tapData, bytesPerPulse[n])) out.push(b);
+  copy(cursor, count);
 
   const mended = new Uint8Array(HEADER_SIZE + out.length);
   mended.set(tap.subarray(0, HEADER_SIZE));
@@ -300,6 +329,12 @@ export function repairTape(tap, { zeroGapCycles = V0_ZERO_GAP_CYCLES } = {}) {
   mended.set(out, HEADER_SIZE);
   result.tap = mended;
   return result;
+}
+
+/** A silence as a v1 entry: the long form, which holds it to the cycle. */
+function longPulse(c) {
+  c = Math.min(0xFFFFFF, Math.round(c));
+  return [0, c & 0xFF, (c >> 8) & 0xFF, (c >> 16) & 0xFF];
 }
 
 /** The bytes of one entry, be it a plain step or a 24-bit long form. */

@@ -30,6 +30,14 @@ The version you are running is shown at the bottom of the About dialog.
   becomes a tape that loads again: what is on a tape, how a recording is read
   and mended, and how to do it in the emulator and with the command line,
   with diagrams of each step.
+- **Tape dumps restored like recordings.** A DC2N `.dmp` dump now gets the
+  same cleanup as a `.wav` recording: Turbo Tape 64 files that read correctly
+  are rewritten at clean widths, so the tape's own loader reads them more
+  reliably.
+- **Mended tapes keep the next file intact.** When a damaged second copy of
+  a file is rebuilt, the files after it now stay where they were. Before, the
+  rebuilt copy could overwrite the start of the next file's lead-in, or shift
+  the rest of the tape by up to a second.
 - **Esc closes the welcome screen.** Before your ROMs were set up, Esc did
   nothing visible on the welcome screen; it now closes it, and the ROM setup
   opens after.

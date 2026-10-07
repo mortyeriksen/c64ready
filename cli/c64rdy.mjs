@@ -71,11 +71,12 @@ inputs, and a quoted wildcard works on any shell: c64rdy wav2tap "tapes/*.wav"
 
   FLAGS
     --out-dir <dir>        Put outputs here instead of the directory you run from
-    (dmp2tap, nbz2g64, tapfix, tapcat, prg2d64, prg2crt, disk2t64, t642d64, info,
+    (nbz2g64, tapfix, tapcat, prg2d64, prg2crt, disk2t64, t642d64, info,
      disk add: no flags of their own)
 
     wav2tap:  --no-mend --no-repair --channel <n|mix|aligned>
               --pre-emphasis <n> --ntsc --cpu-hz <hz>
+    dmp2tap:  --no-mend --no-repair
     tap2wav:  --max-seconds <n>
     sid2prg: --song <n>   Starting song (1-based; default from the SID)
     sid2wav: --song <n> --seconds <n> (180) --sample-rate <hz> (44100)

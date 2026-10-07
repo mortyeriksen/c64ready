@@ -14,7 +14,7 @@ import { tapeListing, diskListing, archiveListing } from './listing.mjs';
 import { t64Files } from './t64.mjs';
 import {
   splitTap, concatTaps, tapSeconds, importWavSync, importProgress,
-  tapDirectory, tapeFacts, tapToPcm, pcmToWav, repairTape, dmpToTap,
+  tapDirectory, tapeFacts, tapToPcm, pcmToWav, repairTape, restoreDump,
   D64, G64, PAL_CPU_HZ, NTSC_CPU_HZ,
 } from './core.mjs';
 
@@ -116,7 +116,8 @@ function dirOne(p, flags) {
     ({ data, version } = splitTap(got.tap));
     files = got.files;
   } else if (kind === 'dmp') {
-    ({ data, version } = splitTap(dmpToTap(bytes).tap));
+    // Cleaned and repaired the way dmp2tap and the app take it in.
+    ({ data, version } = splitTap(restoreDump(bytes).tap));
     files = tapDirectory(data, { version });
   } else {
     throw new Error('not a tape, disk or archive this tool can list');
@@ -215,6 +216,7 @@ export function tap2wav(argv) {
 export function dmp2tap(argv) {
   const { args, flags } = parseArgs(argv, {
     'out': { value: true, alias: 'o' }, 'out-dir': { value: true },
+    'no-mend': {}, 'no-repair': {},
   });
   if (!args.length) throw new UsageError('Usage: c64rdy dmp2tap <in.dmp…> [-o out.tap]');
   const files = inputFiles(args);
@@ -222,15 +224,19 @@ export function dmp2tap(argv) {
   let failed = false;
   for (const p of files) {
     try {
-      const got = dmpToTap(fs.readFileSync(p));
+      const got = restoreDump(fs.readFileSync(p), { clean: !flags['no-mend'], repair: !flags['no-repair'] });
       const out = outFileFor(p, '.tap', flags, files.length);
       writeOut(out, got.tap, flags);
       say(`${path.basename(p)} → ${out}  (${got.machine} ${got.video}, ${mss(got.seconds)})`);
       const { data, version } = splitTap(got.tap);
+      const listed = tapDirectory(data, { version });
       tapeListing({
-        name: path.basename(out), files: tapDirectory(data, { version }),
+        name: path.basename(out), files: listed,
         facts: tapeFacts(data, { version }), seconds: tapSeconds(data, version),
       });
+      const sound = listed.filter(f => !f.damaged).length;
+      say(`\n${sound} of ${listed.length} files readable.` +
+        (got.repaired.length ? ` ${got.repaired.length} mended from the KERNAL's two copies.` : ''));
     } catch (e) {
       fail(`${p}: ${e.message}`);
       failed = true;

@@ -36,8 +36,7 @@ import { G64, isG64 } from './media/g64.js';
 import { nibFileToG64, isNbz } from './media/nib.js';
 import { tapToPcm, pcmToWav } from './media/tap-audio.js';
 import { importWav, importProgress } from './media/wav-import.js';
-import { dmpToTap } from './media/dmp-tape.js';
-import { repairTape } from './media/tap-repair.js';
+import { restoreDump } from './media/dmp-tape.js';
 import { blankTapBytes } from './datasette.js';
 import { LOCK_CLOSED_SVG, LOCK_OPEN_SVG } from './ui/pixel-lock.js';
 import { parseCRT } from './media/crt.js';
@@ -1999,16 +1998,16 @@ async function _tapeBytesFrom(data, name) {
 }
 
 // A DC2N dump is the tape as the cassette port saw it — pulse widths already,
-// no audio to read — so it converts in a moment, here. The KERNAL's copy-merge
-// repair applies as to any tape; the turbo mend does not, there being no
-// recording to read a second time.
+// no audio to read — so it converts in a moment, here. Sound Turbo Tape 64
+// blocks go back clean and the KERNAL's copy-merge repair applies, as for a
+// recording; the turbo mend does not, there being no recording to read a
+// second time.
 function _tapeFromDump(data, name) {
-  const dump = dmpToTap(data);
-  const fixed = repairTape(dump.tap);
-  const files = tapDirectory(fixed.tap.subarray(20), { version: fixed.tap[12] });
+  const dump = restoreDump(data);
+  const files = tapDirectory(dump.tap.subarray(20), { version: dump.tap[12] });
   return _tapeImported({
-    tap: fixed.tap, pulses: dump.pulses, seconds: dump.seconds,
-    repaired: fixed.repaired, unconfirmed: [],
+    tap: dump.tap, pulses: dump.pulses, seconds: dump.seconds,
+    repaired: dump.repaired, unconfirmed: [],
     damagedNames: files.filter(f => f.damaged).map(f => f.name.trim()),
     files: files.length,
     machine: dump.machine,

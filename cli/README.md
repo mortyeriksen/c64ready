@@ -143,6 +143,16 @@ rest) are credited in
 
 ## Release notes
 
+### Next version
+
+- **Dumps restored like recordings.** `dmp2tap`, and `dir` on a `.dmp`, now
+  rebuild damaged KERNAL copies from the copy that checks out, and rewrite
+  sound Turbo Tape 64 blocks at clean widths, as `wav2tap` does. `--no-repair`
+  and `--no-mend` leave either step out.
+- **Repairs keep the next file in place.** A rebuilt KERNAL copy in `wav2tap`,
+  `dmp2tap` or `tapfix` no longer overwrites the next file's lead-in or shifts
+  the rest of the tape.
+
 ### 0.9.4
 
 - **D64/D71 to D81.** `disk2d81` copies PRG, SEQ and USR files into a D81,

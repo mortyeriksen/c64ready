@@ -207,7 +207,8 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   wrong and what was mended.
 - **`.wav` in and out.** Load a recording of a real cassette and the pulses are
   recovered into an ordinary tape; download any tape as a `.wav` that loads on
-  real hardware. A DC2N `.dmp` loads the same way, with no recovering to do.
+  real hardware. A DC2N `.dmp` loads the same way, and gets the same KERNAL
+  repair and turbo block cleanup as a recording.
 - **Tape preservation.** A recording of a worn cassette is recovered, not just
   played: several readings of the signal are compared, a file is mended only
   when the tape itself proves the fix, and every proved file is written back at

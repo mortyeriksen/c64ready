@@ -13,7 +13,7 @@ export { encodeTap } from '../src/media/tap-encode.js';
 export { tapToPcm, pcmToWav, PAL_CPU_HZ } from '../src/media/tap-audio.js';
 export { tapDirectory, tapeFacts } from '../src/media/tap-directory.js';
 export { repairTape } from '../src/media/tap-repair.js';
-export { dmpToTap } from '../src/media/dmp-tape.js';
+export { dmpToTap, restoreDump } from '../src/media/dmp-tape.js';
 export {
   D64, createBlankD64, createBlankD71, createBlankD81, createBlankDisk, createPRGDisk, d64Variant,
   diskNameFromFilename, prgOverflow,

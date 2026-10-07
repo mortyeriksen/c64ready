@@ -1015,7 +1015,7 @@ unpacker unpacks, and never into the input's own folder.
 | `disk2t64` | — |
 | `disk2d81` | `-o <file>` or `--out-dir <dir>`, `--force` to replace an output |
 | `nbz2g64` | — (writes `<name>.g64`) |
-| `dmp2tap` | — |
+| `dmp2tap` | `--no-mend` skip the clean rewrite of sound Turbo Tape 64 blocks · `--no-repair` skip the KERNAL's duplicate-block repair |
 | `tapfix` | — (writes `<name>-mended.tap`) |
 | `tapcat` | — (writes `<first>-joined.tap`) |
 | `prg2d64` | — |

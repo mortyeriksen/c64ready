@@ -5,10 +5,13 @@
 // within TAP's own rounding — plus the format's two rules: a sample at the
 // maximum is an overflow that carries into the next, and a version-1 dump may
 // hold half-waves, which is a v2 tape.
-import { dmpToTap } from '../../src/media/dmp-tape.js';
+import { dmpToTap, restoreDump } from '../../src/media/dmp-tape.js';
 import { tapDirectory } from '../../src/media/tap-directory.js';
 import { PAL_CPU_HZ } from '../../src/media/tap-audio.js';
-import { body, turboFile, pulsesOf } from './_tape-fixtures.js';
+import { ZERO, ONE, body, turboFile, kernalFile, pulsesOf } from './_tape-fixtures.js';
+import { turboTape64Files } from '../../src/media/tap-turbo-formats.js';
+import { cleanTurboTape64 } from '../../src/media/wav-tape.js';
+import { repairTape } from '../../src/media/tap-repair.js';
 
 function expect(cond, msg) {
   if (!cond) throw new Error(msg);
@@ -96,6 +99,72 @@ for (const [bad, why] of [
   let threw = false;
   try { dmpToTap(bad); } catch { threw = true; }
   expect(threw, `${why} is refused`);
+}
+
+// ── A dump is restored the way a recording is ───────────────────────────────
+// A deck's comparator and speed leave a turbo block's widths scattered about
+// the two the format writes. A loader with a fixed threshold reads a block
+// whose checksum passes best at those two widths, so it goes back at them.
+{
+  const jittered = cycles.map((c, i) => (c === ZERO || c === ONE ? c + ((i * 7) % 5 - 2) * 9 : c));
+  const raw = dmpToTap(dump(jittered));
+  const done = restoreDump(dump(jittered));
+  const blocksOf = (tap) => turboTape64Files(pulsesOf(tap)).map(f => pulsesOf(tap).slice(f.data.syncBit, f.data.endBit));
+  const widths = (tap) => new Set(blocksOf(tap).flat());
+  expect(widths(raw.tap).size > 2, `the dump's own data blocks are scattered (${widths(raw.tap).size} widths)`);
+  expect(widths(done.tap).size === 2, `a sound Turbo Tape 64 data block goes back at the format's two widths (${[...widths(done.tap)]})`);
+  const files = tapDirectory(done.tap.subarray(20), { version: done.tap[12] });
+  expect(files.length === 2 && files.every(f => !f.damaged), 'and both files still read whole');
+  // In cycles, before the .tap's steps of 8 round them: the rewrite settles each
+  // block's difference with the gap after it.
+  const sum = (xs) => xs.reduce((a, c) => a + c, 0);
+  const cleaned = cleanTurboTape64(jittered);
+  expect(cleaned.rewritten === 2, `both data blocks are rewritten (${cleaned.rewritten})`);
+  expect(Math.abs(sum(cleaned.pulses) - sum(jittered)) < 1e-6,
+    `and nothing after a rewritten block moves (${sum(cleaned.pulses) - sum(jittered)} cycles)`);
+  const kept = restoreDump(dump(jittered), { clean: false });
+  expect(widths(kept.tap).size > 2, 'clean: false leaves the widths as dumped');
+}
+
+// A KERNAL file whose repeat copy was clipped is rebuilt from the first copy,
+// which the block's own checksum proves. The listing calls a file sound when
+// either copy is, so the copies are read through the repair itself.
+{
+  const clipped = kernalFile('CLIPPED', 0x0801, body(300), { lose: 40 });
+  const state = (tap) => repairTape(tap).files[0]?.state;
+  expect(state(dmpToTap(dump(clipped)).tap) === 'repairable',
+    `the clipped repeat is seen as dumped (${state(dmpToTap(dump(clipped)).tap)})`);
+  const done = restoreDump(dump(clipped));
+  expect(done.repaired.includes('CLIPPED'), `the file is named as repaired ([${done.repaired}])`);
+  expect(state(done.tap) === 'good', `and both copies read whole after (${state(done.tap)})`);
+  const kept = restoreDump(dump(clipped), { repair: false });
+  expect(kept.repaired.length === 0 && state(kept.tap) === 'repairable', 'repair: false leaves it as dumped');
+
+  // The rebuilt copy is longer than the clipped one, and at the KERNAL's own
+  // widths where this deck ran 4% slow. The silence after it takes up the
+  // difference: the file that follows starts where it did, with the whole of
+  // its lead-in.
+  const next = turboFile('NEXT', 0x0801, body(500)).pulses;
+  const tape = [...clipped.map(c => (c < 20000 ? c * 1.04 : c)), ...next];
+  const whereNext = (tap) => {
+    const ps = pulsesOf(tap);
+    let t = 0, i = ps.length - next.length;
+    for (let k = 0; k < i; k++) t += ps[k];
+    return { t, lead: ps.slice(i, i + 1600) };
+  };
+  const before = whereNext(dmpToTap(dump(tape)).tap), after = whereNext(restoreDump(dump(tape), { clean: false }).tap);
+  expect(Math.abs(after.t - before.t) < 64, `the next file starts where it did (${after.t - before.t} cycles)`);
+  expect(after.lead.every((c, i) => c === before.lead[i]), 'and its lead-in is whole');
+}
+
+// Half-waves are neither format's shape: the dump comes through as it was.
+{
+  const halves = [];
+  for (const c of cycles) halves.push(c / 2, c / 2);
+  const done = restoreDump(dump(halves, { version: 1, flags: 0x20 }));
+  const raw = dmpToTap(dump(halves, { version: 1, flags: 0x20 }));
+  expect(done.tap[12] === 2 && done.repaired.length === 0, 'a half-wave dump stays a v2 tape, unrepaired');
+  expect(done.tap.length === raw.tap.length && done.tap.every((b, i) => b === raw.tap[i]), 'and is byte for byte the plain conversion');
 }
 
 console.log('dmp tape spec: OK');

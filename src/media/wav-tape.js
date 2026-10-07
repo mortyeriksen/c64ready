@@ -812,12 +812,17 @@ function mendTurbo({ pulses, startOf }, source, sampleRate, cpuHz, say = () => {
     }
   }
 
-  // And every block that already checks out is written back at those same two
-  // widths. The reading this tape was decoded from was chosen for what *this*
-  // decoder can read — a lifted or averaged signal shifts the widths, and a 1986
-  // loader's threshold is fixed where ours adapts. Measured: files with sound
-  // checksums answering ?LOAD ERROR on the machine. Their bytes are proved, so
-  // handing the loader a clean block costs nothing and settles it.
+  return { pulses: applyPatches(pulses, [...patches, ...soundBlocks(files, widths)]), mended, unconfirmed };
+}
+
+// And every block that already checks out is written back at those same two
+// widths. The reading this tape was decoded from was chosen for what *this*
+// decoder can read — a lifted or averaged signal shifts the widths, and a 1986
+// loader's threshold is fixed where ours adapts. Measured: files with sound
+// checksums answering ?LOAD ERROR on the machine. Their bytes are proved, so
+// handing the loader a clean block costs nothing and settles it.
+function soundBlocks(files, widths) {
+  const patches = [];
   for (const f of files) {
     if (!f.data || !f.data.checksumOk) continue;
     patches.push({
@@ -826,8 +831,27 @@ function mendTurbo({ pulses, startOf }, source, sampleRate, cpuHz, say = () => {
       block: renderTurboTape64Block(f.data.bytes, { ...widths, countdownFrom: f.data.countdownFrom }),
     });
   }
+  return patches;
+}
 
-  if (!patches.length) return { pulses, mended, unconfirmed };
+/**
+ * Every Turbo Tape 64 data block whose checksum passes, written back at the
+ * widths the tape uses elsewhere. Needs only the pulses, so a dump gets it as
+ * a recording does: the deck that took the dump has its own speed and its own
+ * comparator, and a fixed-threshold loader reads the clean block either way.
+ * @param {number[]} pulses  widths in cycles
+ * @returns {{ pulses: number[], rewritten: number }}
+ */
+export function cleanTurboTape64(pulses) {
+  const files = turboTape64Files(pulses);
+  if (!files.some(f => f.data)) return { pulses, rewritten: 0 };
+  const patches = soundBlocks(files, turboTape64Widths(pulses, files));
+  return { pulses: applyPatches(pulses, patches), rewritten: patches.length };
+}
+
+/** Each patch's block put in place of pulses [from, to), in one pass. */
+function applyPatches(pulses, patches) {
+  if (!patches.length) return pulses;
 
   // In tape order, and in one pass: a tape can have a patch per file, and
   // rebuilding the whole pulse stream for each of them copies millions of
@@ -851,7 +875,7 @@ function mendTurbo({ pulses, startOf }, source, sampleRate, cpuHz, say = () => {
     else if (slack < 0 && pulses[at] > -slack + GAP_KEEP) { out.push(pulses[at] + slack); at++; }
   }
   for (let i = at; i < pulses.length; i++) out.push(pulses[i]);
-  return { pulses: out, mended, unconfirmed };
+  return out;
 }
 
 /**

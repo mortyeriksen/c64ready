@@ -249,8 +249,12 @@ exist, and neither is an approximation:
   half-waves, and both containers go out through `tap-encode.js`. Measured on
   two dumps of a
   Mastertronic tape: the stub loads, its own turbo reads the rest, the game
-  comes up. The copy-merge repair applies as to any tape; the turbo mend does
-  not, there being no recording to read again.
+  comes up. **`restoreDump()`** then treats the pulses as a reading is treated
+  once it is chosen: sound Turbo Tape 64 data blocks are written back clean
+  (`cleanTurboTape64()` in `wav-tape.js`) and the copy-merge repair runs. The
+  app's `.dmp` import, `c64rdy dmp2tap` and `dir` all go through it. The turbo
+  mend does not apply, there being no recording to read again, and a half-wave
+  dump passes through unchanged.
 
 Round-tripping is close, not byte-exact, and needn't be: a pulse is ~20 samples
 at 48 kHz, so each edge quantises to ±1 sample (±20 cycles), while the pulse
@@ -271,9 +275,9 @@ that is not moving draws a flat line rather than the last thing it saw.
 
 ### Reading a worn transfer, and mending it (`tap-repair.js`)
 
-The copy-merge repair runs on `.wav` and `.dmp` import alike; the turbo mend
-below is `.wav` only, since it works by reading the recording again and a dump
-has none. Both report through the Status card and the foot of the listing, leave
+The copy-merge repair and the clean rewrite of sound Turbo Tape 64 blocks run
+on `.wav` and `.dmp` import alike. The turbo mend below is `.wav` only, since
+it works by reading the recording again and a dump has none. Both report through the Status card and the foot of the listing, leave
 the recording untouched, and leave any file they cannot prove alone, and mark it.
 
 **Time widths between centre crossings.** Each crossing is interpolated between
@@ -303,7 +307,13 @@ steady, and results sized the window: it took one tape's turbo blocks from 2 of
 
 **Mend a KERNAL file from its second copy.** Where the first copy checks out
 and the repeat does not, the repeat is written again from the first, in place
-and at the length a sound copy would have, so what follows keeps its position;
+at the KERNAL's own widths. It replaces the damaged copy up to its full length,
+the next block or the first silence, and that silence takes up any difference in
+length, so what follows keeps its position (measured: on one side the rebuilt
+repeat ran 0.42 s shorter than the copy it replaced, and written pulse for
+pulse it moved 57 later gaps). Where the silence is too short, the tape grows there
+instead, as on a side where the next recording overwrote the last 2 s of a
+repeat;
 where neither adds up the two are merged, a byte failing parity or lost taken
 from the other pass, both orders tried. The KERNAL writes every block twice and
 reads both before it returns, so a transfer that lost the tail of the repeat

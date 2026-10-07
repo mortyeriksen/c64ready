@@ -50,3 +50,51 @@ export function pulsesOf(tap) {
   }
   return out;
 }
+
+// The KERNAL's three pulses, in cycles: TAP values $30, $42 and $56.
+export const KERNAL = { S: 0x30 * 8, M: 0x42 * 8, L: 0x56 * 8 };
+
+/** One byte as the KERNAL writes it: a byte marker, eight bits LSB first, odd parity. */
+function kernalByte(out, value) {
+  out.push(KERNAL.L, KERNAL.M);
+  let parity = 1;
+  for (let bit = 0; bit < 8; bit++) {
+    const one = (value >> bit) & 1;
+    parity ^= one;
+    out.push(...(one ? [KERNAL.M, KERNAL.S] : [KERNAL.S, KERNAL.M]));
+  }
+  out.push(...(parity ? [KERNAL.M, KERNAL.S] : [KERNAL.S, KERNAL.M]));
+}
+
+/** A block: pilot, countdown from `sync`, the bytes, their XOR, end marker, trailer. */
+function kernalBlock(out, bytes, pilot, sync) {
+  for (let i = 0; i < pilot; i++) out.push(KERNAL.S);
+  for (let v = sync; v >= sync - 8; v--) kernalByte(out, v);
+  let sum = 0;
+  for (const b of bytes) { sum ^= b; kernalByte(out, b); }
+  kernalByte(out, sum);
+  out.push(KERNAL.L);
+  for (let i = 0; i < 60; i++) out.push(KERNAL.S);
+}
+
+/**
+ * A program as the KERNAL saves it: header and its repeat, data and its repeat.
+ * `lose` cuts that many bytes, and the end marker, off the data's repeat — a
+ * transfer that clips the tail of the last block.
+ * @returns {number[]} pulse widths in cycles
+ */
+export function kernalFile(name, start, payload, { lose = 0, tail = 500000 } = {}) {
+  const header = new Array(192).fill(0x20);
+  const end = start + payload.length;
+  header.splice(0, 5, 0x03, start & 255, start >> 8, end & 255, end >> 8);
+  for (let i = 0; i < name.length; i++) header[5 + i] = name.charCodeAt(i);
+  const out = [];
+  kernalBlock(out, header, 600, 0x89);
+  kernalBlock(out, header, 200, 0x09);
+  kernalBlock(out, payload, 200, 0x89);
+  const repeat = [];
+  kernalBlock(repeat, lose ? payload.slice(0, payload.length - lose) : payload, 200, 0x09);
+  if (lose) repeat.length -= 62;                 // its end marker and trailer go too
+  out.push(...repeat, tail);
+  return out;
+}
