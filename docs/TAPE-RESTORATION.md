@@ -5,9 +5,9 @@
 
 # Restoring C64 tapes: from a worn cassette to a .tap that loads
 
-A Commodore 64 cassette from the 1980s has spent forty years losing its
-treble, stretching and shedding. Play it into a sound card and you get a
-recording of all that wear. This guide is about getting the programs back out
+A Commodore 64 cassette from the 1980s may have suffered wear, dropouts or
+reduced high-frequency response over forty years. Play it into a sound card
+and you get a recording of all that wear. This guide is about getting the programs back out
 of it: what a tape actually holds, how C64 READY. reads a recording, how it
 mends what the tape lost, and how you can tell what survived.
 
@@ -28,8 +28,7 @@ programs, every one booted and playing. The CLI made this picture with
 A C64 does not record sound on a cassette, and it does not record bytes
 either. It records **timing**. The machine's tape port flips a signal, and the
 Datasette writes each flip onto the tape. Reading it back, the machine measures
-how long passes between one flip and the next. That length of time is the
-data.
+the time between successive falling edges. Those intervals encode the data.
 
 ![A noisy tape waveform swinging about a dashed centre line, with a shaded gate band at a quarter of the level either side. Dots mark the centre crossings. Brackets under the wave measure each pulse, one full swing, and label it S 384, M 528 or L 688 cycles: the KERNAL format's short, medium and long pulses.](/guide/tape-pulses.svg)
 
@@ -39,18 +38,19 @@ standard format the C64's built-in KERNAL writes uses three widths:
 
 | Pulse | Width | Used for |
 | --- | --- | --- |
-| **S**hort | 384 cycles | half of every bit |
-| **M**edium | 528 cycles | the other half |
-| **L**ong | 688 cycles | the start of each byte |
+| **S**hort | approximately 384 cycles | half of every bit |
+| **M**edium | approximately 528 cycles | the other half |
+| **L**ong | approximately 688 cycles | the start of each byte |
 
 A bit is a pair of pulses: short then medium is a 0, medium then short is
 a 1, and long then medium marks the start of a byte. A whole program is
 thousands of these pairs in a row.
 
-**Turbo loaders**, which most commercial games use, do the same with two
-shorter widths (Turbo Tape 64 uses 216 and 328 cycles), which is why they load
-several times faster. The tape still carries a short KERNAL file at the front:
-that is the loader itself, which then reads the rest.
+**Turbo loaders**, which most commercial games use, work differently. Many use
+two shorter pulse lengths and more efficient encoding (Turbo Tape 64 uses
+approximately 216 and 328 cycles), which makes them considerably faster.
+Self-loading turbo tapes usually begin with a short KERNAL-format loader,
+which then reads the rest.
 
 ### Seeing it for yourself
 
@@ -62,7 +62,7 @@ waveform button beside the card title:
 
 The window shows about 20 ms of tape, and the readout under it counts the
 pulses and gives the shortest and longest in cycles. On a KERNAL tape it
-settles at **384–688**, the three widths above. Wind on into a turbo file and
+settles at around **384–688**, the three widths above. Wind on into a turbo file and
 the numbers drop to its two shorter widths.
 
 The **🔊** button beside it plays the same signal out loud: not a sound
@@ -75,8 +75,7 @@ worn recording.
 
 ### What a `.tap` file is
 
-A `.tap` file is that list of pulse widths, one number per pulse, and nothing
-else. It has no directory and no file names of its own; those are inside the
+A `.tap` file is a header followed by encoded pulse durations. It has no directory and no file names of its own: those are inside the
 pulses, written the way the C64 wrote them. That is why it is the right
 container for a cassette: it keeps everything the tape did, including the
 parts no one has identified yet, and any loader on the tape can read it.
@@ -91,18 +90,18 @@ accurate list of pulse widths.**
 What you capture decides what can be recovered, so a few things are worth
 knowing before you press record.
 
-- **Record in stereo if you can.** The tape has one track, but a stereo head
-  reads it twice, slightly differently. Two channels give the decoder two
-  readings to compare, and that is where most mending comes from.
-- **Any common sample rate works.** Nothing is resampled; widths are measured
-  in the recording's own samples and converted to cycles. At 48 kHz an edge
-  is placed to within about 20 cycles, while the widths a loader tells apart
-  are 64 cycles or more apart, so 44.1 or 48 kHz is plenty. A higher rate
-  places edges more finely.
+- **Capture playback in stereo if you can.** A stereo head reads two portions
+  of the mono track, giving the decoder slightly different readings to
+  compare, and that is where most mending comes from.
+- **Any common sample rate works.** Nothing is resampled: widths are measured
+  in the recording's own samples and converted to cycles. 44.1 or 48 kHz is a
+  practical starting point. At 48 kHz, samples are about 20 C64 cycles apart,
+  while the widths a loader tells apart are 64 cycles or more apart. Actual
+  timing accuracy also depends on signal quality.
 - **Leave the recording as it comes off the deck.** Level and centre are
   measured every few milliseconds as the decoder goes, so there is no need to
   normalise. Filters and noise reduction reshape the very edges being timed.
-- **Keep the whole side.** Silence between files is fine; it is how the
+- **Keep the whole side.** Silence between files is fine: it is how the
   decoder tells recordings apart.
 
 `.wav` files of 8, 16, 24 or 32-bit PCM and 32 or 64-bit float are read, mono
@@ -132,7 +131,7 @@ against the loudest moment of the side.
 Every place the wave crosses its centre is a candidate edge. Hiss crosses the
 centre too, though, so a crossing only counts once the signal swings past a
 **gate**, a quarter of the local level either side of the centre (the shaded
-band in the pulse picture above). Noise inside the band is ignored; a real
+band in the pulse picture above). Noise inside the band is ignored, and a real
 swing goes through it.
 
 Each crossing is placed between the two samples that straddle it, finer than
@@ -142,10 +141,10 @@ one that gives the fewest distinct widths. A home tape can hold recordings
 from decks wired either way up, so each stretch between silences chooses for
 itself.
 
-Each pulse is measured on its own, so a deck that ran a little fast or slow
-does not need correcting: its pulses are all a little short or long, and the
-loaders allow for that. The speed is measured and reported ("the deck that
-wrote this ran 3.1% fast"), but not changed.
+Each pulse is measured on its own, so a small speed difference does not need
+correcting: the pulses are all a little short or long, and the loaders allow
+for that. The difference is measured and reported (for example, the captured
+pulse timings differ from nominal by 3.1%), but not changed.
 
 ### Lining up the channels
 
@@ -161,19 +160,22 @@ four ways: each channel alone, the plain average and the lined-up average.
 
 ### Comparing the readings
 
-Each reading is decoded completely, and the one that proves the most files
+Each reading is decoded completely, and the one that reads the most files
 (complete, with checksums that add up) becomes the tape. Nothing is scored by
-how clean the signal looks; the files themselves decide.
+how clean the signal looks. The files themselves decide.
 
 ---
 
 ## Mending
 
-A worn tape loses things in two ways: **dropouts**, where the oxide is gone
-and the signal briefly vanishes, and **spacing loss**, where the treble fades
-so two short pulses blur into one long one. Mending is about proving what a
-damaged file said, from evidence the recording still holds. **Nothing is
-invented:** a file that cannot be proved is left as it was and marked.
+**Dropouts** briefly weaken or interrupt the signal, and poor tape-to-head contact
+and other playback problems can also blur edges until separate pulses appear
+to merge. Mending recovers what a damaged file said, using evidence retained
+in the recording. Here, *confirmed* means supported by agreeing readings and
+checksum checks, not guaranteed identical to the original. Results supported
+by only one reading, or assembled from partial readings, are marked
+*unconfirmed*, and a file that cannot be recovered is left as it was and
+marked.
 
 ### A KERNAL file: the second copy
 
@@ -196,7 +198,7 @@ aligned.
 
 ### A turbo file: reading again
 
-![Six readings of one damaged turbo block, each a bar with red marks where its pulses could not be read: as recorded, the other channel, and treble lifts of 1.5, 2.5, 3.5 and 5. The lifts of 2.5 and 3.5 read cleanly and agree, so the block is proved and written back clean.](/guide/tape-turbo-mend.svg)
+![Six readings of one damaged turbo block, each a bar with red marks where its pulses could not be read: as recorded, the other channel, and treble lifts of 1.5, 2.5, 3.5 and 5. The lifts of 2.5 and 3.5 read cleanly and agree, so the block is confirmed and written back clean.](/guide/tape-turbo-mend.svg)
 
 A turbo file is written only once, so there is no second copy. The second
 chance is the recording itself: the damaged stretch is read again, in every
@@ -207,9 +209,10 @@ way available.
   spacing loss blurred. On one file, a lift of 3 took 674 unreadable pulses
   down to 296.
 
-A single checksum that adds up is not proof: an 8-bit checksum lets one wrong
-reading in 256 through. So a block is **proved** only when **two readings
-agree byte for byte**. One reading alone is still put back, but reported as
+An 8-bit checksum can miss errors, so a passing checksum alone is not enough
+to confirm a recovery. A block is **confirmed** when **two readings agree byte
+for byte** and pass the checksum: stronger evidence, though they can still
+share an error. One reading alone is still put back, but reported as
 *unconfirmed*. Two that check out but disagree leave the file untouched.
 
 When no whole reading passes, the clean stretches of several readings can be
@@ -221,28 +224,32 @@ again, so a `.dmp` dump gets the KERNAL repair only.
 
 ### Written back clean
 
-Every proved block, mended or not, is rewritten at the exact widths the tape
+Every block whose bytes check out, mended or not, is rewritten at the exact widths the tape
 uses elsewhere. A lifted or averaged reading shifts widths slightly, and a
 1980s loader has a fixed threshold where the decoder adapts. Rewriting means
 the tape's own loader reads the block as if it were new.
 
 ### What it achieves, and what it cannot
 
-On the eight worn cassettes this was built against, **66 of 129** files loaded
-before mending, and **121 of 130** after. Each was checked by actually loading
-it, through the real KERNAL or the tape's own loader.
+On the test set of eight worn cassettes this was built against, **66 of 129**
+files loaded before mending, and **121 of 130** after. The total rises by one
+because mending made one more file readable enough to be found at all. Each
+was checked by loading it, through the real KERNAL or the tape's own loader:
+evidence that it loads, not proof of a perfect restoration.
 
-What is left is beyond any reading:
+What is left is beyond these recordings:
 
-- **Tape that carried nothing.** One file has 923 ms missing, another 685 ms.
-  There is no signal to recover.
+- **Signal missing from the capture.** One file has 923 ms missing, another
+  685 ms. A gap like that may reflect tape damage or a playback problem, so
+  another transfer can sometimes recover more.
 - **A pulse that landed on the wrong side.** Sometimes every pulse is a
   legal width and the block is complete, yet the checksum is out by a bit or
   two: one pulse drifted into the range of the other symbol. There is nothing
   to cut around.
 
-There is no correction for wow and flutter, and none for speed. The pulse
-measurement above makes them unnecessary for almost every tape.
+There is no explicit correction for wow, flutter or overall speed. The decoder
+tolerates some timing variation, but larger changes can still prevent
+recovery.
 
 ---
 
@@ -254,7 +261,7 @@ measurement above makes them unnecessary for almost every tape.
    LOAD ANY**, or drop the file on the screen) and pick the `.wav` or `.dmp`.
 2. **Watch it read.** The "Reading tape" dialog names each pass and shows its
    progress. A 30-minute side is a few hundred megabytes of audio read
-   several times over, so it takes a while; the emulator keeps running
+   several times over, so it takes a while. The emulator keeps running
    behind it.
 3. **Read the verdict.** The **Status** card reports what came out: how long
    the tape is, how many files, and whether any needed mending.
@@ -263,12 +270,12 @@ measurement above makes them unnecessary for almost every tape.
 
 ![The tape listing for a tape called 80S MIXTAPE: seven rows, each with a CBM or TURBO badge, a filename, its size and its start time. One filename is struck through in red, and a note under the list says one file is struck through because the tape lost part of it.](/guide/tape-listing.webp)
 
-A file **struck through** could not be read whole; hover it to see why, and
+A file **struck through** could not be read whole. Hover it to see why, and
 the note under the list counts them and says what was mended. **Click a row**
 to wind the tape to that file's lead-in, then type `LOAD` and press **▶
 PLAY**.
 
-5. **Keep it.** The tape goes into your **Library** as a `.tap`; the recording
+5. **Keep it.** The tape goes into your **Library** as a `.tap`, and the recording
    itself is not stored. **⤓ .TAP** downloads it, and **⤓ .WAV** renders it
    back to clean audio you can play into a real C64.
 
@@ -283,7 +290,7 @@ The [Media guide](GUIDE-MEDIA.md#datasette) covers every button on the deck.
 
 `c64rdy` is for when you have more than one tape, or a recording too big to
 drag into a browser. [The command line guide](GUIDE-CLI.md) shows how to
-install it; it needs Node and nothing else.
+install it. It needs Node and nothing else.
 
 ### Turn recordings into tapes
 
@@ -303,7 +310,7 @@ it: `Only one reading vouches for: …`.
 
 | Option | What it does |
 | --- | --- |
-| `--channel <n\|mix\|aligned>` | Use one particular reading of a stereo transfer, instead of the one that proves the most |
+| `--channel <n\|mix\|aligned>` | Use one particular reading of a stereo transfer, instead of the one that reads the most files |
 | `--pre-emphasis <n>` | Lift the treble of the whole recording before reading |
 | `--no-mend` | Skip the turbo re-reading, to see the tape as it came |
 | `--no-repair` | Skip the KERNAL second-copy repair |
@@ -324,25 +331,25 @@ The deck that wrote this ran 3.1% fast
 ```
 
 The header gives the whole side: how long it plays, which loader formats it
-carries, how far off speed the recording deck ran, and how much of the tape
+carries, how far the pulse timings are off nominal, and how much of the tape
 holds signal no known loader reads. **WIND TO** is where a real deck must be
-wound back to for the loader to find the file; **STARTS** is where its data
+wound back to for the loader to find the file, and **STARTS** is where its data
 begins.
 
 `dir` takes a `.wav` directly too (decoding it on the way), `--damaged` shows
 only the broken rows, and `--pulses` adds pulse positions for digging into a
 particular stretch.
 
-### Prove that it loads
+### Check that it loads
 
 ```
 c64rdy loadtest tapes/side-a.tap
 ```
 
-A clean listing says the bytes are right. `loadtest` goes further: it winds to
+A clean listing says the checksums pass. `loadtest` goes further: it winds to
 each file, loads it through the real KERNAL or the tape's own turbo loader,
 and checks the memory it names actually filled. The listing gains a **LOADS**
-column. It is slow and thorough; `--file NAME` tests just one.
+column. It is slow and thorough, and `--file NAME` tests just one.
 
 ### Look at the pulses
 
@@ -386,15 +393,15 @@ the tape and disassembled.
    ```
    c64rdy dir tapes/*.tap --damaged
    ```
-4. **Prove the rest loads:**
+4. **Check the rest loads:**
    ```
    c64rdy loadtest tapes/side-a.tap
    ```
 5. **For a side that still fails,** try again from the recording:
    `--channel` to force the other reading, or `--pre-emphasis` for a stronger
-   treble lift. If the listing shows silence where a file should be, the tape
-   itself has lost it, and a second transfer on another deck is the only way
-   to get it back.
+   treble lift. If the listing shows a gap where a file should be, it may
+   reflect tape damage or a playback problem. Another transfer, perhaps on
+   another deck, can sometimes recover more.
 6. **See them run:**
    ```
    c64rdy run tapes/side-a.tap --all --collage --anim
@@ -408,18 +415,18 @@ the tape and disassembled.
 | --- | --- |
 | `ok` | The file decoded whole and its checksum passes |
 | `N of M files readable.` | M files found, N of them whole |
-| `K mended from a second reading.` | Turbo blocks proved by two agreeing readings, and rewritten |
-| `Only one reading vouches for: …` | Put back on one reading's word: likely right, not proved |
-| `1 drop, 120 bytes lost` | The signal vanished; a stretch of the file is gone |
+| `K mended from a second reading.` | Turbo blocks recovered from another reading, and rewritten |
+| `Only one reading vouches for: …` | Put back on one reading's word: unconfirmed |
+| `1 drop, 120 bytes lost` | The signal vanished from the capture, and a stretch of the file is missing |
 | `40 bytes garbled` | The signal was there but unreadable: worth a lift or the other channel |
 | `checksum fails` | Complete, but a bit is wrong somewhere |
 | `cut short` | The file stops before its end: the recording or the tape ends early |
-| *ran 3.1% fast* | The recording deck's speed, measured: fine for loading, and worth knowing |
-| A name struck through (emulator) | Not readable whole; hover for the reason |
+| *ran 3.1% fast* | The captured pulse timings differ from nominal by 3.1%: usually fine for loading, and worth knowing |
+| A name struck through (emulator) | Not readable whole: hover for the reason |
 
 *Garbled* is the hopeful one: the signal is there, and a different reading
-may recover it. A *drop* means the tape itself carried nothing, and only
-another transfer of the same cassette can help.
+may recover it. A *drop* means the capture has a gap, which may reflect tape
+damage or a playback problem. Another transfer can sometimes recover more.
 
 ---
 
@@ -436,8 +443,8 @@ another transfer of the same cassette can help.
 
 **Formats read:** the KERNAL's own, Turbo Tape 64, GRL-Supertape, Novaload,
 US Gold / Datasoft, Gremlin Type 2, Ocean / Imagine, Freeload, Wildload and
-PROCASS. A tape written by another loader still restores as pulses and still
-loads; it just lists as signal no known format reads.
+PROCASS. A tape written by another loader still restores as pulses and can
+still load. It just lists as signal no known format reads.
 
 For the full method, with the measurements behind each choice, see the
 [Datasette architecture](DATASETTE-ARCHITECTURE.md#10-the-tape-toolchain) page.

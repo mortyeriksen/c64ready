@@ -152,9 +152,9 @@ const files = {};
   // Legend.
   const ly = H - 34;
   body += text(x0, ly, '● a pulse starts and ends where the wave crosses the centre going the same way', { size: 12, fill: C.text });
-  body += text(x0, ly + 18, 'KERNAL widths in CPU cycles:', { size: 12, fill: C.dim });
-  body += text(x0 + 236, ly + 18, 'S 384', { size: 12, fill: C.green }) + text(x0 + 296, ly + 18, 'M 528', { size: 12, fill: C.amber }) + text(x0 + 356, ly + 18, 'L 688', { size: 12, fill: C.red });
-  body += text(x0 + 428, ly + 18, '· a bit is a pair: S M = 0, M S = 1 · L M marks a byte', { size: 12, fill: C.dim });
+  body += text(x0, ly + 18, 'KERNAL widths, approx. CPU cycles:', { size: 12, fill: C.dim });
+  body += text(x0 + 262, ly + 18, 'S 384', { size: 12, fill: C.green }) + text(x0 + 322, ly + 18, 'M 528', { size: 12, fill: C.amber }) + text(x0 + 382, ly + 18, 'L 688', { size: 12, fill: C.red });
+  body += text(x0 + 448, ly + 18, '· a bit is a pair: S M = 0, M S = 1 · L M marks a byte', { size: 12, fill: C.dim });
   files['tape-pulses.svg'] = svg(W, H, 'What a pulse is', 'A noisy tape waveform swinging about a dashed centre line, with a shaded gate band at plus and minus a quarter of the level. Dots mark the centre crossings. Brackets under the wave measure each pulse, one full swing, and label it S 384, M 528 or L 688 cycles: the KERNAL tape format\'s short, medium and long pulses.', body);
 }
 
@@ -196,8 +196,8 @@ const files = {};
   const lx = x0 + lag * 384 * scale;
   body += line(x0, 104, x0, 236, { stroke: C.amber, dash: '3 3' }) + line(lx, 104, lx, 236, { stroke: C.amber, dash: '3 3' });
   body += text((x0 + lx) / 2, 98, 'lag', { size: 11, fill: C.amber, anchor: 'middle' });
-  body += text(W / 2, H - 18, 'The decoder tries left, right, the plain average and the lined-up average, and keeps whichever proves the most files.', { size: 12, fill: C.text, anchor: 'middle' });
-  files['tape-channels.svg'] = svg(W, H, 'Two channels are two readings', 'Four waveforms. The left and right channels of a stereo transfer show the same pulses, the right one a little late. Their plain average is shrunken and garbled where the two disagree. Averaging after lining the right channel up on the left gives a clean, strong wave. The decoder keeps whichever reading proves the most files.', body);
+  body += text(W / 2, H - 18, 'The decoder tries left, right, the plain average and the lined-up average, and keeps whichever reads the most files.', { size: 12, fill: C.text, anchor: 'middle' });
+  files['tape-channels.svg'] = svg(W, H, 'Two channels are two readings', 'Four waveforms. The left and right channels of a stereo transfer show the same pulses, the right one a little late. Their plain average is shrunken and garbled where the two disagree. Averaging after lining the right channel up on the left gives a clean, strong wave. The decoder keeps whichever reading reads the most files.', body);
 }
 
 // 4. Mending a turbo block: readings, agreement, splice, clean rewrite.
@@ -226,15 +226,15 @@ const files = {};
   body += `<path d="M${x0 - 34},${104 + 3 * 40 + 4} C${x0 - 52},${104 + 3 * 40 + 24} ${x0 - 52},${104 + 4 * 40 + 4} ${x0 - 34},${104 + 4 * 40 + 20}" fill="none" stroke="${C.green}" stroke-width="1.6"/>`;
   const ya = 104 + 6 * 40 + 18;
   body += rect(30, ya, W - 70, 96, { stroke: C.green, sw: 1.4 });
-  body += text(50, ya + 28, 'Two readings agree byte for byte → the block is proved, and written back clean', { size: 14, fill: C.bright, weight: 600 });
+  body += text(50, ya + 28, 'Two readings agree byte for byte → the block is confirmed, and written back clean', { size: 14, fill: C.bright, weight: 600 });
   body += text(50, ya + 50, 'at the two pulse widths the tape uses elsewhere, so the original loader reads it as if new.', { size: 12, fill: C.text });
   body += text(50, ya + 72, 'One reading alone: put back, but marked unconfirmed. Two that disagree: left as it was.', { size: 12, fill: C.amber });
   // Splice note.
   const ys = ya + 118;
   body += text(30, ys, 'No whole reading passes?', { size: 13, fill: C.bright, weight: 600 });
   body += text(30, ys + 20, 'Each reading is trusted except around its faults, and the clean stretches are spliced together,', { size: 12, fill: C.text });
-  body += text(30, ys + 38, 'cut 30, 10, then 1.5 ms short of a fault. The checksum judges the result; a splice is always unconfirmed.', { size: 12, fill: C.dim });
-  files['tape-turbo-mend.svg'] = svg(W, H, 'Mending a damaged turbo block', 'Six readings of one damaged turbo block, each a bar with red marks where its pulses could not be read: as recorded, the other channel, and treble lifts of 1.5, 2.5, 3.5 and 5. The lifts of 2.5 and 3.5 read cleanly and agree, so the block is proved and written back clean. A note explains that one reading alone is marked unconfirmed, two that disagree leave the block alone, and that clean stretches of several readings can be spliced, always marked unconfirmed.', body);
+  body += text(30, ys + 38, 'cut 30, 10, then 1.5 ms short of a fault. The checksum judges the result, and a splice is always unconfirmed.', { size: 12, fill: C.dim });
+  files['tape-turbo-mend.svg'] = svg(W, H, 'Mending a damaged turbo block', 'Six readings of one damaged turbo block, each a bar with red marks where its pulses could not be read: as recorded, the other channel, and treble lifts of 1.5, 2.5, 3.5 and 5. The lifts of 2.5 and 3.5 read cleanly and agree, so the block is confirmed and written back clean. A note explains that one reading alone is marked unconfirmed, two that disagree leave the block alone, and that clean stretches of several readings can be spliced, always marked unconfirmed.', body);
 }
 
 // 5. A KERNAL file's two copies.
@@ -262,8 +262,8 @@ const files = {};
   body += drawRow(266, 'First copy', 'damaged', [3, 4]);
   body += drawRow(308, 'Repeat', 'damaged', [9, 10]);
   body += drawRow(356, 'Merged', 'checksum ok', [], C.green);
-  body += text(x0, 414, '→ the copies are lined up, and each lost byte is taken from the other copy;', { size: 12, fill: C.text });
-  body += text(x0, 432, '  the block\'s checksum decides whether the merge is the file', { size: 12, fill: C.text });
+  body += text(x0, 414, '→ the copies are lined up, and each lost byte is taken from the other copy.', { size: 12, fill: C.text });
+  body += text(x0, 432, '  The block\'s checksum decides whether the merge is the file.', { size: 12, fill: C.text });
   files['tape-kernal-copies.svg'] = svg(W, H, 'A KERNAL file is saved twice', 'Two cases drawn as rows of byte cells. First, a good first copy and a repeat with its last bytes lost: the repeat is written again from the first copy. Second, two copies each with different bytes lost: lined up and merged into one whole block whose checksum passes.', body);
 }
 
