@@ -24,6 +24,8 @@ the rival.
 This page is meant to help you pick a tool for a task. Both are free, they
 read the same files, and many people will want both.
 
+![The same moment of the Raster Time demo by Genesis Project in both emulators: on the left C64 READY. in a browser with its control panels, on the right VICE's picture of the C64 screen beside its Tape menu, a yellow lightning bolt between them.](/guide/c64ready-and-vice.webp)
+
 ## In short
 
 **Pick VICE** when you need NTSC, a C128, VIC-20, PET or Plus/4, a
