@@ -11,6 +11,10 @@ The version you are running is shown at the bottom of the About dialog.
 
 ## Next release
 
+- **C64 READY. and VICE.** A new guide,
+  [C64 READY. and VICE](C64READY-AND-VICE.md), sets the two emulators side by
+  side, in compatibility, portability, media, peripherals and tools, to help
+  you pick the right one for a task.
 - **Focus ring in the theme's colour.** Tabbing to a control now outlines it in
   the theme's accent instead of the browser's blue.
 - **A better-looking 80s Bedroom.** The [80s Bedroom](GUIDE-LOOKS.md#scenes)

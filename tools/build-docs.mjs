@@ -50,10 +50,11 @@ const ORDER = [
   'GUIDE-LOOKS',
   'GUIDE-OPTIONS',
   'GUIDE-CLI',
-  'TAPE-RESTORATION',
   'SPECIFICATIONS',
   'FEATURES',
   'KNOWN-ISSUES',
+  'TAPE-RESTORATION',
+  'C64READY-AND-VICE',
   'COMPONENT-STATUS',
   'ARCHITECTURE',
   'MACHINE-ARCHITECTURE',
@@ -72,7 +73,7 @@ const ORDER = [
 // lead the landing page in their own "Overview & guides" band; everything else
 // falls into the "Architecture & internals" grid.
 const GUIDES = new Set([
-  'WHATS-NEW', 'GETTING-STARTED', 'USER-GUIDE', 'TAPE-RESTORATION', 'FEATURES',
+  'WHATS-NEW', 'GETTING-STARTED', 'USER-GUIDE', 'TAPE-RESTORATION', 'C64READY-AND-VICE', 'FEATURES',
   'KNOWN-ISSUES', 'SPECIFICATIONS', 'ABOUT',
 ]);
 
@@ -101,6 +102,7 @@ const CARD_TEASERS = {
   about: "What it is, what it stands for, and who's behind it.",
   'user-guide': 'Every panel, dialog and button, in topics from the interface and media to options and the command line.',
   'tape-restoration': 'How a worn cassette becomes a tape that loads again.',
+  'c64ready-and-vice': 'How the two emulators differ, and which one suits what you want to do.',
 };
 
 const TEXT_DOCS = [
@@ -654,13 +656,14 @@ function readDocsIndexOverview() {
 const INDEX_LIST = {
   guides: [
     ['GETTING-STARTED', 'Getting Started', 'from blank screen to a running demo'],
+    ['WHATS-NEW', "What's New", 'changes in each release'],
     ['USER-GUIDE', 'User Guide', 'every panel, dialog and button'],
-    ['TAPE-RESTORATION', 'Tape restoration', 'bringing worn cassettes back'],
     ['FEATURES', 'Feature list', 'everything it supports'],
     ['KNOWN-ISSUES', 'Known Issues', 'what is missing or rough'],
-    ['WHATS-NEW', "What's New", 'changes in each release'],
     ['ABOUT', 'About', 'what it is and who made it'],
     ['SPECIFICATIONS', 'Specifications & credits', 'references, formats and thanks'],
+    ['TAPE-RESTORATION', 'Tape restoration', 'bringing worn cassettes back'],
+    ['C64READY-AND-VICE', 'C64 READY. and VICE', 'how the two compare'],
   ],
   internals: [
     ['ARCHITECTURE', 'Architecture overview', 'the whole emulator on one page'],
