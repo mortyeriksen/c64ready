@@ -11,6 +11,10 @@ The version you are running is shown at the bottom of the About dialog.
 
 ## Next release
 
+- **RAM Expansion survives a reset.** Pressing RESET, or loading a disk,
+  tape or program into a running machine, no longer empties the RAM Expansion.
+  A game that keeps its data there, such as one that loads a `.reu` image
+  alongside its disk, carries on working after you swap disks.
 - **C64 READY. and VICE.** A new guide,
   [C64 READY. and VICE](C64READY-AND-VICE.md), sets the two emulators side by
   side, in compatibility, portability, media, peripherals and tools, to help

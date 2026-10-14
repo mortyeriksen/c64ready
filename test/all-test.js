@@ -362,6 +362,7 @@ const TESTS = [
   'test/reu-registers-spec-test.js',
   'test/reu-transfer-spec-test.js',
   'test/reu-dma-timing-spec-test.js',
+  'test/reu-reset-carry-spec-test.js',
   'test/drive/drive-test.js',
   'test/drive/drive-rom-test.js',
   'test/drive/fastloader-test.js',

@@ -1682,7 +1682,7 @@ function updateDriveSounds() {
 // Build a fresh C64Machine and re-attach all cached peripherals (ROMs, SID
 // worklet wiring, drive ROM + TDE, disk image, cartridge, tape). Shared by
 // POWER ON and the RESET button so both produce an identical cold machine.
-function _createAndWireMachine({ keepKey = true } = {}) {
+function _createAndWireMachine({ keepKey = true, reuRam = null } = {}) {
   // The datasette is a separate box with its own mechanics: neither RESET nor a
   // power cycle winds its tape back. The machine is built from scratch here,
   // taking the deck with it, so where the head sits has to be read off the old
@@ -1739,8 +1739,8 @@ function _createAndWireMachine({ keepKey = true } = {}) {
     c64.attachDrive9(loader.drive1541);   // real device-9 1541 on the bus
   }
   _syncDrive9TdeBtn();
-  // Re-fit the RAM Expansion unit. Its RAM comes up blank here; a state load
-  // fills it afterwards from the snapshot.
+  // Re-fit the RAM Expansion unit. Its RAM comes up blank here: a RESET hands
+  // the old contents over in `reuRam`, a state load fills it from the snapshot.
   _applyReu();
   // Re-apply cartridge if one was loaded; refresh UI label.
   if (_cachedCartData) {
@@ -1759,6 +1759,8 @@ function _createAndWireMachine({ keepKey = true } = {}) {
     // up — so the deck's own state goes back on afterwards.
     if (deck) _restoreDeck(keepKey ? deck : { seconds: deck.seconds });
   }
+  // After the cartridge, whose power-up clears expansion RAM.
+  if (reuRam) c64.reu?.loadImage(reuRam);
   // Freshly created machine is "pristine" and will settle at a clean BASIC
   // prompt — unless a cartridge is present, which cold-boots into its own code
   // (no BASIC prompt), so a later PRG load must still reset.
@@ -1951,20 +1953,22 @@ if (mobileKbd) {
 // one. This guarantees the 1541 cold-boots exactly as on power-up (an in-place
 // reset could leave the drive mid-DOS-boot, deadlocking the next LOAD). The RAF
 // loop keeps running against the new global `machine`. Returns false (no-op) if
-// powered off. Does NOT touch any pending auto-load — callers that mean a
-// user-initiated reset clear `_autoSeq` themselves.
+// powered off. Expansion RAM carries over, since /RESET does not clear it.
+// Does NOT touch any pending auto-load — callers that mean a user-initiated
+// reset clear `_autoSeq` themselves.
 function _hardReset() {
   if (!running) return false;
   _releaseAllLatched();
   // The machine is about to be replaced: take whatever is on the tape with us,
   // recording included, the way an inserted disk survives by being a live object.
   _cacheTapeFromDeck();
+  const reuRam = c64.reu?.ram ?? null;
   // Mute the master output (hard cut) across the SID reset + machine re-wire so
   // the worklet's state discontinuity — old event ring → new, all voices reset —
   // can't pop, then restore the user's mute preference once it has settled.
   setMasterMuted(true, true);
   resetSidWorklet();
-  _createAndWireMachine({ keepKey: false });
+  _createAndWireMachine({ keepKey: false, reuRam });
   _syncPowerStateClass();
   if (pasteBtn) pasteBtn.disabled = false;
   clearTimeout(_resetUnmuteTimer);

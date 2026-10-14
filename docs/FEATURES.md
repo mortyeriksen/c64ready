@@ -228,8 +228,9 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **RAM Expansion Unit**: a switch in the RAM Expansion card fits a 1700
   (128 KB), 1764 (256 KB), 1750 (512 KB), 1750 XL (2 MB) or a generic 1, 4, 8
   or 16 MB unit, with an activity lamp beside it. Expansion RAM can be filled
-  from a `.reu` image, saved back out to one, or wiped, and it travels with
-  save states. Nothing is fitted until you switch it on.
+  from a `.reu` image, saved back out to one, or wiped. It keeps its contents
+  through RESET and through loading new media, and travels with save states.
+  Nothing is fitted until you switch it on.
 
 ## Video & display
 
