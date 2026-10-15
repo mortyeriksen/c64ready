@@ -60,5 +60,9 @@ const viewer = fs.readFileSync(path.join(root, 'src/vibes/retrovibes.js'), 'utf8
 assert.match(viewer, /import \{ scene as sceneBedroom \} from '\.\/vibes-scene-bedroom\.js'/, 'the viewer takes its 80s Bedroom from vibes-scene-bedroom.js');
 assert.match(viewer, /const SCENES = \[[^\]]*sceneIkplus, sceneBedroom\]/, '80s Bedroom is the last scene, after IK+ Sunset');
 assert.match(sceneSrc, /name: '80s Bedroom'/, 'the scene is named 80s Bedroom');
+// The grade's grain changes every frame. Ahead of SMAA it would shift SMAA's edge
+// detection frame to frame, so the paper edges of the posters flicker on a still camera.
+const order = ['new OutputPass()', 'new SMAAPass()', 'new ShaderPass(GradeShader)'].map((p) => viewer.indexOf(p));
+assert.ok(order.every((i, k) => i > 0 && (k === 0 || i > order[k - 1])), 'SMAA runs before the grain-adding grade pass, after OutputPass');
 
-console.log('ok  - 80s bedroom: markers, lightmap UVs and scale, small version, no lights/cameras/transmission, follows 3D MODEL, last in the scene list');
+console.log('ok  - 80s bedroom: markers, lightmap UVs and scale, small version, no lights/cameras/transmission, follows 3D MODEL, last in the scene list, grain after SMAA');

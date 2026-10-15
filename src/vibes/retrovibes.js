@@ -626,9 +626,11 @@ export class ModelViewer {
     // (canvas-level pointer/dblclick input is wired once in _ensureRenderer and
     // reads this.controls, which is rebuilt here on each open.)
 
-    // Post-processing: RenderPass → Bloom → OutputPass (tonemap+sRGB) → Grade
-    // (vignette/chroma/grain) → SMAA. Wrapped so a failure degrades to plain
-    // renderer.render (see _loop). Per-scene bloom params set in _applyScene.
+    // Post-processing: RenderPass → Bloom → OutputPass (tonemap+sRGB) → SMAA →
+    // Grade (vignette/chroma/grain). SMAA comes before the grain: grain changes
+    // every frame, and under it SMAA's edge detection would too, flickering
+    // high-contrast edges on a still camera. Wrapped so a failure degrades to
+    // plain renderer.render (see _loop). Per-scene bloom params set in _applyScene.
     try {
       const w = window.innerWidth, h = window.innerHeight;
       const composer = new EffectComposer(renderer);
@@ -643,10 +645,9 @@ export class ModelViewer {
       bloom.enabled = !_lowPowerDevice();
       composer.addPass(bloom);
       composer.addPass(new OutputPass());
+      composer.addPass(new SMAAPass());
       const grade = new ShaderPass(GradeShader);
       composer.addPass(grade);
-      const smaa = new SMAAPass();
-      composer.addPass(smaa);
       this._composer = composer;
       this._bloomPass = bloom;
       this._gradePass = grade;

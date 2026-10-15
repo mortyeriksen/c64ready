@@ -93,9 +93,11 @@ exposes no handle to free.) A lost context is recovered by a
   saved state and yields to the user on drag (§6).
 - **Post-processing** (`EffectComposer`, wrapped in try/catch → plain render on
   failure): `RenderPass` → `UnrealBloomPass` → `OutputPass` (tone-map + sRGB) →
-  `ShaderPass(GradeShader)` → `SMAAPass`. `GradeShader` is a gentle cinematic grade
+  `SMAAPass` → `ShaderPass(GradeShader)`. `GradeShader` is a gentle cinematic grade
   (edge chromatic aberration, vignette and film grain) running on the final sRGB
-  image; its `uTime` (grain) is advanced each frame in `_loop`. Each scene's `grade`
+  image; its `uTime` (grain) is advanced each frame in `_loop`. It runs after
+  SMAA, so the changing grain never reaches SMAA's edge detection and still
+  edges stay still. Each scene's `grade`
   sets `aberration`, `vignette`, `grain` and optional split-tone colours. `_applyScene`
   resets all grade uniforms on each switch, including explicit zero values.
   Spotlight has no chromatic aberration and minimal grain; IK+ Sunset and Bedroom
