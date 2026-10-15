@@ -9,7 +9,11 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
-## Next release
+## 2026.10.3 — October 15, 2026
+
+The 80s Bedroom is rebuilt as a fully modelled room, the RAM Expansion keeps
+its contents across a reset, and restored tapes load more reliably. Two new
+guides cover tape restoration and how C64 READY. compares with VICE.
 
 - **RAM Expansion survives a reset.** Pressing RESET, or loading a disk,
   tape or program into a running machine, no longer empties the RAM Expansion.
@@ -47,7 +51,7 @@ The version you are running is shown at the bottom of the About dialog.
   rebuilt copy could overwrite the start of the next file's lead-in, or shift
   the rest of the tape by up to a second.
 - **Esc closes the welcome screen.** Before your ROMs were set up, Esc did
-  nothing visible on the welcome screen; it now closes it, and the ROM setup
+  nothing visible on the welcome screen. It now closes it, and the ROM setup
   opens after.
 
 ---
