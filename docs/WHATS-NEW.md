@@ -9,14 +9,6 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
-## Next release
-
-- **Steadier edges in Retro Vibes.** The edges of bright things against a
-  dark background, such as the world map and the poster in the 80s Bedroom,
-  no longer flicker while the camera is still.
-
----
-
 ## 2026.10.3 — October 15, 2026
 
 The 80s Bedroom is rebuilt as a fully modelled room, the RAM Expansion keeps
@@ -61,6 +53,9 @@ guides cover tape restoration and how C64 READY. compares with VICE.
 - **Esc closes the welcome screen.** Before your ROMs were set up, Esc did
   nothing visible on the welcome screen. It now closes it, and the ROM setup
   opens after.
+- **Steadier edges in Retro Vibes.** The edges of bright things against a
+  dark background, such as the world map and the poster in the 80s Bedroom,
+  no longer flicker while the camera is still.
 
 ---
 
