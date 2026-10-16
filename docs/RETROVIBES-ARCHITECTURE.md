@@ -92,8 +92,11 @@ exposes no handle to free.) A lost context is recovered by a
   axis (§3). A slow idle auto-spin (`autoRotate`, speed 0.35) is restored from its
   saved state and yields to the user on drag (§6).
 - **Post-processing** (`EffectComposer`, wrapped in try/catch → plain render on
-  failure): `RenderPass` → `UnrealBloomPass` → `OutputPass` (tone-map + sRGB) →
-  `SMAAPass` → `ShaderPass(GradeShader)`. `GradeShader` is a gentle cinematic grade
+  failure): `RenderPass` → [`VolumePass` → `GTAOPass` → `BokehPass`] →
+  `UnrealBloomPass` → `OutputPass` (tone-map + sRGB) → `SMAAPass` →
+  `ShaderPass(GradeShader)`. The bracketed passes exist only off low-power devices
+  and run only for a scene that asks (`volume`, `ao`, `dof`, see Foggy Spotlight
+  below). The composer's targets carry a depth texture, which `VolumePass` reads. `GradeShader` is a gentle cinematic grade
   (edge chromatic aberration, vignette and film grain) running on the final sRGB
   image; its `uTime` (grain) is advanced each frame in `_loop`. It runs after
   SMAA, so the changing grain never reaches SMAA's edge detection and still
@@ -182,20 +185,51 @@ the index.
 | 0 | **Synthwave** | dark neon highway toward a banded sun: scrolling grid, mountain silhouettes, palms, stars | basic; raw tone map (`NoToneMapping`), derivative-filtered grid and road, sun and horizon glow faked in-shader; inverse-square neon lights with intensity scaled by model radius squared |
 | 1 | **Starry Plain** | dark Tron-grid plain: scanner ripple, star layers, a procedural Milky-Way band, shooting stars | basic; raw tone map |
 | 2 | **Spotlight** | near-black studio: overhead spotlight, beam dust, screen-coloured CRT spill | **full composer** (bloom dialled near-off + grade + SMAA) |
-| 3 | **IK+ Sunset** | stone courtyard at dusk: torii and low sun over reflective water, autumn maple, layered headlands | **full composer** (bloom + warm halation + dusk split-tone grade); cool-shadow sunset IBL via `envMap`; ACES exposure 0.66, purple haze fog |
-| 4 | **80s Bedroom** | modelled teenager's bedroom at night (a GLB, below): amber desk lamp, lava lamp, live monitor spill, a flickering wood-grain TV, a half moon through the blinds, a moonbeam, a lit landing | **full composer** (bloom + amber halation + teal/amber grade) |
+| 3 | **Foggy Spotlight** | Cycles-baked studio floor (a GLB, below): theatre spotlight, stage smoke in the beam, live monitor spill | **full composer** with smoke, contact shadows and depth of field, Khronos PBR Neutral tone mapping, a Cycles light probe via `envMap` |
+| 4 | **IK+ Sunset** | stone courtyard at dusk: torii and low sun over reflective water, autumn maple, layered headlands | **full composer** (bloom + warm halation + dusk split-tone grade); cool-shadow sunset IBL via `envMap`; ACES exposure 0.66, purple haze fog |
+| 5 | **80s Bedroom** | modelled teenager's bedroom at night (a GLB, below): amber desk lamp, lava lamp, live monitor spill, a flickering wood-grain TV, a half moon through the blinds, a moonbeam, a lit landing | **full composer** (bloom + amber halation + teal/amber grade) |
 
 Scenes flagged `basic` render with a plain `renderer.render` and bypass the composer;
 the **bloom + grade + SMAA** pipeline runs for the non-basic scenes
-(**Spotlight**, **IK+ Sunset**, **80s Bedroom**), while Synthwave and Starry Plain further use raw tone mapping and
+(**Spotlight**, **Foggy Spotlight**, **IK+ Sunset**, **80s Bedroom**), while Synthwave and Starry Plain further use raw tone mapping and
 bake their glow into their own shaders. Backdrop gradients are cached equirect
 `CanvasTexture`s; the procedural props (star sprites, sunset sky/sun, water
 normal map, checker floor) are built once and cached at module level.
 
+### Foggy Spotlight
+
+The Spotlight mood made photographic. Its surroundings come from files in
+`public/models/`, made in Blender around the C64 model, which is never moved:
+
+- **Baked floor.** `spotlight_real.glb` holds a worn studio floor whose light, the
+  lamp's pool, the machine's soft contact shadows and its bounce, is baked in
+  Cycles into a 2048 px emissive map. Its base colour is black, so the live lamp
+  adds only glints off the roughness and normal maps, never a second pool. Those
+  two are one seamless 1024 px tile repeated three times across the floor
+  (`KHR_texture_transform`). `spotlight_real_small.glb` halves every map. The file also holds the hanging lamp, and
+  `Light Key` / `Light Key Target` markers carry the live light's intensity
+  (candela), angle, penumbra and colour as extras.
+- **Light probe.** `spotlight_real_env.hdr`, 512 px for both builds, is a Cycles
+  equirect taken from the computer's centre with the computer and the
+  lamp's lens hidden. As the scene's `envMap` it gives the machine the studio's
+  bounce light and reflections. `tone: 'neutral'` keeps the live picture's blue
+  saturated.
+- **Smoke.** `VolumePass` (`vibes-volume-pass.js`) ray-marches the key light's cone
+  against the scene depth at no more than 800 px wide, lit with inverse-square
+  falloff, penumbra, Henyey-Greenstein scattering and the light's shadow map, so
+  the machine casts a wedge through it. The screen's RectAreaLight lights it too,
+  as a Lambertian panel in the live picture's colour (`screenGlow` times its
+  physical share). Density is domain-warped 3D noise that drifts and settles
+  toward the floor. Without the pass (low-power devices) the
+  scene draws an additive cone instead.
+- **Contact shadows and focus.** `ao` turns on a half-resolution `GTAOPass`, `dof`
+  a `BokehPass` focused on the orbit target. A scene lists its see-through effects
+  in `userData.noDepth` so neither pass treats them as surfaces.
+
 ### The 80s Bedroom
 
-The bedroom is the one scene built from a model file rather than code:
-`public/bedroom.glb`, modelled in Blender, with the C64 placed by the viewer as
+The 80s Bedroom is built from a model file too:
+`public/models/bedroom.glb`, modelled in Blender, with the C64 placed by the viewer as
 in every scene and the room fitted around it (carpet 0.72 m below the model,
 `R * 1.04` world units per metre, the room 6 cm behind the model's centre so the
 monitor's cables lie on the desk). `vibes-scene-bedroom.js` loads it.
@@ -227,7 +261,7 @@ monitor's cables lie on the desk). `vibes-scene-bedroom.js` loads it.
   in two passes by flipping `material.side`, which re-checks the shader program
   and re-uploads every light uniform on each pass of every frame.
 - **Offline.** The service worker serves the GLBs and lightmaps cache-first from
-  the model cache (`c64emu-models-v2`) under fixed names, so replacing one of
+  the model cache (`c64emu-models-v3`) under fixed names, so replacing one of
   these files needs that cache's name bumped in `src/sw.js`.
 
 Bedroom and Spotlight set `staticShadows`. `vibes-shadow-cache.js` watches the

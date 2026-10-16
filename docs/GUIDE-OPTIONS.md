@@ -31,7 +31,7 @@ ROM management. All choices persist in this browser.
 
 | Button | What it does |
 | --- | --- |
-| **THEME** | The colour theme: **CLASSIC** (the default), **GEOS**, **BREADBIN**, **PHOSPHOR**, **OUT RUN**, **COMMANDO**, then any you have imported. See [Themes](GUIDE-LOOKS.md#themes). |
+| **THEME** | The colour theme: **CLASSIC** (the default), **GEOS**, **BREADBIN**, **PHOSPHOR**, **OUT RUN**, **COMMANDO**, **ART DECO**, then any you have imported. See [Themes](GUIDE-LOOKS.md#themes). |
 | **APPEARANCE** | **SYSTEM** (the default) follows your device's dark or light setting, and changes with it; **DARK** and **LIGHT** keep one. The screen, the CRT looks and Retro Vibes look the same in both. The appearance button in the header does the same. |
 | **IMPORT** / **EXPORT** / **REMOVE** | Load a theme file, save the current theme as a complete file, or remove an imported theme from this browser. |
 

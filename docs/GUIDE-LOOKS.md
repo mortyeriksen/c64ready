@@ -10,10 +10,11 @@ play. Part of the [User Guide](USER-GUIDE.md).
 ## Themes
 
 A theme sets the interface's colours, and can lay a faint pattern on the page
-behind the panels. **Classic** is the default, and five more are built in.
+behind the panels. **Classic** is the default, and six more are built in.
 Each has a pattern of its own: Classic a large, subtle grid, GEOS a dither
 like its desktop, Breadbin a woven crosshatch, Phosphor scanlines in dark
-mode and green-bar paper in light, Out Run a finer grid and Commando dots. The gallery below shows each in dark mode on the left and
+mode and green-bar paper in light, Out Run a finer grid, Commando dots and
+Art Deco rows of fans. The gallery below shows each in dark mode on the left and
 light mode on the right; step through it with **Previous** and **Next**. The screen, the CRT looks and Retro Vibes keep their
 own colours whatever the theme, and you can import your own too. On a first
 visit, the welcome screen wears one of the built-in themes at random, and the
@@ -44,6 +45,10 @@ app keeps that theme when you leave it.
 **Commando**: Night road and muzzle flash in dark mode, khaki and olive drab in light.
 
 ![Commando: sand on dark brown with orange accents in dark mode, khaki outlined in olive drab with muzzle-flash orange accents in light mode.](/guide/theme-commando.webp)
+
+**Art Deco**: Gold and jade: ivory type on peacock midnight in dark mode, navy ink on ivory paper in light.
+
+![Art Deco: ivory text on deep peacock blue with gilt borders, gold and jade accents in dark mode, navy ink on ivory paper ruled in gilt with gold and jade accents in light mode, rows of fans on the page in both.](/guide/theme-artdeco.webp)
 
 <!-- /gallery -->
 
@@ -124,7 +129,7 @@ Export Classic to get the whole file to edit.
   that sets them still imports.
 - **Page pattern**: the optional `look` names a pattern for each mode, drawn
   on the page behind the panels: `dither`, `bars`, `scanlines`, `grid`,
-  `dots`, `weave` or `none`, with a `size` of `small`, `medium` (the default)
+  `dots`, `fans`, `weave` or `none`, with a `size` of `small`, `medium` (the default)
   or `large`. It is drawn in `pattern-ink`, which has to be faint, an alpha of
   0.15 or less such as `rgba(0, 0, 0, 0.08)`, so the header text over it stays
   readable; left out, the pattern uses the theme's `text` colour at 0.07. On
@@ -152,7 +157,7 @@ available over the 3D scene.
 | **Scroll / pinch** | Zoom. |
 | **Double-click / double-tap** | Powers the C64 on when it's off, so you can boot the machine without leaving the 3D scene. |
 | **🎬** | Change the scene. |
-| **⛶** | Glides the camera to a head-on view that fills the frame with the monitor, a virtual fullscreen. Drag or scroll to break out of it. |
+| **⛶** | Glides the camera to a head-on view that fills the frame with the monitor, a virtual fullscreen. From the side or behind, it swings around the monitor to its screen. Drag or scroll to break out of it. |
 | **🥽 ENTER VR** | View in VR (shown when a headset or the WebXR emulator is available). |
 | **ⓘ model credit** | Shows attribution for the 3D model. |
 | **Cmd+Shift+X** / **Ctrl+Shift+X** | **Studio mode**: hides everything else in this table (the mouse pointer included) and leaves the scene alone with the C64 READY. logo, for screenshots and video. The same keys bring the controls back. It is remembered, so the scene reopens the way you left it. |
@@ -160,7 +165,7 @@ available over the 3D scene.
 
 ### Scenes
 
-The **🎬** button cycles through five scenes. Each strip in the gallery shows
+The **🎬** button cycles through six scenes. Each strip in the gallery shows
 the scene from the default view, up close, and from a low angle; step through
 them with **Previous** and **Next**.
 
@@ -177,6 +182,10 @@ them with **Previous** and **Next**.
 **Spotlight**: One warm spotlight in the dark, the live CRT colouring the floor.
 
 ![Three views of the Spotlight scene: the setup picked out of pitch darkness by a single warm overhead spotlight, grounded on a matte studio floor while the live CRT softly colours its surroundings.](/guide/retro-vibes-spotlight.webp)
+
+**Foggy Spotlight**: A theatre spotlight cutting through stage smoke onto a worn studio floor.
+
+![Three views of the Foggy Spotlight scene: the setup in a pool of warm light on a worn, scuffed studio floor, stage smoke drifting through the beam and settling low around the machine, the rest of the studio dark.](/guide/retro-vibes-foggy-spotlight.webp)
 
 **IK+ Sunset**: A courtyard by the bay at dusk, a torii gate before the setting sun.
 

@@ -294,6 +294,54 @@ body[data-splash-theme="commando"] #splash {
   --page-pattern: radial-gradient(circle, var(--pattern-ink) 1px, transparent 1.5px);
   --page-pattern-size: 12px 12px;
 }
+/* Art Deco, dark */
+body[data-splash-theme="artdeco"] #splash {
+  --crt-bg: #000e16;
+  --page-glow: #03252f;
+  --pattern-ink: rgba(164, 125, 33, 0.08);
+  --panel-bg: #001a25;
+  --border: #7b5e22;
+  --control-bg: #02202c;
+  --button-bg: #02202c;
+  --button-accent: #cda13e;
+  --shadow: #000000;
+  --text: #dad1be;
+  --text-dim: #948d7a;
+  --text-bright: #fffffd;
+  --on-accent: #000000;
+  --accent: #a47d21;
+  --accent-bright: #dff4ff;
+  --green: #8fe985;
+  --logo-ramp-4: #cb9f3d;
+  --logo-ramp-2: #806115;
+  --logo-ramp-1: #5e4505;
+  --page-pattern: radial-gradient(circle at 50% 100%, transparent 7px, var(--pattern-ink) 7px 8px, transparent 8px 15px, var(--pattern-ink) 15px 16px, transparent 16px 23px, var(--pattern-ink) 23px 24px, transparent 24px);
+  --page-pattern-size: 48px 24px;
+}
+/* Art Deco, light */
+:root[data-mode="light"] body[data-splash-theme="artdeco"] #splash {
+  --crt-bg: #eceae3;
+  --page-glow: #e0dbce;
+  --pattern-ink: rgba(123, 86, 15, 0.07);
+  --panel-bg: #fdfaf1;
+  --border: #d7c298;
+  --control-bg: #f2f0eb;
+  --button-bg: #f2f0eb;
+  --button-accent: #734f06;
+  --shadow: #4a658b;
+  --text: #132a4d;
+  --text-dim: #4b668d;
+  --text-bright: #031839;
+  --on-accent: #ffffff;
+  --accent: #7b560f;
+  --accent-bright: #031839;
+  --green: #2a7337;
+  --logo-ramp-4: #65470b;
+  --logo-ramp-2: #cd993d;
+  --logo-ramp-1: #d0ccbf;
+  --page-pattern: radial-gradient(circle at 50% 100%, transparent 7px, var(--pattern-ink) 7px 8px, transparent 8px 15px, var(--pattern-ink) 15px 16px, transparent 16px 23px, var(--pattern-ink) 23px 24px, transparent 24px);
+  --page-pattern-size: 48px 24px;
+}
 /* A system asking for more contrast gets no page pattern, as on the page. */
 @media (prefers-contrast: more) {
   body[data-splash-theme] #splash#splash {   /* outranks the light-mode blocks */

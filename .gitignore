@@ -30,6 +30,8 @@ investigation/
 *.c64states
 *.c64state
 *.glb
-# The 80s Bedroom's room is our own model, small enough to keep in the repository.
-!public/bedroom.glb
-!public/bedroom_small.glb
+# Our own scene models (the 80s Bedroom's room, the Spotlight Real floor) are small enough to keep in the repository.
+!public/models/bedroom.glb
+!public/models/bedroom_small.glb
+!public/models/spotlight_real.glb
+!public/models/spotlight_real_small.glb

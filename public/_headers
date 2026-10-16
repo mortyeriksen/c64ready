@@ -37,10 +37,10 @@
 
 # The 3D models: 18 MB and 95 MB, fetched only when Retro Vibes opens, and
 # content-stable. RENAME on replacement (and bump MODEL_CACHE in src/sw.js).
-/commodore_64.glb
+/models/commodore_64.glb
   Cache-Control: public, max-age=31536000, immutable
 
-/commodore_64_4k.glb
+/models/commodore_64_4k.glb
   Cache-Control: public, max-age=31536000, immutable
 
 # Link-preview cards. The version is in the filename precisely so a shared link

@@ -28,7 +28,7 @@ precache(self.__WB_MANIFEST);
 // Runtime caches (see the fetch handler below): the lazy-loaded 3D-viewer model
 // GLBs, and the guide screenshots the docs embed. Versioned so bumping a suffix
 // drops stale copies on activate.
-const MODEL_CACHE = 'c64emu-models-v2';
+const MODEL_CACHE = 'c64emu-models-v3';
 const GUIDE_CACHE = 'c64emu-guide-v3';
 const RUNTIME_CACHES = [MODEL_CACHE, GUIDE_CACHE];
 
@@ -38,7 +38,7 @@ const RUNTIME_CACHES = [MODEL_CACHE, GUIDE_CACHE];
 const ANALYTICS_MARKERS = new Set(
   ['/pwa.html', '/pwa-installed.html', '/roms-loaded.html', '/roms-vice.html', '/returned.html',
    '/roms-theme-classic.html', '/roms-theme-geos.html', '/roms-theme-breadbin.html', '/roms-theme-phosphor.html',
-   '/roms-theme-outrun.html', '/roms-theme-commando.html', '/roms-theme-custom.html']);
+   '/roms-theme-outrun.html', '/roms-theme-commando.html', '/roms-theme-artdeco.html', '/roms-theme-custom.html']);
 
 // Prompt-to-update flow: a new SW installs and WAITS (note: NO unconditional
 // skipWaiting on install) so it never swaps code out from under a running
@@ -138,15 +138,16 @@ self.addEventListener('fetch', (event) => {
   // serve every later open (and offline) from cache with no re-download. Only a
   // complete 200 is cached (never an opaque/partial/errored response). CORP is
   // re-applied on serve so the model stays embeddable under COEP require-corp.
-  // NOTE: the filenames are unversioned (commodore_64*.glb) — if a model asset
-  // is ever replaced, bump MODEL_CACHE below so clients drop the stale copy.
+  // Everything under /models/ (the GLBs, the 80s Bedroom's lightmaps, Spotlight
+  // Real's light probes) goes in this bucket. NOTE: the filenames are
+  // unversioned — if one is ever replaced, bump MODEL_CACHE below so clients
+  // drop the stale copy.
   // Guide screenshots (/guide/*): only the docs embed them, and they outweigh the
   // whole rest of the app, so they are kept OUT of the precache too (globIgnores)
   // and cached the same way — the first docs page that shows one pays for it, and
   // it is offline from then on. Bump GUIDE_CACHE when a shot is replaced, since
   // the filenames are stable (tools/guide-shots.mjs overwrites them in place).
-  // The 80s Bedroom's lightmap images go with its GLB into the model bucket.
-  if (/\.glb$/i.test(url.pathname) || /\/bedroom_light[^/]*\.webp$/i.test(url.pathname) || url.pathname.startsWith('/guide/')) {
+  if (url.pathname.startsWith('/models/') || url.pathname.startsWith('/guide/')) {
     const bucket = url.pathname.startsWith('/guide/') ? GUIDE_CACHE : MODEL_CACHE;
     event.respondWith((async () => {
       const cache = await caches.open(bucket);

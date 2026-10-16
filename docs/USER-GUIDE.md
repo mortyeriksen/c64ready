@@ -29,6 +29,9 @@ from blank screen to running demo, start with
 **Commando**
 ![The interface in the Commando theme's dark mode: sand on dark brown with orange accents.](/guide/overview-commando.webp)
 
+**Art Deco**
+![The interface in the Art Deco theme's dark mode: ivory text on peacock midnight with gilt borders and gold accents.](/guide/overview-artdeco.webp)
+
 <!-- /gallery -->
 
 Three regions: the **header** (branding and links), the **display** (the

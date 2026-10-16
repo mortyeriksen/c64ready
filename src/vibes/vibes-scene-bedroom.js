@@ -104,7 +104,7 @@ export function makeTvScanner(doc, w, h) {
   return c;
 }
 
-// The 80s Bedroom as a modelled room: public/bedroom.glb, made in
+// The 80s Bedroom as a modelled room: public/models/bedroom.glb, made in
 // Blender from the earlier procedural room, with curtains, a draped duvet, period
 // props, scanned materials, a lit landing through the open door and a half moon
 // outside the window. The computer is not in the file; the viewer places the
@@ -122,7 +122,7 @@ export function makeTvScanner(doc, w, h) {
 // one lightmap, a separate image holding Cycles' indirect diffuse light scaled
 // to fit 8 bits. "Room Origin" stores that scale (extras.lightmapScale). Direct
 // light stays real-time, so the lamp, the TV and the moon still move and flicker.
-const BASE = ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/');
+const BASE = ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/') + 'models/';
 // Options ▸ Display ▸ 3D MODEL picks the files, as it does the C64 model's:
 // SMALL (and AUTO on a phone or tablet) loads the lighter room, with 512 px
 // textures, lighter cloth and a 1024 px lightmap.

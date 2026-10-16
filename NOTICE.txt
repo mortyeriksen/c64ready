@@ -42,7 +42,7 @@ PetMe64, Giana, Berkelium64
     Creative Commons Attribution 4.0 International (CC BY 4.0)
     https://skfb.ly/oUKFx  ·  https://creativecommons.org/licenses/by/4.0/
     Files: commodore_64.glb, commodore_64_4k.glb — served by the deployed
-    site under public/, not kept in this repository (see README).
+    site under public/models/, not kept in this repository (see README).
     Used for the optional 3D Retro Vibes.
 
 ================================================================================

@@ -253,7 +253,7 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **Dark and light mode**: the interface follows the system's colour scheme, or
   stays dark or light, from a button in the header or Options ▸ Theme. The
   screen and the CRT looks are the same in both.
-- **Themes**: Classic, GEOS, Breadbin, Phosphor, Out Run and Commando built
+- **Themes**: Classic, GEOS, Breadbin, Phosphor, Out Run, Commando and Art Deco built
   in, and your own as a JSON file of colours and an optional page pattern,
   with a dark mode, a light mode or both; export any theme as a complete
   starting point (see [Themes](GUIDE-LOOKS.md#themes)).
@@ -296,8 +296,10 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 
 - **Retro Vibes 3D viewer**: a full-screen 3D scene of the C64 whose on-screen
   TV mirrors the live emulator picture, with several switchable lighting/backdrop
-  moods. In Spotlight and 80s Bedroom, the monitor casts light that follows the
-  picture's colour and brightness. Synthwave has opposing neon lights and a
+  moods. In Spotlight, Foggy Spotlight and 80s Bedroom, the monitor casts light
+  that follows the picture's colour and brightness. Foggy Spotlight fills its
+  beam with drifting stage smoke that the machine casts a shadow through and
+  the screen tints blue. Synthwave has opposing neon lights and a
   smoothly filtered grid; the cinematic scenes have individual grain and lens
   effects. Opened with the **VIBES** button in Controls; **Esc** / ✕ returns.
   **Cmd+Shift+X** / **Ctrl+Shift+X** is Studio mode, stripping the scene to the

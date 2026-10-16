@@ -2,7 +2,7 @@
 // Copyright © 2026 Morten Øien Eriksen
 // ── retrovibes.js — fullscreen 3D "Retro Vibes" model viewer ─────────────────
 // Double-clicking "vibes" in the header tagline opens this: a browser-window-
-// filling Three.js scene showing public/commodore_64.glb, lit like an 80s
+// filling Three.js scene showing public/models/commodore_64.glb, lit like an 80s
 // synthwave demo. Drag to rotate, scroll / two-finger pinch to zoom, Esc or the
 // ✕ (top-right) to close.
 //
@@ -27,6 +27,10 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { SMAAPass } from 'three/examples/jsm/postprocessing/SMAAPass.js';
+import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
+import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
+import { VolumePass } from './vibes-volume-pass.js';
+import { screenApproach, bezierAt } from './vibes-camera-path.js';
 import { attachKeycapPresses } from './keycap-press.js';   // [removable prototype]
 import { hostTouchControls, restoreTouchControls } from '../ui/touch-joystick.js';
 import { bgTexture, wantsLargeModels } from './vibes-scene-common.js';
@@ -37,6 +41,7 @@ import { scene as sceneStarry } from './vibes-scene-starry.js';
 import { scene as sceneSpotlight } from './vibes-scene-spotlight.js';
 import { scene as sceneIkplus } from './vibes-scene-ikplus.js';
 import { scene as sceneBedroom } from './vibes-scene-bedroom.js';
+import { scene as sceneSpotlightReal } from './vibes-scene-spotlight-real.js';
 
 // Cinematic grade: subtle vignette + edge chromatic aberration + film grain.
 // Runs on the final sRGB image (after OutputPass). Kept gentle so it flavours
@@ -97,9 +102,9 @@ const GradeShader = {
 // large screens and a lighter build (~19 MB) for phones. Choose once at module
 // load by device screen size — the model loads lazily and stays resident, so
 // there's no need to react to later resizes. Vite serves public/ at the site
-// root; BASE_URL keeps the path correct under a non-root deploy base (guarded so
-// a non-Vite context never throws).
-const MODEL_BASE = ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/');
+// root, and every 3D asset lives in public/models/; BASE_URL keeps the path
+// correct under a non-root deploy base (guarded so a non-Vite context never throws).
+const MODEL_BASE = ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/') + 'models/';
 // Options ▸ Display ▸ 3D MODEL picks the size (vibes-scene-common.js), and
 // the 80s Bedroom's room follows the same choice.
 function resolveModelUrl() {
@@ -125,7 +130,7 @@ const STUDIO_KEY = 'c64emu.modelViewerStudio';
 // (removed wholesale on switch); optional animate(group, t) runs each frame;
 // `css` is the overlay backdrop class; `envInt` scales the RoomEnvironment IBL;
 // optional `fog` = {color, near, far} (near/far ×sphere.radius). ctx = {sphere,box}.
-const SCENES = [sceneSynthwave, sceneStarry, sceneSpotlight, sceneIkplus, sceneBedroom];
+const SCENES = [sceneSynthwave, sceneStarry, sceneSpotlight, sceneSpotlightReal, sceneIkplus, sceneBedroom];
 
 export class ModelViewer {
   constructor(overlayEl) {
@@ -188,6 +193,13 @@ export class ModelViewer {
     this._composer = null;
     this._bloomPass = null;
     this._gradePass = null;
+    // Contact shadows and depth of field, built only off low-power devices and
+    // enabled only for scenes that ask (`ao`, `dof`). Null when not built.
+    this._aoPass = null;
+    this._dofPass = null;
+    this._volPass = null;      // smoke in a scene's spotlight beam (`volume`)
+    this._sceneVolume = false;
+    this._depthHidden = new Array(8).fill(null);   // scratch for _hideFromDepth: filled by index, never resized
     // A remembered index can point past the end after a scene is removed —
     // clamp so it lands on the nearest scene instead of wrapping to the first.
     this._sceneIndex = (() => {
@@ -626,17 +638,41 @@ export class ModelViewer {
     // (canvas-level pointer/dblclick input is wired once in _ensureRenderer and
     // reads this.controls, which is rebuilt here on each open.)
 
-    // Post-processing: RenderPass → Bloom → OutputPass (tonemap+sRGB) → SMAA →
-    // Grade (vignette/chroma/grain). SMAA comes before the grain: grain changes
+    // Post-processing: RenderPass → [Volume → GTAO → Bokeh] → Bloom → OutputPass
+    // (tonemap+sRGB) → SMAA → Grade (vignette/chroma/grain). The bracketed passes
+    // exist only off low-power devices and run only for a scene that asks: the
+    // volume marches smoke through a spotlight against the RenderPass's depth
+    // (hence the depth texture on the composer's targets), GTAO and Bokeh each
+    // draw the scene again for depth. SMAA comes before the grain: grain changes
     // every frame, and under it SMAA's edge detection would too, flickering
     // high-contrast edges on a still camera. Wrapped so a failure degrades to
     // plain renderer.render (see _loop). Per-scene bloom params set in _applyScene.
     try {
       const w = window.innerWidth, h = window.innerHeight;
-      const composer = new EffectComposer(renderer);
+      const target = new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType });
+      target.depthTexture = new THREE.DepthTexture(w, h);
+      const composer = new EffectComposer(renderer, target);
       composer.setPixelRatio(renderer.getPixelRatio());
       composer.setSize(w, h);
       composer.addPass(new RenderPass(scene, camera));
+      if (!_lowPowerDevice()) {
+        const vol = new VolumePass();
+        vol.camera = camera; vol.enabled = false;
+        composer.addPass(vol);
+        this._volPass = vol;
+        const ao = new GTAOPass(scene, camera, w, h);
+        // Occlusion is soft, so it runs at half resolution; its blend samples
+        // it up onto the full frame.
+        const aoSize = ao.setSize.bind(ao);
+        ao.setSize = (width, height) => aoSize(Math.ceil(width / 2), Math.ceil(height / 2));
+        ao.enabled = false;
+        composer.addPass(ao);
+        const dof = new BokehPass(scene, camera, { focus: 1, aperture: 0, maxblur: 0 });
+        dof.enabled = false;
+        composer.addPass(dof);
+        this._hideFromDepth(ao); this._hideFromDepth(dof);
+        this._aoPass = ao; this._dofPass = dof;
+      }
       const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.9, 0.6, 0.6);
       // Bloom is the only pass with a real per-frame cost — a blur pyramid over
       // the whole frame, resized with the canvas. A phone pays for it in frame
@@ -659,6 +695,26 @@ export class ModelViewer {
     this._glReady = true;
     this.supported = true;
     this._onResize();
+  }
+
+  // A scene's see-through effects (a light shaft, dust) list themselves in its
+  // group's userData.noDepth. Hidden around a pass's own depth render, they
+  // neither occlude (GTAO) nor pull the focus plane (Bokeh).
+  _hideFromDepth(pass) {
+    const render = pass.render.bind(pass);
+    const hidden = this._depthHidden;
+    // Only the three buffers go through: GTAO and Bokeh read nothing else, and
+    // a forwarded deltaTime would be boxed on every call.
+    // The scratch list is filled by index and counted, not pushed and cleared:
+    // setting an array's length to 0 drops its storage, and the next push would
+    // allocate it again every frame.
+    pass.render = (renderer, writeBuffer, readBuffer) => {
+      const list = this._sceneGroup?.userData.noDepth;
+      let n = 0;
+      if (list) for (let i = 0; i < list.length && n < hidden.length; i++) if (list[i].visible) { list[i].visible = false; hidden[n++] = list[i]; }
+      render(renderer, writeBuffer, readBuffer);
+      for (let i = 0; i < n; i++) { hidden[i].visible = true; hidden[i] = null; }
+    };
   }
 
   // ── Load the GLB (once) ──────────────────────────────────────────────────
@@ -1001,6 +1057,12 @@ export class ModelViewer {
       if (this.scene) this._swapScene(i);
     });
   }
+  // Switch straight to scene `i` once its files are in (the 🎬 button's path,
+  // without the label): for the screenshot tools. Resolves when it is applied.
+  showScene(i) {
+    const ready = SCENES[((i % SCENES.length) + SCENES.length) % SCENES.length].preload?.() ?? Promise.resolve();
+    return ready.then(() => { if (this.scene) this._swapScene(i); });
+  }
   _swapScene(i) {
     // Pause + mute across the swap: tearing down the old scene and building the
     // new one stalls the main thread. _loop resumes once the new scene is fully
@@ -1051,7 +1113,9 @@ export class ModelViewer {
   // button under the scene toggler. Aims straight down the CRT glass's own
   // normal and dollies to the distance where the screen just fits the viewport
   // (limited by whichever of its width/height is tighter for the live aspect),
-  // then glides the camera there. Auto-spin stops so the head-on view holds.
+  // then glides the camera there: straight from in front, and from the side or
+  // behind along a curve that swings around the monitor and turns in to face
+  // the glass. Auto-spin stops so the head-on view holds.
   zoomToScreen() {
     if (!this._modelLoaded || !this.camera || !this.controls) return;
 
@@ -1082,9 +1146,22 @@ export class ModelViewer {
       return;
     }
 
-    // Face the glass from the side the camera is already on — the GLB's normal
-    // sign isn't guaranteed to point out the front.
-    if (normal.dot(this.camera.position.clone().sub(center)) < 0) normal.negate();
+    // Face the glass from its front, wherever the camera is. The GLB's normal
+    // sign isn't guaranteed, so the setup's bounds decide which side is out,
+    // as for the CRT light in _applyScene.
+    const setup = this._modelSphere;
+    if (setup ? normal.dot(center.clone().sub(setup.center)) < 0 : normal.dot(this.camera.position.clone().sub(center)) < 0) normal.negate();
+    // The monitor's cabinet, as a sphere the glide must stay outside: the
+    // glass's largest ancestor still well smaller than the whole setup, with
+    // 60% room so the swing keeps the cabinet well in view as it passes.
+    let body = null;
+    if (mesh && setup) {
+      let node = mesh;
+      const box = new THREE.Box3();
+      while (node.parent && node.parent !== this._model && box.setFromObject(node.parent).getSize(new THREE.Vector3()).length() < setup.radius * 1.2) node = node.parent;
+      body = box.setFromObject(node).getBoundingSphere(new THREE.Sphere());
+      body.radius *= 1.6;
+    }
 
     // Fit distance: the larger of the width- and height-limited pullbacks for
     // the current aspect, with a hair of margin so the glass sits inside the
@@ -1104,13 +1181,20 @@ export class ModelViewer {
 
     // Hold the head-on view: stop the idle spin (and remember it), then glide.
     if (this.controls.autoRotate) { this.controls.autoRotate = false; this._saveAutoRotate(false); }
+    // From further out than two setups' widths, the glide closes in to that
+    // distance before it swings around.
+    const setupWidth = this._modelBox ? Math.max(this._modelBox.max.x - this._modelBox.min.x, this._modelBox.max.z - this._modelBox.min.z) : Infinity;
+    const path = screenApproach(this.camera.position, center.clone().addScaledVector(normal, dist), center, normal, body, 2 * setupWidth);
+    // A half turn around takes about twice as long as a straight glide; closing
+    // in adds time for its share of the path, at most 60% more.
+    const swing = 2480 + 2800 * (path.angle / Math.PI);
+    const closeIn = path.segments.length > 1 ? path.ends[0] : 0;
     this._camTween = {
-      fromPos: this.camera.position.clone(),
-      toPos: center.clone().addScaledVector(normal, dist),
+      path,
       fromTarget: this.controls.target.clone(),
       toTarget: center.clone(),
       t0: performance.now(),
-      dur: 620,
+      dur: swing * Math.min(1.6, 1 / (1 - closeIn)),
     };
   }
 
@@ -1122,8 +1206,9 @@ export class ModelViewer {
     const a = this._camTween;
     const k = Math.min((performance.now() - a.t0) / a.dur, 1);
     const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;   // easeInOutCubic
-    this.camera.position.lerpVectors(a.fromPos, a.toPos, e);
-    this.controls.target.lerpVectors(a.fromTarget, a.toTarget, e);
+    bezierAt(a.path, e, this.camera.position);
+    const t0 = a.fromTarget, t1 = a.toTarget, tg = this.controls.target;   // inline lerp: no boxed alpha per frame
+    tg.x = t0.x + (t1.x - t0.x) * e; tg.y = t0.y + (t1.y - t0.y) * e; tg.z = t0.z + (t1.z - t0.z) * e;
     this.camera.lookAt(this.controls.target);
     if (k >= 1) {
       this._camTween = null;
@@ -1155,9 +1240,12 @@ export class ModelViewer {
     // default is the shared neutral RoomEnvironment PMREM.
     this.scene.environment = (def.envMap && this.renderer && def.envMap(this.renderer)) || this._envMap;
     this.scene.environmentIntensity = def.envInt;
-    // Tone mapping: `tone: 'none'` renders raw (punchy neon, e.g. Synthwave);
-    // otherwise ACES (also what the composer's OutputPass uses).
-    this.renderer.toneMapping = def.tone === 'none' ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
+    // Tone mapping: `tone: 'none'` renders raw (punchy neon, e.g. Synthwave),
+    // `tone: 'agx'` or `'neutral'` (Khronos PBR Neutral, which keeps saturated
+    // colours like the live picture) for the scenes baked in Cycles; otherwise
+    // ACES. The composer's OutputPass uses the same.
+    const TONES = { none: THREE.NoToneMapping, agx: THREE.AgXToneMapping, neutral: THREE.NeutralToneMapping };
+    this.renderer.toneMapping = TONES[def.tone] ?? THREE.ACESFilmicToneMapping;
     // Per-scene exposure (a dusk scene dials it down for mood); default 1.05.
     this.renderer.toneMappingExposure = def.exposure || 1.05;
     // Opaque in-scene background (gradient sky) — lets the bloom composite cleanly
@@ -1220,10 +1308,33 @@ export class ModelViewer {
         height: (bb.max.y - bb.min.y) * Math.abs(scale.y),
       };
     }
+    // Contact shadows and depth of field, sized to the model. `ao.radius` and
+    // `dof.aperture` are per model radius; `dof.maxblur` is a fraction of the frame.
+    if (this._aoPass) {
+      this._aoPass.enabled = !!def.ao;
+      if (def.ao) {
+        this._aoPass.updateGtaoMaterial({ radius: def.ao.radius * sphere.radius, distanceExponent: def.ao.distanceExponent ?? 1, thickness: (def.ao.thickness ?? 1) * sphere.radius, scale: 1, samples: def.ao.samples ?? 16 });
+        this._aoPass.blendIntensity = def.ao.intensity ?? 1;
+      }
+    }
+    if (this._dofPass) {
+      this._dofPass.enabled = !!def.dof;
+      if (def.dof) {
+        this._dofPass.uniforms.aperture.value = def.dof.aperture / sphere.radius;
+        this._dofPass.uniforms.maxblur.value = def.dof.maxblur;
+      }
+    }
+    // Smoke in the beam: the scene puts its SpotLight in g.userData.volumeLight
+    // once it has one, and _loop runs the pass from then on.
+    this._sceneVolume = !!(this._volPass && def.volume);
+    if (this._volPass) { this._volPass.enabled = false; this._volPass.light = null; }
+    if (this._sceneVolume) this._volPass.configure(def.volume, sphere.radius, box.min.y);
     const g = new THREE.Group();
     // A scene that loads its contents (the 80s Bedroom's room) returns a
     // promise that settles once they are in; _readyScene waits for it.
-    this._sceneBuilt = def.build(g, { sphere, box, screen });
+    // `volume` tells it whether the smoke pass will run, so it can skip its
+    // cheaper stand-in.
+    this._sceneBuilt = def.build(g, { sphere, box, screen, volume: this._sceneVolume });
     this.scene.add(g);
     this._sceneGroup = g;
     this._sceneAnimate = def.animate || null;
@@ -1465,6 +1576,13 @@ export class ModelViewer {
       this.renderer.render(this.scene, this.camera);
     } else if (this._composer && !this._sceneBasic) {
       if (this._gradePass) this._gradePass.uniforms.uTime.value = t;
+      if (this._sceneVolume) {
+        const light = this._sceneGroup?.userData.volumeLight || null;
+        this._volPass.light = light; this._volPass.enabled = !!light;
+        this._volPass.screen = this._sceneGroup?.userData.crtGlow || null;   // the screen lights the smoke too
+      }
+      // Focus follows the orbit target: whatever the view turns around is sharp.
+      if (this._dofPass?.enabled) this._dofPass.uniforms.focus.value = this.camera.position.distanceTo(this.controls.target);
       this._composer.render();
     } else {
       this.renderer.render(this.scene, this.camera);   // basic scenes: plain, no bloom/grade
@@ -1670,7 +1788,7 @@ export class ModelViewer {
 
     // Drop every per-open reference so the model's geometry/texture data can be GC'd.
     this.scene = this.camera = this.controls = null;
-    this._composer = this._bloomPass = this._gradePass = null;
+    this._composer = this._bloomPass = this._gradePass = this._aoPass = this._dofPass = this._volPass = null;
     this._model = this._sceneGroup = this._sceneAnimate = null;
     this._shadowCache = null;
     this._modelSphere = this._modelBox = null;

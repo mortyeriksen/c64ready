@@ -15,7 +15,7 @@ import { collectionDir } from '../test/external-assets.js';
 
 const base = process.argv[2] || 'http://localhost:5173';
 const out = (process.argv[3] || collectionDir('vibes-guide-work')).replace(/\/$/, '');
-const SLUGS = ['synthwave', 'starry-plain', 'spotlight', 'ikplus', '80s-bedroom'];
+const SLUGS = ['synthwave', 'starry-plain', 'spotlight', 'foggy-spotlight', 'ikplus', '80s-bedroom'];
 const ROM_DIR = new URL('../roms/', import.meta.url).pathname;
 
 const browser = await launchShotBrowser();
@@ -99,7 +99,7 @@ const PICK = want.length ? want.map((s) => {
 
 for (const n of PICK) {
   const sceneDone = slowWarning(`The ${SLUGS[n]} scene`, 12);
-  await page.evaluate((i) => window.modelViewer._applyScene(i), n);
+  await page.evaluate((i) => window.modelViewer.showScene(i), n);   // waits for a scene's own files, as the 🎬 button does
   await page.waitForLoadState('networkidle');   // a scene with a room file fetches it now
   await page.waitForTimeout(3000);   // scene build + water/shadows settle
   for (const mode of ['hero', 'close', 'low']) {

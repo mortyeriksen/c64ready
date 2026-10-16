@@ -16,6 +16,16 @@ https://c64ready.netlify.app/*  https://c64ready.com/:splat  301!
 # name resolving until those clients have taken an update.
 /guide/datasette-loading.gif  /guide/datasette-loading.webp  301
 
+# The 3D assets moved into /models/. A client still running the previous build
+# (it waits on the update prompt) asks for them at the site root; keep those
+# names resolving until such clients have taken an update.
+/commodore_64.glb          /models/commodore_64.glb          301
+/commodore_64_4k.glb       /models/commodore_64_4k.glb       301
+/bedroom.glb               /models/bedroom.glb               301
+/bedroom_small.glb         /models/bedroom_small.glb         301
+/bedroom_light.webp        /models/bedroom_light.webp        301
+/bedroom_light_small.webp  /models/bedroom_light_small.webp  301
+
 # The CLI guide became a topic page of the User Guide. Its heading ids did not
 # change, and a browser keeps the #fragment across the redirect.
 /docs/user-guide-cli.html  /docs/guide-cli.html  301

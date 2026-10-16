@@ -30,12 +30,16 @@ expect(viewer.includes('COULD NOT LOAD MODEL'),
 
 // ── The deployed site serves them immutably; a rename must not lose that ─────
 const headers = read('public/_headers');
-for (const m of MODELS) expect(headers.includes(`/${m}`), `public/_headers has an entry for /${m}`);
+for (const m of MODELS) expect(headers.includes(`/models/${m}`), `public/_headers has an entry for /models/${m}`);
+// A client still on the build before the move asks at the site root.
+const redirects = read('public/_redirects');
+for (const m of MODELS) expect(new RegExp(`^/${m.replace('.', '\\.')}\\s+/models/${m.replace('.', '\\.')}\\s+301`, 'm').test(redirects),
+  `public/_redirects sends the old /${m} on to /models/${m}`);
 
 // ── And a developer is told what to do ───────────────────────────────────────
 const readme = read('README.md');
 for (const m of MODELS) expect(readme.includes(m), `the README names ${m}`);
-for (const m of MODELS) expect(readme.includes(`public/${m}`), `and that ${m} goes at the top level of public/`);
+for (const m of MODELS) expect(readme.includes(`public/models/${m}`), `and that ${m} goes in public/models/`);
 expect(readme.includes('skfb.ly/oUKFx'),
   'and sends the reader to the model\'s own source, not to a copy this project serves');
 expect(readme.includes('CC BY'), 'and under what licence, since they are third-party');
@@ -53,10 +57,10 @@ for (const m of MODELS) expect(!ignoreRules.some((l) => l.startsWith('!') && l.e
 // Inside a checkout, ask git itself — that is what a commit would consult.
 if (fs.existsSync(new URL('../.git', import.meta.url))) {
   for (const m of MODELS) {
-    const r = spawnSync('git', ['check-ignore', '-q', `public/${m}`],
+    const r = spawnSync('git', ['check-ignore', '-q', `public/models/${m}`],
       { cwd: new URL('..', import.meta.url), stdio: 'ignore' });
     if (r.error) break;   // no git on this machine — the .gitignore checks above stand
-    expect(r.status === 0, `git would ignore public/${m}`);
+    expect(r.status === 0, `git would ignore public/models/${m}`);
   }
 }
 

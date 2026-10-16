@@ -38,6 +38,7 @@ import { BREADBIN_THEME } from './themes/breadbin.js';
 import { PHOSPHOR_THEME } from './themes/phosphor.js';
 import { OUTRUN_THEME } from './themes/outrun.js';
 import { COMMANDO_THEME } from './themes/commando.js';
+import { ARTDECO_THEME } from './themes/artdeco.js';
 
 export const THEME_FORMAT = 'c64ready-theme/2';
 const THEME_FORMATS = ['c64ready-theme/1', THEME_FORMAT]; // /1 files import as they are
@@ -112,6 +113,11 @@ const PATTERNS = {
   }),
   // A grid of small dots.
   dots: (n) => ({ image: 'radial-gradient(circle, var(--pattern-ink) 1px, transparent 1.5px)', size: `${6 * n}px ${6 * n}px` }),
+  // Rows of half-circle fans, three arcs each, like Art Deco sunrise motifs.
+  fans: (n) => ({
+    image: `radial-gradient(circle at 50% 100%, transparent ${4 * n - 1}px, var(--pattern-ink) ${4 * n - 1}px ${4 * n}px, transparent ${4 * n}px ${8 * n - 1}px, var(--pattern-ink) ${8 * n - 1}px ${8 * n}px, transparent ${8 * n}px ${12 * n - 1}px, var(--pattern-ink) ${12 * n - 1}px ${12 * n}px, transparent ${12 * n}px)`,
+    size: `${24 * n}px ${12 * n}px`,
+  }),
   // Fine diagonal crosshatch, like a woven or textured surface.
   weave: (n) => ({
     image: `repeating-linear-gradient(45deg, var(--pattern-ink) 0 1px, transparent 1px ${5 * n}px), repeating-linear-gradient(-45deg, var(--pattern-ink) 0 1px, transparent 1px ${5 * n}px)`,
@@ -289,6 +295,7 @@ const BUILTIN = [
   { id: 'phosphor', name: 'Phosphor', builtin: true, theme: validateTheme(PHOSPHOR_THEME).theme },
   { id: 'outrun', name: 'Out Run', builtin: true, theme: validateTheme(OUTRUN_THEME).theme },
   { id: 'commando', name: 'Commando', builtin: true, theme: validateTheme(COMMANDO_THEME).theme },
+  { id: 'artdeco', name: 'Art Deco', builtin: true, theme: validateTheme(ARTDECO_THEME).theme },
 ];
 
 // The built-in themes, in the order THEME steps through them.

@@ -12,7 +12,7 @@ import { collectionDir } from '../test/external-assets.js';
 
 const inDir = (process.argv[2] || collectionDir('vibes-guide-work')).replace(/\/$/, '');
 const outDir = (process.argv[3] || 'public/guide').replace(/\/$/, '');
-const SLUGS = ['synthwave', 'starry-plain', 'spotlight', 'ikplus', '80s-bedroom'];
+const SLUGS = ['synthwave', 'starry-plain', 'spotlight', 'foggy-spotlight', 'ikplus', '80s-bedroom'];
 const MODES = ['hero', 'close', 'low'];
 const GUT = 6, BG = [11, 11, 18];
 

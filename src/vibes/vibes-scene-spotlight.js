@@ -24,7 +24,7 @@ function floorRoughness() {
   return _floorRoughness;
 }
 
-function addBeamDust(g, spot, sphere) {
+export function addBeamDust(g, spot, sphere) {
   const count = 64, positions = new Float32Array(count * 3), seeds = new Float32Array(count);
   const direction = spot.target.position.clone().sub(spot.position);
   const length = direction.length(); direction.normalize();

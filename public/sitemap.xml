@@ -5,15 +5,15 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://c64ready.com/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-16</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-16</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/whats-new.html</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-16</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/about.html</loc>
@@ -25,7 +25,7 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/user-guide.html</loc>
-    <lastmod>2026-10-06</lastmod>
+    <lastmod>2026-10-16</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/guide-interface.html</loc>
@@ -41,11 +41,11 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/guide-looks.html</loc>
-    <lastmod>2026-10-06</lastmod>
+    <lastmod>2026-10-16</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/guide-options.html</loc>
-    <lastmod>2026-10-06</lastmod>
+    <lastmod>2026-10-16</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/guide-cli.html</loc>
@@ -57,7 +57,7 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/features.html</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-16</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/known-issues.html</loc>
@@ -109,11 +109,11 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/retrovibes-architecture.html</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-16</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/performance-analysis.html</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-16</lastmod>
   </url>
   <url>
     <loc>https://c64ready.com/docs/testing.html</loc>
@@ -125,6 +125,6 @@
   </url>
   <url>
     <loc>https://c64ready.com/docs/notice.html</loc>
-    <lastmod>2026-10-03</lastmod>
+    <lastmod>2026-10-16</lastmod>
   </url>
 </urlset>

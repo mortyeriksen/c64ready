@@ -96,9 +96,9 @@ export default defineConfig({
           '**/roms/**',
           // Docs-only and huge; runtime-cached on first view (see /guide/ in src/sw.js).
           '**/guide/**',
-          // The 80s Bedroom's lightmaps travel with its GLB: runtime-cached with
-          // the 3D models (see src/sw.js), only for viewers who open that scene.
-          '**/bedroom_light*',
+          // The 3D assets (models, lightmaps, light probes): runtime-cached in
+          // the model bucket (see src/sw.js), only for viewers who open Retro Vibes.
+          '**/models/**',
           // Splash art and the teaser loop: the splash shows once, on a first visit,
           // which is online by definition.
           '**/screens/splash-*',
@@ -121,6 +121,7 @@ export default defineConfig({
           '**/roms-theme-phosphor.html',
           '**/roms-theme-outrun.html',
           '**/roms-theme-commando.html',
+          '**/roms-theme-artdeco.html',
           '**/roms-theme-custom.html',
         ],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // three.js chunk headroom

@@ -92,12 +92,12 @@ nothing else needs them — a missing model just shows `COULD NOT LOAD MODEL` in
 Get it from the source, *"Commodore 64 || Computer (Full Pack)"* by dark_igorek, [CC BY
 4.0](https://creativecommons.org/licenses/by/4.0/): **<https://skfb.ly/oUKFx>**
 
-Save the `.glb` at the top level of `public/`, named to match — the viewer asks for it at
-the site root, so a subfolder will not do:
+Save the `.glb` in `public/models/`, named to match, beside the other 3D assets — the
+viewer asks for it at `/models/`:
 
 ```text
-public/commodore_64.glb        # the default
-public/commodore_64_4k.glb     # optional 4K export
+public/models/commodore_64.glb        # the default
+public/models/commodore_64_4k.glb     # optional 4K export
 ```
 
 The light one is enough; 4K is only used when **Options ▸ Display ▸ 3D MODEL SIZE** is

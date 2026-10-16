@@ -1197,6 +1197,7 @@ const _ROM_THEME_MARKERS = {
   phosphor: '/roms-theme-phosphor.html',
   outrun: '/roms-theme-outrun.html',
   commando: '/roms-theme-commando.html',
+  artdeco: '/roms-theme-artdeco.html',
   custom: '/roms-theme-custom.html',
 };
 

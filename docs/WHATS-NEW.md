@@ -9,6 +9,23 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
+## Next release
+
+- **Art Deco theme.** A seventh built-in [theme](GUIDE-LOOKS.md#themes): gold
+  and jade, with ivory type on peacock midnight in dark mode and navy ink on
+  ivory paper in light, and rows of Art Deco fans on the page, a new pattern
+  that theme files can use too.
+- **Foggy Spotlight.** A new [Retro Vibes scene](GUIDE-LOOKS.md#scenes): a
+  theatre spotlight hanging over the machine, stage smoke drifting through its
+  beam and pooling on a worn studio floor. The machine casts a shadow through
+  the smoke, the screen's glow lights it in front of the monitor, and on phones
+  and tablets the beam shows as a soft cone of light.
+- **⛶ in Retro Vibes always finds the screen.** Pressing it from behind the
+  monitor used to frame the back of the cabinet. The camera now swings around
+  the monitor in a smooth curve and comes to rest facing the screen.
+
+---
+
 ## 2026.10.3 — October 15, 2026
 
 The 80s Bedroom is rebuilt as a fully modelled room, the RAM Expansion keeps

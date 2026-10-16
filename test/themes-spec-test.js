@@ -12,7 +12,7 @@
 //   6. Export is complete: every token in every mode the theme has.
 //   7. THEME_TOKENS is exactly the token list of styles-theme.css.
 //   8. The built-in themes (GEOS, Breadbin, Phosphor, Out Run,
-//      Commando) are valid, have both modes, and
+//      Commando, Art Deco) are valid, have both modes, and
 //      their text colours reach 4.5:1 on the panels they sit on.
 //   9. The inline pre-paint script puts the stored theme in place and pins its mode.
 //  10. The splash wears a random built-in theme: styles-splash-themes.css is
@@ -33,6 +33,7 @@ import { BREADBIN_THEME } from '../src/ui/themes/breadbin.js';
 import { PHOSPHOR_THEME } from '../src/ui/themes/phosphor.js';
 import { OUTRUN_THEME } from '../src/ui/themes/outrun.js';
 import { COMMANDO_THEME } from '../src/ui/themes/commando.js';
+import { ARTDECO_THEME } from '../src/ui/themes/artdeco.js';
 import { resolveMode } from '../src/ui/appearance.js';
 
 function expect(cond, msg) {
@@ -171,7 +172,7 @@ for (const mode of ['dark', 'light']) {
     expect(r >= 4.5, `Classic ${mode}: ${what} is ${r.toFixed(2)}:1, under 4.5`);
   }
 }
-for (const [label, source] of [['GEOS', GEOS_THEME], ['Breadbin', BREADBIN_THEME], ['Phosphor', PHOSPHOR_THEME], ['Out Run', OUTRUN_THEME], ['Commando', COMMANDO_THEME]]) {
+for (const [label, source] of [['GEOS', GEOS_THEME], ['Breadbin', BREADBIN_THEME], ['Phosphor', PHOSPHOR_THEME], ['Out Run', OUTRUN_THEME], ['Commando', COMMANDO_THEME], ['Art Deco', ARTDECO_THEME]]) {
   const v = validateTheme(source);
   expect(v.theme && themeModes(v.theme) === 'both', `the built-in ${label} theme is valid with both modes (${v.error})`);
   for (const [mode, m] of Object.entries(v.theme.modes)) {
@@ -251,7 +252,7 @@ for (const [label, source] of [['GEOS', GEOS_THEME], ['Breadbin', BREADBIN_THEME
     const m = ink.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/);
     return m ? mixIn(bg, '#' + [m[1], m[2], m[3]].map((x) => (+x).toString(16).padStart(2, '0')).join(''), +m[4]) : bg;
   };
-  for (const [label, source] of [['Classic', null], ['GEOS', GEOS_THEME], ['Breadbin', BREADBIN_THEME], ['Phosphor', PHOSPHOR_THEME], ['Out Run', OUTRUN_THEME], ['Commando', COMMANDO_THEME]]) {
+  for (const [label, source] of [['Classic', null], ['GEOS', GEOS_THEME], ['Breadbin', BREADBIN_THEME], ['Phosphor', PHOSPHOR_THEME], ['Out Run', OUTRUN_THEME], ['Commando', COMMANDO_THEME], ['Art Deco', ARTDECO_THEME]]) {
     const t = source ? validateTheme(source).theme : { look: CLASSIC_LOOK, modes: { dark: {}, light: {} } };
     expect(t.look && t.look.dark && t.look.light, `${label} has a page pattern in both modes`);
     for (const mode of ['dark', 'light']) {
