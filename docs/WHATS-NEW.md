@@ -9,7 +9,11 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
-## Next release
+## 2026.10.4 — October 16, 2026
+
+A new Retro Vibes scene puts the machine under a theatre spotlight in drifting
+stage smoke, and a seventh built-in theme, Art Deco, dresses the interface in
+gold and jade.
 
 - **Art Deco theme.** A seventh built-in [theme](GUIDE-LOOKS.md#themes): gold
   and jade, with ivory type on peacock midnight in dark mode and navy ink on
