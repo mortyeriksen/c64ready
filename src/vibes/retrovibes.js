@@ -1441,7 +1441,9 @@ export class ModelViewer {
             vec2 vc = vMapUv - 0.5;
             float vig = clamp( 1.0 - uVignette * dot( vc, vc ) * 4.0, 0.0, 1.0 );
             // uGain undoes the scanlines' dimming, so it retreats with them.
-            gl_FragColor.rgb *= lines * vig * mix( 1.0, uGain, fade );
+            // Capped at 1.0: scenes set their bloom threshold there, so the
+            // picture's whites stay crisp instead of glowing mid-screen.
+            gl_FragColor.rgb = min( gl_FragColor.rgb * lines * vig * mix( 1.0, uGain, fade ), vec3( 1.0 ) );
           }
         `);
     };

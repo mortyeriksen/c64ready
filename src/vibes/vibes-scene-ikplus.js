@@ -202,9 +202,10 @@ export const scene = {
     // in a group scaled to the model (scene units × S) with the platform at the
     // model's base; lights are world-space. Dusk mood → ACES exposure 0.66 +
     // purple haze. Composer on: the sun, halo, water glint and lit windows need
-    // bloom to read as light; threshold high so the sky field itself never blows.
+    // bloom to read as light; threshold 1.0, where the live picture tops out,
+    // so neither the sky field nor the screen's whites glow.
     name: 'IK+ Sunset', css: 'scene-ikplus', envInt: 1.1, envMap: ikEnvMap, exposure: 0.66,
-    bloom: { strength: 0.3, radius: 0.45, threshold: 0.95 },
+    bloom: { strength: 0.3, radius: 0.45, threshold: 1.0 },
     halation: [[1, 1, 1], [1, 0.94, 0.86], [1, 0.86, 0.7], [1, 0.75, 0.55], [1, 0.66, 0.46]],
     grade: { aberration: 0.0002, vignette: 0.18, grain: 0.008, split: 0.46, shadow: [0.8, 0.92, 1.16], highlight: [1.08, 0.98, 0.84] },
     fog: { color: 0x28172f, near: 5, far: 68 },

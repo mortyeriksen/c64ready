@@ -1,9 +1,11 @@
-// Spec tests for Retro Vibes framebuffer light sampling and chevron geometry.
+// Spec tests for Retro Vibes framebuffer light sampling, the live picture's
+// brightness ceiling and chevron geometry.
 
 import assert from 'node:assert/strict';
 import { sampleScreenLight } from '../src/vibes/vibes-screen-light.js';
 import { addCrtLight, animateCrtLight } from '../src/vibes/vibes-crt-light.js';
 import * as THREE from 'three';
+import fs from 'node:fs';
 import { makeChevronGeometry } from '../src/vibes/vibes-scene-synthwave.js';
 
 const result = { r: 0, g: 0, b: 0, luminance: 0, active: false };
@@ -64,5 +66,19 @@ right.computeBoundingBox(); left.computeBoundingBox();
 assert.equal(right.groups.length > 0, true, 'each road chevron is one continuous extruded mesh');
 assert.ok(Math.abs(right.boundingBox.max.x + left.boundingBox.min.x) < 1e-6, 'left and right chevrons are exact mirrored shapes');
 assert.ok(Math.abs(right.boundingBox.min.x + left.boundingBox.max.x) < 1e-6, 'mirrored chevrons keep identical stitched extents');
+
+{
+  // The live picture never passes 1.0, so a bloom threshold of 1.0 keeps it out
+  // of the glow: the scanline gain is capped after it is applied.
+  const viewer = fs.readFileSync(new URL('../src/vibes/retrovibes.js', import.meta.url), 'utf8');
+  const out = viewer.match(/gl_FragColor\.rgb\s*=\s*min\(\s*gl_FragColor\.rgb\s*\*\s*lines\s*\*\s*vig\s*\*\s*mix\(\s*1\.0,\s*uGain,\s*fade\s*\),\s*vec3\(\s*1\.0\s*\)\s*\)/);
+  assert.ok(out, 'the CRT scanline gain is capped at 1.0, so the live picture stays under the bloom threshold');
+  for (const file of fs.readdirSync(new URL('../src/vibes/', import.meta.url)).filter((f) => /^vibes-scene-.*\.js$/.test(f))) {
+    const src = fs.readFileSync(new URL(`../src/vibes/${file}`, import.meta.url), 'utf8');
+    for (const m of src.matchAll(/bloom:\s*\{[^}]*threshold:\s*([\d.]+)/g)) {
+      assert.ok(Number(m[1]) >= 1.0, `${file}: a bloom threshold of ${m[1]} would make the live picture's whites glow (it tops out at 1.0)`);
+    }
+  }
+}
 
 console.log('vibes screen-light spec: PASS');

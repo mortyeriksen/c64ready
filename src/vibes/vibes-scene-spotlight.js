@@ -73,7 +73,7 @@ export const scene = {
     name: 'Spotlight', css: 'scene-spotlight', envInt: 0.0,
     staticShadows: true,
     bg: [[0, '#0b0b10'], [0.55, '#060608'], [1, '#000000']],
-    bloom: { strength: 0.12, radius: 0.5, threshold: 0.9 },   // near-off: the screen must not glow
+    bloom: { strength: 0.12, radius: 0.5, threshold: 1.0 },   // near-off, and the screen (at most 1.0) never glows
     grade: { aberration: 0, vignette: 0.15, grain: 0.006 },
     build(g, { sphere, box, screen }) {
       // The faint fill represents bounce from the one overhead source, not a

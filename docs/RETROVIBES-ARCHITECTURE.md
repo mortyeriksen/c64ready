@@ -144,7 +144,8 @@ modelled 1702's glass. It is set up by `_wireScreen()` and refreshed every frame
   tone-map-exempt**, so the screen reads as a self-emitting CRT at the true VIC
   palette, untouched by the scene's lighting or ACES grading. A CRT effect
   (horizontal scanlines, corner vignette, gain) is injected via `onBeforeCompile`,
-  after the material's own sRGB decode. The mesh's original material and atlas UVs are
+  after the material's own sRGB decode. Its output is capped at 1.0, and every
+  scene's bloom threshold is at least 1.0, so the picture never glows. The mesh's original material and atlas UVs are
   kept so the powered-off monitor can be restored exactly as shipped.
 - **`_setScreenLive(live)`** swaps the glass between the live-feed material (+ planar
   UVs) and the model's original material (+ atlas UVs), in lockstep.
