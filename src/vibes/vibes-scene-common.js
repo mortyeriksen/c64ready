@@ -2,6 +2,7 @@
 // Copyright © 2026 Morten Øien Eriksen
 
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 // Touch devices (phones AND tablets) never get the heavy 4K model: a large
 // tablet like an iPad reports a longest dimension >= 1024 but has neither the
@@ -68,6 +69,44 @@ export function markShared(val) {
   if (val && val.isTexture) { val._shared = true; return val; }
   if (val && typeof val === 'object') for (const k in val) { const t = val[k]; if (t && t.isTexture) t._shared = true; }
   return val;
+}
+
+// Folds the opaque meshes that hold still relative to `root` into one mesh per
+// material and shadow setup: fewer draw calls, each of which costs three a
+// round of per-object uniform uploads. `moving` lists what the scene animates;
+// those and everything under them stay as they are, as do transparent meshes,
+// instances, render-ordered meshes and meshes with their own render hook.
+export function mergeStatic(root, moving = []) {
+  root.updateWorldMatrix(true, true);
+  const toRoot = new THREE.Matrix4().copy(root.matrixWorld).invert();
+  const skip = new Set(moving), buckets = new Map();
+  const collect = (o) => {
+    if (skip.has(o)) return;
+    if (o.isMesh && !o.isInstancedMesh && !o.isSkinnedMesh && o.visible && !Array.isArray(o.material)
+        && !o.material.transparent && o.renderOrder === 0 && o.onBeforeRender === THREE.Object3D.prototype.onBeforeRender) {
+      const m = new THREE.Matrix4().multiplyMatrices(toRoot, o.matrixWorld);
+      if (m.determinant() > 0) {
+        const geo = o.geometry;
+        const key = `${o.material.uuid}|${o.castShadow}|${o.receiveShadow}|${geo.index ? 'i' : 'n'}|${Object.keys(geo.attributes).sort()}`;
+        if (!buckets.has(key)) buckets.set(key, []);
+        buckets.get(key).push({ o, m });
+      }
+    }
+    for (let i = 0; i < o.children.length; i++) collect(o.children[i]);
+  };
+  for (let i = 0; i < root.children.length; i++) collect(root.children[i]);
+  let merged = 0;
+  for (const list of buckets.values()) {
+    if (list.length < 2) continue;
+    const geo = mergeGeometries(list.map(({ o, m }) => o.geometry.clone().applyMatrix4(m)));
+    if (!geo) continue;
+    const first = list[0].o, mesh = new THREE.Mesh(geo, first.material);
+    mesh.castShadow = first.castShadow; mesh.receiveShadow = first.receiveShadow;
+    for (const { o } of list) o.removeFromParent();
+    root.add(mesh);
+    merged += list.length;
+  }
+  return merged;
 }
 
 // Soft, physically attenuated studio spotlight from above. `intensity` is the

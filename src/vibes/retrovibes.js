@@ -35,7 +35,7 @@ import { attachKeycapPresses } from './keycap-press.js';   // [removable prototy
 import { hostTouchControls, restoreTouchControls } from '../ui/touch-joystick.js';
 import { bgTexture, wantsLargeModels } from './vibes-scene-common.js';
 import { sampleScreenLight } from './vibes-screen-light.js';
-import { ShadowCache } from './vibes-shadow-cache.js';
+import { ShadowCache, ShadowThrottle } from './vibes-shadow-cache.js';
 import { scene as sceneSynthwave } from './vibes-scene-synthwave.js';
 import { scene as sceneStarry } from './vibes-scene-starry.js';
 import { scene as sceneSpotlight } from './vibes-scene-spotlight.js';
@@ -186,7 +186,7 @@ export class ModelViewer {
     this._sceneGroup = null;      // THREE.Group holding the active scene's lights/props
     this._sceneAnimate = null;    // optional per-frame animator for the active scene
     this._sceneBasic = false;     // scenes flagged basic bypass the composer (plain render)
-    this._shadowCache = null;
+    this._shadowCache = this._shadowThrottle = null;
     this._modelSphere = null;     // model bounds, for scene grids/floors/spotlight
     this._modelBox = null;
     // Post-processing (bloom + grade + SMAA). Null → fall back to plain render.
@@ -1333,14 +1333,15 @@ export class ModelViewer {
     // A scene that loads its contents (the 80s Bedroom's room) returns a
     // promise that settles once they are in; _readyScene waits for it.
     // `volume` tells it whether the smoke pass will run, so it can skip its
-    // cheaper stand-in.
-    this._sceneBuilt = def.build(g, { sphere, box, screen, volume: this._sceneVolume });
+    // cheaper stand-in, and `lowPower` whether to keep costly extras off.
+    this._sceneBuilt = def.build(g, { sphere, box, screen, volume: this._sceneVolume, lowPower: _lowPowerDevice() });
     this.scene.add(g);
     this._sceneGroup = g;
     this._sceneAnimate = def.animate || null;
     this._sceneBasic = !!def.basic;   // basic scenes render without the post pipeline
     this._shadowCache = def.staticShadows ? new ShadowCache(this.scene) : null;
-    this.renderer.shadowMap.autoUpdate = !this._shadowCache;
+    this._shadowThrottle = !this._shadowCache && def.shadowHz ? new ShadowThrottle(def.shadowHz) : null;
+    this.renderer.shadowMap.autoUpdate = !this._shadowCache && !this._shadowThrottle;
     this.renderer.shadowMap.needsUpdate = true;
 
     for (const s of SCENES) this.overlay.classList.remove(s.css);
@@ -1559,6 +1560,7 @@ export class ModelViewer {
     const t = performance.now() * 0.001;
     if (this._sceneAnimate) this._sceneAnimate(this._sceneGroup, t, powered, this._screenLight);   // scenes may gate FX (e.g. the CRT) on power
     if (this._shadowCache && this._shadowCache.update()) this.renderer.shadowMap.needsUpdate = true;
+    else if (this._shadowThrottle && this._shadowThrottle.update(t)) this.renderer.shadowMap.needsUpdate = true;
     const presenting = this.renderer.xr.isPresenting;
     // Desktop view: a fullscreen-framer glide (if running) drives the camera and
     // suppresses OrbitControls' own update for its duration; otherwise controls
@@ -1567,6 +1569,7 @@ export class ModelViewer {
       if (this._camTween) this._updateCamTween();
       else this.controls.update();
     }
+    if (!presenting && !this._holdRender) this._sceneGroup?.userData.reflection?.prerender(this.renderer, this.scene, this.camera);
     if (this._holdRender && !presenting) {
       // The next scene's shaders are compiling (_readyScene): draw nothing, so
       // the canvas keeps its last frame and no draw waits on a compile.
@@ -1790,7 +1793,7 @@ export class ModelViewer {
     this.scene = this.camera = this.controls = null;
     this._composer = this._bloomPass = this._gradePass = this._aoPass = this._dofPass = this._volPass = null;
     this._model = this._sceneGroup = this._sceneAnimate = null;
-    this._shadowCache = null;
+    this._shadowCache = this._shadowThrottle = null;
     this._modelSphere = this._modelBox = null;
     this._offMaterial = null;
     this._screenTex = this._screenDataRef = this._screenMesh = this._screenGeo = null;

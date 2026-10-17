@@ -299,9 +299,10 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   moods. In Spotlight, Foggy Spotlight and 80s Bedroom, the monitor casts light
   that follows the picture's colour and brightness. Foggy Spotlight fills its
   beam with drifting stage smoke that the machine casts a shadow through and
-  the screen tints blue. Synthwave has opposing neon lights and a
-  smoothly filtered grid; the cinematic scenes have individual grain and lens
-  effects. Opened with the **VIBES** button in Controls; **Esc** / ✕ returns.
+  the screen tints blue. Synthwave drives a glowing neon highway toward a
+  banded sun and a lit city skyline, past palms and contoured mountains, on a
+  wet road that mirrors the sun. The cinematic scenes have individual grain and lens effects.
+  Opened with the **VIBES** button in Controls, and **Esc** / ✕ returns.
   **Cmd+Shift+X** / **Ctrl+Shift+X** is Studio mode, stripping the scene to the
   machine and the C64 READY. logo for screenshots and video (see
   [Retro Vibes](GUIDE-LOOKS.md#retro-vibes)).

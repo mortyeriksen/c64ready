@@ -9,6 +9,17 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
+## Next release
+
+- **Synthwave, remade.** The [Retro Vibes](GUIDE-LOOKS.md#scenes) highway now
+  glows: neon grid and rails, a banded sun behind cloud streaks and a city
+  skyline, and a wet road that mirrors it. The city's windows light up and go
+  dark, and beacons blink on its spires. Modelled palms and contoured mountains
+  drive past with the grid, the stars twinkle, and now and then a shooting star
+  crosses the sky.
+
+---
+
 ## 2026.10.4 — October 16, 2026
 
 A new Retro Vibes scene puts the machine under a theatre spotlight in drifting

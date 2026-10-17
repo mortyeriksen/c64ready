@@ -132,8 +132,13 @@ in the browser or `NAME=0` in Node harnesses.
   import three.js only on first open, so the library stays out of the initial
   bundle. See [Retro Vibes](RETROVIBES-ARCHITECTURE.md).
 - **Retro Vibes render reuse.** Bedroom and Spotlight retain static shadow maps
-  until casting geometry or the shadow rig changes. IK+ updates water reflections
-  at 30 Hz while its wave shading keeps display cadence. The screen provider
+  until casting geometry or the shadow rig changes. IK+ and Synthwave update their
+  reflections at 30 Hz, rendered before the main pass so lit materials skip
+  three's per-frame program re-check. IK+ wave shading keeps display cadence.
+  IK+ merges its still, opaque scenery per material (`mergeStatic`), and the
+  swaying maple within itself: about 170 draws a frame instead of 390, and half
+  the per-draw uniform garbage. Its shadow maps refresh at 10 Hz (`shadowHz`),
+  since only that slow sway moves a caster. The screen provider
   reuses its descriptor, and Starry pools its meteor geometry
   and material. See [Retro Vibes](RETROVIBES-ARCHITECTURE.md) §§4–5.
 - **Foggy Spotlight's extra passes.** Smoke, contact shadows and depth of field

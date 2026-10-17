@@ -3,7 +3,7 @@
 
 import * as THREE from 'three';
 import { Water } from 'three/examples/jsm/objects/Water.js';
-import { markShared } from './vibes-scene-common.js';
+import { markShared, mergeStatic } from './vibes-scene-common.js';
 import { cacheWaterReflection } from './vibes-reflection-cache.js';
 
 // IK+ sunset scene textures (cached): the C64-sunset sky gradient with chunky
@@ -208,6 +208,7 @@ export const scene = {
     halation: [[1, 1, 1], [1, 0.94, 0.86], [1, 0.86, 0.7], [1, 0.75, 0.55], [1, 0.66, 0.46]],
     grade: { aberration: 0.0002, vignette: 0.18, grain: 0.008, split: 0.46, shadow: [0.8, 0.92, 1.16], highlight: [1.08, 0.98, 0.84] },
     fog: { color: 0x28172f, near: 5, far: 68 },
+    shadowHz: 10,   // only the maple's slow sway moves a caster
     bg: [[0, '#12081f'], [1, '#2a0e3f']],
     build(g, { sphere, box }) {
       const R = sphere.radius, cx = sphere.center.x, cy = sphere.center.y, cz = sphere.center.z, gy = box.min.y;
@@ -237,8 +238,22 @@ export const scene = {
       env.position.set(cx, baseY, cz - 8 * S);
       g.add(env);
 
-      const std = (color, rough, metal) => new THREE.MeshStandardMaterial({ color, roughness: rough == null ? 0.85 : rough, metalness: metal || 0 });
-      const glow = (color, amt) => { const m = std(color, 0.95); m.emissive = new THREE.Color(color).multiplyScalar(amt == null ? 0.4 : amt); return m; };
+      // Shared per look, so mergeStatic can fold like-coloured props together.
+      const mats = new Map();
+      const std = (color, rough, metal) => {
+        const key = `s${color}|${rough}|${metal}`;
+        if (!mats.has(key)) mats.set(key, new THREE.MeshStandardMaterial({ color, roughness: rough == null ? 0.85 : rough, metalness: metal || 0 }));
+        return mats.get(key);
+      };
+      const glow = (color, amt) => {
+        const key = `g${color}|${amt}`;
+        if (!mats.has(key)) {
+          const m = new THREE.MeshStandardMaterial({ color, roughness: 0.95 });
+          m.emissive = new THREE.Color(color).multiplyScalar(amt == null ? 0.4 : amt);
+          mats.set(key, m);
+        }
+        return mats.get(key);
+      };
 
       // ── Sky dome (gradient by elevation; surrounds the orbit camera) ──
       {
@@ -309,7 +324,7 @@ export const scene = {
       // into a clipped white wedge in Water's mirror camera at side-on orbit
       // angles. Exclude both sky billboards from that reflection pass; the
       // water shader's own warm specular remains the sunset trail.
-      g.userData.ikReflection = cacheWaterReflection(water, [sunDisc, halo]);
+      g.userData.reflection = cacheWaterReflection(water, [sunDisc, halo]);
       // Keep the sea BEHIND the shoreline instead of sweeping forward under the
       // beach into the foreground (which read as "water under the ground"). The
       // beach's far edge sits at env-z -14 -> world (cz - 22*S); push the plane
@@ -727,13 +742,18 @@ export const scene = {
       g.add(sun, sun.target);
       g.add(new THREE.HemisphereLight(0x665f8c, 0x171d33, 0.94));
 
+      // The tree sways as one, so its limbs and leaf masses merge within it;
+      // the rest of the scenery merges within env.
+      mergeStatic(tree, leaves.map((l) => l.leaf));
+      mergeStatic(env, [tree, fish, ...birds.map((b) => b.bird)]);
+
       g.userData.ikWater = water;
       g.userData.ikTree = tree;
       g.userData.ikBirds = birds;
       g.userData.ikFish = fish;
     },
     animate(g, t) {
-      if (g.userData.ikReflection) g.userData.ikReflection.time = t;
+      if (g.userData.reflection) g.userData.reflection.time = t;
       if (g.userData.ikWater) g.userData.ikWater.material.uniforms['time'].value = t * 0.36;
       if (g.userData.ikTree) g.userData.ikTree.rotation.z = Math.sin(t * 0.42) * 0.012;
       const birds = g.userData.ikBirds;

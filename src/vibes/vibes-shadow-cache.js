@@ -83,3 +83,19 @@ function check(values, index, value) {
   values[index] = value;
   return true;
 }
+
+// For a scene whose casters move slowly (a swaying tree): shadow maps refresh
+// at `hz` instead of every frame. update(t) takes seconds and answers whether
+// to refresh now; a clock that runs backwards (scene restart) refreshes too.
+export class ShadowThrottle {
+  constructor(hz) {
+    this.every = 1 / hz;
+    this.at = -Infinity;
+  }
+
+  update(t) {
+    if (t - this.at < this.every - 1e-6 && t >= this.at) return false;
+    this.at = t;
+    return true;
+  }
+}

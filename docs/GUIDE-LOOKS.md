@@ -171,9 +171,9 @@ them with **Previous** and **Next**.
 
 <!-- gallery scenes -->
 
-**Synthwave**: A glowing neon grid under a banded sun and wireframe mountains.
+**Synthwave**: A glowing neon highway toward a banded sun and a city skyline, palms and contoured mountains driving past.
 
-![Three views of the Synthwave scene: the C64 setup on a glowing neon grid under a banded Outrun sun and wireframe mountains.](/guide/retro-vibes-synthwave.webp)
+![Three views of the Synthwave scene: the C64 setup on a glowing neon grid under a banded Outrun sun, a lit city skyline and wireframe mountains.](/guide/retro-vibes-synthwave.webp)
 
 **Starry Plain**: A pulsing grid beneath the Milky Way and the occasional meteor.
 

@@ -320,14 +320,14 @@ body[data-splash-theme="artdeco"] #splash {
 }
 /* Art Deco, light */
 :root[data-mode="light"] body[data-splash-theme="artdeco"] #splash {
-  --crt-bg: #eceae3;
-  --page-glow: #e0dbce;
+  --crt-bg: #dedbd3;
+  --page-glow: #d3cfc5;
   --pattern-ink: rgba(123, 86, 15, 0.07);
-  --panel-bg: #fdfaf1;
+  --panel-bg: #f1efea;
   --border: #d7c298;
-  --control-bg: #f2f0eb;
-  --button-bg: #f2f0eb;
-  --button-accent: #734f06;
+  --control-bg: #e6e4de;
+  --button-bg: #e6e4de;
+  --button-accent: #6b4906;
   --shadow: #4a658b;
   --text: #132a4d;
   --text-dim: #4b668d;

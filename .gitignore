@@ -30,8 +30,9 @@ investigation/
 *.c64states
 *.c64state
 *.glb
-# Our own scene models (the 80s Bedroom's room, the Spotlight Real floor) are small enough to keep in the repository.
+# Our own scene models (the 80s Bedroom's room, the Foggy Spotlight floor, Synthwave's palms and mountains) are small enough to keep in the repository.
 !public/models/bedroom.glb
 !public/models/bedroom_small.glb
 !public/models/spotlight_real.glb
 !public/models/spotlight_real_small.glb
+!public/models/synthwave.glb

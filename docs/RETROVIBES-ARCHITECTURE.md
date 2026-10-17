@@ -182,7 +182,7 @@ the index.
 
 | # | `name` | Backdrop / mood | Post pipeline |
 |---|--------|-----------------|---------------|
-| 0 | **Synthwave** | dark neon highway toward a banded sun: scrolling grid, mountain silhouettes, palms, stars | basic; raw tone map (`NoToneMapping`), derivative-filtered grid and road, sun and horizon glow faked in-shader; inverse-square neon lights with intensity scaled by model radius squared |
+| 0 | **Synthwave** | neon highway driving toward a banded sun behind cloud streaks: wet mirror road, modelled palms and contoured mountains (a GLB, below), twinkling stars, a shooting star | **full composer** (bloom on neon pushed past 1.0, Khronos PBR Neutral tone mapping), a sunset IBL via `envMap`, inverse-square neon lights scaled by model radius squared |
 | 1 | **Starry Plain** | dark Tron-grid plain: scanner ripple, star layers, a procedural Milky-Way band, shooting stars | basic; raw tone map |
 | 2 | **Spotlight** | near-black studio: overhead spotlight, beam dust, screen-coloured CRT spill | **full composer** (bloom dialled near-off + grade + SMAA) |
 | 3 | **Foggy Spotlight** | Cycles-baked studio floor (a GLB, below): theatre spotlight, stage smoke in the beam, live monitor spill | **full composer** with smoke, contact shadows and depth of field, Khronos PBR Neutral tone mapping, a Cycles light probe via `envMap` |
@@ -191,10 +191,40 @@ the index.
 
 Scenes flagged `basic` render with a plain `renderer.render` and bypass the composer;
 the **bloom + grade + SMAA** pipeline runs for the non-basic scenes
-(**Spotlight**, **Foggy Spotlight**, **IK+ Sunset**, **80s Bedroom**), while Synthwave and Starry Plain further use raw tone mapping and
-bake their glow into their own shaders. Backdrop gradients are cached equirect
+(**Synthwave**, **Spotlight**, **Foggy Spotlight**, **IK+ Sunset**, **80s Bedroom**), while Starry Plain further uses raw tone mapping and
+bakes its glow into its own shaders. Backdrop gradients are cached equirect
 `CanvasTexture`s; the procedural props (star sprites, sunset sky/sun, water
 normal map, checker floor) are built once and cached at module level.
+
+### Synthwave
+
+- **Neon that glows.** Grid lines, road rails, the sun and the chevrons are
+  pushed past 1.0 in linear light, so the bloom (threshold 1.0) catches only
+  them and the live picture stays crisp. The shaders' colours are written in
+  sRGB and turned linear (`lin()`) before that, since the composer treats
+  shader output as linear.
+- **Wet mirror road.** The road is a `Reflector` refreshed at 30 Hz through
+  `cacheWaterReflection`, smeared slightly along the road and kept to bright
+  reflections, strongest at grazing angles. Low-power devices draw a painted
+  sun streak instead (the viewer passes `lowPower` to `build()`).
+- **One driving speed.** Grid, road marks, palms and chevron signs all move
+  toward the viewer at `FLOW` model radii per second, the props looping from
+  the far fog to just behind the setup.
+- **Modelled scenery.** `public/models/synthwave.glb` (Blender, in model radii
+  around the model's centre) holds three palms, cloned for the fourteen that
+  drive past with a rim-lit silhouette material, the two flank mountains, their
+  coarse contour grids (drawn as lines along the grid's axes, `gridLines()`),
+  and the rear range. `preload()` fetches it so the scene arrives whole.
+- **City skyline.** `makeSkyline()` builds two seeded rows of towers, taller
+  toward the sun, between where the palms appear and the sun, and merges them
+  into one mesh. One shader draws everything on it from world position and a
+  per-tower attribute (seed, roof height, trim). Windows switch on and off
+  every 23 s or so and fade to their average below a pixel, so they never
+  shimmer. Some rooftops get a pink or cyan neon rim, and the tallest towers a
+  spire with a blinking beacon, both pushed past 1.0 to bloom. It costs no
+  measurable GPU time.
+- **Fixed layout.** Stars, palms and towers are placed from seeded sequences,
+  so the scene looks the same on every visit.
 
 ### Foggy Spotlight
 
@@ -272,10 +302,24 @@ non-casting dust do not. Scene switches rebuild dependencies and request fresh m
 reparenting tracked objects rebuilds the dependencies too. Code adding casters to
 an existing scene must call the cache's `rebuild()`.
 
-IK+ refreshes its offscreen water reflection at 30 Hz, reducing the extra scene
-render and associated shader-program cache work. The water's wave time still
-advances every display frame. Projection changes and XR eye renders bypass the
-rate limit. Starry keeps one hidden meteor, reusing its geometry, material and
+A scene whose casters move only slowly sets `shadowHz` instead
+(`ShadowThrottle`): its maps refresh at that rate rather than every frame. IK+
+uses 10 Hz, since only the maple's sway moves a caster, and at that rate the
+sway shifts its shadow by a fraction of a texel per refresh.
+
+IK+ (water) and Synthwave (road mirror) refresh their offscreen reflection at
+30 Hz, reducing the extra scene render. The water's wave time still advances
+every display frame. Projection changes and XR eye renders bypass the rate
+limit. Outside XR the viewer refreshes the mirror before the main render, not
+inside it: three keeps one light state per render nesting depth, and a nested
+mirror makes every lit material rebuild its program parameters each frame.
+
+Every draw costs three a round of matrix and colour uploads that allocate, so
+IK+ builds its props from many primitives and then folds the still, opaque
+ones into one mesh per material and shadow setup (`mergeStatic` in
+`vibes-scene-common.js`). The swaying maple merges within its own group, and
+what animates on its own (gulls, falling leaves, the fish) and what blends
+(ripples, foam) keeps its own mesh. Starry keeps one hidden meteor, reusing its geometry, material and
 direction vector; its maximum lifetime is shorter than the minimum spawn interval.
 
 ## 6. Interactions on the model

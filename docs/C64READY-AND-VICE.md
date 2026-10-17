@@ -157,7 +157,7 @@ release notes. The C64 READY. column comes from the
 | Opening any file | Smart attach works out what a file is, and dropping one on the window starts it | LOAD ANY works out what a file is, and dropping one on the screen puts it in the right slot |
 | Library | Your own folders, plus a fliplist of disk images to swap between | Everything you open, kept in the browser and searchable |
 | SID music | VSID, a dedicated player | A `.sid` plays on the emulated C64 in its own player screen |
-| 3D and VR | No | Retro Vibes: the machine in five 3D scenes, from an 80s bedroom to a synthwave neon grid, with experimental VR |
+| 3D and VR | No | Retro Vibes: the machine in six 3D scenes, from an 80s bedroom to a synthwave neon grid, with experimental VR |
 
 ### The projects
 

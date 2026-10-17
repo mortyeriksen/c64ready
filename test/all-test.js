@@ -53,6 +53,7 @@ const TESTS = [
   'test/vibes-bedroom-spec-test.js',
   'test/vibes-spotlight-real-spec-test.js',
   'test/vibes-camera-path-test.js',
+  'test/vibes-synthwave-spec-test.js',
   'test/drive/d64-write-prg-spec-test.js',
   'test/escape-stack-spec-test.js',
   'test/tape/tap-audio-spec-test.js',
