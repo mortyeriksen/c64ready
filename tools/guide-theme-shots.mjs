@@ -26,7 +26,7 @@ fs.mkdirSync(OUT, { recursive: true });
 const BASE = process.argv[2] || 'http://localhost:5173';
 const ONLY = process.argv.slice(3);
 const DISK = assetPath('raster-time-demo') || '';
-const THEMES = ['classic', 'geos', 'breadbin', 'phosphor', 'outrun', 'commando', 'artdeco'].filter((t) => !ONLY.length || ONLY.includes(t));
+const THEMES = ['classic', 'geos', 'breadbin', 'phosphor', 'outrun', 'commando', 'artdeco', 'lookout'].filter((t) => !ONLY.length || ONLY.includes(t));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const romCache = {};

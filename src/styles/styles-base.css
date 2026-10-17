@@ -34,13 +34,64 @@ body {
   /* A theme's page pattern over the glow (themeCss sets the two variables). */
   background-image: var(--page-pattern), radial-gradient(ellipse at 50% 0%, var(--page-glow) 0%, var(--crt-bg) 62%);
   background-size: var(--page-pattern-size), auto;
+  isolation: var(--page-twinkle-isolation, auto);
 }
+
+/* A theme's twinkle (look "twinkle"): two layers of the pattern's sparkle
+   (sparse glints for stars, else a copy of the pattern) flash in turn, each
+   on a cycle of its own, and jump to a new offset while dark, so every flash
+   lights a different handful of stars. The flash is opacity on a layer of its
+   own, which the compositor runs without repainting; the jump repaints that
+   one layer every few seconds, never while it shows. body isolates (themeCss
+   sets the variables) so the layers sit over its background, under the
+   panels. Still for reduced motion, and gone while the display fills the
+   screen. */
+body::before,
+body::after {
+  content: '';
+  display: var(--page-twinkle, none);
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--page-twinkle-image);
+  background-size: var(--page-twinkle-size);
+  opacity: 0;
+  will-change: opacity;
+  animation: page-twinkle-flash 3.3s ease-in-out infinite, page-twinkle-jump-a 13.2s steps(1, end) infinite;
+}
+body::after {
+  animation: page-twinkle-flash 4.3s ease-in-out -1.7s infinite, page-twinkle-jump-b 17.2s steps(1, end) -1.7s infinite;
+}
+@keyframes page-twinkle-flash {
+  0%, 45%, 100% { opacity: 0; }
+  22% { opacity: 1; }
+}
+@keyframes page-twinkle-jump-a {
+  0% { background-position: 37px 61px; }
+  25% { background-position: 301px 223px; }
+  50% { background-position: 149px 467px; }
+  75% { background-position: 433px 131px; }
+}
+@keyframes page-twinkle-jump-b {
+  0% { background-position: 211px 113px; }
+  25% { background-position: 517px 341px; }
+  50% { background-position: 83px 529px; }
+  75% { background-position: 389px 17px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  body::after { display: none; }
+}
+body.fullscreen-mode::after { display: none; }
 
 /* Classic's page pattern, a large faint grid (CLASSIC_LOOK in src/ui/themes.js).
    A theme sets its own, or none; a system asking for more contrast gets none. */
 :root {
   --page-pattern: linear-gradient(var(--pattern-ink) 1px, transparent 1px), linear-gradient(90deg, var(--pattern-ink) 1px, transparent 1px);
   --page-pattern-size: 48px 48px, 48px 48px;
+  --page-twinkle-image: none;
+  --page-twinkle-size: auto;
 }
 @media (prefers-contrast: more) {
   :root:root:root:root {

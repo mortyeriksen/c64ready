@@ -1198,6 +1198,7 @@ const _ROM_THEME_MARKERS = {
   outrun: '/roms-theme-outrun.html',
   commando: '/roms-theme-commando.html',
   artdeco: '/roms-theme-artdeco.html',
+  lookout: '/roms-theme-lookout.html',
   custom: '/roms-theme-custom.html',
 };
 

@@ -253,10 +253,11 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **Dark and light mode**: the interface follows the system's colour scheme, or
   stays dark or light, from a button in the header or Options ▸ Theme. The
   screen and the CRT looks are the same in both.
-- **Themes**: Classic, GEOS, Breadbin, Phosphor, Out Run, Commando and Art Deco built
-  in, and your own as a JSON file of colours and an optional page pattern,
-  with a dark mode, a light mode or both; export any theme as a complete
-  starting point (see [Themes](GUIDE-LOOKS.md#themes)).
+- **Themes**: Classic, GEOS, Breadbin, Phosphor, Out Run, Commando, Art Deco
+  and Lookout Point built in, and your own as a JSON file of colours and an
+  optional page pattern, which can twinkle, with a dark mode, a light mode or
+  both. Export any theme as a complete starting point (see
+  [Themes](GUIDE-LOOKS.md#themes)).
 - **FPS and per-frame timer** readout in the header.
 
 ## Sound

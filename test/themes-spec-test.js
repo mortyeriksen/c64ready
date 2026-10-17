@@ -12,7 +12,7 @@
 //   6. Export is complete: every token in every mode the theme has.
 //   7. THEME_TOKENS is exactly the token list of styles-theme.css.
 //   8. The built-in themes (GEOS, Breadbin, Phosphor, Out Run,
-//      Commando, Art Deco) are valid, have both modes, and
+//      Commando, Art Deco, Lookout Point) are valid, have both modes, and
 //      their text colours reach 4.5:1 on the panels they sit on.
 //   9. The inline pre-paint script puts the stored theme in place and pins its mode.
 //  10. The splash wears a random built-in theme: styles-splash-themes.css is
@@ -34,6 +34,7 @@ import { PHOSPHOR_THEME } from '../src/ui/themes/phosphor.js';
 import { OUTRUN_THEME } from '../src/ui/themes/outrun.js';
 import { COMMANDO_THEME } from '../src/ui/themes/commando.js';
 import { ARTDECO_THEME } from '../src/ui/themes/artdeco.js';
+import { LOOKOUT_THEME } from '../src/ui/themes/lookout.js';
 import { resolveMode } from '../src/ui/appearance.js';
 
 function expect(cond, msg) {
@@ -172,7 +173,7 @@ for (const mode of ['dark', 'light']) {
     expect(r >= 4.5, `Classic ${mode}: ${what} is ${r.toFixed(2)}:1, under 4.5`);
   }
 }
-for (const [label, source] of [['GEOS', GEOS_THEME], ['Breadbin', BREADBIN_THEME], ['Phosphor', PHOSPHOR_THEME], ['Out Run', OUTRUN_THEME], ['Commando', COMMANDO_THEME], ['Art Deco', ARTDECO_THEME]]) {
+for (const [label, source] of [['GEOS', GEOS_THEME], ['Breadbin', BREADBIN_THEME], ['Phosphor', PHOSPHOR_THEME], ['Out Run', OUTRUN_THEME], ['Commando', COMMANDO_THEME], ['Art Deco', ARTDECO_THEME], ['Lookout Point', LOOKOUT_THEME]]) {
   const v = validateTheme(source);
   expect(v.theme && themeModes(v.theme) === 'both', `the built-in ${label} theme is valid with both modes (${v.error})`);
   for (const [mode, m] of Object.entries(v.theme.modes)) {
@@ -246,13 +247,51 @@ for (const [label, source] of [['GEOS', GEOS_THEME], ['Breadbin', BREADBIN_THEME
   expect(themeCss(parseTheme(JSON.stringify(exp)).theme) === themeCss(parseTheme(JSON.stringify(exportTheme({ name: 'P', theme: parseTheme(JSON.stringify(exp)).theme }, classic))).theme),
     'a theme with a look exports and imports again unchanged');
 
+  // Twinkle: a look can make its pattern twinkle. themeCss turns the two
+  // overlays of styles-base.css on for that mode only; Classic never twinkles.
+  const tw = parseTheme(L({ dark: { pattern: 'stars', twinkle: true }, light: { pattern: 'dots', twinkle: false } }));
+  expect(tw.theme && tw.theme.look.dark.twinkle === true && !tw.theme.look.light.twinkle, 'twinkle is a look setting per mode');
+  rejects(L({ dark: { pattern: 'stars', twinkle: 'yes' } }), '"twinkle"', 'twinkle is true or false');
+  const twCss = themeCss(tw.theme);
+  expect(/\[data-mode="dark"\][^{]*\{[^}]*--page-twinkle: block;[^}]*--page-twinkle-isolation: isolate;/.test(twCss), 'a twinkling mode shows the overlays and isolates the page body');
+  expect(/\[data-mode="light"\] \{[^}]*--page-twinkle: none;[^}]*--page-twinkle-isolation: auto;/.test(twCss), 'a mode without twinkle hides them');
+  expect(themeCss(parseTheme(L({ dark: { pattern: 'none', twinkle: true } })).theme).includes('--page-twinkle: none;'), 'twinkle needs a pattern to twinkle');
+  expect(exportTheme({ name: 'T', theme: tw.theme }, classic).look.dark.twinkle === true, 'export keeps twinkle');
+  expect(/body::before,\s*body::after\s*\{[^}]*display: var\(--page-twinkle, none\);[^}]*background-image: var\(--page-twinkle-image\);/.test(base),
+    'the overlays draw the twinkle image, hidden unless a theme turns twinkle on');
+  const stars = patternLayers('stars');
+  expect(stars.sparkle && stars.sparkle.image !== stars.image && stars.sparkle.image.split('gradient(').length - 1 === stars.sparkle.size.split(',').length,
+    'stars twinkle with a sparkle of their own, one size per layer');
+  expect(twCss.includes(`--page-twinkle-image: ${stars.sparkle.image.replaceAll('var(--pattern-ink)', 'color-mix(in srgb, var(--text) 85%, transparent)')};`),
+    'a twinkling stars mode flashes the stars\' sparkle, in the text colour: glints are brief, so they may outshine the faint ink');
+  const dotsTw = themeCss(parseTheme(L({ dark: { pattern: 'dots', twinkle: true } })).theme);
+  expect(dotsTw.includes(`--page-twinkle-image: ${patternLayers('dots').image.replaceAll('var(--pattern-ink)', 'color-mix(in srgb, var(--text) 35%, transparent)')};`),
+    'a pattern without a sparkle twinkles with a fainter copy of itself');
+  expect(/isolation: var\(--page-twinkle-isolation, auto\)/.test(base), 'the page body isolates only for twinkle');
+  expect(/prefers-reduced-motion: reduce\)\s*\{\s*body::before,\s*body::after\s*\{\s*display: none;/.test(base), 'twinkle stays still for reduced motion');
+  const flash = base.match(/@keyframes page-twinkle-flash\s*\{[\s\S]*?\n\}/)[0];
+  expect(/opacity/.test(flash) && !/background|transform|width|height|top|left/.test(flash.replace('page-twinkle-flash', '')),
+    'the flash animates opacity only, which the compositor runs without repainting');
+  for (const k of ['a', 'b']) {
+    expect(new RegExp(`page-twinkle-jump-${k} [\\d.]+s steps\\(1, end\\)`).test(base), `jump ${k} steps, so its layer repaints a few times a cycle, not every frame`);
+  }
+  // Each jump lands while its layer is dark: the jump cycle is four flash
+  // cycles, and the flash is dark at its start.
+  const cyc = (sel) => base.match(new RegExp(`${sel}[\\s\\S]*?page-twinkle-flash ([\\d.]+)s[^,]*,\\s*page-twinkle-jump-\\w ([\\d.]+)s`)).slice(1).map(Number);
+  for (const [sel, [f, j]] of [['body::after \\{', cyc('body::after \\{')], ['body::before,', cyc('body::before,')]]) {
+    expect(Math.abs(j - 4 * f) < 1e-9, `${sel} jumps on flash boundaries (${j}s = 4 × ${f}s)`);
+  }
+  expect(/0%, 45%, 100% \{ opacity: 0; \}/.test(flash), 'a flash starts and ends dark');
+  expect(validateTheme(LOOKOUT_THEME).theme.look.dark.pattern === 'stars' && validateTheme(LOOKOUT_THEME).theme.look.dark.twinkle, 'Lookout Point twinkles its stars at night');
+  expect(validateTheme(LOOKOUT_THEME).theme.look.light.pattern === 'waves' && !validateTheme(LOOKOUT_THEME).theme.look.light.twinkle, 'and looks out over still waves by day');
+
   // Header text sits on the page, over the pattern: it stays legible over the
   // worst of the page (its glow or its base) with the ink laid on top.
   const over = (bg, ink) => {
     const m = ink.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/);
     return m ? mixIn(bg, '#' + [m[1], m[2], m[3]].map((x) => (+x).toString(16).padStart(2, '0')).join(''), +m[4]) : bg;
   };
-  for (const [label, source] of [['Classic', null], ['GEOS', GEOS_THEME], ['Breadbin', BREADBIN_THEME], ['Phosphor', PHOSPHOR_THEME], ['Out Run', OUTRUN_THEME], ['Commando', COMMANDO_THEME], ['Art Deco', ARTDECO_THEME]]) {
+  for (const [label, source] of [['Classic', null], ['GEOS', GEOS_THEME], ['Breadbin', BREADBIN_THEME], ['Phosphor', PHOSPHOR_THEME], ['Out Run', OUTRUN_THEME], ['Commando', COMMANDO_THEME], ['Art Deco', ARTDECO_THEME], ['Lookout Point', LOOKOUT_THEME]]) {
     const t = source ? validateTheme(source).theme : { look: CLASSIC_LOOK, modes: { dark: {}, light: {} } };
     expect(t.look && t.look.dark && t.look.light, `${label} has a page pattern in both modes`);
     for (const mode of ['dark', 'light']) {

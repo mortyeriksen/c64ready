@@ -14,13 +14,13 @@
 //       "dark":  { "panel-bg": "#000000", "text": "#f2f2f2", ... },
 //       "light": { "panel-bg": "#ffffff", "text": "#111111", ... }
 //     },
-//     "look": { "dark": { "pattern": "dither", "size": "small" } }
+//     "look": { "dark": { "pattern": "stars", "size": "small", "twinkle": true } }
 //   }
 //
 // The keys of a mode are the tokens of styles-theme.css (THEME_TOKENS) and every
 // value is a plain colour: #rgb, #rgba, #rrggbb, #rrggbbaa, rgb() or rgba(). The
-// optional "look" names a page pattern per mode from PATTERNS; the recipes are
-// the app's, and pattern-ink must stay faint (MAX_INK_ALPHA). Nothing else is
+// optional "look" names a page pattern per mode from PATTERNS, and can make it
+// twinkle; the recipes are the app's, and pattern-ink must stay faint (MAX_INK_ALPHA). Nothing else is
 // accepted, so a file cannot reach outside the colours and the named patterns. A theme needs at
 // least one mode; a mode it leaves out uses its other mode (the appearance
 // switch then has nothing to switch), and a token a mode leaves out keeps the
@@ -39,6 +39,7 @@ import { PHOSPHOR_THEME } from './themes/phosphor.js';
 import { OUTRUN_THEME } from './themes/outrun.js';
 import { COMMANDO_THEME } from './themes/commando.js';
 import { ARTDECO_THEME } from './themes/artdeco.js';
+import { LOOKOUT_THEME } from './themes/lookout.js';
 
 export const THEME_FORMAT = 'c64ready-theme/2';
 const THEME_FORMATS = ['c64ready-theme/1', THEME_FORMAT]; // /1 files import as they are
@@ -98,6 +99,18 @@ const fail = (error) => ({ error });
 // var(--pattern-ink) behind the panels (body's --page-pattern layer, over the
 // page glow) and returns the layers' images and their sizes, one per layer.
 export const PATTERN_SIZES = ['small', 'medium', 'large'];
+// Stars as radial-gradient layers: per tile size, [x, y] as fractions of the
+// tile, the radius in px and how many times to draw it (brightness).
+function starLayers(tiles) {
+  const image = [], size = [];
+  for (const [tile, stars] of tiles) {
+    for (const [x, y, r, times] of stars) {
+      const star = `radial-gradient(${r}px ${r}px at ${+(x * tile).toFixed(1)}px ${+(y * tile).toFixed(1)}px, var(--pattern-ink), transparent)`;
+      for (let k = 0; k < times; k++) { image.push(star); size.push(`${tile}px ${tile}px`); }
+    }
+  }
+  return { image: image.join(', '), size: size.join(', ') };
+}
 const PATTERNS = {
   none: null,
   // A checkerboard, like the GEOS desktop.
@@ -118,6 +131,31 @@ const PATTERNS = {
     image: `radial-gradient(circle at 50% 100%, transparent ${4 * n - 1}px, var(--pattern-ink) ${4 * n - 1}px ${4 * n}px, transparent ${4 * n}px ${8 * n - 1}px, var(--pattern-ink) ${8 * n - 1}px ${8 * n}px, transparent ${8 * n}px ${12 * n - 1}px, var(--pattern-ink) ${12 * n - 1}px ${12 * n}px, transparent ${12 * n}px)`,
     size: `${24 * n}px ${12 * n}px`,
   }),
+  // Scattered stars on two tiles of different sizes, so the field never reads
+  // as a grid. A star covers a few pixels, so each is drawn twice (the
+  // brightest three times) to show at the faint ink a pattern must keep. Its
+  // sparkle, which twinkle flashes, is a handful of glints on two large tiles
+  // whose sizes share no factor, so they scatter rather than line up.
+  stars: (n) => {
+    const field = starLayers([
+      [64 * n, [[0.09, 0.15, 1.3, 2], [0.61, 0.32, 1, 2], [0.34, 0.79, 1.2, 2], [0.87, 0.62, 1, 2]]],
+      [104 * n, [[0.74, 0.13, 1.8, 3], [0.16, 0.85, 1.1, 2], [0.89, 0.7, 1.4, 2], [0.45, 0.42, 1, 2]]],
+    ]);
+    field.sparkle = starLayers([
+      [233 * n, [[0.31, 0.57, 2.3, 1]]],
+      [311 * n, [[0.78, 0.24, 2.0, 1]]],
+    ]);
+    return field;
+  },
+  // Rows of wavy lines. In each row's tile a ring centred on the top edge
+  // shows only its lower half, and one centred on the bottom edge half a
+  // wavelength along only its upper half, so they join on the line between
+  // rows into one continuous wave, with open space between the rows.
+  waves: (n) => {
+    const r = 4 * n, w = 4 * r, h = 3.5 * r;
+    const arc = (x, y) => `radial-gradient(circle at ${x}px ${y}px, transparent ${r - 0.75}px, var(--pattern-ink) ${r - 0.75}px ${r + 0.75}px, transparent ${r + 1.25}px)`;
+    return { image: `${arc(r, 0)}, ${arc(3 * r, h)}`, size: `${w}px ${h}px, ${w}px ${h}px` };
+  },
   // Fine diagonal crosshatch, like a woven or textured surface.
   weave: (n) => ({
     image: `repeating-linear-gradient(45deg, var(--pattern-ink) 0 1px, transparent 1px ${5 * n}px), repeating-linear-gradient(-45deg, var(--pattern-ink) 0 1px, transparent 1px ${5 * n}px)`,
@@ -147,7 +185,7 @@ export function colourAlpha(v) {
   return m[2] ? parseFloat(m[1]) / 100 : parseFloat(m[1]);
 }
 
-// A theme's "look": per mode, a page pattern and its size. Returns { look }
+// A theme's "look": per mode, a page pattern, its size and whether it twinkles. Returns { look }
 // with only what is valid kept, or { error }. Lenient drops what it cannot use.
 function validateLook(obj, modes, lenient) {
   if (obj === undefined) return { look: null };
@@ -165,8 +203,11 @@ function validateLook(obj, modes, lenient) {
       } else if (key === 'size') {
         if (!PATTERN_SIZES.includes(value)) { if (lenient) continue; return fail(`"size" in "look" mode "${mode}" should be one of ${PATTERN_SIZES.join(', ')}.`); }
         out.size = value;
+      } else if (key === 'twinkle') {
+        if (typeof value !== 'boolean') { if (lenient) continue; return fail(`"twinkle" in "look" mode "${mode}" should be true or false.`); }
+        if (value) out.twinkle = true;
       } else if (!lenient) {
-        return fail(`Unknown setting "${key}" in "look" mode "${mode}": a look has "pattern" and "size".`);
+        return fail(`Unknown setting "${key}" in "look" mode "${mode}": a look has "pattern", "size" and "twinkle".`);
       }
     }
     // A look for a mode the theme does not have has nothing to apply to.
@@ -258,7 +299,8 @@ export function themeModes(theme) {
 // its own (tools/splash-themes.mjs, from themeModeSet below).
 const DEFAULT_INK_ALPHA = 0.07;
 // One mode's custom properties as the page gets them: the theme's colours,
-// the button colours that follow them, and its page pattern.
+// the button colours that follow them, and its page pattern. Twinkle turns on
+// the pattern's two overlays in styles-base.css.
 export function themeModeSet(theme, m) {
   const set = withButtonColours(theme.modes[m]);
   const layers = patternLayers(theme.look?.[m]?.pattern, theme.look?.[m]?.size);
@@ -273,6 +315,17 @@ export function themeModeSet(theme, m) {
     set['page-pattern'] = 'none';
     set['page-pattern-size'] = 'auto';
   }
+  // Twinkle flashes the pattern's sparkle, or a copy of the pattern. Its ink
+  // is the text colour, well past the faint pattern ink: glints are sparse and
+  // brief, so they never sit steadily under text. A copy of a whole pattern
+  // gets less of it than a sparkle's few glints.
+  const twinkle = !!(layers && theme.look[m].twinkle);
+  const sparkle = twinkle ? (layers.sparkle || layers) : null;
+  const glint = `color-mix(in srgb, var(--text) ${layers?.sparkle ? 85 : 35}%, transparent)`;
+  set['page-twinkle'] = twinkle ? 'block' : 'none';
+  set['page-twinkle-isolation'] = twinkle ? 'isolate' : 'auto';
+  set['page-twinkle-image'] = sparkle ? sparkle.image.replaceAll('var(--pattern-ink)', glint) : 'none';
+  set['page-twinkle-size'] = sparkle ? sparkle.size : 'auto';
   return set;
 }
 export function themeCss(theme) {
@@ -296,6 +349,7 @@ const BUILTIN = [
   { id: 'outrun', name: 'Out Run', builtin: true, theme: validateTheme(OUTRUN_THEME).theme },
   { id: 'commando', name: 'Commando', builtin: true, theme: validateTheme(COMMANDO_THEME).theme },
   { id: 'artdeco', name: 'Art Deco', builtin: true, theme: validateTheme(ARTDECO_THEME).theme },
+  { id: 'lookout', name: 'Lookout Point', builtin: true, theme: validateTheme(LOOKOUT_THEME).theme },
 ];
 
 // The built-in themes, in the order THEME steps through them.

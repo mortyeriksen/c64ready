@@ -122,6 +122,7 @@ export default defineConfig({
           '**/roms-theme-outrun.html',
           '**/roms-theme-commando.html',
           '**/roms-theme-artdeco.html',
+          '**/roms-theme-lookout.html',
           '**/roms-theme-custom.html',
         ],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // three.js chunk headroom

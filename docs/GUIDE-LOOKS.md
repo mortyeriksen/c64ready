@@ -10,11 +10,12 @@ play. Part of the [User Guide](USER-GUIDE.md).
 ## Themes
 
 A theme sets the interface's colours, and can lay a faint pattern on the page
-behind the panels. **Classic** is the default, and six more are built in.
+behind the panels. **Classic** is the default, and seven more are built in.
 Each has a pattern of its own: Classic a large, subtle grid, GEOS a dither
 like its desktop, Breadbin a woven crosshatch, Phosphor scanlines in dark
-mode and green-bar paper in light, Out Run a finer grid, Commando dots and
-Art Deco rows of fans. The gallery below shows each in dark mode on the left and
+mode and green-bar paper in light, Out Run a finer grid, Commando dots,
+Art Deco rows of fans and Lookout Point twinkling stars in dark mode and
+waves in light. The gallery below shows each in dark mode on the left and
 light mode on the right; step through it with **Previous** and **Next**. The screen, the CRT looks and Retro Vibes keep their
 own colours whatever the theme, and you can import your own too. On a first
 visit, the welcome screen wears one of the built-in themes at random, and the
@@ -49,6 +50,10 @@ app keeps that theme when you leave it.
 **Art Deco**: Gold and jade: ivory type on peacock midnight in dark mode, navy ink on ivory paper in light.
 
 ![Art Deco: ivory text on deep peacock blue with gilt borders, gold and jade accents in dark mode, navy ink on ivory paper ruled in gilt with gold and jade accents in light mode, rows of fans on the page in both.](/guide/theme-artdeco.webp)
+
+**Lookout Point**: A pirate's lookout: the night watch under twinkling stars in dark mode, the sea by day in light.
+
+![Lookout Point: moonlit lavender text on a starry indigo sky with campfire-amber main buttons in dark mode, indigo ink on twilight lavender with solid indigo main buttons over rows of waves in light mode.](/guide/theme-lookout.webp)
 
 <!-- /gallery -->
 
@@ -102,7 +107,7 @@ Export Classic to get the whole file to edit.
     }
   },
   "look": {
-    "dark": { "pattern": "grid", "size": "medium" }
+    "dark": { "pattern": "stars", "size": "medium", "twinkle": true }
   }
 }
 ```
@@ -129,15 +134,21 @@ Export Classic to get the whole file to edit.
   that sets them still imports.
 - **Page pattern**: the optional `look` names a pattern for each mode, drawn
   on the page behind the panels: `dither`, `bars`, `scanlines`, `grid`,
-  `dots`, `fans`, `weave` or `none`, with a `size` of `small`, `medium` (the default)
+  `dots`, `fans`, `weave`, `stars`, `waves` or `none`, with a `size` of `small`, `medium` (the default)
   or `large`. It is drawn in `pattern-ink`, which has to be faint, an alpha of
   0.15 or less such as `rgba(0, 0, 0, 0.08)`, so the header text over it stays
   readable; left out, the pattern uses the theme's `text` colour at 0.07. On
   a system set to ask for more contrast the page stays plain. A file in the
   older `c64ready-theme/1` format still imports, with no pattern.
+- **Twinkle**: add `"twinkle": true` to a mode's look and its pattern
+  twinkles. With `stars`, a few bright stars at a time flash and fade, each
+  flash somewhere new. Other patterns flash a fainter copy of themselves the
+  same way. Twinkle is drawn in the theme's `text` colour, brighter than the
+  pattern ink, since it only shows for a moment. A system set to reduce motion
+  keeps the pattern still, and so does the full-screen display.
 - **Checks**: a file with an unknown name, a value that is not a colour, a
-  pattern or size that is not on the list, an ink stronger than 0.15, or a
-  missing `name` or `modes` is refused, and the message says which. Importing a
+  pattern or size that is not on the list, a `twinkle` that is not `true` or
+  `false`, an ink stronger than 0.15, or a missing `name` or `modes` is refused, and the message says which. Importing a
   file with the same name as an imported theme replaces it.
 
 ---

@@ -38,7 +38,8 @@ const RUNTIME_CACHES = [MODEL_CACHE, GUIDE_CACHE];
 const ANALYTICS_MARKERS = new Set(
   ['/pwa.html', '/pwa-installed.html', '/roms-loaded.html', '/roms-vice.html', '/returned.html',
    '/roms-theme-classic.html', '/roms-theme-geos.html', '/roms-theme-breadbin.html', '/roms-theme-phosphor.html',
-   '/roms-theme-outrun.html', '/roms-theme-commando.html', '/roms-theme-artdeco.html', '/roms-theme-custom.html']);
+   '/roms-theme-outrun.html', '/roms-theme-commando.html', '/roms-theme-artdeco.html', '/roms-theme-lookout.html',
+   '/roms-theme-custom.html']);
 
 // Prompt-to-update flow: a new SW installs and WAITS (note: NO unconditional
 // skipWaiting on install) so it never swaps code out from under a running

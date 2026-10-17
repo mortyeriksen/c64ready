@@ -32,6 +32,9 @@ from blank screen to running demo, start with
 **Art Deco**
 ![The interface in the Art Deco theme's dark mode: ivory text on peacock midnight with gilt borders and gold accents.](/guide/overview-artdeco.webp)
 
+**Lookout Point**
+![The interface in the Lookout Point theme's dark mode: moonlit lavender text on a starry indigo sky with campfire-amber main buttons.](/guide/overview-lookout.webp)
+
 <!-- /gallery -->
 
 Three regions: the **header** (branding and links), the **display** (the

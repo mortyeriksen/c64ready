@@ -342,6 +342,54 @@ body[data-splash-theme="artdeco"] #splash {
   --page-pattern: radial-gradient(circle at 50% 100%, transparent 7px, var(--pattern-ink) 7px 8px, transparent 8px 15px, var(--pattern-ink) 15px 16px, transparent 16px 23px, var(--pattern-ink) 23px 24px, transparent 24px);
   --page-pattern-size: 48px 24px;
 }
+/* Lookout Point, dark */
+body[data-splash-theme="lookout"] #splash {
+  --crt-bg: #08061f;
+  --page-glow: #17134a;
+  --pattern-ink: rgba(226, 222, 255, 0.15);
+  --panel-bg: #13103a;
+  --border: #2c2770;
+  --control-bg: #1a1650;
+  --button-bg: #1a1650;
+  --button-accent: #f4a640;
+  --shadow: #000000;
+  --text: #dcd8ff;
+  --text-dim: #9893cf;
+  --text-bright: #ffffff;
+  --on-accent: #1a0f00;
+  --accent: #f4a640;
+  --accent-bright: #fff1d8;
+  --green: #8fe985;
+  --logo-ramp-4: #f4a640;
+  --logo-ramp-2: #c0612a;
+  --logo-ramp-1: #3a3490;
+  --page-pattern: radial-gradient(1.3px 1.3px at 11.5px 19.2px, var(--pattern-ink), transparent), radial-gradient(1.3px 1.3px at 11.5px 19.2px, var(--pattern-ink), transparent), radial-gradient(1px 1px at 78.1px 41px, var(--pattern-ink), transparent), radial-gradient(1px 1px at 78.1px 41px, var(--pattern-ink), transparent), radial-gradient(1.2px 1.2px at 43.5px 101.1px, var(--pattern-ink), transparent), radial-gradient(1.2px 1.2px at 43.5px 101.1px, var(--pattern-ink), transparent), radial-gradient(1px 1px at 111.4px 79.4px, var(--pattern-ink), transparent), radial-gradient(1px 1px at 111.4px 79.4px, var(--pattern-ink), transparent), radial-gradient(1.8px 1.8px at 153.9px 27px, var(--pattern-ink), transparent), radial-gradient(1.8px 1.8px at 153.9px 27px, var(--pattern-ink), transparent), radial-gradient(1.8px 1.8px at 153.9px 27px, var(--pattern-ink), transparent), radial-gradient(1.1px 1.1px at 33.3px 176.8px, var(--pattern-ink), transparent), radial-gradient(1.1px 1.1px at 33.3px 176.8px, var(--pattern-ink), transparent), radial-gradient(1.4px 1.4px at 185.1px 145.6px, var(--pattern-ink), transparent), radial-gradient(1.4px 1.4px at 185.1px 145.6px, var(--pattern-ink), transparent), radial-gradient(1px 1px at 93.6px 87.4px, var(--pattern-ink), transparent), radial-gradient(1px 1px at 93.6px 87.4px, var(--pattern-ink), transparent);
+  --page-pattern-size: 128px 128px, 128px 128px, 128px 128px, 128px 128px, 128px 128px, 128px 128px, 128px 128px, 128px 128px, 208px 208px, 208px 208px, 208px 208px, 208px 208px, 208px 208px, 208px 208px, 208px 208px, 208px 208px, 208px 208px;
+}
+/* Lookout Point, light */
+:root[data-mode="light"] body[data-splash-theme="lookout"] #splash {
+  --crt-bg: #dcd8ee;
+  --page-glow: #f4f1ff;
+  --pattern-ink: rgba(36, 29, 107, 0.08);
+  --panel-bg: #f7f5fd;
+  --border: #c9c3e6;
+  --control-bg: #eeebf8;
+  --button-bg: #eeebf8;
+  --button-accent: #7a4000;
+  --shadow: #4a4580;
+  --text: #1c1750;
+  --text-dim: #4f4a86;
+  --text-bright: #120e3e;
+  --on-accent: #ffffff;
+  --accent: #8a4a00;
+  --accent-bright: #120e3e;
+  --green: #2a7337;
+  --logo-ramp-4: #241d6b;
+  --logo-ramp-2: #e08a2c;
+  --logo-ramp-1: #c9c3e6;
+  --page-pattern: radial-gradient(circle at 8px 0px, transparent 7.25px, var(--pattern-ink) 7.25px 8.75px, transparent 9.25px), radial-gradient(circle at 24px 28px, transparent 7.25px, var(--pattern-ink) 7.25px 8.75px, transparent 9.25px);
+  --page-pattern-size: 32px 28px, 32px 28px;
+}
 /* A system asking for more contrast gets no page pattern, as on the page. */
 @media (prefers-contrast: more) {
   body[data-splash-theme] #splash#splash {   /* outranks the light-mode blocks */

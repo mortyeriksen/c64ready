@@ -11,6 +11,14 @@ The version you are running is shown at the bottom of the About dialog.
 
 ## Next release
 
+- **Lookout Point theme.** A new built-in theme for a pirate's lookout: the
+  night watch in dark mode, a starry indigo sky in moonlit lavender with
+  campfire-amber buttons and stars twinkling on the page, and the sea by day
+  in light mode, lavender with indigo buttons over rows of waves. Pick it in [Options ▸ Theme](GUIDE-OPTIONS.md#theme).
+- **Twinkling theme patterns.** A theme file can now make its page pattern
+  twinkle, and there are two new patterns, `stars` to twinkle with and
+  `waves`. See the
+  [theme file format](GUIDE-LOOKS.md#themes).
 - **Synthwave, remade.** The [Retro Vibes](GUIDE-LOOKS.md#scenes) highway now
   glows: neon grid and rails, a banded sun behind cloud streaks and a city
   skyline, and a wet road that mirrors it. The city's windows light up and go
