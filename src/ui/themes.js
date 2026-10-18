@@ -99,14 +99,15 @@ const fail = (error) => ({ error });
 // var(--pattern-ink) behind the panels (body's --page-pattern layer, over the
 // page glow) and returns the layers' images and their sizes, one per layer.
 export const PATTERN_SIZES = ['small', 'medium', 'large'];
-// Stars as radial-gradient layers: per tile size, [x, y] as fractions of the
-// tile, the radius in px and how many times to draw it (brightness).
+// Stars as radial-gradient layers: per tile [width, height], [x, y] as
+// fractions of the tile, the radius in px and how many times to draw it
+// (brightness).
 function starLayers(tiles) {
   const image = [], size = [];
-  for (const [tile, stars] of tiles) {
+  for (const [[w, h], stars] of tiles) {
     for (const [x, y, r, times] of stars) {
-      const star = `radial-gradient(${r}px ${r}px at ${+(x * tile).toFixed(1)}px ${+(y * tile).toFixed(1)}px, var(--pattern-ink), transparent)`;
-      for (let k = 0; k < times; k++) { image.push(star); size.push(`${tile}px ${tile}px`); }
+      const star = `radial-gradient(${r}px ${r}px at ${+(x * w).toFixed(1)}px ${+(y * h).toFixed(1)}px, var(--pattern-ink), transparent)`;
+      for (let k = 0; k < times; k++) { image.push(star); size.push(`${w}px ${h}px`); }
     }
   }
   return { image: image.join(', '), size: size.join(', ') };
@@ -131,19 +132,25 @@ const PATTERNS = {
     image: `radial-gradient(circle at 50% 100%, transparent ${4 * n - 1}px, var(--pattern-ink) ${4 * n - 1}px ${4 * n}px, transparent ${4 * n}px ${8 * n - 1}px, var(--pattern-ink) ${8 * n - 1}px ${8 * n}px, transparent ${8 * n}px ${12 * n - 1}px, var(--pattern-ink) ${12 * n - 1}px ${12 * n}px, transparent ${12 * n}px)`,
     size: `${24 * n}px ${12 * n}px`,
   }),
-  // Scattered stars on two tiles of different sizes, so the field never reads
-  // as a grid. A star covers a few pixels, so each is drawn twice (the
-  // brightest three times) to show at the faint ink a pattern must keep. Its
-  // sparkle, which twinkle flashes, is a handful of glints on two large tiles
-  // whose sizes share no factor, so they scatter rather than line up.
+  // Scattered stars. A tile repeats each of its stars at the tile's width, so
+  // a tile's stars make rows across the page: the field is spread over five
+  // rectangular tiles with prime sides, none sharing a factor, each holding
+  // two or three stars at well-apart heights, so the rows interleave and break
+  // up. The one brighter star sits on the largest tile, where its repeats are
+  // far apart. A star covers a few pixels, so each is drawn twice (the brightest
+  // three times) to show at the faint ink a pattern must keep. Its sparkle,
+  // which twinkle flashes, is a handful of glints on two large tiles.
   stars: (n) => {
     const field = starLayers([
-      [64 * n, [[0.09, 0.15, 1.3, 2], [0.61, 0.32, 1, 2], [0.34, 0.79, 1.2, 2], [0.87, 0.62, 1, 2]]],
-      [104 * n, [[0.74, 0.13, 1.8, 3], [0.16, 0.85, 1.1, 2], [0.89, 0.7, 1.4, 2], [0.45, 0.42, 1, 2]]],
+      [[61 * n, 53 * n], [[0.18, 0.27, 1, 2], [0.71, 0.81, 1.2, 2]]],
+      [[89 * n, 79 * n], [[0.43, 0.09, 1.3, 2], [0.91, 0.46, 1, 2], [0.07, 0.72, 1.1, 2]]],
+      [[127 * n, 113 * n], [[0.62, 0.33, 1.2, 2], [0.29, 0.58, 1, 2], [0.84, 0.94, 1.1, 2]]],
+      [[167 * n, 151 * n], [[0.12, 0.15, 1.4, 2], [0.55, 0.67, 1.1, 2], [0.95, 0.39, 1, 2]]],
+      [[211 * n, 193 * n], [[0.37, 0.86, 1.6, 3], [0.76, 0.21, 1.1, 2], [0.03, 0.51, 1, 2]]],
     ]);
     field.sparkle = starLayers([
-      [233 * n, [[0.31, 0.57, 2.3, 1]]],
-      [311 * n, [[0.78, 0.24, 2.0, 1]]],
+      [[233 * n, 229 * n], [[0.31, 0.57, 2.3, 1]]],
+      [[311 * n, 307 * n], [[0.78, 0.24, 2.0, 1]]],
     ]);
     return field;
   },
