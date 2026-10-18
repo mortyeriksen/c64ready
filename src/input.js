@@ -61,7 +61,10 @@ const _giveBackKeyboard = (target) => {
   if (target.matches('input:not([type="checkbox"]):not([type="file"]), textarea') || target.isContentEditable) return;
   canvas.focus({ preventScroll: true });
 };
+// A click on a dropdown opens it, so it keeps focus (a dropdown inside a label
+// is still a dropdown): picking from it hands the keyboard back on change.
 document.addEventListener('click', (e) => {
+  if (e.target.closest?.('select')) return;
   if (e.target.closest?.('button, a[href], [role="button"], label')) _giveBackKeyboard(e.target);
 }, true);
 document.addEventListener('change', (e) => { if (e.target.matches?.('select')) _giveBackKeyboard(e.target); }, true);

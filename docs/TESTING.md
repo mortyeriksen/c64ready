@@ -107,7 +107,9 @@ reach it and POTX, motion reaches it under pointer lock, and it follows a port
 swap and a RESET. The harness needs Chrome and local ROMs in
 `roms/`; it mocks Assembly64 and makes no live catalog requests. With the dev
 server on `localhost` instead of 127.0.0.1, pass
-`node test/assembly64/browser-check.mjs --url=http://localhost:5173`.
+`node test/assembly64/browser-check.mjs --url=http://localhost:5173`. Leave
+the source alone while it runs: the dev server reloads the page on any change
+it watches, and the run fails partway.
 Use `-- --url=http://127.0.0.1:5174` to select another local port.
 
 After `npm run build`, run `npm run preview -- --host 127.0.0.1 --port 4173`

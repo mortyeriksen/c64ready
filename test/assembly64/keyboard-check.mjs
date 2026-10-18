@@ -51,6 +51,19 @@ export async function checkKeyboard(page) {
       assert.equal(await target.evaluate(node => node === document.activeElement), true, 'Shift+Tab reverses through the compact control');
       assert.deepEqual(await calls(), [], 'Control Shift+Tab does not reach the C64');
     }
+    // A dropdown in the control sits inside a label: clicking it opens it and
+    // keeps focus there, and picking from it hands the keyboard back.
+    for (const name of ['Source', 'Type']) {
+      const select = control.getByLabel(name, { exact: true });
+      await select.click();
+      await page.waitForTimeout(100);
+      assert.equal(await select.evaluate(node => node === document.activeElement), true, `clicking the ${name} dropdown keeps focus on it, so its list stays open`);
+      await page.keyboard.press('Escape');
+    }
+    const type = control.getByLabel('Type', { exact: true });
+    await type.click();
+    await type.selectOption({ index: 1 });
+    assert.equal(await page.evaluate(() => document.activeElement?.id), 'screen', 'picking from a dropdown with the mouse hands the keyboard back to the C64');
     await control.getByLabel('Search media', { exact: true }).focus();
     assert.equal(await page.locator('#keyboard-focus-hint').isVisible(), true, 'Typing fields show the keyboard focus hint');
     await page.locator('#screen').click();

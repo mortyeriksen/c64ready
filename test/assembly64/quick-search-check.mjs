@@ -8,7 +8,11 @@ export async function checkQuickSearch(page) {
   const catalog = page.getByRole('dialog', { name: 'Assembly64 Browser', exact: true });
   assert.equal(await refine.isVisible(), false, 'Refine Search is hidden before a quick search');
   assert.equal(await control.evaluate(node => Boolean(node.querySelector('.mb-launcher-navigation').compareDocumentPosition(node.querySelector('form')) & Node.DOCUMENT_POSITION_FOLLOWING)), true, 'Explore and Favorites appear above quick search');
-  assert.equal(await control.getByLabel('Type', { exact: true }).inputValue(), 'demos', 'Quick search defaults to the server-defined Demos category');
+  const typeSelect = control.getByLabel('Type', { exact: true });
+  // The categories come from the server: the default applies once they are in.
+  await typeSelect.locator('option[value="demos"]').waitFor({ state: 'attached', timeout: 15000 });
+  const typeState = await typeSelect.evaluate(node => `value "${node.value}", options ${[...node.options].map(o => o.value).join('|')}`);
+  assert.equal(await typeSelect.inputValue(), 'demos', `Quick search defaults to the server-defined Demos category (${typeState})`);
   await input.press('Enter');
   await control.getByText('9 results', { exact: true }).waitFor();
   assert.ok((await rows.locator('.mb-meta').allTextContents()).every(text => text.startsWith('Demo ·')), 'The default quick search requests demos only');
