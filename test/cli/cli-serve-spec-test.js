@@ -135,10 +135,11 @@ try {
     expect((await handshake(own, 'http://localhost:5174')).includes('101'), 'and a page on this computer on another port, such as a dev server');
     expect((await handshake(own, 'http://127.0.0.1:5174')).includes('101'), 'by address too');
     expect((await handshake(own, 'http://192.168.1.20:8080')).includes('403'), 'a page from another address is refused');
+    expect((await handshake(own, 'https://c64ready.com')).includes('101'), 'the public app may use it too: serve takes the app from that site');
     expect((await handshake(own, 'https://evil.example')).includes('403'), 'another site is refused');
     expect((await handshake(`evil.example:${port}`, `http://evil.example:${port}`)).includes('403'), 'a DNS name rebound to this machine is refused');
-    expect(blocked.length === 3 && blocked.every((t) => /^relay blocked .*not by this app$/.test(t)), `each refused page is logged: ${JSON.stringify(blocked)}`);
-    ok('relay: only pages on this computer may open connections');
+    expect(blocked.length === 3 && blocked.every((t) => /^relay blocked .*may not use this relay$/.test(t)), `each refused page is logged: ${JSON.stringify(blocked)}`);
+    ok('relay: only pages on this computer, or of the site the app comes from, may open connections');
   }
 
   {

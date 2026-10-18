@@ -12,15 +12,17 @@ import crypto from 'node:crypto';
 const GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 
 // Who may use the relay. A browser always sends Origin and a page cannot fake
-// it, so a browser request must come from a page on this computer: one served
-// on a loopback name or address, on any port, so the app on a dev server may
-// use the relay of c64rdy serve. A page on another IP address must be the app
-// this server serves. A DNS name rebound to this machine is refused. Without
-// the check any web page the user has open could open TCP connections through
-// it. Programs that send no Origin are local and can connect themselves anyway.
-export function fromOwnApp(req) {
+// it, so a browser request must come from a page on this computer (served on a
+// loopback name or address, on any port, so the app on a dev server may use
+// the relay of c64rdy serve) or from one of `origins`, the sites the app itself
+// is published on. A page on another IP address must be the app this server
+// serves. A DNS name rebound to this machine is refused. Without the check any
+// web page the user has open could open TCP connections through it. Programs
+// that send no Origin are local and can connect themselves anyway.
+export function fromOwnApp(req, origins = []) {
   const origin = req.headers.origin;
   if (origin === undefined) return true;
+  if (origins.includes(origin)) return true;
   let o;
   try { o = new URL(origin); } catch { return false; }
   const name = o.hostname.replace(/^\[|\]$/g, '');
@@ -70,11 +72,12 @@ function frame(payload, opcode = 2) {
  * Serve the relay on an http.Server's upgrade requests under `prefix`.
  * `onConnect(host, port)` may return false to refuse a target. Targets on this
  * machine or its network are refused unless `allowLocal`. Every refusal goes
- * to `block` (default: `log`), so a server can show it whatever else it logs. With
+ * to `block` (default: `log`), so a server can show it whatever else it logs.
+ * `origins` lists sites, besides pages on this computer, whose pages may use it. With
  * `exclusive: false` other upgrade requests are left for the server's other
  * handlers (a dev server's hot reload). Returns the handler, already attached.
  */
-export function attachRelay(server, { prefix = '/relay', onConnect = null, log = () => {}, block = log, exclusive = true, allowLocal = false } = {}) {
+export function attachRelay(server, { prefix = '/relay', onConnect = null, log = () => {}, block = log, exclusive = true, allowLocal = false, origins = [] } = {}) {
   const route = new RegExp(`^${prefix.replace(/[/.]/g, '\\$&')}/([^/?#]+)/(\\d{1,5})$`);
   const handler = (req, sock, head) => {
     const m = route.exec((req.url || '').split('?')[0]);
@@ -82,8 +85,8 @@ export function attachRelay(server, { prefix = '/relay', onConnect = null, log =
     if (!m || !key || String(req.headers.upgrade || '').toLowerCase() !== 'websocket') return false;
     const host = decodeURIComponent(m[1]);
     const port = Number(m[2]);
-    if (!fromOwnApp(req)) {
-      block(`relay blocked ${host}:${port}: asked by ${req.headers.origin}, not by this app`);
+    if (!fromOwnApp(req, origins)) {
+      block(`relay blocked ${host}:${port}: asked by a page from ${req.headers.origin}, which may not use this relay`);
       sock.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
       return true;
     }

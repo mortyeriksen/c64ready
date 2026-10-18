@@ -914,7 +914,8 @@ user port device and reloads it on every save.
 The relay reaches the internet only: it refuses this computer and machines on
 your own network, so nothing in the app can reach your router or other
 devices. `--allow-local` lifts that, for a BBS you run at home. Only pages on
-this computer may use the relay, and each connection it refuses is printed.
+this computer and the public app at c64ready.com may use the relay, and each
+connection it refuses is printed.
 
 ## Threads
 

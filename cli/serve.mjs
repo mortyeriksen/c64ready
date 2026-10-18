@@ -183,7 +183,9 @@ export async function startServe({ port = DEFAULT_PORT, app = null, device = nul
     }
     return undefined;
   });
-  attachRelay(server, { log: (t) => log(t), block: (t) => block(t), allowLocal });
+  // Pages of the site the app comes from may use the relay as well: the
+  // public app pointed at a relay on this computer.
+  attachRelay(server, { log: (t) => log(t), block: (t) => block(t), allowLocal, origins: [new URL(site).origin] });
   // Every socket, upgraded relay ones included, so close() can end them all.
   const sockets = new Set();
   server.on('connection', (c) => { sockets.add(c); c.on('close', () => sockets.delete(c)); });
