@@ -93,7 +93,7 @@ const until = (pred, ms = 3000) => new Promise((resolve) => {
   const echo = net.createServer((sock) => sock.on('data', (d) => sock.write(d)));
   await new Promise((r) => echo.listen(0, '127.0.0.1', r));
   const server = http.createServer();
-  attachRelay(server);
+  attachRelay(server, { allowLocal: true });   // the echo server is on this machine
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   const base = `ws://127.0.0.1:${server.address().port}/relay`;
   const ctl = createBrowserHost({ meta, panelHost: null, setStatus: () => {}, relayBase: () => base });

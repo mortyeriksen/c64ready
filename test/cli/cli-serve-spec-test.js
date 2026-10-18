@@ -38,7 +38,8 @@ await new Promise((r) => echo.listen(0, '127.0.0.1', r));
 const echoPort = echo.address().port;
 
 // The relay tests below reach a TCP server on this machine, so this one allows local targets.
-const srv = await startServe({ port: 0, app: tmp, device: deviceFile, allowLocal: true, log: () => {} });
+const blocked = [];
+const srv = await startServe({ port: 0, app: tmp, device: deviceFile, allowLocal: true, log: () => {}, block: (t) => blocked.push(t) });
 const base = srv.url.replace(/\/$/, '');
 const wsBase = base.replace('http', 'ws');
 
@@ -131,9 +132,13 @@ try {
     const own = `127.0.0.1:${port}`;
     expect((await handshake(own, `http://${own}`)).includes('101'), 'the app\'s own page may connect');
     expect((await handshake(`localhost:${port}`, `http://localhost:${port}`)).includes('101'), 'so may the app on localhost');
+    expect((await handshake(own, 'http://localhost:5174')).includes('101'), 'and a page on this computer on another port, such as a dev server');
+    expect((await handshake(own, 'http://127.0.0.1:5174')).includes('101'), 'by address too');
+    expect((await handshake(own, 'http://192.168.1.20:8080')).includes('403'), 'a page from another address is refused');
     expect((await handshake(own, 'https://evil.example')).includes('403'), 'another site is refused');
     expect((await handshake(`evil.example:${port}`, `http://evil.example:${port}`)).includes('403'), 'a DNS name rebound to this machine is refused');
-    ok('relay: only the app this server serves may open connections');
+    expect(blocked.length === 3 && blocked.every((t) => /^relay blocked .*not by this app$/.test(t)), `each refused page is logged: ${JSON.stringify(blocked)}`);
+    ok('relay: only pages on this computer may open connections');
   }
 
   {
@@ -145,7 +150,8 @@ try {
     const remote = ['8.8.8.8', '172.32.0.1', '100.128.0.1', '2606:4700:4700::1111', '::ffff:8.8.8.8'];
     for (const a of local) expect(isLocalAddress(a), `${a} is local`);
     for (const a of remote) expect(!isLocalAddress(a), `${a} is not local`);
-    const strict = await startServe({ port: 0, app: tmp, log: () => {} });
+    const strictBlocked = [];
+    const strict = await startServe({ port: 0, app: tmp, log: () => {}, block: (t) => strictBlocked.push(t) });
     try {
       const port = strict.server.address().port;
       const own = `127.0.0.1:${port}`;
@@ -158,6 +164,7 @@ try {
       });
       expect((await status('127.0.0.1')).includes('403'), 'an address on this computer is refused');
       expect((await status('localhost')).includes('403'), 'so is a name that resolves to it');
+      expect(strictBlocked.length === 2 && strictBlocked.every((t) => /blocked .*local network/.test(t)), `each block is logged: ${JSON.stringify(strictBlocked)}`);
     } finally {
       await strict.close();
     }

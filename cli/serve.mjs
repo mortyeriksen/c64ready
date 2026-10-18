@@ -15,7 +15,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { parseArgs, UsageError } from './args.mjs';
-import { say } from './report.mjs';
+import { say, fail } from './report.mjs';
 import { attachRelay } from './relay.mjs';
 import { loadDevice } from './userport.mjs';
 import { scanDeviceSource } from '../src/userport/scan.js';
@@ -128,7 +128,7 @@ function openBrowser(url) {
  * Start the server. Resolves to { server, url, close() } once listening.
  * Used by the command below and by the tests.
  */
-export async function startServe({ port = DEFAULT_PORT, app = null, device = null, site = DEFAULT_SITE, allowLocal = false, log = say } = {}) {
+export async function startServe({ port = DEFAULT_PORT, app = null, device = null, site = DEFAULT_SITE, allowLocal = false, log = say, block = fail } = {}) {
   if (app && !fs.existsSync(path.join(app, 'index.html'))) throw new Error(`${app} has no index.html: build the app first (npm run build)`);
   if (device) {
     await loadDevice(device);                     // fail now on a broken file, not in the browser
@@ -183,7 +183,7 @@ export async function startServe({ port = DEFAULT_PORT, app = null, device = nul
     }
     return undefined;
   });
-  attachRelay(server, { log: (t) => log(t), allowLocal });
+  attachRelay(server, { log: (t) => log(t), block: (t) => block(t), allowLocal });
   // Every socket, upgraded relay ones included, so close() can end them all.
   const sockets = new Set();
   server.on('connection', (c) => { sockets.add(c); c.on('close', () => sockets.delete(c)); });

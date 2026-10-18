@@ -12,19 +12,20 @@ import crypto from 'node:crypto';
 const GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 
 // Who may use the relay. A browser always sends Origin and a page cannot fake
-// it, so a browser request must come from the app this server itself serves,
-// and on a loopback name or an IP address: a DNS name rebound to this machine
-// is refused as well. Without the check any web page the user has open could
-// open TCP connections into their network. Programs that send no Origin are
-// local and can open those connections themselves anyway.
+// it, so a browser request must come from a page on this computer: one served
+// on a loopback name or address, on any port, so the app on a dev server may
+// use the relay of c64rdy serve. A page on another IP address must be the app
+// this server serves. A DNS name rebound to this machine is refused. Without
+// the check any web page the user has open could open TCP connections through
+// it. Programs that send no Origin are local and can connect themselves anyway.
 export function fromOwnApp(req) {
   const origin = req.headers.origin;
   if (origin === undefined) return true;
   let o;
   try { o = new URL(origin); } catch { return false; }
-  if (o.host !== String(req.headers.host || '')) return false;
   const name = o.hostname.replace(/^\[|\]$/g, '');
-  return name === 'localhost' || net.isIP(name) !== 0;
+  if (name === 'localhost' || (net.isIP(name) !== 0 && isLoopback(name))) return true;
+  return o.host === String(req.headers.host || '') && net.isIP(name) !== 0;
 }
 const MAX_FRAME = 1 << 20;
 
@@ -47,6 +48,10 @@ export function isLocalAddress(ip) {
   return LOCAL.check(ip, family === 4 ? 'ipv4' : 'ipv6');
 }
 
+function isLoopback(ip) {
+  return ip === '::1' || /^127\./.test(ip) || /^::ffff:127\./i.test(ip);
+}
+
 function frame(payload, opcode = 2) {
   const len = payload.length;
   let head;
@@ -64,24 +69,27 @@ function frame(payload, opcode = 2) {
 /**
  * Serve the relay on an http.Server's upgrade requests under `prefix`.
  * `onConnect(host, port)` may return false to refuse a target. Targets on this
- * machine or its network are refused unless `allowLocal`. With
+ * machine or its network are refused unless `allowLocal`. Every refusal goes
+ * to `block` (default: `log`), so a server can show it whatever else it logs. With
  * `exclusive: false` other upgrade requests are left for the server's other
  * handlers (a dev server's hot reload). Returns the handler, already attached.
  */
-export function attachRelay(server, { prefix = '/relay', onConnect = null, log = () => {}, exclusive = true, allowLocal = false } = {}) {
+export function attachRelay(server, { prefix = '/relay', onConnect = null, log = () => {}, block = log, exclusive = true, allowLocal = false } = {}) {
   const route = new RegExp(`^${prefix.replace(/[/.]/g, '\\$&')}/([^/?#]+)/(\\d{1,5})$`);
   const handler = (req, sock, head) => {
     const m = route.exec((req.url || '').split('?')[0]);
     const key = req.headers['sec-websocket-key'];
     if (!m || !key || String(req.headers.upgrade || '').toLowerCase() !== 'websocket') return false;
+    const host = decodeURIComponent(m[1]);
+    const port = Number(m[2]);
     if (!fromOwnApp(req)) {
+      block(`relay blocked ${host}:${port}: asked by ${req.headers.origin}, not by this app`);
       sock.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
       return true;
     }
     if (head && head.length) sock.unshift(head);
-    const host = decodeURIComponent(m[1]);
-    const port = Number(m[2]);
     if (port < 1 || port > 65535 || (onConnect && onConnect(host, port) === false)) {
+      block(`relay blocked ${host}:${port}`);
       sock.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
       return true;
     }
@@ -92,9 +100,13 @@ export function attachRelay(server, { prefix = '/relay', onConnect = null, log =
 
     let tcp = null;
     let open = false;
-    const connect = (address) => {
+    // `addrs`, when given, are the checked addresses: net.connect tries them
+    // in turn (IPv6 and IPv4, as it would for the name) without looking the
+    // name up again.
+    const connect = (addrs) => {
       if (sock.destroyed) return;
-      tcp = net.connect(port, address);
+      const lookup = addrs && ((name, opts, cb) => (opts.all ? cb(null, addrs) : cb(null, addrs[0].address, addrs[0].family)));
+      tcp = net.connect({ host, port, autoSelectFamily: true, ...(lookup ? { lookup } : {}) });
       tcp.setNoDelay(true);
       tcp.on('connect', () => {
         open = true;
@@ -112,19 +124,19 @@ export function attachRelay(server, { prefix = '/relay', onConnect = null, log =
         if (open && !sock.destroyed) sock.end(frame(Buffer.alloc(0), 8));
       });
     };
-    if (allowLocal) connect(host);
+    if (allowLocal) connect(null);
     else {
-      // Resolve once and connect to the address checked, so a name cannot
-      // answer differently the second time.
+      // Resolve once and connect only to the addresses checked, so a name
+      // cannot answer differently the second time.
       dns.lookup(host, { all: true }, (err, addrs) => {
         if (err || !addrs.length) {
           log(`relay ✗ ${host}:${port} ${err ? err.code || err.message : 'no address'}`);
           sock.end('HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\n\r\n');
         } else if (addrs.some((a) => isLocalAddress(a.address))) {
-          log(`relay ✗ ${host}:${port} is on this computer or its network (--allow-local permits it)`);
+          block(`relay blocked ${host}:${port}: it is on this computer or its local network (--allow-local permits it)`);
           sock.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
         } else {
-          connect(addrs[0].address);
+          connect(addrs);
         }
       });
     }

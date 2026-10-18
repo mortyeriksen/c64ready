@@ -51,6 +51,7 @@ export function initUserportCard({ getMachine, safeMode = false }) {
     panel: $('userport-panel'),
     status: $('userport-status'),
     relay: $('userport-relay'),
+    relayNote: $('userport-relay-note'),
     install: $('btn-userport-install'),
     file: $('userport-file'),
     url: $('btn-userport-url'),
@@ -245,7 +246,30 @@ export function initUserportCard({ getMachine, safeMode = false }) {
   }
   ui.relay.value = readPref(KEY_RELAY, '');
   ui.relay.placeholder = defaultRelayBase() || 'none: run c64rdy serve, or enter a relay';
-  ui.relay.addEventListener('change', () => writePref(KEY_RELAY, ui.relay.value.trim()));
+  // A ws:// or wss:// address is saved as it is typed or pasted, and the note
+  // says so. Anything else is not saved, and says why once the field is left.
+  const relayValid = (v) => {
+    if (!v) return true;
+    try { return /^wss?:$/.test(new URL(v).protocol); } catch { return false; }
+  };
+  let relayNoteTimer = 0;
+  function relayNote(text, error = false) {
+    clearTimeout(relayNoteTimer);
+    ui.relayNote.textContent = text;
+    ui.relayNote.classList.toggle('error', error);
+    if (text && !error) relayNoteTimer = setTimeout(() => { ui.relayNote.textContent = ''; }, 4000);
+  }
+  ui.relay.addEventListener('input', () => {
+    const v = ui.relay.value.trim();
+    if (!relayValid(v)) { relayNote(''); return; }
+    if (v === readPref(KEY_RELAY, '')) return;
+    writePref(KEY_RELAY, v);
+    const via = currentRelay();
+    relayNote(via ? `Saved. New calls go through ${via}.` : 'Saved. No relay now: run c64rdy serve, or enter one.');
+  });
+  ui.relay.addEventListener('change', () => {
+    if (!relayValid(ui.relay.value.trim())) relayNote('Not saved: a relay address starts with ws:// or wss://.', true);
+  });
 
   // ── Modal ────────────────────────────────────────────────────────────────
   const layer = { close: () => closeModal(), isOpen: () => !ui.modal.hidden };

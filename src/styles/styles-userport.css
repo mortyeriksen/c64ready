@@ -35,6 +35,16 @@
   gap: 8px;
   margin-bottom: 8px;
 }
+.userport-relay-note {
+  margin: -4px 0 8px;
+  overflow-wrap: anywhere;
+}
+.userport-relay-note:empty {
+  display: none;
+}
+.userport-relay-note.error {
+  color: var(--accent);
+}
 .userport-relay input {
   flex: 1;
   min-width: 0;

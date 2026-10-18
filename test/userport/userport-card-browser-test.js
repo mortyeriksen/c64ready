@@ -198,15 +198,22 @@ export function create() {
     const { ctx, page } = await newPage({ 'c64emu.userport': 'on' });
     expect((await page.getAttribute('#userport-relay', 'placeholder')).endsWith('/relay'), 'served locally, the placeholder shows the app\'s own relay');
     await page.fill('#userport-relay', 'wss://relay.example/relay');
-    await page.press('#userport-relay', 'Tab');
+    const note = await page.textContent('#userport-relay-note');
+    expect(/Saved/.test(note) && note.includes('wss://relay.example/relay'), `a pasted relay is saved at once, and says so: "${note}"`);
     await page.reload({ waitUntil: 'networkidle' });
-    expect(await page.inputValue('#userport-relay') === 'wss://relay.example/relay', 'the relay address is remembered');
+    expect(await page.inputValue('#userport-relay') === 'wss://relay.example/relay', 'the relay address is remembered, with no Enter or Tab');
+    await page.fill('#userport-relay', 'relay.example');
+    await page.press('#userport-relay', 'Tab');
+    const bad = await page.textContent('#userport-relay-note');
+    expect(/Not saved/.test(bad) && /ws:\/\//.test(bad), `an address that is not ws:// or wss:// is refused, and says why: "${bad}"`);
+    await page.reload({ waitUntil: 'networkidle' });
+    expect(await page.inputValue('#userport-relay') === 'wss://relay.example/relay', 'and the saved relay stays');
     await ctx.close();
     const safe = await newPage({ 'c64emu.userport': 'on' }, `${BASE}/?USERPORT_SAFE=1`);
     const s = await state(safe.page);
     expect(s.disabled && !s.on && /Safe mode/.test(s.status), `safe mode: switch locked off, status says so (${s.status})`);
     await safe.ctx.close();
-    ok('the relay address is remembered, and safe mode loads no device code');
+    ok('the relay address is saved as it is pasted, says so, refuses a non-ws address, and safe mode loads no device code');
   }
 
   // ── With the machine on: crash and power off ───────────────────────────
