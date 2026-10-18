@@ -128,7 +128,7 @@ function openBrowser(url) {
  * Start the server. Resolves to { server, url, close() } once listening.
  * Used by the command below and by the tests.
  */
-export async function startServe({ port = DEFAULT_PORT, app = null, device = null, site = DEFAULT_SITE, log = say } = {}) {
+export async function startServe({ port = DEFAULT_PORT, app = null, device = null, site = DEFAULT_SITE, allowLocal = false, log = say } = {}) {
   if (app && !fs.existsSync(path.join(app, 'index.html'))) throw new Error(`${app} has no index.html: build the app first (npm run build)`);
   if (device) {
     await loadDevice(device);                     // fail now on a broken file, not in the browser
@@ -183,7 +183,7 @@ export async function startServe({ port = DEFAULT_PORT, app = null, device = nul
     }
     return undefined;
   });
-  attachRelay(server, { log: (t) => log(t) });
+  attachRelay(server, { log: (t) => log(t), allowLocal });
   // Every socket, upgraded relay ones included, so close() can end them all.
   const sockets = new Set();
   server.on('connection', (c) => { sockets.add(c); c.on('close', () => sockets.delete(c)); });
@@ -209,15 +209,17 @@ export async function startServe({ port = DEFAULT_PORT, app = null, device = nul
 
 export async function serve(argv) {
   const { args, flags } = parseArgs(argv, {
-    port: { value: true }, app: { value: true }, device: { value: true }, site: { value: true }, open: {},
+    port: { value: true }, app: { value: true }, device: { value: true }, site: { value: true }, open: {}, 'allow-local': {},
   });
-  if (args.length) throw new UsageError('Usage: c64rdy serve [--port N] [--app <dir>] [--device <file.js>] [--open]');
+  if (args.length) throw new UsageError('Usage: c64rdy serve [--port N] [--app <dir>] [--device <file.js>] [--allow-local] [--open]');
   const port = flags.port === undefined ? DEFAULT_PORT : Number(flags.port);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new UsageError('--port takes a port number, 1 to 65535');
-  const { url } = await startServe({ port, app: flags.app ?? null, device: flags.device ?? null, site: flags.site ?? DEFAULT_SITE });
+  const allowLocal = Boolean(flags['allow-local']);
+  const { url } = await startServe({ port, app: flags.app ?? null, device: flags.device ?? null, site: flags.site ?? DEFAULT_SITE, allowLocal });
   say(`C64 READY. at ${url}  (user port relay at ${url.replace('http', 'ws')}relay)`);
   say(flags.app ? `serving ${flags.app}` : `app from ${flags.site ?? DEFAULT_SITE}, cached for offline use`);
   if (flags.device) say(`user port device ${flags.device} is installed in the app and reloads when the file changes`);
+  if (allowLocal) say('the relay also reaches this computer and its local network');
   say('Ctrl+C stops it.');
   if (flags.open) openBrowser(url);
   await new Promise(() => {});                     // runs until interrupted

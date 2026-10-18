@@ -6,6 +6,7 @@
 // (RFC 6455). The URL shape is fTelnet's, so relays built for it work too.
 
 import net from 'node:net';
+import dns from 'node:dns';
 import crypto from 'node:crypto';
 
 const GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
@@ -27,6 +28,25 @@ export function fromOwnApp(req) {
 }
 const MAX_FRAME = 1 << 20;
 
+// Addresses on the user's own machine or network: loopback, private and
+// carrier-grade NAT ranges, link-local, multicast and reserved. The relay
+// refuses them unless allowLocal is set, so nothing in the app (an installed
+// device, a typed ATD) can reach the router or other machines on the network,
+// which browsers keep web pages away from.
+const LOCAL = new net.BlockList();
+for (const [a, bits] of [['0.0.0.0', 8], ['10.0.0.0', 8], ['100.64.0.0', 10], ['127.0.0.0', 8],
+  ['169.254.0.0', 16], ['172.16.0.0', 12], ['192.168.0.0', 16], ['224.0.0.0', 4], ['240.0.0.0', 4]]) LOCAL.addSubnet(a, bits, 'ipv4');
+for (const [a, bits] of [['::', 128], ['::1', 128], ['fc00::', 7], ['fe80::', 10], ['ff00::', 8]]) LOCAL.addSubnet(a, bits, 'ipv6');
+
+/** True for an address on this machine or its network, or for anything that is not an address. */
+export function isLocalAddress(ip) {
+  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(ip);
+  if (mapped) ip = mapped[1];
+  const family = net.isIP(ip);
+  if (!family) return true;
+  return LOCAL.check(ip, family === 4 ? 'ipv4' : 'ipv6');
+}
+
 function frame(payload, opcode = 2) {
   const len = payload.length;
   let head;
@@ -43,11 +63,12 @@ function frame(payload, opcode = 2) {
 
 /**
  * Serve the relay on an http.Server's upgrade requests under `prefix`.
- * `onConnect(host, port)` may return false to refuse a target. With
+ * `onConnect(host, port)` may return false to refuse a target. Targets on this
+ * machine or its network are refused unless `allowLocal`. With
  * `exclusive: false` other upgrade requests are left for the server's other
  * handlers (a dev server's hot reload). Returns the handler, already attached.
  */
-export function attachRelay(server, { prefix = '/relay', onConnect = null, log = () => {}, exclusive = true } = {}) {
+export function attachRelay(server, { prefix = '/relay', onConnect = null, log = () => {}, exclusive = true, allowLocal = false } = {}) {
   const route = new RegExp(`^${prefix.replace(/[/.]/g, '\\$&')}/([^/?#]+)/(\\d{1,5})$`);
   const handler = (req, sock, head) => {
     const m = route.exec((req.url || '').split('?')[0]);
@@ -69,24 +90,44 @@ export function attachRelay(server, { prefix = '/relay', onConnect = null, log =
     const accept = crypto.createHash('sha1').update(key + GUID).digest('base64');
     log(`relay → ${host}:${port}`);
 
-    const tcp = net.connect(port, host);
+    let tcp = null;
     let open = false;
-    tcp.setNoDelay(true);
-    tcp.on('connect', () => {
-      open = true;
-      sock.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n'
-        + `Sec-WebSocket-Accept: ${accept}\r\n`
-        + (protocol ? `Sec-WebSocket-Protocol: ${protocol}\r\n` : '') + '\r\n');
-    });
-    tcp.on('data', (d) => { if (!sock.destroyed) sock.write(frame(d)); });
-    tcp.on('error', (e) => {
-      log(`relay ✗ ${host}:${port} ${e.code || e.message}`);
-      if (!open) sock.end('HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\n\r\n');
-      else sock.destroy();
-    });
-    tcp.on('close', () => {
-      if (open && !sock.destroyed) sock.end(frame(Buffer.alloc(0), 8));
-    });
+    const connect = (address) => {
+      if (sock.destroyed) return;
+      tcp = net.connect(port, address);
+      tcp.setNoDelay(true);
+      tcp.on('connect', () => {
+        open = true;
+        sock.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n'
+          + `Sec-WebSocket-Accept: ${accept}\r\n`
+          + (protocol ? `Sec-WebSocket-Protocol: ${protocol}\r\n` : '') + '\r\n');
+      });
+      tcp.on('data', (d) => { if (!sock.destroyed) sock.write(frame(d)); });
+      tcp.on('error', (e) => {
+        log(`relay ✗ ${host}:${port} ${e.code || e.message}`);
+        if (!open) sock.end('HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\n\r\n');
+        else sock.destroy();
+      });
+      tcp.on('close', () => {
+        if (open && !sock.destroyed) sock.end(frame(Buffer.alloc(0), 8));
+      });
+    };
+    if (allowLocal) connect(host);
+    else {
+      // Resolve once and connect to the address checked, so a name cannot
+      // answer differently the second time.
+      dns.lookup(host, { all: true }, (err, addrs) => {
+        if (err || !addrs.length) {
+          log(`relay ✗ ${host}:${port} ${err ? err.code || err.message : 'no address'}`);
+          sock.end('HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\n\r\n');
+        } else if (addrs.some((a) => isLocalAddress(a.address))) {
+          log(`relay ✗ ${host}:${port} is on this computer or its network (--allow-local permits it)`);
+          sock.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+        } else {
+          connect(addrs[0].address);
+        }
+      });
+    }
 
     let buf = Buffer.alloc(0);
     sock.on('data', (d) => {
@@ -99,19 +140,19 @@ export function attachRelay(server, { prefix = '/relay', onConnect = null, log =
         if (len === 126) { if (buf.length < 4) return; len = buf.readUInt16BE(2); off = 4; }
         else if (len === 127) { if (buf.length < 10) return; len = Number(buf.readBigUInt64BE(2)); off = 10; }
         // A client frame must be masked (RFC 6455 §5.1).
-        if (!masked || len > MAX_FRAME) { sock.destroy(); tcp.destroy(); return; }
+        if (!masked || len > MAX_FRAME) { sock.destroy(); if (tcp) tcp.destroy(); return; }
         if (buf.length < off + 4 + len) return;
         const mask = buf.subarray(off, off + 4);
         const payload = Buffer.from(buf.subarray(off + 4, off + 4 + len));
         for (let i = 0; i < payload.length; i++) payload[i] ^= mask[i & 3];
         buf = buf.subarray(off + 4 + len);
-        if (opcode === 0x8) { tcp.end(); sock.end(frame(Buffer.alloc(0), 8)); return; }
+        if (opcode === 0x8) { if (tcp) tcp.end(); sock.end(frame(Buffer.alloc(0), 8)); return; }
         if (opcode === 0x9) { sock.write(frame(payload, 0xA)); continue; }
         if ((opcode === 0x0 || opcode === 0x1 || opcode === 0x2) && open) tcp.write(payload);
       }
     });
-    sock.on('close', () => tcp.destroy());
-    sock.on('error', () => tcp.destroy());
+    sock.on('close', () => { if (tcp) tcp.destroy(); });
+    sock.on('error', () => { if (tcp) tcp.destroy(); });
     return true;
   };
   server.on('upgrade', (req, sock, head) => {

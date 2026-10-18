@@ -112,6 +112,7 @@ inputs, and a quoted wildcard works on any shell: c64rdy wav2tap "tapes/*.wav"
               (the run then keeps to real time)
     serve:    --port <n> (6464)  --app <dir> serve a local build
               --device <file.js> install a user port device, reload on change
+              --allow-local  let the relay reach this computer and its network
               --open  open it in the browser
     disk new: --name <NAME> --id <ID>
 

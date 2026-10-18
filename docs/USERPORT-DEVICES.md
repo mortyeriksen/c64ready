@@ -115,7 +115,8 @@ no device code loaded.
 
 `openSocket` goes through the relay set in the User Port card, which
 `c64rdy serve` provides. Any relay of the form
-`ws(s)://server/relay/<host>/<port>` works.
+`ws(s)://server/relay/<host>/<port>` works. `c64rdy serve` refuses hosts on
+the user's own computer and network unless started with `--allow-local`.
 
 ## Developing with the CLI
 

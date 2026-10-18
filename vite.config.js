@@ -58,8 +58,8 @@ const buildDocsPlugin = {
 // same one `c64rdy serve` runs, so network devices work while developing.
 const userportRelayPlugin = {
   name: 'c64:userport-relay',
-  configureServer: (server) => { if (server.httpServer) attachRelay(server.httpServer, { exclusive: false }); },
-  configurePreviewServer: (server) => { if (server.httpServer) attachRelay(server.httpServer, { exclusive: false }); },
+  configureServer: (server) => { if (server.httpServer) attachRelay(server.httpServer, { exclusive: false, allowLocal: switchOn('relayAllowLocal') }); },
+  configurePreviewServer: (server) => { if (server.httpServer) attachRelay(server.httpServer, { exclusive: false, allowLocal: switchOn('relayAllowLocal') }); },
 };
 
 // Match Netlify: /docs/ and /docs/about serve the built files at the requested URL;

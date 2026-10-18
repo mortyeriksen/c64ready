@@ -11,6 +11,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import http from 'node:http';
 import { startServe } from '../../cli/serve.mjs';
+import { isLocalAddress } from '../../cli/relay.mjs';
 
 let testNo = 0, failing = 0, current = [];
 function expect(cond, msg) { if (!cond) current.push(msg); }
@@ -36,7 +37,8 @@ const echo = net.createServer((s) => s.on('data', (d) => s.write(d)));
 await new Promise((r) => echo.listen(0, '127.0.0.1', r));
 const echoPort = echo.address().port;
 
-const srv = await startServe({ port: 0, app: tmp, device: deviceFile, log: () => {} });
+// The relay tests below reach a TCP server on this machine, so this one allows local targets.
+const srv = await startServe({ port: 0, app: tmp, device: deviceFile, allowLocal: true, log: () => {} });
 const base = srv.url.replace(/\/$/, '');
 const wsBase = base.replace('http', 'ws');
 
@@ -132,6 +134,34 @@ try {
     expect((await handshake(own, 'https://evil.example')).includes('403'), 'another site is refused');
     expect((await handshake(`evil.example:${port}`, `http://evil.example:${port}`)).includes('403'), 'a DNS name rebound to this machine is refused');
     ok('relay: only the app this server serves may open connections');
+  }
+
+  {
+    // By default the relay stays off this computer and its network (RFC 1918
+    // private, RFC 6598 shared, RFC 3927/4291 link-local, RFC 1122 loopback,
+    // RFC 4193 unique local), names included, as browsers keep web pages away.
+    const local = ['127.0.0.1', '10.1.2.3', '172.16.0.1', '172.31.255.255', '192.168.1.1', '100.64.0.1',
+      '169.254.1.1', '0.0.0.0', '224.0.0.1', '::1', '::', 'fd00::1', 'fe80::1', '::ffff:192.168.1.1', 'not-an-address'];
+    const remote = ['8.8.8.8', '172.32.0.1', '100.128.0.1', '2606:4700:4700::1111', '::ffff:8.8.8.8'];
+    for (const a of local) expect(isLocalAddress(a), `${a} is local`);
+    for (const a of remote) expect(!isLocalAddress(a), `${a} is not local`);
+    const strict = await startServe({ port: 0, app: tmp, log: () => {} });
+    try {
+      const port = strict.server.address().port;
+      const own = `127.0.0.1:${port}`;
+      const status = (target) => new Promise((resolve) => {
+        const sock = net.connect(port, '127.0.0.1');
+        sock.on('connect', () => sock.write(`GET /relay/${target}/${echoPort} HTTP/1.1\r\nHost: ${own}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n`
+          + `Sec-WebSocket-Key: ${crypto.randomBytes(16).toString('base64')}\r\nSec-WebSocket-Version: 13\r\nOrigin: http://${own}\r\n\r\n`));
+        sock.once('data', (d) => { resolve(d.toString('latin1').split('\r\n')[0]); sock.destroy(); });
+        sock.on('error', () => resolve('error'));
+      });
+      expect((await status('127.0.0.1')).includes('403'), 'an address on this computer is refused');
+      expect((await status('localhost')).includes('403'), 'so is a name that resolves to it');
+    } finally {
+      await strict.close();
+    }
+    ok('relay: by default it refuses targets on this computer and its network');
   }
 
   {

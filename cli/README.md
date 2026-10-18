@@ -149,7 +149,8 @@ rest) are credited in
 - **The app on your computer.** `c64rdy serve` runs C64 READY. on
   `http://localhost:6464` with the relay its WiFi modem needs, cached for
   offline use. `--device <file.js>` installs a user port device and reloads it
-  on every save.
+  on every save. The relay stays off this computer and your local network
+  unless `--allow-local`.
 - **User port devices in a run.** `run --userport <device.js>` plugs a device
   into the machine, or `--userport wifi-modem` the built-in modem.
 - **Dumps restored like recordings.** `dmp2tap`, and `dir` on a `.dmp`, now

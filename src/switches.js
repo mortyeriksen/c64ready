@@ -73,6 +73,14 @@ const SWITCHES = {
     env: ['USERPORT_SAFE'],
   },
 
+  // Let the dev server's user port relay reach this computer and its local
+  // network, for a BBS running at home. Off, it refuses those addresses, as
+  // c64rdy serve does without --allow-local: RELAY_ALLOW_LOCAL=1.
+  relayAllowLocal: {
+    default: false,
+    env: ['RELAY_ALLOW_LOCAL'],
+  },
+
   // The dev server compiles docs/*.md into public/docs/ when it starts and on
   // every edit. Tests that start their own dev server turn it off, so they never
   // rewrite tracked files under other tests: VITE_BUILD_DOCS=0.
