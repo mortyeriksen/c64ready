@@ -37,6 +37,7 @@ const TESTS = [
   'test/media-browser-test.js',
   'test/docs-sitemap-spec-test.js',
   'test/docs-head-assets-spec-test.js',
+  'test/docs-guide-jump-spec-test.js',
   'test/audio-lifecycle-spec-test.js',
   'test/splash-spec-test.js',
   'test/panel-order-spec-test.js',

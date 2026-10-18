@@ -371,6 +371,58 @@ ${items}
       </nav>`;
 }
 
+// Every User Guide page's sections, filled in by buildDocs before any page is
+// written, so each page's jump menu can list the chapters of all of them.
+let guideTocs = new Map();
+
+// Phones and narrow windows have no room for the left menu, so the User Guide's
+// pages carry a menu in the sticky top bar instead: every page with its
+// chapters, the one being read selected, following along as the reader scrolls.
+export function renderGuideJump(name, tocs = guideTocs) {
+  const page = `/docs/${name.toLowerCase()}.html`;
+  const pages = [['USER-GUIDE', 'Overview'], ...GUIDE_PAGES.map((n) => [n, guideTitle(n)])];
+  const groups = pages.map(([n, label]) => {
+    const href = `/docs/${n.toLowerCase()}.html`;
+    const chapters = (tocs.get(n) || []).filter((t) => t.text !== 'Topics')
+      .map((t) => `          <option value="${href}#${t.id}">${t.level === 3 ? '· ' : ''}${escapeHtml(t.text)}</option>`).join('\n');
+    return `        <optgroup label="${escapeHtml(label)}">
+          <option value="${href}"${n === name ? ' selected' : ''}>${escapeHtml(label)}</option>
+${chapters}
+        </optgroup>`;
+  }).join('\n');
+  return `    <div class="guide-jump">
+      <select id="guide-jump-select" data-page="${page}" aria-label="User Guide: go to a page or chapter">
+${groups}
+      </select>
+    </div>`;
+}
+
+// Goes where the menu says, and keeps it on the chapter at the top of the
+// screen while the reader scrolls. Does nothing while the menu is hidden.
+const guideJumpScript = () => `  <script>
+    (function () {
+      var sel = document.getElementById('guide-jump-select');
+      if (!sel) return;
+      var page = sel.getAttribute('data-page');
+      sel.addEventListener('change', function () { location.href = sel.value; });
+      var heads = [].slice.call(document.querySelectorAll('.doc-content h2[id], .doc-content h3[id]'));
+      var waiting = false;
+      function follow() {
+        waiting = false;
+        if (sel.offsetParent === null) return;
+        var line = (parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0) + 8;
+        var at = page;
+        for (var i = 0; i < heads.length; i++) {
+          if (heads[i].getBoundingClientRect().top > line) break;
+          at = page + '#' + heads[i].id;
+        }
+        if (sel.value !== at && sel.querySelector('option[value="' + at + '"]')) sel.value = at;
+      }
+      addEventListener('scroll', function () { if (!waiting) { waiting = true; requestAnimationFrame(follow); } }, { passive: true });
+      follow();
+    })();
+  </script>`;
+
 function renderToc(toc) {
   if (toc.length < 2) return '';
   const items = toc
@@ -561,11 +613,13 @@ function renderDocPage(meta, bodyHtml, toc) {
   const title = `${meta.title} · C64 READY. docs`;
   const path = meta.path || `/docs/${meta.href || slug(meta.title)}.html`;
   const inGuide = GUIDE_PAGES.includes(meta.name);
+  const guidePage = inGuide || meta.name === 'USER-GUIDE';
+  const header = guidePage ? topbar.replace(/\n  <\/header>$/, `\n${renderGuideJump(meta.name)}\n  </header>`) : topbar;
   const crumbs = inGuide
     ? `<a href="/docs/">Docs</a> <span>/</span> <a href="/docs/user-guide.html">User Guide</a> <span>/</span> ${escapeHtml(meta.title)}`
     : `<a href="/docs/">Docs</a> <span>/</span> ${escapeHtml(meta.title)}`;
   return `${head(title, { desc: meta.desc, path, image: meta.image })}
-${topbar}
+${header}
   <main class="doc-main${tocHtml ? ' has-toc' : ''}">
 ${tocHtml}
     <article class="doc-content">
@@ -573,7 +627,7 @@ ${tocHtml}
 ${bodyHtml}
 ${inGuide ? guidePager(meta.name) + '\n' : ''}    </article>
   </main>
-${meta.name === 'USER-GUIDE' ? guideRedirectScript() + '\n' : ''}${foot}`;
+${meta.name === 'USER-GUIDE' ? guideRedirectScript() + '\n' : ''}${guidePage ? guideJumpScript() + '\n' : ''}${foot}`;
 }
 
 // Compile a plain-text file (LICENSE, NOTICE.txt) verbatim into a styled doc
@@ -1111,10 +1165,38 @@ h4:hover .anchor, h5:hover .anchor, h6:hover .anchor { opacity: 0.6; }
 }
 .doc-foot a:hover { color: var(--text); text-decoration-color: var(--accent); }
 
+/* The User Guide's jump menu: only where the left menu has no room. */
+.guide-jump { display: none; }
+
 @media (max-width: 860px) {
   .doc-main.has-toc { grid-template-columns: 1fr; gap: 0; }
   .doc-toc { display: none; }
   .docs-hero h1 { font-size: 1.9rem; }
+  .doc-top:has(.guide-jump) { flex-wrap: wrap; row-gap: 10px; }
+  .guide-jump { display: block; flex: 1 0 100%; }
+  .guide-jump select {
+    width: 100%; padding: 8px 10px;
+    font: inherit; font-size: 0.92rem;
+    color: var(--text); background: var(--panel-bg);
+    border: 1px solid var(--border); border-radius: 6px;
+  }
+  /* The menu takes the place of the About and icon buttons, so the bar is two
+     rows at most. */
+  .doc-top:has(.guide-jump) .nav-links { display: none; }
+  /* The bar is a row taller here: anchors land just below it, with one offset
+     (the page's padding) rather than padding and margin added together, so
+     the menu's "chapter at the top" line matches where a jump lands. */
+  html:has(.guide-jump) { scroll-padding-top: 120px; }
+  html:has(.guide-jump) .doc-content :is(h1, h2, h3, h4, h5, h6) { scroll-margin-top: 0; }
+}
+
+/* A phone on its side has little height: the menu sits in the logo's row, so
+   the bar stays one row. */
+@media (max-width: 860px) and (max-height: 500px) {
+  .doc-top:has(.guide-jump) { flex-wrap: nowrap; }
+  .guide-jump { flex: 1 1 auto; min-width: 0; order: 1; }
+  .doc-top:has(.guide-jump) .top-nav { order: 2; }
+  html:has(.guide-jump) { scroll-padding-top: 84px; }
 }
 
 /* ABOUT and the two icons are desktop-only. They need more room than the plain
@@ -1155,7 +1237,7 @@ export async function buildDocs() {
   mkdirSync(DOCS_OUT, { recursive: true });
   const history = sourceHistory();   // two git calls for every date below
 
-  const docs = files.map((file) => {
+  const compiled = files.map((file) => {
     const name = file.replace(/\.md$/, '');
     // Output HTML is lowercase-named (getting-started.html, cpu-architecture.html
     // …). `name` (original case) is kept for ORDER/GUIDES matching + sorting;
@@ -1175,6 +1257,12 @@ export async function buildDocs() {
     bodyHtml = renderGalleries(rewriteDocLinks(bodyHtml));
     if (href === 'about') writeAboutFragment(bodyHtml);
     const { html, toc } = addAnchorsAndToc(bodyHtml);
+    return { file, name, href, meta, html, toc };
+  });
+  // Every guide page's sections first, so each page's jump menu lists them all.
+  guideTocs = new Map(compiled.filter((c) => c.name === 'USER-GUIDE' || GUIDE_PAGES.includes(c.name)).map((c) => [c.name, c.toc]));
+
+  const docs = compiled.map(({ file, name, href, meta, html, toc }) => {
     writeFileSync(join(DOCS_OUT, `${href}.html`), renderDocPage({ ...meta, href, name }, html, toc));
     // Cleaner label for the index cards: drop the "(src/…)" parentheticals the
     // doc H1s carry, while the page keeps its full title.
