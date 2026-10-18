@@ -144,7 +144,7 @@ rest) are credited in
 
 ## Release notes
 
-### Next version
+### 0.9.5
 
 - **The app on your computer.** `c64rdy serve` runs C64 READY. on
   `http://localhost:6464` with the relay its WiFi modem needs, cached for
