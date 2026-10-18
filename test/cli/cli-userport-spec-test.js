@@ -12,7 +12,7 @@ import { run } from '../../cli/run.mjs';
 import { UsageError } from '../../cli/args.mjs';
 import { setQuiet } from '../../cli/report.mjs';
 import { C64Machine } from '../../src/machine.js';
-import { readAsset } from '../external-assets.js';
+import { readAsset, assetPath } from '../external-assets.js';
 
 let failures = 0;
 function assert(cond, msg) { if (!cond) { console.error(`FAIL: ${msg}`); failures++; } }
@@ -126,7 +126,7 @@ export const meta = { id: 'example.recorder', name: 'Recorder', version: '1', ap
 export function create(port) { return { onPortB(pb) { fs.writeFileSync(${JSON.stringify(seen)}, JSON.stringify(pb)); } }; }
 `);
   const t0 = Date.now();
-  await run([prg, '--userport', recorder, '--frames', '25', '-o', path.join(tmp, 'out.png')]);
+  await run([prg, '--userport', recorder, '--frames', '25', '-o', path.join(tmp, 'out.png'), '--roms', path.dirname(assetPath('kernal'))]);
   const secs = (Date.now() - t0) / 1000;
   const last = fs.existsSync(seen) ? JSON.parse(fs.readFileSync(seen, 'utf8')) : null;
   assert(last === 170, `the program's POKE 56577,170 reached the device: ${last}`);

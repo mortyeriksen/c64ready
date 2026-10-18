@@ -68,9 +68,11 @@ function fakeRom(p, size, marker) {
   fakeRom(at('bad', 'kernal.bin'), 8000, 9);
   fakeRom(at('bad', 'basic.bin'), 8192, 2);
   fakeRom(at('bad', 'chargen.bin'), 4096, 3);
-  let threw = null;
-  try { resolveRoms({ dir: at('bad') }); } catch (e) { threw = e; }
-  assert(threw, 'a truncated kernal.bin does not resolve');
+  // Other places (./roms, a saved folder, VICE) may still supply ROMs, so the
+  // rule is that this folder is not the one they come from.
+  let roms = null;
+  try { roms = resolveRoms({ dir: at('bad') }); } catch { /* nothing anywhere */ }
+  assert(!roms || roms.from !== at('bad'), 'a truncated kernal.bin does not resolve');
 }
 
 // Missing ROMs are one plain sentence naming the files and the flag.

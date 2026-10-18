@@ -37,7 +37,7 @@ const pet = bytes => String.fromCharCode(...bytes);
 const two = n => String(n % 100).padStart(2, '0');
 
 export class VirtualDrive {
-  /** @param {() => (import('./media/d64.js').D64|null)} getDisk the mounted image, or null */
+  /** @param {() => (import('./d64.js').D64|null)} getDisk the mounted image, or null */
   constructor(getDisk) {
     this._getDisk = getDisk;
     this.onWrite = null;      // host hook: the image changed
