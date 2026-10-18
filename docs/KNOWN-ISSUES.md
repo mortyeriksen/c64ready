@@ -55,7 +55,7 @@ software:
 
 ## File formats
 
-- **`.d71` and `.p00`** download from the Assembly64 browser but do not load.
+- **`.p00`** downloads from the Assembly64 browser but does not load.
 - **`.nib`**, the uncompressed nibbler dump, does not load; only its
   compressed form, `.nbz`, does. The CLI's `info` reads either.
 
