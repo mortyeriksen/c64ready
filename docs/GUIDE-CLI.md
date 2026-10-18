@@ -897,7 +897,7 @@ copyrighted and never bundled. They are looked for in this order:
 `chargen.bin`), then a VICE installation's own ROM folder — so if VICE is
 installed, it just works.
 
-## The app on your computer
+## Local server
 
 ```sh
 c64rdy serve --open

@@ -64,7 +64,7 @@ inputs, and a quoted wildcard works on any shell: c64rdy wav2tap "tapes/*.wav"
     c64rdy run      <prg|tap|d64|d71|d81|g64|t64|crt> Boot it headless, save a PNG
     c64rdy roms     [<dir>]                   Remember the C64 ROM folder
 
-  THE APP ON THIS COMPUTER
+  LOCAL SERVER
     c64rdy serve                              C64 READY. on localhost, with the modem relay
 
   EDITABLE CONTAINER

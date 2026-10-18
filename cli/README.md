@@ -79,7 +79,7 @@ c64rdy --version
 | **SID music into player or audio** | `sid2prg`, `sid2wav` |
 | **Questions about a file** | `dir`, `info`, `loadtest`, `loader` |
 | **Boot the machine** | `run` (a PNG of the screen, or an animated one), with `--userport` for a user port device |
-| **The app on this computer** | `serve`, with the relay the WiFi modem needs |
+| **Local server** | `serve`, with the relay the WiFi modem needs |
 | **A disk's interior** | `disk new`, `disk add`, `disk rm`, `disk extract` |
 
 `c64rdy --help` lists every command and flag.
