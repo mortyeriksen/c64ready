@@ -9,7 +9,11 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
-## Next release
+## 2026.10.5 — October 18, 2026
+
+The user port arrives, and its devices are pluggable: a built-in WiFi modem
+that calls BBSes at up to 9600 baud, or your own device written in JavaScript.
+A new pirate theme, Lookout Point, has stars twinkling on the page.
 
 - **User Port and a WiFi modem.** A new card for user port devices. The
   built-in WiFi modem lets terminal programs such as CCGMS call BBSes, through
