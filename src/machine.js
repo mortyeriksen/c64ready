@@ -13,6 +13,7 @@ import { Drive1541, IDLE_WAKE_NONE } from './drive1541.js';
 import { VirtualDrive } from './media/virtual-drive.js';
 import { Datasette } from './datasette.js';
 import { REU, REU_DEFAULT_MODEL } from './reu.js';
+import { UserPort } from './userport.js';
 import { parseCRT } from './media/crt.js';
 import { createCartridgeFromCRT } from './cartridges/registry.js';
 import { makeVoiceTrio, computeSyncPulses } from './sid/sid-voice.js';
@@ -31,6 +32,8 @@ const RING_CAPACITY = 131072; // must be power of 2
 const SID_EVENT_SIZE = 8;
 const SHARED_HEADER_BYTES = 16;  // 4 × Int32
 const SHARED_BUF_SIZE = SHARED_HEADER_BYTES + RING_CAPACITY * SID_EVENT_SIZE;
+
+const CYCLES_PER_SECOND_PAL = 985248;
 
 // A C64 CIA port pin as an IEC line level (0 = high/released, 1 = low/asserted).
 // Open-collector 7406: an output-low pin (DDR bit set, latch bit clear) — or an
@@ -224,6 +227,12 @@ export class C64Machine {
     this._lastIecBusData = 1;
     this.datasette = new Datasette();
     this.datasette.flagCallback = (level) => this.cia1.setFlag(level);
+    // User port device host. Non-null only while a device is plugged in, so the
+    // master cycle's test for it stays a single null check.
+    this.userport = null;
+    // Device id a restored snapshot was made with, when that device is not the
+    // one plugged in now (the UI says so). Null otherwise.
+    this.userportRestoreMismatch = null;
     // Optional RAM Expansion Unit — a second bus master. Non-null only while
     // the user has switched one on. _reuBusHold is kept as a plain boolean on
     // the machine rather than reached for through the device, so the master
@@ -350,6 +359,7 @@ export class C64Machine {
       } else {
         this.vic2.noteBankChange(newBank);
       }
+      if (this.userport !== null) this.userport.portAChanged();
     };
 
     this.cia2.readPortA = () => {
@@ -972,6 +982,7 @@ export class C64Machine {
     this.joyPort2 = 0xFF;
 
     this.datasette.reset();
+    if (this.userport !== null) this.userport.reset();
     this._resetSidAudioQueue();
 
     // 1541 needs a fresh CPU/VIA state so its DOS ROM boots into its idle loop
@@ -1362,6 +1373,28 @@ export class C64Machine {
     return reu;
   }
 
+  // Plug a device into the user port. `factory(port)` builds it against the
+  // device API in userport.js. Replaces any device already plugged in.
+  attachUserport(id, factory, version = null) {
+    if (this.userport === null) {
+      const up = new UserPort(this.cia2, CYCLES_PER_SECOND_PAL);
+      this.cia2.readPortB = () => up.readPortB();
+      this.cia2.writePortB = () => up.portBChanged();
+      this.cia2.pcStrobe = () => up.pcStrobe();
+      this.userport = up;
+    }
+    return this.userport.plug(id, factory, version);
+  }
+
+  detachUserport() {
+    if (this.userport === null) return;
+    this.userport.unplug();
+    this.userport = null;
+    this.cia2.readPortB = null;
+    this.cia2.writePortB = null;
+    this.cia2.pcStrobe = null;
+  }
+
   detachReu() {
     if (!this.reu) return;
     this.mem.installReu(null);
@@ -1708,6 +1741,7 @@ export class C64Machine {
       cia1: this.cia1.serialize(),
       cia2: this.cia2.serialize(),
       datasette: this.datasette.serialize(),
+      userport: this.userport !== null ? this.userport.serialize() : null,
       drive1541: (this.drive1541 && this.truedriveEnabled) ? this.drive1541.serialize() : null,
       reu: this.reu ? this.reu.serialize() : null,
       sid2: this.sid2 ? { ...this.secondSidConfig(), regs: this.sid2.proxy.regs.slice(),
@@ -1755,6 +1789,14 @@ export class C64Machine {
     this.cia1.deserialize(s.cia1);
     this.cia2.deserialize(s.cia2);
     this.datasette.deserialize(s.datasette);
+    this.userportRestoreMismatch = null;
+    let userportRestored = false;
+    if (s.userport && s.userport.deviceId) {
+      userportRestored = this.userport !== null && this.userport.deserialize(s.userport);
+      if (!userportRestored) this.userportRestoreMismatch = s.userport.deviceId;
+    }
+    // A device the snapshot did not restore still has to see the restored lines.
+    if (this.userport !== null && !userportRestored) this.userport.resync();
     if (s.drive1541 && this.drive1541) this.drive1541.deserialize(s.drive1541);
     // The REU re-drives its own bus-hold and /IRQ lines from the restored
     // register file, so the machine-level latches below need no REU entry.
@@ -2022,6 +2064,7 @@ export class C64Machine {
     // (CPU-port $01 bit 5) between cycles, so the gate is always current, and
     // _motorStartupRemaining only counts down while motorOn — behavior-identical.
     if (this.datasette.motorOn) this.datasette.clock(1);
+    if (this.userport) this.userport.tick();
 
     this.cia1.endMasterCycle?.();
     this.cia2.endMasterCycle?.();

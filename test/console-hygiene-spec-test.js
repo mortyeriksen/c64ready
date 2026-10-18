@@ -40,6 +40,9 @@ const ALLOWED = {
   'main.js': {
     '[sid]': 'SID cycle-sync diagnostics, behind `if (!window.c64Trace?.sidDiag) return;`.',
   },
+  'userport/host.js': {
+    '(none)': 'host.log(), the user port device API\'s own console channel: only a plugged-in device calls it.',
+  },
   'recorder.js': {
     '[recorder]': 'remux/index statistics, behind `if (window.c64Trace?.recorderDiag)`.',
   },

@@ -231,6 +231,9 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   from a `.reu` image, saved back out to one, or wiped. It keeps its contents
   through RESET and through loading new media, and travels with save states.
   Nothing is fitted until you switch it on.
+- **User port**: one device at a time. A built-in WiFi modem (Zimodem
+  commands, 300 to 2400 baud, Telnet), and your own devices from a `.js` file
+  or a web address ([Writing a user port device](USERPORT-DEVICES.md)).
 
 ## Video & display
 
@@ -338,6 +341,9 @@ batches: a shelf of `.wav` recordings into mended `.tap` files in one command,
 formats converted in every honest direction, or every program on a tape side
 booted headless and tiled into one captioned sheet. Node 20.19 or newer,
 no dependencies; the [CLI guide](GUIDE-CLI.md) walks every command.
+
+`c64rdy serve` runs the app on your computer with the relay the WiFi modem
+needs, and `run --userport` plugs a user port device into a headless run.
 
 `sid2prg` wraps SID tunes with the same C64 music player as the browser UI.
 `sid2wav` renders a selected song as 16-bit WAV audio (mono for one SID, stereo for two), with duration,

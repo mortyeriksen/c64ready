@@ -25,6 +25,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const TESTS = [
+  // Slowest first (a dev server and a browser), so it runs alongside the rest.
+  'test/userport/userport-card-browser-test.js',
   'test/vic2/vic2-graphics-foreground-spec-test.js',
   'test/vic2/vic2-collision-overlay-spec-test.js',
   'test/vic2/vic2-render-history-spec-test.js',
@@ -426,6 +428,14 @@ const TESTS = [
   'test/autoload-ready-detect-spec-test.js',
   'test/vic2/lightpen-spec-test.js',
   'test/lightpen-cia-wiring-spec-test.js',
+  'test/userport/userport-port-spec-test.js',
+  'test/userport/userport-host-spec-test.js',
+  'test/paste-queue-spec-test.js',
+  'test/userport/userport-plugins-spec-test.js',
+  'test/userport/userport-scan-spec-test.js',
+  'test/userport/wifi-modem-spec-test.js',
+  'test/userport/led-board-device-test.js',
+  'test/userport/modem-kernal-rs232-test.js',
   'test/vic2/vic2-badline-tricks-spec-test.js',
   'test/vic2/vic2-sprite-priority-collision-spec-test.js',
   'test/vic2/vic2-irq-sources-spec-test.js',

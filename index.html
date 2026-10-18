@@ -684,6 +684,41 @@
               </div>
             </div>
           </div>
+          <div class="panel-card" id="userport-card" data-panel="userport">
+            <div class="panel-card-header">
+              <h2>User Port</h2>
+              <label class="power-switch" id="userport-power-switch" title="Plug the chosen device into the user port">
+                <input type="checkbox" id="userport-power"
+                title="Plug the device in or pull it out." aria-label="User port device plugged in">
+                <span class="power-track"><span class="power-thumb"></span></span>
+              </label>
+              <button class="expand-btn" title="Expand" aria-label="Toggle User Port">▼</button>
+            </div>
+            <div class="panel-body">
+              <div class="cp-row">
+                <div class="cp-row-head">
+                  <span class="cp-port-name">Device</span>
+                  <select class="cp-device-select" id="userport-device"
+                    title="The device on the user port: a built-in one or one you installed."></select>
+                </div>
+              </div>
+              <div class="userport-panel" id="userport-panel"></div>
+              <div class="reu-status userport-status" id="userport-status">nothing plugged in</div>
+              <label class="userport-relay" title="Where network devices connect through. Empty uses the relay of the app served by c64rdy serve.">
+                <span class="cp-port-name">Relay</span>
+                <input type="text" id="userport-relay" spellcheck="false" autocomplete="off">
+              </label>
+              <div class="userport-actions">
+                <button class="btn" id="btn-userport-install"
+                  title="Install a device from a .js file on this computer (or drop one on this card).">INSTALL…</button>
+                <input type="file" id="userport-file" accept=".js,.mjs,text/javascript" hidden>
+                <button class="btn" id="btn-userport-url"
+                  title="Install a device from a web address.">FROM URL…</button>
+                <button class="btn" id="btn-userport-manage"
+                  title="See, export or remove the devices installed in this browser.">MANAGE</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div><!-- /.panel-cols -->
 
@@ -957,6 +992,17 @@
             title="Delete every saved state in this browser. Cannot be undone.">🗑 CLEAR ALL</button>
         <input type="file" id="state-import-input" accept=".c64state,.c64states,.json" hidden>
       </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="userport-modal" hidden>
+    <div class="modal-card userport-modal-card" role="dialog" aria-modal="true" aria-labelledby="userport-modal-title">
+      <div class="panel-card-header">
+        <h2 id="userport-modal-title">User port devices</h2>
+        <button class="expand-btn" id="btn-userport-modal-x" aria-label="Close">✕</button>
+      </div>
+      <div class="userport-modal-body" id="userport-modal-body"></div>
+      <div class="confirm-actions" id="userport-modal-actions"></div>
     </div>
   </div>
 

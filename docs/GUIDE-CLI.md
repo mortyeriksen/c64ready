@@ -887,11 +887,29 @@ ones. The length is the same either way, and the report says when it happened:
 `20 filmed at 5 fps (1 distinct)` means nineteen of the twenty screens were
 the one before them.
 
+`--userport <device.js>` (or `wifi-modem`) plugs a
+[user port device](USERPORT-DEVICES.md) in. The run then keeps to real time,
+so a networked device has time to talk.
+
 `run`, `loadtest`, `tap2d64` and `prg2tap` need the C64 ROMs, which are
 copyrighted and never bundled. They are looked for in this order:
 `--roms <dir>`, `$C64_ROMS`, `./roms` (as `kernal.bin`, `basic.bin`,
 `chargen.bin`), then a VICE installation's own ROM folder — so if VICE is
 installed, it just works.
+
+## The app on your computer
+
+```sh
+c64rdy serve --open
+```
+
+serves C64 READY. on `http://localhost:6464`, this computer only, with the
+relay the [WiFi modem](GUIDE-MEDIA.md#wifi-modem) needs. The app comes from
+c64ready.com and is cached, so it also starts offline. It keeps its own ROMs
+and settings, apart from the public site's.
+
+`--app <dir>` serves a local build instead. `--device <file.js>` installs a
+user port device and reloads it on every save.
 
 ## Threads
 
@@ -1028,7 +1046,8 @@ unpacker unpacks, and never into the input's own folder.
 | `loadtest` | `--file NAME` one program only · `--jobs <n>` threads · `--roms <dir>` |
 | `loader` | `--dump <file>` write all 64 KB of memory · `--seconds <n>` how long to let it run (60) · `--roms <dir>` |
 | `roms` | — (a folder to remember; run it bare at a terminal and it asks) |
-| `run` | `--no-press` leave a screen that stopped moving alone · `--frames <n>` how long after the start · `--file NAME` a program off a `.d64`, `.d71`, `.d81`, `.g64` or `.tap` · `--all` every program on a `.d64`, `.d71`, `.d81`, `.g64` or `.tap` · `--collage` tile a `--all` run into one sheet (animated with `--anim`) · `--jobs <n>` threads, with `--all` · `--anim` film it · `--fps <n>` how often to film (5, at most 50) · `--speed <n>` how fast it plays against the machine · `--roms <dir>` |
+| `serve` | `--port <n>` (6464) · `--app <dir>` serve a local build · `--device <file.js>` install a user port device, reload on change · `--open` open the browser |
+| `run` | `--userport <device.js\|wifi-modem>` plug a user port device in · `--no-press` leave a screen that stopped moving alone · `--frames <n>` how long after the start · `--file NAME` a program off a `.d64`, `.d71`, `.d81`, `.g64` or `.tap` · `--all` every program on a `.d64`, `.d71`, `.d81`, `.g64` or `.tap` · `--collage` tile a `--all` run into one sheet (animated with `--anim`) · `--jobs <n>` threads, with `--all` · `--anim` film it · `--fps <n>` how often to film (5, at most 50) · `--speed <n>` how fast it plays against the machine · `--roms <dir>` |
 | `disk new` | `--name NAME` the disk's header name · `--id ID` its two-character id · PRGs named on the line are written straight in · `--force` reformats an existing image |
 | `disk add` | — |
 | `disk rm` | — (takes a DOS `"GAME*"` pattern; scratches every match) |

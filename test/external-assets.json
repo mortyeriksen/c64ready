@@ -133,6 +133,15 @@
    ],
    "link": "https://github.com/Klaus2m5/6502_65C02_functional_tests"
   },
+  "ccgms": {
+   "description": "CCGMS Future 0.2 terminal program (Craig Smith, alwyz, Michael Steil), for the User Guide's user port BBS shot \u2014 tools/guide-extra-shots.mjs",
+   "env": "C64_CCGMS_PRG",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/prg/ccgms-future-0.2.prg"
+   ],
+   "link": "https://github.com/mist64/ccgmsterm/releases/tag/v0.2",
+   "note": "Third-party program \u2014 bring your own; not distributed with this repo"
+  },
   "raster-time-demo": {
    "description": "Raster demo .d64 (Raster Time by Genesis Project, BCC Party #20) for the User Guide screenshots \u2014 the 'in action' overview-running shot, and the PETSCII directory art in drive8-loaded / directory-zoom \u2014 tools/guide-shots.mjs",
    "env": "C64_RASTER_TIME_D64",

@@ -54,6 +54,7 @@ const ORDER = [
   'FEATURES',
   'KNOWN-ISSUES',
   'TAPE-RESTORATION',
+  'USERPORT-DEVICES',
   'C64READY-AND-VICE',
   'COMPONENT-STATUS',
   'ARCHITECTURE',
@@ -73,7 +74,7 @@ const ORDER = [
 // lead the landing page in their own "Overview & guides" band; everything else
 // falls into the "Architecture & internals" grid.
 const GUIDES = new Set([
-  'WHATS-NEW', 'GETTING-STARTED', 'USER-GUIDE', 'TAPE-RESTORATION', 'C64READY-AND-VICE', 'FEATURES',
+  'WHATS-NEW', 'GETTING-STARTED', 'USER-GUIDE', 'TAPE-RESTORATION', 'USERPORT-DEVICES', 'C64READY-AND-VICE', 'FEATURES',
   'KNOWN-ISSUES', 'SPECIFICATIONS', 'ABOUT',
 ]);
 
@@ -663,6 +664,7 @@ const INDEX_LIST = {
     ['ABOUT', 'About', 'what it is and who made it'],
     ['SPECIFICATIONS', 'Specifications & credits', 'references, formats and thanks'],
     ['TAPE-RESTORATION', 'Tape restoration', 'bringing worn cassettes back'],
+    ['USERPORT-DEVICES', 'User port devices', 'write and install your own'],
     ['C64READY-AND-VICE', 'C64 READY. and VICE', 'how the two compare'],
   ],
   internals: [

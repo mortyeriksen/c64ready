@@ -65,6 +65,21 @@ const SWITCHES = {
     default: false,
     env: ['CRT_SHADER_SOFTWARE'],
   },
+
+  // Start with the user port empty and load no device code at all, for when an
+  // installed device breaks the app on load: ?USERPORT_SAFE=1.
+  userportSafeMode: {
+    default: false,
+    env: ['USERPORT_SAFE'],
+  },
+
+  // The dev server compiles docs/*.md into public/docs/ when it starts and on
+  // every edit. Tests that start their own dev server turn it off, so they never
+  // rewrite tracked files under other tests: VITE_BUILD_DOCS=0.
+  viteBuildsDocs: {
+    default: true,
+    env: ['VITE_BUILD_DOCS'],
+  },
 };
 
 // Resolve a switch by name: env override ('1'/'0') if present, else — in the

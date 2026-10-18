@@ -11,6 +11,11 @@ The version you are running is shown at the bottom of the About dialog.
 
 ## Next release
 
+- **User Port and a WiFi modem.** A new card for user port devices. The
+  built-in WiFi modem lets terminal programs such as CCGMS call BBSes, through
+  the relay `c64rdy serve` provides. See [User Port](GUIDE-MEDIA.md#user-port).
+- **Your own user port devices.** One JavaScript file, installed from a file
+  or a web address. See [Writing a user port device](USERPORT-DEVICES.md).
 - **Lookout Point theme.** A new built-in theme for a pirate's lookout: the
   night watch in dark mode, a starry indigo sky in moonlit lavender with
   campfire-amber buttons and stars twinkling on the page, and the sea by day

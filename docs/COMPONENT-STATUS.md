@@ -74,7 +74,9 @@ implementation is to documented hardware behavior for that component.
 | Disk | Virtual drive (TDE off) | Implemented | Medium | The KERNAL's serial primitives are answered by a DOS over the mounted image for a trap-served drive: OPEN, CHKIN, CHRIN, CLOSE, LOAD and SAVE, the directory as a channel, channel 15 status and the I, V, S, R, N, U1/U2, B-P and M-R commands. Instant, with no bus timing. See the [drive doc](DRIVE-ARCHITECTURE.md). |
 | Expansion | Cartridges | Implemented | Medium-high | Hardware types, by CRT id: type 0 (generic 8K/16K/Ultimax), type 1 (Action Replay v4.x/v5/v6: ROM/RAM banking, IO1/IO2, RESET/FREEZE), type 3 (Final Cartridge III: four 16K banks, IO1/IO2 ROM mirror, `$DFFF` control, RESET/FREEZE), type 19 (Magic Desk / Domark / HES Australia), and type 32 (EasyFlash). Loadable while powered off. |
 | Expansion | RAM Expansion Unit (8726 REC) | Implemented | Medium-high | 1700, 1764, 1750, 1750 XL and generic 1/4/8/16 MB units: full register file, all transfer types, autoload, fixed-address modes and the `$FF00` deferred trigger. Transfers run as a real second bus master (6510 halted, one bus access per byte, VIC DMA precedence). All 16 QuickReuTest programs pass, cycle-count checks included. |
-| Expansion | Other cartridge types / user port / printer / modem | Missing | Low | Not implemented. |
+| Expansion | User port | Implemented | Medium | CIA2 PB0-PB7, PA2, PC2 and FLAG2 brought out to one pluggable device, with installable devices (see [Writing a user port device](USERPORT-DEVICES.md)). No CNT/SP pins yet, so no UP9600. |
+| Expansion | WiFi modem (user port) | Implemented | Medium | Zimodem-style Hayes modem: 8N1 and other formats from 300 to 2400 baud with autobaud, Telnet, phonebook, RTS/CTS and DTR handling. Reaches the network through a WebSocket relay. |
+| Expansion | Other cartridge types / printer / ACIA cartridges | Missing | Low | Not implemented. |
 
 ## Unmodelled quirks, for the record
 

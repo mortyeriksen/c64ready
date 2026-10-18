@@ -3,6 +3,8 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { buildDocs } from './tools/build-docs.mjs';
+import { attachRelay } from './cli/relay.mjs';
+import { switchOn } from './src/switches.js';
 
 // Cross-origin isolation for the SID worklet's SharedArrayBuffer. Dev + preview only;
 // the production host sends them for the first load, then src/sw.js re-stamps the
@@ -30,6 +32,7 @@ const sidWorkletFullReload = {
 const buildDocsPlugin = {
   name: 'c64:build-docs',
   async buildStart() {
+    if (!switchOn('viteBuildsDocs')) return;
     const n = await buildDocs();
     if (n) this.info(`compiled ${n} doc page(s) → public/docs/`);
   },
@@ -38,6 +41,7 @@ const buildDocsPlugin = {
   async hotUpdate({ file }) {
     if (this.environment.name !== 'client') return;   // rebuild once, not per-env
     if (!/[\\/]docs[\\/][^\\/]+\.md$/.test(file)) return;
+    if (!switchOn('viteBuildsDocs')) return;
     const n = await buildDocs();
     this.info(`recompiled ${n} doc page(s) → public/docs/`);
     this.environment.hot.send({ type: 'full-reload' });
@@ -48,6 +52,14 @@ const buildDocsPlugin = {
   // These middlewares run before Vite's, which is what beats the SPA fallback.
   configureServer: (server) => { server.middlewares.use(docsPaths); },
   configurePreviewServer: (server) => { server.middlewares.use(docsPaths); },
+};
+
+// The user port relay (/relay/<host>/<port>) on the dev and preview servers, the
+// same one `c64rdy serve` runs, so network devices work while developing.
+const userportRelayPlugin = {
+  name: 'c64:userport-relay',
+  configureServer: (server) => { if (server.httpServer) attachRelay(server.httpServer, { exclusive: false }); },
+  configurePreviewServer: (server) => { if (server.httpServer) attachRelay(server.httpServer, { exclusive: false }); },
 };
 
 // Match Netlify: /docs/ and /docs/about serve the built files at the requested URL;
@@ -79,6 +91,7 @@ export default defineConfig({
   },
   plugins: [
     buildDocsPlugin,
+    userportRelayPlugin,
     sidWorkletFullReload,
     VitePWA({
       strategies: 'injectManifest',   // custom SW (src/sw.js) — needed for COI header re-stamping

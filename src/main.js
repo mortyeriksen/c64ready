@@ -53,6 +53,8 @@ import {
 } from './recorder.js';
 import { splashIsOpen } from './ui/splash.js';
 import { initPanelOrder } from './ui/panel-order.js';
+import { initUserportCard } from './userport/card.js';
+import { createPasteQueue } from './paste-queue.js';
 import { initAppearance } from './ui/appearance.js';
 import { initThemes } from './ui/themes.js';
 import { confirmDialog } from './ui/dialogs.js';
@@ -93,6 +95,9 @@ const presenter = switchOn('webglPresenter')
   ? WebGLPresenter.create(canvas, CANVAS_W, CANVAS_H)
   : null;
 const ctx = presenter ? null : canvas.getContext('2d');
+// The User Port card (src/userport/card.js). Created once the panels exist;
+// machines built before then get their device when it is.
+let userportCard = null;
 const collisionIndicator = switchOn('vicCollisionOverlay')
   ? new CollisionIndicator(document.getElementById('collision-indicator')) : null;
 const crtShader = !!presenter && presenter.crtAvailable && switchOn('crtShader')
@@ -569,7 +574,7 @@ const IDEAL_DELTA = (CYCLES_PER_FRAME / PAL_CPU_HZ) * 1000;
 // (_pristineBoot && !_hasBeenReady); no audio plays during boot, so there's no
 // pitch/sync side-effect. Bump higher for an even snappier boot.
 const BOOT_WARP = 4;
-let pendingPasteText = '';
+const pasteQueue = createPasteQueue();
 
 // Per-frame compute timer. Code-level switch (not a UI control): when true,
 // the average wall-clock time spent in machine.runFrame() — the emulation
@@ -610,7 +615,7 @@ function normalizeClipboardText(text) {
 function queueClipboardText(text) {
   const normalized = normalizeClipboardText(text);
   if (!normalized) return 0;
-  pendingPasteText += normalized;
+  pasteQueue.add(normalized);
   return normalized.length;
 }
 
@@ -623,12 +628,12 @@ function queuePastedTextAndReport(text) {
   return queued;
 }
 
+// One function for the per-frame flush, so the rAF loop allocates nothing.
+const _bufferPaste = (text) => c64.bufferKeyboardText(text);
+
 function flushKeyboardPasteQueue() {
-  if (!running || !pendingPasteText) return;
-  const accepted = c64.bufferKeyboardText(pendingPasteText);
-  if (accepted > 0) {
-    pendingPasteText = pendingPasteText.slice(accepted);
-  }
+  if (!running || !pasteQueue.pending) return;
+  pasteQueue.flush(_bufferPaste, c64.userportDeviceId !== null);
 }
 
 if (sidToggleBtn) {
@@ -1046,10 +1051,10 @@ updateRomFilenames();
 for (const btn of document.querySelectorAll('.expand-btn')) {
   const panel = btn.closest('.panel-card');
   if (!panel) continue;
-  // Disk drive 9 and the RAM Expansion have headers that are power affordances,
-  // not expanders (media.js wires them to their power switches); their expand
-  // state follows power, so skip them here.
-  if (panel.id === 'diskdrive9-card' || panel.id === 'reu-card') continue;
+  // Disk drive 9, the RAM Expansion and the User Port have headers that are
+  // power affordances, not expanders (media.js and userport/card.js wire them to
+  // their power switches); their expand state follows power, so skip them here.
+  if (panel.id === 'diskdrive9-card' || panel.id === 'reu-card' || panel.id === 'userport-card') continue;
   // Toggle target is the whole header; the chevron is a button inside it, so a
   // click (mouse or keyboard) on the chevron bubbles here too — one handler
   // covers both, and no double-toggle.
@@ -1088,6 +1093,8 @@ for (const btn of document.querySelectorAll('.expand-btn')) {
 // expand wiring above so the handle lands in a header that already knows how to
 // toggle — the handle stops its own clicks from reaching it.
 initPanelOrder();
+userportCard = initUserportCard({ getMachine: () => c64, safeMode: switchOn('userportSafeMode') });
+userportCard.attach(c64);
 
 loader.bindInputs(kernalInput, basicInput, charInput, drive1541Input);
 loader.onReady(roms => {
@@ -1516,6 +1523,7 @@ function rafLoop(timestamp) {
   if (_autoSeq) _serviceAutoLoad();
 
   if (frameExecuted) {
+    if (userportCard) userportCard.frame();
     if (collisionIndicator) collisionIndicator.update(timestamp, c64.collisionOverlay());
     if (presenter) presenter.present(c64.presentationBuffer());
     else c64.blit(ctx);
@@ -1744,6 +1752,9 @@ function _createAndWireMachine({ keepKey = true, reuRam = null } = {}) {
   // Re-fit the RAM Expansion unit. Its RAM comes up blank here: a RESET hands
   // the old contents over in `reuRam`, a state load fills it from the snapshot.
   _applyReu();
+  // Plug the user port device back in. Before the cartridge and before a state
+  // load's restoreState, so a snapshot finds its device.
+  userportCard?.attach(c64);
   // Re-apply cartridge if one was loaded; refresh UI label.
   if (_cachedCartData) {
     const info = c64.loadCartridge(_cachedCartData);
@@ -1853,6 +1864,7 @@ powerBtn.addEventListener('click', async () => {
     resetSidWorklet();
     updateMediaIndicators(false);   // stop the tape motor-dot pulse before the machine goes away
     _cacheTapeFromDeck();           // keep the tape (and any recording) for the next power-on
+    userportCard?.detach();         // the user port device loses power too
     setMachine(null);
     _syncCartridgeControls();
     _blankScreen();
@@ -3090,7 +3102,7 @@ initInput({
   },
   toggleVibesZoom: () => vibesZoom?.toggle(),
   downloadSnapshot,
-  clearPendingPaste: () => { pendingPasteText = ''; },
+  clearPendingPaste: () => pasteQueue.clear(),
   // The paste shortcut lives in input.js's registry with the rest, but the
   // clipboard plumbing is here; _pasteClaim keeps it from doubling up with the
   // native `paste` event below when the browser raises both.

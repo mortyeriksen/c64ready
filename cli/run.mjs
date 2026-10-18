@@ -29,6 +29,7 @@ import {
   FRAMES_PER_SECOND,
 } from './tapeload.mjs';
 import { jobsFor, inParallel } from './jobs.mjs';
+import { plugDevice } from './userport.mjs';
 const BOOT_CAP = 400;                            // frames to give the KERNAL before giving up on it
 const ANIM_FPS = 5;                              // screens a --anim film takes per second
 
@@ -67,9 +68,9 @@ export async function run(argv) {
     out: { value: true, alias: 'o' }, 'out-dir': { value: true },
     frames: { value: true }, roms: { value: true }, file: { value: true }, all: {},
     anim: {}, fps: { value: true }, speed: { value: true }, jobs: { value: true },
-    'no-press': {}, collage: {},
+    'no-press': {}, collage: {}, userport: { value: true },
   });
-  if (args.length !== 1) throw new UsageError('Usage: c64rdy run <prg|tap|d64|d71|d81|g64|t64|crt> [--file NAME | --all] [-o out.png] [--frames N] [--anim [--fps N] [--speed N]] [--jobs N] [--roms <dir>]');
+  if (args.length !== 1) throw new UsageError('Usage: c64rdy run <prg|tap|d64|d71|d81|g64|t64|crt> [--file NAME | --all] [-o out.png] [--frames N] [--anim [--fps N] [--speed N]] [--jobs N] [--roms <dir>] [--userport <device.js|wifi-modem>]');
   const p = args[0];
   let bytes = fs.readFileSync(p);
   let kind = sniff(bytes, p);
@@ -90,6 +91,7 @@ export async function run(argv) {
   if (flags.file && flags.all) throw new UsageError('--file names one program, --all runs every one; pick one');
   if (flags.all && flags.out) throw new UsageError('--all writes one PNG per program; use --out-dir, not -o');
   if (flags.collage && !flags.all) throw new UsageError('--collage gathers a --all run into one sheet; add --all');
+  if (flags.userport && (flags.all || kind === 'tap')) throw new UsageError('--userport plugs a device into one machine; it works with a single .prg, disk or cartridge run');
   const frames = countFlag(flags, 'frames') ?? RUN_FRAMES[kind];
   // Both film knobs ask for a film by being named: --anim can stay unsaid.
   const anim = Boolean(flags.anim || flags.fps !== undefined || flags.speed !== undefined);
@@ -168,6 +170,9 @@ export async function run(argv) {
 
   const m = new C64Machine();
   m.loadROMs(roms);
+  // A user port device is plugged in before the machine starts, as it would be
+  // on the desk. The run then keeps to real time so its network has a chance.
+  const device = flags.userport ? await plugDevice(m, flags.userport) : null;
 
   if (kind === 'prg') {
     // Wait for the prompt, do not count frames at it: the KERNAL does not finish
@@ -220,7 +225,13 @@ export async function run(argv) {
   // A film plays at fps × speed: one machine-second of screens, shown in one
   // second divided by the speed.
   const film = anim ? new Apng(CANVAS_W, CANVAS_H, fps * speed) : null;
-  const { pressed } = runFrames(m, frames, film, fps, { press });
+  const { pressed } = device
+    ? await runFramesLive(m, frames, film, fps, { press, afterFrame: device.frame })
+    : runFrames(m, frames, film, fps, { press });
+  if (device) {
+    if (device.error()) say(`user port: ${device.meta.name} stopped: ${device.error().message}`);
+    device.dispose();
+  }
   const out = outFileFor(p, '.png', flags);
   if (film) film.write(out); else writePng(out, m.vic2.fb32, CANVAS_W, CANVAS_H);
   say(`${out}  (${frames} frames after start${filmSaid(film, { fps, speed })}${pressSaid(pressed)})`);
@@ -424,7 +435,28 @@ function bootToReady(m, cap = BOOT_CAP) {
   return cap;
 }
 
-export function runFrames(m, frames, film, fps, { label = null, press = true } = {}) {
+export function runFrames(m, frames, film, fps, opts = {}) {
+  const steps = frameSteps(m, frames, film, fps, opts);
+  let r;
+  while (!(r = steps.next()).done);
+  return r.value;
+}
+
+// The same run, giving the event loop a turn after every frame and keeping to
+// the machine's own 50 frames a second, for a user port device on the network.
+export async function runFramesLive(m, frames, film, fps, opts = {}) {
+  const steps = frameSteps(m, frames, film, fps, opts);
+  const start = performance.now();
+  let i = 0, r;
+  while (!(r = steps.next()).done) {
+    i++;
+    const wait = start + (i * 1000) / FRAMES_PER_SECOND - performance.now();
+    await new Promise((res) => (wait > 1 ? setTimeout(res, wait) : setImmediate(res)));
+  }
+  return r.value;
+}
+
+function* frameSteps(m, frames, film, fps, { label = null, press = true, afterFrame = null } = {}) {
   let shots = 0, filmed = -1;
   let mark = 0, still = 0, pressed = 0, hold = 0, holding = null;
   const release = () => {
@@ -435,6 +467,7 @@ export function runFrames(m, frames, film, fps, { label = null, press = true } =
   for (let i = 0; i < frames; i++) {
     if (label) progress(label, i / frames);
     m.runFrame();
+    if (afterFrame) afterFrame();
 
     if (hold > 0 && --hold === 0) {
       release();
@@ -459,6 +492,7 @@ export function runFrames(m, frames, film, fps, { label = null, press = true } =
       shots++;
       filmed = i;
     }
+    yield;
   }
   if (holding) release();                        // never leave a key held down
   if (film && filmed !== frames - 1) film.add(m.vic2.fb32);

@@ -123,6 +123,9 @@ export class CIA {
     // `if (this.readPortA)` / `if (this.writePortB)` guard behaves identically.
     this.readPortA = null;  this.readPortB = null;
     this.writePortA = null; this.writePortB = null;
+    // PC strobe: called on every CPU read or write of port B (never on a peek).
+    // The pin goes low for the cycle after the access (6526 datasheet, PC).
+    this.pcStrobe = null;
 
     // CIA1 keyboard matrix: matrix[col] is a byte; bit = 0 means key pressed
     this.matrix = new Uint8Array(8).fill(0xFF);
@@ -458,6 +461,7 @@ export class CIA {
           return ((this.portB & this.portBDir) |
                   (this._readKeyboard() & ~this.portBDir)) & 0xFF;
         }
+        if (this.pcStrobe) this.pcStrobe();
         if (this.readPortB) return this.readPortB();
         return (this.portB & this.portBDir) | (0xFF & ~this.portBDir);
       case 0x02: return this.portADir;
@@ -574,6 +578,7 @@ export class CIA {
       case 0x01: 
         this.portB = val; 
         if (this.writePortB) this.writePortB(val);
+        if (this.pcStrobe) this.pcStrobe();
         break;
       case 0x02: {
         const oldDdra = this.portADir;
@@ -739,8 +744,8 @@ export class CIA {
     return (3 - (effective & 0x03)) * 0x4000;
   }
 
-  // CIA1 only: called by Datasette on each tape pulse edge.
-  // A falling edge (1→0) sets ICR bit 4 (FLAG) and may fire an IRQ.
+  // FLAG pin input: the datasette read line on CIA1, user port pin B on CIA2.
+  // A falling edge (1→0) sets ICR bit 4 (FLAG) and may fire an IRQ (NMI on CIA2).
   setFlag(level) {
     if (this._flagLevel === 1 && level === 0) {
       // Sets the FLAG data bit; the IR latch picks it up on the next clock().

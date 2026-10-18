@@ -36,8 +36,13 @@ tests. See the [VIC-II architecture](VIC2-ARCHITECTURE.md#fetch-fed-graphics).
 - **Three-SID tunes** are not supported. Two-SID tunes play in Safe view only;
   their Voices view is unavailable. Expansion addresses `$DE00-$DFFF` need an
   empty cartridge slot, and `$DF00-$DFFF` cannot share an attached REU.
-- **Cartridge families beyond the five in the Features list, user-port
-  devices, printers and modems** are not implemented.
+- **Cartridge families beyond the five in the Features list, printers and
+  ACIA modem cartridges** (SwiftLink) are not implemented.
+- **The WiFi modem needs a relay** to reach the internet. `c64rdy serve`
+  provides one. A relay on your own computer used from the public site is
+  blocked by Safari, and Chrome asks for permission first.
+- **UP9600** (9600 baud on the user port) is not supported: the CIA serial
+  pins it needs are not modelled.
 
 ## Unmodelled hardware quirks
 

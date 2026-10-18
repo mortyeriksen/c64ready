@@ -20,6 +20,7 @@ import { nbz2g64 } from './nib.mjs';
 import { prg2turbo } from './turbo.mjs';
 import { roms as romsCmd } from './roms.mjs';
 import { sid2prg, sid2wav } from './sid.mjs';
+import { serve } from './serve.mjs';
 
 const VERSION = JSON.parse(fs.readFileSync(new URL('./package.json', import.meta.url))).version;
 
@@ -63,6 +64,9 @@ inputs, and a quoted wildcard works on any shell: c64rdy wav2tap "tapes/*.wav"
     c64rdy run      <prg|tap|d64|d71|d81|g64|t64|crt> Boot it headless, save a PNG
     c64rdy roms     [<dir>]                   Remember the C64 ROM folder
 
+  THE APP ON THIS COMPUTER
+    c64rdy serve                              C64 READY. on localhost, with the modem relay
+
   EDITABLE CONTAINER
     c64rdy disk new     <out.d64|d71|d81> [f.prg…] Format a blank disk (add PRGs too)
     c64rdy disk add     <d.d64|d71|d81> <f.prg…>  Write PRGs into it
@@ -104,6 +108,11 @@ inputs, and a quoted wildcard works on any shell: c64rdy wav2tap "tapes/*.wav"
               --collage  Tile a --all run into one sheet (animated if --anim)
               --anim [--fps <n>] [--speed <n>]  Film the run: an animated PNG
               --no-press  Leave a waiting screen alone (SPACE, then fire)
+              --userport <device.js|wifi-modem>  Plug a user port device in
+              (the run then keeps to real time)
+    serve:    --port <n> (6464)  --app <dir> serve a local build
+              --device <file.js> install a user port device, reload on change
+              --open  open it in the browser
     disk new: --name <NAME> --id <ID>
 
     threads:  --jobs <n>  run --all, loadtest, tap2d64, tap2prg --via-machine
@@ -136,6 +145,7 @@ const COMMANDS = {
   disk: diskCmd.disk,
   info: info.run,
   run: runCmd.run,
+  serve,
   loadtest: runCmd.loadtest,
   tap2d64: runCmd.tap2d64,
   tap2prg: runCmd.tap2prg,

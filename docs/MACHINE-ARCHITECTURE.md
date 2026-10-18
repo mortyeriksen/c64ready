@@ -353,6 +353,14 @@ The UI only reports host motion (`neosMove`) and buttons (`setNeosButtons`); the
 right button sets `potXOverride`. NEOS state is not part of a savestate, and
 `input.js` resets it (`neosResetPort`) on power-off, reset and state load.
 
+**The user port** (`userport.js`) exists only while a device is plugged in.
+`attachUserport` hooks CIA2's port B read and write, its PC strobe and the
+port A write (PA2). The master cycle ticks it after the datasette, behind a
+null check, and a tick only works when a device timer or a PC2 pulse is due.
+Input pins read the pull-ups ANDed with the device. FLAG2 goes through
+`cia2.setFlag` to the NMI. A throwing device is unplugged and reported through
+`userport.onError`. Device API: [Writing a user port device](USERPORT-DEVICES.md).
+
 **Memory map & banking live in `memory.js`**, not here. `_rebuildMemoryMap()`
 builds per-page read/write tables from the 6510 port ($01) LORAM/HIRAM/CHAREN
 bits + cartridge EXROM/GAME, and routes `$D000-$DFFF` to VIC/SID/CIA/color-RAM

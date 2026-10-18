@@ -193,6 +193,22 @@ export class MachineFacade {
   // The fitted REU, or null.
   get reu()           { return this.machine.reu ? this._reu : null; }
   attachReu(modelId)  { this.machine.attachReu(modelId); }
+  // User port: plug a device in (see userport.js), pull it out, and hear about
+  // a device that threw. The error handler survives re-plugging.
+  attachUserport(id, factory, version, onError) {
+    const dev = this.machine.attachUserport(id, factory, version);
+    this.machine.userport.onError = onError;
+    return dev;
+  }
+  detachUserport()    { this.machine.detachUserport(); }
+  get userportDeviceId() { return this.machine.userport?.deviceId ?? null; }
+  // The device a just-restored snapshot was made with, when it is not the one
+  // plugged in. Reading it clears it.
+  takeUserportRestoreMismatch() {
+    const id = this.machine.userportRestoreMismatch;
+    this.machine.userportRestoreMismatch = null;
+    return id;
+  }
   detachReu()         { this.machine.detachReu(); }
 
   // ── Memory (read-only views) ─────────────────────────────────────────────

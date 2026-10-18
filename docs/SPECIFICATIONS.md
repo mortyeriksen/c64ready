@@ -81,7 +81,8 @@ this project:
 
 ### CIA / 6526
 
-- **MOS 6526 (CIA) datasheet**: timers, TOD, and serial-register behavior
+- **MOS 6526 (CIA) datasheet**: timers, TOD, serial-register behavior, and the
+  PC and FLAG handshake lines the user port brings out
   (the CIA spec tests cite the re-typeset archive.org copy by sheet number).
   <https://6502.org/documents/datasheets/mos/mos_6526_cia_preliminary_nov_1981.pdf>  ·
   <https://archive.org/details/mos_6526_cia_recreated>
@@ -195,6 +196,24 @@ revisions:
   the status size bit, and the DMA rates: 1 MB/s for STASH and FETCH against
   500 KB/s for SWAP, the processor halted throughout, VIC DMA taking precedence.
   <https://www.zimmers.net/anonftp/pub/cbm/manuals/cmd/1750-CLONE-users-guide.txt>
+
+### User port and WiFi modem
+
+- **_Commodore 64 Programmer's Reference Guide_**: the RS-232 control register baud codes.
+- **Michael Steil, _UP9600: How to Bit-Bang 9600 Baud RS-232 on the C64_**:
+  the user port RS-232 lines.
+  <https://www.pagetable.com/?p=1656>
+- **_Put your C64 online for ten bucks_** (Compute's Gazette, 2026): WiFi modem wiring.
+  <https://www.computesgazette.com/2026/07/28/put-your-c64-online-for-ten-bucks/>
+- **Bo Zimmerman, Zimodem**: the modem command set.
+  <https://github.com/bozimmerman/Zimodem>
+- **Hayes command set**: Wikipedia and the Wikibooks _Serial Programming_ pages.
+  <https://en.wikipedia.org/wiki/Hayes_AT_command_set>  ·
+  <https://en.wikibooks.org/wiki/Serial_Programming/Modems_and_AT_Commands>
+- **RFC 854, 855, 857, 858** (Telnet) and **RFC 6455** (WebSocket).
+  <https://www.rfc-editor.org/>
+- **Rick Parrish, fTelnet**: the relay URL convention.
+  <https://www.ftelnet.ca/>
 
 ### 1541 disk drive
 
@@ -381,6 +400,14 @@ A special thanks goes to the following:
   <https://assembly64.hackerswithstyle.se/assembly/index.html>
 - **OneLoad64**: one-file C64 games collection.
   <https://oneload64.github.io/>
+
+### BBSes and terminal programs
+
+- **Commodore Image BBS**, the board in the User Guide's user port screenshot.
+  <telnet://cib.dyndns.org:6400>
+- **CCGMS Future** by Craig Smith, alwyz and Michael Steil, the terminal
+  program in that screenshot.
+  <https://github.com/mist64/ccgmsterm>
 
 ### AI collaborators
 

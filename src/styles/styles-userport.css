@@ -1,0 +1,174 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2026 Morten Øien Eriksen */
+/* src/styles/styles-userport.css – the User Port card and its device dialog.
+   Part of the styles.css @import manifest — cascade order is set there. */
+
+#userport-card .cp-row {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  margin-bottom: 8px;
+}
+
+/* The device's own panel (a ShadowRoot inside); empty when it has none. */
+.userport-panel:empty {
+  display: none;
+}
+.userport-panel {
+  margin-bottom: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--text);
+}
+
+.userport-status {
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+.userport-status.error {
+  color: var(--accent);
+}
+
+.userport-relay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.userport-relay input {
+  flex: 1;
+  min-width: 0;
+  background: var(--control-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.62rem;
+  padding: 4px 6px;
+}
+
+.userport-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.userport-actions > .btn {
+  min-width: 0;
+  padding: 6px 4px;
+  font-size: 0.62rem;
+}
+
+#userport-card.drop-target {
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+}
+
+/* ── Install and manage dialog ───────────────────────────────────────── */
+.userport-modal-card {
+  width: min(560px, calc(100vw - 32px));
+}
+.userport-modal-body {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--text);
+  line-height: 1.5;
+  margin: 4px 0 18px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.userport-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 12px;
+  margin: 0 0 12px;
+}
+.userport-facts dt {
+  color: var(--dim);
+}
+.userport-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.userport-warning {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--red);
+  border-left-width: 4px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--red) 14%, transparent);
+  color: var(--text);
+}
+.userport-warning strong {
+  color: var(--red);
+  font-size: 0.95rem;
+  letter-spacing: 0.3px;
+}
+.userport-warning p {
+  margin: 0;
+}
+.userport-findings {
+  margin: 0 0 14px;
+}
+.userport-findings p {
+  margin: 0;
+  color: var(--dim);
+}
+.userport-findings ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+.userport-findings li.high {
+  color: var(--red);
+}
+.userport-findings li.medium {
+  color: var(--warn-text);
+}
+.userport-findings small {
+  display: block;
+  color: var(--dim);
+  overflow-wrap: anywhere;
+}
+.userport-consent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  cursor: pointer;
+}
+.userport-consent input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--red);
+}
+.userport-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.userport-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px dashed var(--border);
+}
+.userport-list li:first-child {
+  border-top: none;
+}
+.userport-list .name {
+  flex: 1;
+  min-width: 0;
+}
+.userport-list .name small {
+  display: block;
+  color: var(--dim);
+  overflow-wrap: anywhere;
+}
+.userport-list .btn {
+  padding: 4px 6px;
+  font-size: 0.6rem;
+}

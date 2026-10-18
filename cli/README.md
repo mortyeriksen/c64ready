@@ -78,7 +78,8 @@ c64rdy --version
 | **Programs into containers** | `prg2d64`, `prg2crt`, `prg2tap`, `prg2turbo` |
 | **SID music into player or audio** | `sid2prg`, `sid2wav` |
 | **Questions about a file** | `dir`, `info`, `loadtest`, `loader` |
-| **Boot the machine** | `run` (a PNG of the screen, or an animated one) |
+| **Boot the machine** | `run` (a PNG of the screen, or an animated one), with `--userport` for a user port device |
+| **The app on this computer** | `serve`, with the relay the WiFi modem needs |
 | **A disk's interior** | `disk new`, `disk add`, `disk rm`, `disk extract` |
 
 `c64rdy --help` lists every command and flag.
@@ -145,6 +146,12 @@ rest) are credited in
 
 ### Next version
 
+- **The app on your computer.** `c64rdy serve` runs C64 READY. on
+  `http://localhost:6464` with the relay its WiFi modem needs, cached for
+  offline use. `--device <file.js>` installs a user port device and reloads it
+  on every save.
+- **User port devices in a run.** `run --userport <device.js>` plugs a device
+  into the machine, or `--userport wifi-modem` the built-in modem.
 - **Dumps restored like recordings.** `dmp2tap`, and `dir` on a `.dmp`, now
   rebuild damaged KERNAL copies from the copy that checks out, and rewrite
   sound Turbo Tape 64 blocks at clean widths, as `wav2tap` does. `--no-repair`

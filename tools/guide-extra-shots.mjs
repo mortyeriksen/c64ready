@@ -21,6 +21,11 @@
 //   panel-hide.webp       a side-panel card held over the Hide square — a real
 //                        pointer drag, held open for the shot
 //   panel-restore.webp    the "Show hidden panels" picker the + button opens
+//   user-port-bbs.webp    animated: CCGMS on the built-in WiFi modem calling a
+//                        real C64 BBS (Commodore Image BBS) through the dev
+//                        server's relay, from the dial to its welcome page.
+//                        Needs the 'ccgms' asset, img2webp, the network and the
+//                        BBS answering. GUIDE_BBS=host:port picks another board.
 //
 // Drives the LIVE dev server (start your Vite first). Shots land in public/guide/
 // as 1920-capped WebP (guide-image.mjs).
@@ -28,11 +33,12 @@
 // drive8D64 defaults to the 'raster-time-demo' asset (test/external-assets.json).
 // Set GUIDE_ONLY=update-toast (comma-separated) to regenerate only some shots.
 import { chromium } from 'playwright';
+import { execFileSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { assetPath } from '../test/external-assets.js';
+import { assetPath, missingNote } from '../test/external-assets.js';
 import { saveGuideShot, shotLabel } from './guide-image.mjs';
 import { buildMixtape } from './mixtape.mjs';
 
@@ -342,6 +348,125 @@ if (want('touch-joystick')) {
     await mctx.close();
     done.push('touch-joystick'); console.log('  ✓ touch-joystick (landscape)');
   } catch (e) { skipped.push('touch-joystick'); console.error('  ✗ touch-joystick —', e.message.split('\n')[0]); }
+}
+
+// ── the user port: CCGMS on the WiFi modem, calling a BBS ─────────────────────
+// An animated WebP of a whole call: the dial typed at a person's pace (CCGMS's
+// 2400 baud driver garbles a pasted burst), CONNECT, the board's banner asking
+// for DEL, then its colour welcome page drawing in. Commodore Image BBS answers
+// on three nodes, so a busy line is unlikely. Every wait is on what the screen
+// shows, not on a clock.
+const BBS_STEP = 200;                                    // ms between frames
+const BBS_HOLD = 3000;                                   // the finished welcome, before the loop
+// Runs in the page (Playwright sends the source, so the word is an argument).
+const screenHas = (word) => {
+  const ram = window.machine.mem.ram;
+  let text = '';
+  for (let i = 0x0400; i < 0x07e8; i++) {
+    const c = ram[i] & 0x7f;
+    text += c >= 1 && c <= 26 ? String.fromCharCode(c + 96) : String.fromCharCode(c);
+  }
+  return text.toLowerCase().includes(word);
+};
+if (want('user-port-bbs')) {
+  const ccgms = assetPath('ccgms');
+  const bbs = process.env.GUIDE_BBS || 'cib.dyndns.org:6400';
+  let encoder = true;
+  try { execFileSync('img2webp', ['-version'], { stdio: 'ignore' }); } catch { encoder = false; }
+  if (!ccgms || !encoder) {
+    skipped.push('user-port-bbs');
+    console.log(`  # SKIP user-port-bbs — ${!ccgms ? missingNote('ccgms') : 'img2webp not found (brew install webp)'}`);
+  } else {
+    // At 1x the 384x272 screen is drawn at twice its pixels, crisp and small.
+    const ctx = await browser.newContext({ colorScheme: 'dark',
+      viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 1, reducedMotion: 'reduce',
+    });
+    // ROMs into the browser's cache, as the setup dialog keeps them.
+    const roms = {};
+    for (const [slot, asset] of Object.entries({ kernal: 'kernal', basic: 'basic', charRom: 'chargen' })) {
+      const file = assetPath(asset);
+      if (file) roms[`c64emu.rom.${slot}`] = fs.readFileSync(file).toString('base64');
+    }
+    await ctx.addInitScript((cache) => {
+      try {
+        for (const [key, value] of Object.entries(cache)) localStorage.setItem(key, value);
+        localStorage.setItem('c64emu.installDismissed', '1');
+        localStorage.setItem('c64emu.splashSeen', '1');
+        localStorage.setItem('c64emu.userport', 'on');
+        localStorage.setItem('c64emu.userport.device', 'builtin.wifi-modem');
+      } catch {}
+    }, roms);
+    const page = await bootPage(ctx);
+    const type = async (text, gap = 160) => {
+      for (const ch of text) {
+        await page.evaluate((c) => window.machine.bufferKeyboardText(c), ch);
+        await sleep(gap);
+      }
+    };
+    const frames = fs.mkdtempSync(path.join(os.tmpdir(), 'bbs-frames-'));
+    let capturing = false, n = 0, filming = null;
+    const capture = async () => {
+      const t0 = Date.now();
+      while (capturing) {
+        const wait = n * BBS_STEP - (Date.now() - t0);
+        if (wait > 0) await sleep(wait);
+        await page.locator('#screen').screenshot({ path: path.join(frames, `f${String(n).padStart(4, '0')}.png`) });
+        n++;
+      }
+    };
+    try {
+      await page.evaluate((bytes) => window.machine.loadPRG(new Uint8Array(bytes)), Array.from(fs.readFileSync(ccgms)));
+      await type('RUN\r', 60);
+      await page.waitForFunction(screenHas, 'mode ready', { timeout: 20000, polling: 250 });
+      await sleep(1500);
+      capturing = true;
+      filming = capture();
+      await sleep(1000);
+      await type(`ATDT"${bbs.toUpperCase()}"\r`);
+      await page.waitForFunction(screenHas, 'backspace', { timeout: 45000, polling: 250 });
+      await sleep(1200);
+      await type('\x14');                                // DEL: the board's colour-graphics question
+      // The welcome scrolls away within seconds, so the machine is held still a
+      // few frames after its last line and the colour bar under it are drawn.
+      await page.evaluate(() => {
+        const m = window.machine;
+        const run = m.runFrame.bind(m);
+        let after = -1;
+        m.runFrame = () => {
+          if (after === 0) return;
+          run();
+          if (after > 0) after--;
+          else {
+            let text = '';
+            for (let i = 0x0400; i < 0x07e8; i++) {
+              const c = m.mem.ram[i] & 0x7f;
+              text += c >= 1 && c <= 26 ? String.fromCharCode(c + 96) : String.fromCharCode(c);
+            }
+            if (text.includes('Graphics!')) after = 9;
+          }
+          window.__welcomeHeld = after === 0;
+        };
+      });
+      await page.waitForFunction(() => window.__welcomeHeld === true, null, { timeout: 60000, polling: 100 });
+      await sleep(400);
+      capturing = false;
+      await filming;
+      const files = fs.readdirSync(frames).filter((f) => f.endsWith('.png')).sort().map((f) => path.join(frames, f));
+      const out = path.join(OUT, 'user-port-bbs.webp');
+      execFileSync('img2webp', ['-loop', '0', '-lossy', '-q', '85', '-m', '6',
+        '-d', String(BBS_STEP), ...files.slice(0, -1), '-d', String(BBS_HOLD), files[files.length - 1], '-o', out], { stdio: 'ignore' });
+      done.push('user-port-bbs');
+      console.log(`  ✓ user-port-bbs (${bbs}, ${files.length} frames, ${(fs.statSync(out).size / 1024).toFixed(0)} KiB)`);
+    } catch (e) {
+      capturing = false;
+      await filming?.catch(() => {});
+      skipped.push('user-port-bbs');
+      const status = await page.textContent('#userport-status').catch(() => '?');
+      console.error('  ✗ user-port-bbs —', e.message.split('\n')[0], `(user port: ${status})`);
+    }
+    fs.rmSync(frames, { recursive: true, force: true });
+    await ctx.close();
+  }
 }
 
 await browser.close();

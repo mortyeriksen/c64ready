@@ -29,7 +29,7 @@ read the same files, and many people will want both.
 ## In short
 
 **Pick VICE** when you need NTSC, a C128, VIC-20, PET or Plus/4, a
-machine-language monitor and debugger, warp speed, a printer, RS-232, IDE64
+machine-language monitor and debugger, warp speed, a printer, RS-232 beyond a modem, IDE64
 or network cartridge, a less common cartridge type, or three decades of proven
 compatibility.
 
@@ -60,7 +60,7 @@ release notes. The C64 READY. column comes from the
 | CIA chips | 6526 or 6526A, per CIA | One generic 6526 |
 | 1541 drive | True drive emulation | True drive emulation |
 | How it is checked | Thirty years of real-world use, and the VICE test programs, which are maintained alongside it | The VICE test programs, comparison with headless `x64sc`, and a suite of labelled unit tests. Remaining differences are listed in [Component status](COMPONENT-STATUS.md) |
-| Known gaps for the C64 | Few, tracked in the VICE bug tracker | NTSC, user-port devices, printers, modems, and cartridge types beyond the families it supports, listed in [Known issues](KNOWN-ISSUES.md) |
+| Known gaps for the C64 | Few, tracked in the VICE bug tracker | NTSC, printers, UP9600, ACIA modem cartridges, and cartridge types beyond the families it supports, listed in [Known issues](KNOWN-ISSUES.md) |
 
 ### Portability and installation
 
@@ -124,9 +124,9 @@ release notes. The C64 READY. column comes from the
 | Touch screens | No | An on-screen stick and the device's own keyboard |
 | Mice | 1351, NEOS, Amiga, Atari ST, CX22 trackball, SmartMouse, Micromys | 1351 and NEOS |
 | Paddles, light pens and guns | Paddles, KoalaPad, several light pens and light guns | Paddles driven by the mouse. The light-pen line is wired, with no pointer device for it |
-| User port | RS-232, joystick adapters, DigiMAX and more | No |
+| User port | RS-232, joystick adapters, DigiMAX and more | A WiFi modem, and devices you write and install yourself |
 | Printers | MPS-801, 802 and 803, the 1520 plotter and others, to text or picture files | No |
-| RS-232 and modems | RS-232 on the user port or an ACIA cartridge such as Swiftlink, linked to a serial port, a file or a network socket. A modem means a real one or the external tcpser tool | No |
+| RS-232 and modems | RS-232 on the user port or an ACIA cartridge such as Swiftlink, linked to a serial port, a file or a network socket. A modem means a real one or the external tcpser tool | RS-232 on the user port with a built-in Hayes modem, through a WebSocket relay |
 
 ### Display and sound
 

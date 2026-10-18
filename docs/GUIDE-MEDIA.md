@@ -281,6 +281,66 @@ that combination needs a port expander. Two limits:
 
 ---
 
+## User Port
+
+The edge connector at the back of the C64, for modems, printers and home-made
+boards. The card holds one device at a time: pick it from the dropdown, then
+switch the card on (or click its header) to plug it in.
+
+### WiFi modem
+
+A Hayes modem with the Zimodem command set, wired like the user port WiFi
+modems sold for the C64. Its lights show carrier (CD), receive (RX) and
+transmit (TX).
+
+| Command | What it does |
+| --- | --- |
+| `ATDT"host:port"` | Dials a BBS over Telnet. `ATD"host:port"` connects raw. |
+| `+++` | Back to command mode, with a second's pause either side. `ATO` returns. |
+| `ATH` | Hangs up. |
+| `ATB2400` | Sets the speed. Otherwise it follows the terminal, 300 to 2400 baud. |
+| `ATP"5551212=host:port"` | Stores a number for programs that dial digits. |
+| `AT&V` / `AT&W` | Shows the settings / saves them. |
+
+A web page cannot open internet connections, so the modem goes through a
+relay: run the app with `c64rdy serve`, or enter one under **Relay**.
+`ATD"echo"` connects to a loopback, for trying it without a network.
+
+### Calling a BBS
+
+![An animation of a call: CCGMS dials Commodore Image BBS through the WiFi modem, the board asks for colour graphics, shows its logo art, then draws its colour welcome page.](/guide/user-port-bbs.webp)
+
+1. Start the app with `c64rdy serve` and switch the User Port on.
+2. Load a terminal program such as CCGMS. Its defaults suit the modem.
+3. Click the C64 screen and type `ATDT"cib.dyndns.org:6400"`. What you type
+   shows as the modem echoes it.
+4. If the BBS asks for DEL, press DEL for colour graphics.
+5. To hang up: pause, `+++`, pause, `ATH`.
+
+Boards to call: the [Commodore BBS Outpost](https://www.commodorebbs.com/) for
+Commodore boards, the [Telnet BBS Guide](https://www.telnetbbsguide.com/) for
+all kinds.
+
+### Installing devices
+
+| Button | What it does |
+| --- | --- |
+| **INSTALL…** | Installs a device from a `.js` file. Dropping one on the card does the same. |
+| **FROM URL…** | Installs a device from a web address. |
+| **MANAGE** | Exports or removes installed devices. Built-ins can be exported as a starting point. |
+
+A device runs inside the app with no sandbox, so the install dialog warns first,
+lists anything risky it finds in the code (sending data, reading your storage,
+logging keys and the like), and keeps **INSTALL** off until you tick that you
+trust it. Finding nothing is not a guarantee.
+[Writing a user port device](USERPORT-DEVICES.md) shows how to make one, with
+an LED board to try.
+
+While a device is plugged in, **📋 PASTE** types about 12 characters a second,
+so terminal programs keep up. Device state travels with save states.
+
+---
+
 ## Datasette
 
 ![Animation of the Datasette card loading the Commando tape: PLAY latched, the motor dot lit green, the bar and timer climbing.](/guide/datasette-loading.webp)
