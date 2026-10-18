@@ -22,10 +22,10 @@
 //                        pointer drag, held open for the shot
 //   panel-restore.webp    the "Show hidden panels" picker the + button opens
 //   user-port-bbs.webp    animated: CCGMS on the built-in WiFi modem calling a
-//                        real C64 BBS (Commodore Image BBS) through the dev
-//                        server's relay, from the dial to its welcome page.
-//                        Needs the 'ccgms' asset, img2webp, the network and the
-//                        BBS answering. GUIDE_BBS=host:port picks another board.
+//                        real C64 BBS (The Oasis BBS) through the dev server's
+//                        relay, from the dial to its title screen. Needs the
+//                        'ccgms' asset, img2webp, the network and the BBS's one
+//                        line free. GUIDE_BBS=host:port picks another board.
 //
 // Drives the LIVE dev server (start your Vite first). Shots land in public/guide/
 // as 1920-capped WebP (guide-image.mjs).
@@ -351,13 +351,18 @@ if (want('touch-joystick')) {
 }
 
 // ── the user port: CCGMS on the WiFi modem, calling a BBS ─────────────────────
-// An animated WebP of a whole call: the dial typed at a person's pace (CCGMS's
-// 2400 baud driver garbles a pasted burst), CONNECT, the board's banner asking
-// for DEL, then its colour welcome page drawing in. Commodore Image BBS answers
-// on three nodes, so a busy line is unlikely. Every wait is on what the screen
-// shows, not on a clock.
+// An animated WebP of a whole call at 9600 baud, CCGMS set to its UP9600 driver
+// first: the dial typed at a person's pace, CONNECT, the board asking for
+// RETURN and whether the terminal shows Commodore graphics, then its title
+// screen drawing in. The Oasis is a real C64 on one line, so a call fails while
+// someone else is on, or for a few minutes after a call while it resets. The film ends as the title's "press any key" shows,
+// or once the screen has been still for BBS_STILL.
 const BBS_STEP = 200;                                    // ms between frames
-const BBS_HOLD = 3000;                                   // the finished welcome, before the loop
+const BBS_HOLD = 3000;                                   // the finished title, before the loop
+const BBS_STILL = 3000;
+// Prompt, then the key. Keys go into the keyboard buffer as PETSCII, where
+// unshifted letters are ASCII capitals.
+const BBS_ANSWERS = [['hit return', '\r'], ['(y/n)', 'Y']];
 // Runs in the page (Playwright sends the source, so the word is an argument).
 const screenHas = (word) => {
   const ram = window.machine.mem.ram;
@@ -370,7 +375,7 @@ const screenHas = (word) => {
 };
 if (want('user-port-bbs')) {
   const ccgms = assetPath('ccgms');
-  const bbs = process.env.GUIDE_BBS || 'cib.dyndns.org:6400';
+  const bbs = process.env.GUIDE_BBS || 'oasisbbs.hopto.org:6400';
   let encoder = true;
   try { execFileSync('img2webp', ['-version'], { stdio: 'ignore' }); } catch { encoder = false; }
   if (!ccgms || !encoder) {
@@ -419,39 +424,47 @@ if (want('user-port-bbs')) {
       await type('RUN\r', 60);
       await page.waitForFunction(screenHas, 'mode ready', { timeout: 20000, polling: 250 });
       await sleep(1500);
+      // F7 opens the parameters: M steps the modem type, B the baud rate.
+      await type('\x88', 400);
+      for (const [key, want] of [['M', 'up9600'], ['B', 'rate   - 9600']]) {
+        for (let i = 0; i < 8 && !(await page.evaluate(screenHas, want)); i++) await type(key, 500);
+        if (!(await page.evaluate(screenHas, want))) throw new Error(`CCGMS setting not found: ${want}`);
+      }
+      await type('\r', 400);
+      await page.waitForFunction(screenHas, 'mode ready', { timeout: 20000, polling: 250 });
+      await sleep(1000);
       capturing = true;
       filming = capture();
       await sleep(1000);
       await type(`ATDT"${bbs.toUpperCase()}"\r`);
-      await page.waitForFunction(screenHas, 'backspace', { timeout: 45000, polling: 250 });
-      await sleep(1200);
-      await type('\x14');                                // DEL: the board's colour-graphics question
-      // The welcome scrolls away within seconds, so the machine is held still a
-      // few frames after its last line and the colour bar under it are drawn.
-      await page.evaluate(() => {
+      for (const [prompt, key] of BBS_ANSWERS) {
+        await page.waitForFunction(screenHas, prompt, { timeout: 45000, polling: 250 });
+        await sleep(1200);
+        await type(key);
+      }
+      // Screen and colour RAM, sampled until they stop changing.
+      const look = () => page.evaluate(() => {
         const m = window.machine;
-        const run = m.runFrame.bind(m);
-        let after = -1;
-        m.runFrame = () => {
-          if (after === 0) return;
-          run();
-          if (after > 0) after--;
-          else {
-            let text = '';
-            for (let i = 0x0400; i < 0x07e8; i++) {
-              const c = m.mem.ram[i] & 0x7f;
-              text += c >= 1 && c <= 26 ? String.fromCharCode(c + 96) : String.fromCharCode(c);
-            }
-            if (text.includes('Graphics!')) after = 9;
-          }
-          window.__welcomeHeld = after === 0;
-        };
+        let h = 0;
+        for (let i = 0x0400; i < 0x07e8; i++) h = (h * 31 + m.mem.ram[i]) | 0;
+        for (let i = 0; i < 1000; i++) h = (h * 31 + m.mem.colorRam[i]) | 0;
+        return h;
       });
-      await page.waitForFunction(() => window.__welcomeHeld === true, null, { timeout: 60000, polling: 100 });
-      await sleep(400);
+      let last = await look(), lastFrame = n, changedAt = Date.now(), drawn = false;
+      const end = Date.now() + 90000;
+      let titleAt = 0;
+      while (Date.now() < end && !(drawn && Date.now() - changedAt > BBS_STILL)) {
+        await sleep(250);
+        const h = await look();
+        if (h !== last) { last = h; lastFrame = n; changedAt = Date.now(); drawn = true; }
+        if (!titleAt && await page.evaluate(screenHas, 'press any key')) titleAt = Date.now();
+        if (titleAt && Date.now() - titleAt > 500) { lastFrame = n; break; }
+      }
+      if (!drawn) throw new Error('nothing came after the last answer');
       capturing = false;
       await filming;
-      const files = fs.readdirSync(frames).filter((f) => f.endsWith('.png')).sort().map((f) => path.join(frames, f));
+      const files = fs.readdirSync(frames).filter((f) => f.endsWith('.png')).sort()
+        .slice(0, lastFrame + 2).map((f) => path.join(frames, f));
       const out = path.join(OUT, 'user-port-bbs.webp');
       execFileSync('img2webp', ['-loop', '0', '-lossy', '-q', '85', '-m', '6',
         '-d', String(BBS_STEP), ...files.slice(0, -1), '-d', String(BBS_HOLD), files[files.length - 1], '-o', out], { stdio: 'ignore' });
@@ -463,6 +476,16 @@ if (want('user-port-bbs')) {
       skipped.push('user-port-bbs');
       const status = await page.textContent('#userport-status').catch(() => '?');
       console.error('  ✗ user-port-bbs —', e.message.split('\n')[0], `(user port: ${status})`);
+      const shown = await page.evaluate(() => {
+        const ram = window.machine.mem.ram, rows = [];
+        for (let r = 0; r < 25; r++) {
+          let line = '';
+          for (let c = 0; c < 40; c++) { const v = ram[0x0400 + r * 40 + c] & 0x7f; line += v >= 1 && v <= 26 ? String.fromCharCode(v + 96) : String.fromCharCode(v); }
+          if (line.trim()) rows.push(`    ${line.trimEnd()}`);
+        }
+        return rows.slice(-8).join('\n');
+      }).catch(() => '');
+      if (shown) console.error(shown);
     }
     fs.rmSync(frames, { recursive: true, force: true });
     await ctx.close();

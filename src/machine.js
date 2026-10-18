@@ -1377,10 +1377,14 @@ export class C64Machine {
   // device API in userport.js. Replaces any device already plugged in.
   attachUserport(id, factory, version = null) {
     if (this.userport === null) {
-      const up = new UserPort(this.cia2, CYCLES_PER_SECOND_PAL);
+      const up = new UserPort(this.cia2, CYCLES_PER_SECOND_PAL, this.cia1);
       this.cia2.readPortB = () => up.readPortB();
       this.cia2.writePortB = () => up.portBChanged();
+      this.cia2.pbTimerChanged = () => up.portBChanged();
       this.cia2.pcStrobe = () => up.pcStrobe();
+      const serial = () => up.serialChanged();
+      this.cia1.serialPinsChanged = serial;
+      this.cia2.serialPinsChanged = serial;
       this.userport = up;
     }
     return this.userport.plug(id, factory, version);
@@ -1392,7 +1396,10 @@ export class C64Machine {
     this.userport = null;
     this.cia2.readPortB = null;
     this.cia2.writePortB = null;
+    this.cia2.pbTimerChanged = null;
     this.cia2.pcStrobe = null;
+    this.cia1.serialPinsChanged = null;
+    this.cia2.serialPinsChanged = null;
   }
 
   detachReu() {

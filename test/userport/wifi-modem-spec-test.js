@@ -36,12 +36,13 @@ function memStore() {
 
 function harness({ storage = memStore(), noNet = false } = {}) {
   let clock = 0, wake = Infinity;
-  let pb = 0xFF, devPB = 0xFF, pa2 = 1;
+  let pb = 0xFF, devPB = 0xFF, pa2 = 1, sp1 = 1, devSerial = 0x0F;
   const rxEdges = [];
+  const serialLog = [];
   const flagEdges = [];
   const sockets = [];
   const port = {
-    apiVersion: 1, cyclesPerSecond: CPS,
+    apiVersion: 2, cyclesPerSecond: CPS,
     now: () => clock,
     drivePB(mask, levels) {
       const nv = (~mask | levels) & 0xFF;
@@ -53,6 +54,12 @@ function harness({ storage = memStore(), noNet = false } = {}) {
     cancelWake() { wake = Infinity; },
     c64PB: () => pb,
     c64PA2: () => pa2,
+    driveSerial(mask, levels) {
+      const nv = (~mask | levels) & 0x0F;
+      if (nv !== devSerial) serialLog.push([clock, nv]);
+      devSerial = nv;
+    },
+    c64Serial: () => 0x0E | sp1,
   };
   const host = {
     storage,
@@ -70,8 +77,9 @@ function harness({ storage = memStore(), noNet = false } = {}) {
   };
   let decodedTo = 0;
   return {
-    dev, sockets, rxEdges, flagEdges,
+    dev, sockets, rxEdges, flagEdges, serialLog,
     get devPB() { return devPB; },
+    get devSerial() { return devSerial; },
     setPB(v) { pb = v; dev.onPortB(v); },
     idle(seconds) { advanceTo(clock + Math.round(seconds * CPS)); },
     // One 8N1 frame from the C64 on PA2, at `baud`.
@@ -85,6 +93,22 @@ function harness({ storage = memStore(), noNet = false } = {}) {
         if (levels[k] !== pa2) { pa2 = levels[k]; dev.onPA2(pa2); }
       }
       advanceTo(Math.round(start + 10 * bit) + 1);
+    },
+    // A byte the way the UP9600 driver sends it through CIA1's shift register
+    // on SP1, with PA2 held high: two SDR bytes, MSB first, two Timer A
+    // underflows per bit (`halfBit` cycles each).
+    sendUp9600(byte, halfBit = 52) {
+      let rev = 0;
+      for (let i = 0; i < 8; i++) rev |= ((byte >> i) & 1) << (7 - i);
+      const first = rev >> 1, second = ((rev & 1) << 7) | 0x7F;
+      const bits = [];
+      for (const b of [first, second]) for (let i = 7; i >= 0; i--) bits.push((b >> i) & 1);
+      const start = clock;
+      bits.forEach((level, k) => {
+        advanceTo(Math.round(start + (2 * k + 1) * halfBit));
+        if (level !== sp1) { sp1 = level; dev.onSerial(0x0E | sp1); }
+      });
+      advanceTo(Math.round(start + 33 * halfBit));
     },
     send(text, baud = 1200) {
       for (const ch of text) this.sendByte(typeof ch === 'number' ? ch : ch.charCodeAt(0), baud);
@@ -443,8 +467,47 @@ function connected(h, cmd = 'ATD"bbs.example:6400"\r') {
 {
   const src = fs.readFileSync(new URL('../../src/userport/devices/wifi-modem.js', import.meta.url), 'utf8');
   expect(!/^\s*import\s/m.test(src) && !/\bimport\s*\(/.test(src), 'no imports: one file, like any installed device');
-  expect(meta.apiVersion === 1 && meta.id === 'builtin.wifi-modem', 'meta names API version 1');
+  expect(meta.apiVersion === 2 && meta.id === 'builtin.wifi-modem', 'meta names API version 2');
   ok('the modem is a single self-contained plugin file');
+}
+
+// ── UP9600: the bridges for 9600 baud through the CIA shift registers ──────
+// SP1 is wired to TXD with PA2, RXD to SP2 (and FLAG2), PB7 to CNT2.
+{
+  const storage = memStore();
+  storage.set('settings', { baud: 9600 });
+  const h = harness({ storage });
+  for (const ch of 'AT\r') h.sendUp9600(ch.charCodeAt(0));
+  const got = h.received(9600);
+  expect(got === `AT\r${CRLF}OK${CRLF}`, `a command sent through SP1 at 9600, got ${show(got)}`);
+  ok('UP9600: the modem reads what CIA1 shifts out on SP1');
+}
+
+{
+  const h = harness();
+  for (const ch of 'AT\r') h.sendUp9600(ch.charCodeAt(0));
+  const got = h.received(9600);
+  expect(h.dev.state.baud === 9600, `autobaud on the UP9600 "A" picks 9600: ${h.dev.state.baud}`);
+  expect(got === `AT\r${CRLF}OK${CRLF}`, `and answers at 9600, got ${show(got)}`);
+  ok('UP9600: autobaud finds 9600 from the first A');
+}
+
+{
+  const h = harness();
+  h.send('AT\r');
+  h.received();
+  const sp2At = (t) => {
+    let l = 1;
+    for (const [c, v] of h.serialLog) { if (c > t) break; l = (v >> 2) & 1; }
+    return l;
+  };
+  const off = h.rxEdges.filter(([c, v]) => sp2At(c) !== v).length;
+  expect(h.rxEdges.length > 0 && off === 0, `SP2 follows RXD: ${off} of ${h.rxEdges.length} edges differ`);
+  h.setPB(0x7F);
+  expect((h.devSerial & 0x08) === 0, 'PB7 low takes CNT2 low');
+  h.setPB(0xFF);
+  expect((h.devSerial & 0x08) === 0x08, 'PB7 high takes CNT2 high');
+  ok('UP9600: RXD reaches SP2, and CNT2 follows PB7');
 }
 
 console.log(failing ? `\n${failing} of ${testNo} FAILED` : `\nall ${testNo} passed`);

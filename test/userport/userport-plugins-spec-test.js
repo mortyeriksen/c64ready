@@ -40,7 +40,8 @@ const withMeta = (patch) => ({ ...good, meta: { ...good.meta, ...patch } });
 }
 
 {
-  expect(throwsWith(() => validateDeviceModule(withMeta({ apiVersion: 2 })), /not supported/), 'apiVersion 2 refused');
+  expect(validateDeviceModule(withMeta({ apiVersion: 2 })).apiVersion === 2, 'apiVersion 2 accepted');
+  expect(throwsWith(() => validateDeviceModule(withMeta({ apiVersion: 3 })), /not supported/), 'apiVersion 3 refused');
   expect(throwsWith(() => validateDeviceModule(withMeta({ apiVersion: undefined })), /not supported/), 'no apiVersion refused');
   ok('only supported API versions are accepted');
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
-// Types for C64 READY. user port devices, API version 1.
+// Types for C64 READY. user port devices, API version 2 (version 1 devices still run).
 // See https://c64ready.com/docs/userport-devices.html
 
 /** TTL level at a pin: 1 is high, 0 is low. */
@@ -11,14 +11,14 @@ export interface DeviceMeta {
   id: string;
   name: string;
   version: string;
-  apiVersion: 1;
+  apiVersion: 1 | 2;
   author?: string;
   description?: string;
 }
 
 /** The connector, in emulated time. */
 export interface UserPort {
-  readonly apiVersion: 1;
+  readonly apiVersion: 2;
   /** 985248, the PAL clock. */
   readonly cyclesPerSecond: number;
   /** The current machine cycle. */
@@ -30,10 +30,14 @@ export interface UserPort {
   /** Call `onTimer` at `cycle`. One timer, a new call replaces it. */
   wakeAt(cycle: number): void;
   cancelWake(): void;
-  /** PB0-PB7 as the C64 drives them (inputs read high). */
+  /** PB0-PB7 as the C64 drives them (inputs read high), PB6/PB7 timer outputs included. */
   c64PB(): number;
   /** PA2 as the C64 drives it. */
   c64PA2(): Level;
+  /** API 2. Drive the serial lines in `mask` (SP1 1, CNT1 2, SP2 4, CNT2 8) to `levels`, release the others. */
+  driveSerial(mask: number, levels: number): void;
+  /** API 2. SP1, CNT1, SP2, CNT2 as the CIAs drive them (inputs read high). */
+  c64Serial(): number;
 }
 
 export interface Socket {
@@ -65,6 +69,8 @@ export interface Host {
 export interface Device {
   onPortB?(levels: number): void;
   onPA2?(level: Level): void;
+  /** API 2. The CIAs changed what they drive on SP1, CNT1, SP2 or CNT2. */
+  onSerial?(lines: number): void;
   onPC2?(): void;
   onTimer?(cycle: number): void;
   reset?(): void;

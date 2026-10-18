@@ -41,8 +41,6 @@ tests. See the [VIC-II architecture](VIC2-ARCHITECTURE.md#fetch-fed-graphics).
 - **The WiFi modem needs a relay** to reach the internet. `c64rdy serve`
   provides one. A relay on your own computer used from the public site is
   blocked by Safari, and Chrome asks for permission first.
-- **UP9600** (9600 baud on the user port) is not supported: the CIA serial
-  pins it needs are not modelled.
 
 ## Unmodelled hardware quirks
 
@@ -54,9 +52,6 @@ software:
   6569 (not the 8565) is not reproduced. No known demo depends on it.
 - **C64C glue-logic glitches**: two variant-specific banking glitches exist in
   the code but are off by default, because real chips are unstable about them.
-- **CIA serial port, physical pins**: the serial register works as software uses
-  it, but the physical SP/CNT pins carry no data. That only matters for
-  user-port hardware, which is not emulated either.
 
 ## File formats
 

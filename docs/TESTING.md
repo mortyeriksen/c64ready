@@ -225,6 +225,20 @@ The PAL screenshot is 384×272, the same crop as our `frameBuffer`, so pixels al
 3. Build the **same** trace headlessly from our emulator: drive `machine._runMasterCycle()` in a loop (19656 cycles = one PAL frame) and record `(cpu.pc, vic2.raster, vic2.cycleInLine − 1)` at each `cpu.atInstructionBoundary()`. Boot with about 200 warm-up frames before `loadPRG` + `injectRun`, or KERNAL init clobbers the injected RUN.
 4. Diff by **PC**, not by time; the instruction stream is identical. A divergent `CYC` for the same PC points straight at the cycle where our timing differs. A `CYC` *gap* on one side is a CPU stall (bad-line or sprite-DMA BA) that the other side doesn't have.
 
+### CIA testprogs
+
+`test/cia-testprog-sweep.mjs` runs every old-6526 PAL program that VICE's
+`testbench/c64-testlist.in` lists under `CIA/` and `interrupts/`, plus
+Lorenz's CIA programs. It reads each verdict from the debug cartridge (`$D7FF`)
+and records the cycle it came on and a hash of the screen. Save a run before a
+CIA change and compare after it: any change in verdict, cycle or screen is
+listed.
+
+```bash
+node test/cia-testprog-sweep.mjs --out=investigation/cia-before.json
+node test/cia-testprog-sweep.mjs --baseline=investigation/cia-before.json
+```
+
 ### RAM Expansion (REU) testprogs
 
 The VICE testprogs `REU/` directory is the oracle. Those programs are

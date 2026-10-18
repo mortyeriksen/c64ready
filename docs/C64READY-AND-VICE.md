@@ -60,7 +60,7 @@ release notes. The C64 READY. column comes from the
 | CIA chips | 6526 or 6526A, per CIA | One generic 6526 |
 | 1541 drive | True drive emulation | True drive emulation |
 | How it is checked | Thirty years of real-world use, and the VICE test programs, which are maintained alongside it | The VICE test programs, comparison with headless `x64sc`, and a suite of labelled unit tests. Remaining differences are listed in [Component status](COMPONENT-STATUS.md) |
-| Known gaps for the C64 | Few, tracked in the VICE bug tracker | NTSC, printers, UP9600, ACIA modem cartridges, and cartridge types beyond the families it supports, listed in [Known issues](KNOWN-ISSUES.md) |
+| Known gaps for the C64 | Few, tracked in the VICE bug tracker | NTSC, printers, ACIA modem cartridges, and cartridge types beyond the families it supports, listed in [Known issues](KNOWN-ISSUES.md) |
 
 ### Portability and installation
 

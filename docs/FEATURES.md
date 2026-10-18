@@ -232,7 +232,7 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   through RESET and through loading new media, and travels with save states.
   Nothing is fitted until you switch it on.
 - **User port**: one device at a time. A built-in WiFi modem (Zimodem
-  commands, 300 to 2400 baud, Telnet), and your own devices from a `.js` file
+  commands, 300 to 2400 baud and 9600 with UP9600, Telnet), and your own devices from a `.js` file
   or a web address ([Writing a user port device](USERPORT-DEVICES.md)).
 
 ## Video & display

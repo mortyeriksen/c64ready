@@ -183,6 +183,14 @@
    ],
    "link": "https://github.com/libsidplayfp/VICE-testprogs"
   },
+  "vice-testprogs-dir": {
+   "description": "VICE-testprogs root \u2014 cia-testprog-sweep.mjs runs the CIA and interrupt programs from testbench/c64-testlist.in (GPL-2)",
+   "env": "C64_VICE_TESTPROGS_DIR",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/vice-emu-code-r46094-testprogs"
+   ],
+   "link": "https://github.com/libsidplayfp/VICE-testprogs"
+  },
   "blureu-image": {
    "description": "blu.reu \u2014 the 16 MB expansion image BluREU/Crest ships; reudetect needs it to pass",
    "env": "C64_BLUREU_IMAGE",

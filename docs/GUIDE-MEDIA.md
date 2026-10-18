@@ -290,15 +290,15 @@ switch the card on (or click its header) to plug it in.
 ### WiFi modem
 
 A Hayes modem with the Zimodem command set, wired like the user port WiFi
-modems sold for the C64. Its lights show carrier (CD), receive (RX) and
-transmit (TX).
+modems sold for the C64, including the UP9600 bridges for 9600 baud. Its
+lights show carrier (CD), receive (RX) and transmit (TX).
 
 | Command | What it does |
 | --- | --- |
 | `ATDT"host:port"` | Dials a BBS over Telnet. `ATD"host:port"` connects raw. |
 | `+++` | Back to command mode, with a second's pause either side. `ATO` returns. |
 | `ATH` | Hangs up. |
-| `ATB2400` | Sets the speed. Otherwise it follows the terminal, 300 to 2400 baud. |
+| `ATB9600` | Sets the speed. Otherwise it follows the terminal: 300 to 2400 baud, or 9600 with a UP9600 driver. |
 | `ATP"5551212=host:port"` | Stores a number for programs that dial digits. |
 | `AT&V` / `AT&W` | Shows the settings / saves them. |
 
@@ -308,13 +308,17 @@ relay: run the app with `c64rdy serve`, or enter one under **Relay**.
 
 ### Calling a BBS
 
-![An animation of a call: CCGMS dials Commodore Image BBS through the WiFi modem, the board asks for colour graphics, shows its logo art, then draws its colour welcome page.](/guide/user-port-bbs.webp)
+![An animation of a call at 9600 baud: CCGMS dials The Oasis BBS through the WiFi modem, the board asks for RETURN and whether the terminal shows Commodore graphics, then draws its palm tree title screen.](/guide/user-port-bbs.webp)
 
 1. Start the app with `c64rdy serve` and switch the User Port on.
-2. Load a terminal program such as CCGMS. Its defaults suit the modem.
-3. Click the C64 screen and type `ATDT"cib.dyndns.org:6400"`. What you type
-   shows as the modem echoes it.
-4. If the BBS asks for DEL, press DEL for colour graphics.
+2. Load a terminal program such as CCGMS. Its defaults suit the modem. For
+   9600 baud, press F7, then M until the modem type is UP9600 and B until the
+   baud rate is 9600.
+3. Click the C64 screen and type `ATDT"oasisbbs.hopto.org:6400"` to call
+   [The Oasis BBS](https://theoasisbbs.com/), a Color 64 board on a real C64.
+   What you type shows as the modem echoes it.
+4. Press RETURN when it asks, then Y for Commodore graphics. Other boards may
+   ask for DEL instead.
 5. To hang up: pause, `+++`, pause, `ATH`.
 
 Boards to call: the [Commodore BBS Outpost](https://www.commodorebbs.com/) for

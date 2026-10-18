@@ -126,6 +126,10 @@ export class CIA {
     // PC strobe: called on every CPU read or write of port B (never on a peek).
     // The pin goes low for the cycle after the access (6526 datasheet, PC).
     this.pcStrobe = null;
+    // Called when the levels the CIA drives on SP/CNT (serialPins()) or on
+    // PB6/PB7 as timer outputs change. The user port listens to them.
+    this.serialPinsChanged = null;
+    this.pbTimerChanged = null;
 
     // CIA1 keyboard matrix: matrix[col] is a byte; bit = 0 means key pressed
     this.matrix = new Uint8Array(8).fill(0xFF);
@@ -147,12 +151,29 @@ export class CIA {
     this._cntRising = false;
 
     // SDR output-mode shift state (CRA bit 6 = 1).
-    // Real hw: a write to SDR primes the internal shift register; each Timer A
-    // underflow toggles CNT, and 16 underflows (= 8 bits) later the SP IRQ
-    // (ICR bit 3) fires. We don't model the SP/CNT pins, only the count + IRQ.
+    // A write to SDR primes the shift register; each Timer A underflow toggles
+    // CNT, a falling CNT puts the next bit (MSB first) on SP, and 16 underflows
+    // (= 8 bits) later the SP IRQ (ICR bit 3) fires.
     this._sdrShifting = false;
     this._sdrCount = 0;
     this._sdrPending = false;  // SDR write queued during an active shift
+    this._srOut = 0;           // bits still to go out
+    this._spOut = 1;           // SP and CNT levels driven in output mode
+    this._cntOut = 1;
+    // Input mode (CRA bit 6 = 0): SP is shifted in on each rising CNT edge.
+    this._spLevel = 1;         // SP pin, as driven from outside
+    this._srIn = 0;
+    this._srInBits = 0;
+    this._serialLast = 3;      // last reported serialPins()
+
+    // Timer outputs on PB6/PB7 (CRA/CRB bit 1). _pbPulse holds 0x40/0x80 for
+    // the one cycle of an underflow; the toggle flip-flops invert on every
+    // underflow and are set by a START rising edge. _pbTimerLast is the last
+    // reported (enabled << 8 | levels), 0 while neither output is on.
+    this._pbPulse = 0;
+    this._pbToggleA = false;
+    this._pbToggleB = false;
+    this._pbTimerLast = 0;
 
     // CRA/CRB LOAD+START write→count latency. Counter set when the LOAD
     // strobe is written while START is set; cia.clock decrements it instead
@@ -304,6 +325,8 @@ export class CIA {
     // start — edge detection is per-clock on real silicon, not a sticky latch.
     const cntRising = this._cntRising;
     this._cntRising = false;
+    if (cntRising && (cra & 0x40) === 0) this._shiftIn();
+    if (this._pbPulse !== 0) this._pbPulse = 0;
 
     // Timer work only runs when a timer is started (or finishing a delayed
     // stop); the latch logic above and the _irNextPending recompute below run
@@ -339,6 +362,8 @@ export class CIA {
             this._raiseIcr(0x01);
             aUnderflow = true;
             anyUnderflow = true;
+            this._pbPulse |= 0x40;
+            this._pbToggleA = !this._pbToggleA;
             if (cra & 0x08) this.cra = cra & ~0x01; // one-shot
           } else {
             this.timerA = (this.timerA - 1) & 0xFFFF;
@@ -348,18 +373,10 @@ export class CIA {
         if (this._craStopPending) this._craStopPending = 0;
       }
 
-      // SDR output: each Timer A underflow shifts a half-bit on CNT. 16
-      // underflows = 8 bits => SP IRQ (ICR bit 3). Only counts when shifting
-      // has been armed by an SDR write while in output mode.
-      if (aUnderflow && this._sdrShifting && (cra & 0x40)) {
-        this._sdrCount++;
-        if (this._sdrCount >= 16) {
-          this._sdrCount = 0;
-          this._raiseIcr(0x08);
-          if (this._sdrPending) this._sdrPending = false; // re-arm: keep shifting
-          else                   this._sdrShifting = false;
-        }
-      }
+      // SDR output: each Timer A underflow is a CNT half-bit. 16 underflows =
+      // 8 bits => SP IRQ (ICR bit 3). Only counts when shifting has been armed
+      // by an SDR write while in output mode.
+      if (aUnderflow && this._sdrShifting && (cra & 0x40)) this._shiftOut();
 
       // Timer B count modes:
       // 00 = PHI2
@@ -389,6 +406,8 @@ export class CIA {
           if (this.timerB === 0) {
             this.timerB = this.latchB; // latch 0 => period 1 (see Timer A)
             this._raiseIcr(0x02);
+            this._pbPulse |= 0x80;
+            this._pbToggleB = !this._pbToggleB;
             if (crb & 0x08) this.crb = crb & ~0x01; // one-shot
           } else {
             this.timerB = (this.timerB - 1) & 0xFFFF;
@@ -398,6 +417,9 @@ export class CIA {
         if (this._crbStopPending) this._crbStopPending = 0;
       }
     }
+
+    // CRA/CRB writes report PBON switching; here only the levels can change.
+    if (((cra | crb) & 0x02) !== 0) this._pbTimerCheck();
 
     // Arm the IR latch for the next clock from the current (post-underflow)
     // masked-data condition. NOT recomputed on $DC0D read — that's the bug.
@@ -410,6 +432,79 @@ export class CIA {
 
   get irqPending() {
     return (this.icrStatus & this.icrMask & 0x1F) !== 0;
+  }
+
+  // One Timer A underflow while sending: CNT falls on odd counts, putting the
+  // next bit on SP, and rises on even ones.
+  _shiftOut() {
+    const n = ++this._sdrCount;
+    if (n & 1) {
+      this._spOut = (this._srOut >> 7) & 1;
+      this._srOut = (this._srOut << 1) & 0xFF;
+      this._cntOut = 0;
+    } else {
+      this._cntOut = 1;
+    }
+    this._serialCheck();
+    if (n >= 16) {
+      this._sdrCount = 0;
+      this._raiseIcr(0x08);
+      if (this._sdrPending) {          // the byte written meanwhile follows
+        this._sdrPending = false;
+        this._srOut = this.sdr;
+      } else {
+        this._sdrShifting = false;
+      }
+    }
+  }
+
+  // A rising CNT edge in input mode: shift SP in; 8 bits fill the SDR.
+  _shiftIn() {
+    this._srIn = ((this._srIn << 1) | this._spLevel) & 0xFF;
+    if (++this._srInBits === 8) {
+      this._srInBits = 0;
+      this.sdr = this._srIn;
+      this._raiseIcr(0x08);
+    }
+  }
+
+  // Levels the CIA drives on its serial pins: bit 0 = SP, bit 1 = CNT, 1 where
+  // high or released (input mode leaves both to the pull-ups).
+  serialPins() {
+    return (this.cra & 0x40) ? (this._spOut | (this._cntOut << 1)) : 3;
+  }
+
+  _serialCheck() {
+    const pins = this.serialPins();
+    if (pins === this._serialLast) return;
+    this._serialLast = pins;
+    if (this.serialPinsChanged) this.serialPinsChanged();
+  }
+
+  // PB6/PB7 where CRA/CRB bit 1 makes them timer outputs, over the port value.
+  applyTimerOutputs(v) {
+    const cra = this.cra, crb = this.crb;
+    if (cra & 0x02) {
+      const hi = (cra & 0x04) ? this._pbToggleA : (this._pbPulse & 0x40) !== 0;
+      v = hi ? v | 0x40 : v & ~0x40;
+    }
+    if (crb & 0x02) {
+      const hi = (crb & 0x04) ? this._pbToggleB : (this._pbPulse & 0x80) !== 0;
+      v = hi ? v | 0x80 : v & ~0x80;
+    }
+    return v & 0xFF;
+  }
+
+  _pbTimerState() {
+    const on = ((this.cra & 0x02) << 5) | ((this.crb & 0x02) << 6);
+    return on ? (on << 8) | (this.applyTimerOutputs(0) & on) : 0;
+  }
+
+  _pbTimerCheck() {
+    const now = this._pbTimerState();
+    if (now === this._pbTimerLast) return;
+    this._pbTimerLast = now;
+    if (this.pbTimerChanged) this.pbTimerChanged();
   }
 
   beginMasterCycle() {
@@ -448,7 +543,7 @@ export class CIA {
       case 0x00: 
         if (this.readPortA) return this.readPortA();
         return (this.portA & this.portADir) | (0xFF & ~this.portADir);
-      case 0x01:
+      case 0x01: {
         if (this.id === 1) {
           // CIA1 Port B: per-bit, output pins (DDR=1) read back the output
           // latch while input pins (DDR=0) read the keyboard-matrix row state
@@ -458,12 +553,15 @@ export class CIA {
           // DDRB=$FF — returning the keyboard unconditionally (ignoring DDRB)
           // made the latch invisible, so a written RTS read back as $FF and
           // crashed test 5 into a BRK storm.
-          return ((this.portB & this.portBDir) |
-                  (this._readKeyboard() & ~this.portBDir)) & 0xFF;
+          const kb = ((this.portB & this.portBDir) |
+                      (this._readKeyboard() & ~this.portBDir)) & 0xFF;
+          return ((this.cra | this.crb) & 0x02) ? this.applyTimerOutputs(kb) : kb;
         }
         if (this.pcStrobe) this.pcStrobe();
-        if (this.readPortB) return this.readPortB();
-        return (this.portB & this.portBDir) | (0xFF & ~this.portBDir);
+        const pb = this.readPortB ? this.readPortB()
+          : (this.portB & this.portBDir) | (0xFF & ~this.portBDir);
+        return ((this.cra | this.crb) & 0x02) ? this.applyTimerOutputs(pb) : pb;
+      }
       case 0x02: return this.portADir;
       case 0x03: return this.portBDir;
       case 0x04: return this._visibleTimerARead() & 0xFF;
@@ -544,13 +642,13 @@ export class CIA {
       case 0x00:
         if (this.readPortA) return this.readPortA();
         return (this.portA & this.portADir) | (0xFF & ~this.portADir);
-      case 0x01:
-        if (this.id === 1) {
-          return ((this.portB & this.portBDir) |
-                  (this._readKeyboard() & ~this.portBDir)) & 0xFF;
-        }
-        if (this.readPortB) return this.readPortB();
-        return (this.portB & this.portBDir) | (0xFF & ~this.portBDir);
+      case 0x01: {
+        const pb = this.id === 1
+          ? ((this.portB & this.portBDir) | (this._readKeyboard() & ~this.portBDir)) & 0xFF
+          : this.readPortB ? this.readPortB()
+            : (this.portB & this.portBDir) | (0xFF & ~this.portBDir);
+        return ((this.cra | this.crb) & 0x02) ? this.applyTimerOutputs(pb) : pb;
+      }
       case 0x02: return this.portADir;
       case 0x03: return this.portBDir;
       case 0x04: return this._visibleTimerARead() & 0xFF;
@@ -626,7 +724,7 @@ export class CIA {
         // already active, queue this byte to be sent right after.
         if (this.cra & 0x40) {
           if (this._sdrShifting) this._sdrPending = true;
-          else { this._sdrShifting = true; this._sdrCount = 0; }
+          else { this._sdrShifting = true; this._sdrCount = 0; this._srOut = val; }
         }
         break;
       case 0x0D:
@@ -676,12 +774,20 @@ export class CIA {
         // alike; the $11 FORCE+START path above was already exact). Reuses
         // _craStartPending as a pure count-skip — no load semantics here.
         if (!wasRunning && (val & 0x01) && !(val & 0x10)) this._craStartPending = 1;
-        // Switching SP out -> in cancels any in-progress shift.
+        // Switching SP out -> in cancels any in-progress shift; either way
+        // the input shift register starts over.
         if (wasOutput && !(this.cra & 0x40)) {
           this._sdrShifting = false;
           this._sdrPending = false;
           this._sdrCount = 0;
+          this._cntOut = 1;
         }
+        if (wasOutput !== (this.cra & 0x40)) {
+          this._srInBits = 0;
+          this._serialCheck();
+        }
+        if (!wasRunning && (val & 0x01)) this._pbToggleA = true;
+        this._pbTimerCheck();
         break;
       }
       case 0x0F: {
@@ -704,6 +810,8 @@ export class CIA {
         // Plain START 0→1 count-hold, symmetric to the CRA handler above
         // (one-clock skip, VICE-measured on TB via the cia-start oracle).
         if (!wasRunning && (val & 0x01) && !(val & 0x10)) this._crbStartPending = 1;
+        if (!wasRunning && (val & 0x01)) this._pbToggleB = true;
+        this._pbTimerCheck();
         break;
       }
     }
@@ -762,6 +870,11 @@ export class CIA {
     this._cntLevel = level;
   }
 
+  // SP pin as driven from outside; shifted in on rising CNT in input mode.
+  setSp(level) {
+    this._spLevel = level & 1;
+  }
+
   reset() {
     this.timerA = 0xFFFF;  this.latchA = 0xFFFF;
     this.timerB = 0xFFFF;  this.latchB = 0xFFFF;
@@ -785,6 +898,9 @@ export class CIA {
     this._sdrShifting = false;
     this._sdrPending = false;
     this._sdrCount = 0;
+    this._srOut = 0; this._spOut = 1; this._cntOut = 1;
+    this._spLevel = 1; this._srIn = 0; this._srInBits = 0;
+    this._pbPulse = 0; this._pbToggleA = false; this._pbToggleB = false;
     this._craStartPending = 0;
     this._crbStartPending = 0;
     this._craStopPending = 0;
@@ -794,6 +910,8 @@ export class CIA {
     this._timerReadWindow = false;
     this._timerAReadValue = this.timerA;
     this._timerBReadValue = this.timerB;
+    this._pbTimerCheck();
+    this._serialCheck();
     this._updateIrq();
   }
 
@@ -823,6 +941,9 @@ export class CIA {
       todHalted: this.todHalted, todLatched: this.todLatched, todDivider: this.todDivider,
       _flagLevel: this._flagLevel, _cntLevel: this._cntLevel, _cntRising: this._cntRising,
       _sdrShifting: this._sdrShifting, _sdrCount: this._sdrCount, _sdrPending: this._sdrPending,
+      _srOut: this._srOut, _spOut: this._spOut, _cntOut: this._cntOut,
+      _spLevel: this._spLevel, _srIn: this._srIn, _srInBits: this._srInBits,
+      _pbPulse: this._pbPulse, _pbToggleA: this._pbToggleA, _pbToggleB: this._pbToggleB,
       _craStartPending: this._craStartPending, _crbStartPending: this._crbStartPending,
       _craStopPending: this._craStopPending, _crbStopPending: this._crbStopPending,
       _craStopControl: this._craStopControl, _crbStopControl: this._crbStopControl,
@@ -852,11 +973,17 @@ export class CIA {
     this.todHalted = !!s.todHalted; this.todLatched = !!s.todLatched; this.todDivider = s.todDivider | 0;
     this._flagLevel = s._flagLevel; this._cntLevel = s._cntLevel; this._cntRising = !!s._cntRising;
     this._sdrShifting = !!s._sdrShifting; this._sdrCount = s._sdrCount | 0; this._sdrPending = !!s._sdrPending;
+    this._srOut = s._srOut & 0xFF; this._spOut = s._spOut ?? 1; this._cntOut = s._cntOut ?? 1;
+    this._spLevel = s._spLevel ?? 1; this._srIn = s._srIn & 0xFF; this._srInBits = s._srInBits | 0;
+    this._pbPulse = s._pbPulse | 0; this._pbToggleA = !!s._pbToggleA; this._pbToggleB = !!s._pbToggleB;
     this._craStartPending = s._craStartPending | 0; this._crbStartPending = s._crbStartPending | 0;
     this._craStopPending = s._craStopPending | 0; this._crbStopPending = s._crbStopPending | 0;
     this._craStopControl = s._craStopControl | 0; this._crbStopControl = s._crbStopControl | 0;
     this._timerReadWindow = !!s._timerReadWindow;
     this._timerAReadValue = s._timerAReadValue & 0xFFFF; this._timerBReadValue = s._timerBReadValue & 0xFFFF;
+    // The machine tells the user port about restored lines itself (resync).
+    this._pbTimerLast = this._pbTimerState();
+    this._serialLast = this.serialPins();
     this._updateIrq();
   }
 }

@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
-// WiFi modem: a user port device plugin (user port device API version 1).
+// WiFi modem: a user port device plugin (user port device API version 2).
 //
 // A Hayes-compatible modem in the style of the Zimodem firmware, wired the way
 // user port WiFi modems are: RXD on PB0 and FLAG2, TXD on PA2, RTS on PB1,
 // DTR on PB2, DCD on PB4, CTS on PB6. Control lines are active high at the
 // pins (the Commodore convention), with Zimodem's S46/S48/S50 to invert them.
+// It also has the UP9600 bridges for 9600 baud: RXD to SP2, SP1 to TXD and
+// PB7 to CNT2, so CIA2's shift register receives clocked by Timer B on PB7,
+// and CIA1's shift register sends.
 //
 // This file is a plugin like any other: one module, no imports, only the
 // `port` and `host` objects. It is the reference for writing devices.
@@ -13,14 +16,15 @@
 export const meta = {
   id: 'builtin.wifi-modem',
   name: 'WiFi modem',
-  version: '1.0.0',
-  apiVersion: 1,
+  version: '1.1.0',
+  apiVersion: 2,
   author: 'C64 READY.',
   description: 'A Hayes-compatible WiFi modem with the Zimodem command set. Dial a BBS with ATDT"host:port".',
 };
 
 const RXD = 0x01, RTS = 0x02, DTR = 0x04, DCD = 0x10, CTS = 0x40;
 const DRIVEN = RXD | DCD | CTS;
+const SP1 = 0x01, SP2 = 0x04, CNT2 = 0x08;
 const BAUDS = [300, 600, 1200, 2400, 4800, 9600, 19200];
 const PLUS_IDLE = 0;
 const NOT_DUE = Number.MAX_SAFE_INTEGER;
@@ -88,6 +92,8 @@ export function create(port, host) {
   let rxDue = NOT_DUE;
   let lineFreeAt = 0;                // end of the last stop bit sent
   let rxdLevel = 1;
+  let cnt2Level = (c64Lines >> 7) & 1;  // the PB7 bridge
+  let txLine = 1;                       // PA2 and SP1, wired together
 
   // Frame being received from the C64.
   let txState = 0;                   // 0 idle, 1 measuring the start bit, 2 sampling
@@ -128,6 +134,11 @@ export function create(port, host) {
     if (active(carrier ? 1 : 0, 46)) levels |= DCD;
     if (active(1, 48)) levels |= CTS;
     port.drivePB(DRIVEN, levels);
+    port.driveSerial(SP2 | CNT2, (rxdLevel ? SP2 : 0) | (cnt2Level ? CNT2 : 0));
+  }
+
+  function txLevel() {
+    return port.c64PA2() & port.c64Serial() & SP1;
   }
 
   function rtsAsserted() {
@@ -249,7 +260,10 @@ export function create(port, host) {
     return settings.autobaud && !online && !dialing && !gotA;
   }
 
-  function onPA2(level) {
+  function onTxLine() {
+    const level = txLevel();
+    if (level === txLine) return;
+    txLine = level;
     if (txState === 0) {
       if (level !== 0) return;
       txStart = port.now();
@@ -284,7 +298,7 @@ export function create(port, host) {
   }
 
   function txEvent() {
-    const level = port.c64PA2();
+    const level = txLevel();
     const dataBits = frameBits();
     if (txBit === 0) {
       if (level !== 0) { txState = 0; txDue = NOT_DUE; return; }   // glitch, not a start bit
@@ -703,6 +717,11 @@ export function create(port, host) {
   function onPortB(levels) {
     const was = c64Lines;
     c64Lines = levels;
+    const pb7 = (levels >> 7) & 1;
+    if (pb7 !== cnt2Level) {
+      cnt2Level = pb7;
+      drivePins();
+    }
     if (settings.dtrMode === 2 && (was & DTR) && !(levels & DTR) && (connected || dialing)) {
       hangup();
       result('NO CARRIER');
@@ -759,7 +778,8 @@ export function create(port, host) {
   drivePins();
 
   return {
-    onPA2,
+    onPA2: onTxLine,
+    onSerial: onTxLine,
     onPortB,
     onTimer,
     // The modem has its own power: a C64 /RESET leaves the call up. (The app's
@@ -779,9 +799,11 @@ export function create(port, host) {
       rxChunks.length = 0; rxChunk = null; frameLen = 0; rxDue = NOT_DUE;
       txState = 0; txDue = NOT_DUE; houseDue = NOT_DUE; probeFrom = 0;
       rxdLevel = 1;
+      txLine = txLevel();
       held.length = 0; pendingDrop = false; plusCount = PLUS_IDLE;
       telnetState = 0; line = '';
       c64Lines = port.c64PB();
+      cnt2Level = (c64Lines >> 7) & 1;
       lastC64Byte = port.now();
       if (sock) { const s = sock; sock = null; s.close(); }
       dialing = false;

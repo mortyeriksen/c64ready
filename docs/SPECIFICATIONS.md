@@ -87,7 +87,8 @@ this project:
   <https://6502.org/documents/datasheets/mos/mos_6526_cia_preliminary_nov_1981.pdf>  ·
   <https://archive.org/details/mos_6526_cia_recreated>
 - **Wolfgang Lorenz, _A Software Model of the CIA6526_**: reverse-engineered cycle
-  timing plus the CIA compatibility test suite this project validates against.
+  timing and the PB6/PB7 timer outputs, plus the CIA compatibility test suite
+  this project validates against.
   <https://ist.uwaterloo.ca/~schepers/MJK/cia6526.html>
 
 ### SID 6581 / 8580 audio
@@ -205,6 +206,9 @@ revisions:
   <https://www.pagetable.com/?p=1656>
 - **_Put your C64 online for ten bucks_** (Compute's Gazette, 2026): WiFi modem wiring.
   <https://www.computesgazette.com/2026/07/28/put-your-c64-online-for-ten-bucks/>
+- **CCGMS Terminal, UP9600 driver** (after Daniel Dallmann's UP9600): the
+  UP9600 bridges and how its driver uses the CIA shift registers.
+  <https://github.com/mist64/ccgmsterm>
 - **Bo Zimmerman, Zimodem**: the modem command set.
   <https://github.com/bozimmerman/Zimodem>
 - **Hayes command set**: Wikipedia and the Wikibooks _Serial Programming_ pages.
@@ -403,10 +407,10 @@ A special thanks goes to the following:
 
 ### BBSes and terminal programs
 
-- **Commodore Image BBS**, the board in the User Guide's user port screenshot.
-  <telnet://cib.dyndns.org:6400>
+- **The Oasis BBS**, the board in the User Guide's user port animation.
+  <https://theoasisbbs.com/>
 - **CCGMS Future** by Craig Smith, alwyz and Michael Steil, the terminal
-  program in that screenshot.
+  program in that animation.
   <https://github.com/mist64/ccgmsterm>
 
 ### AI collaborators

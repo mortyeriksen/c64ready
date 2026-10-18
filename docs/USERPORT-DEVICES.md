@@ -19,7 +19,7 @@ export const meta = {
   id: 'yourname.device',   // lowercase letters, digits, dots and dashes
   name: 'My device',
   version: '1.0.0',
-  apiVersion: 1,           // the API version below
+  apiVersion: 2,           // the API version below
   author: 'Your name',
   description: 'One line for the install dialog.',
 };
@@ -30,7 +30,8 @@ export function create(port, host) {
 ```
 
 `create` runs every time the device is plugged in: on power-on, after a reset
-of the machine and after loading a save state.
+of the machine and after loading a save state. Version 1 devices still run.
+Version 2 added the serial lines.
 
 ## The port
 
@@ -46,8 +47,10 @@ low.
 | `port.setFlag(level)` | drive FLAG2 (pin B). A falling edge sets CIA2 ICR bit 4, an NMI when enabled |
 | `port.wakeAt(cycle)` | call `onTimer` at that cycle. One timer, a new call replaces it |
 | `port.cancelWake()` | drop the timer |
-| `port.c64PB()` | PB0-PB7 as the C64 drives them (inputs read high) |
+| `port.c64PB()` | PB0-PB7 as the C64 drives them (inputs read high). PB6 and PB7 include the CIA timer outputs when on |
 | `port.c64PA2()` | PA2 (pin M) as the C64 drives it |
+| `port.driveSerial(mask, levels)` | drive the serial lines in `mask` to `levels`, release the rest: SP1 (pin 5) 1, CNT1 (pin 4) 2, SP2 (pin 7) 4, CNT2 (pin 6) 8 |
+| `port.c64Serial()` | those four lines as the CIAs drive them, same bits |
 
 Callbacks the device can return:
 
@@ -55,6 +58,7 @@ Callbacks the device can return:
 | --- | --- |
 | `onPortB(levels)` | the C64 changed what it drives on PB0-PB7 |
 | `onPA2(level)` | the C64 changed PA2 |
+| `onSerial(lines)` | a CIA changed what it drives on SP or CNT, as in `c64Serial()` |
 | `onPC2()` | PC2 (pin 8) pulses low: the cycle after a CPU read or write of `$DD01` |
 | `onTimer(cycle)` | a `wakeAt` time arrived |
 | `reset()` | the C64 was reset. The device keeps its own state |

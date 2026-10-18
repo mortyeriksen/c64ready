@@ -12,12 +12,17 @@
 // a line is low when either side pulls it low (wired-AND), which is how the
 // CIA's port pins and open-collector devices meet on the real port.
 
-export const USERPORT_API_VERSION = 1;
+export const USERPORT_API_VERSION = 2;
+
+// Serial pins, as bits for driveSerial() and c64Serial(): the SP and CNT lines
+// of CIA1 (pins 5 and 4) and CIA2 (pins 7 and 6).
+export const SP1 = 0x01, CNT1 = 0x02, SP2 = 0x04, CNT2 = 0x08;
 
 const NONE = Number.MAX_SAFE_INTEGER;
 
 export class UserPort {
-  constructor(cia2, cyclesPerSecond) {
+  constructor(cia2, cyclesPerSecond, cia1 = null) {
+    this.cia1 = cia1;
     this.cia2 = cia2;
     this.cyclesPerSecond = cyclesPerSecond;
     this.device = null;
@@ -34,6 +39,8 @@ export class UserPort {
     this.lastC64PB = 0xFF;
     this.lastPA2 = 1;
     this.flagLevel = 1;
+    this.devSerial = 0x0F;   // SP/CNT levels the device drives
+    this.lastSerial = 0x0F;
     this.port = this._makeHandle();
   }
 
@@ -61,6 +68,10 @@ export class UserPort {
       },
       c64PB: () => up._c64PB(),
       c64PA2: () => up._c64PA2(),
+      driveSerial(mask, levels) {
+        up._driveSerial((~mask | levels) & 0x0F);
+      },
+      c64Serial: () => up._c64Serial(),
     });
   }
 
@@ -69,6 +80,7 @@ export class UserPort {
     this.unplug();
     this.lastC64PB = this._c64PB();
     this.lastPA2 = this._c64PA2();
+    this.lastSerial = this._c64Serial();
     this.deviceId = id;
     this.deviceVersion = version;
     let dev;
@@ -92,6 +104,7 @@ export class UserPort {
     this.next = NONE;
     this.devPB = 0xFF;
     if (this.flagLevel === 0) this.port.setFlag(1);
+    this._driveSerial(0x0F);
     if (dev && dev.detach) {
       try { dev.detach(); } catch { /* a failing detach must not keep the device plugged */ }
     }
@@ -140,7 +153,7 @@ export class UserPort {
     if (this.pc2Due < this.next) this.next = this.pc2Due;
   }
 
-  // CIA2 port B latch or DDRB written.
+  // CIA2 port B latch or DDRB written, or a PB6/PB7 timer output changed.
   portBChanged() {
     const pb = this._c64PB();
     if (pb === this.lastC64PB) return;
@@ -148,6 +161,17 @@ export class UserPort {
     const dev = this.device;
     if (dev !== null && dev.onPortB) {
       try { dev.onPortB(pb); } catch (err) { this._fail(err); }
+    }
+  }
+
+  // CIA1 or CIA2 changed what it drives on SP or CNT.
+  serialChanged() {
+    const lines = this._c64Serial();
+    if (lines === this.lastSerial) return;
+    this.lastSerial = lines;
+    const dev = this.device;
+    if (dev !== null && dev.onSerial) {
+      try { dev.onSerial(lines); } catch (err) { this._fail(err); }
     }
   }
 
@@ -167,23 +191,44 @@ export class UserPort {
   resync() {
     this.lastC64PB = -1;
     this.lastPA2 = -1;
+    this.lastSerial = -1;
     this.portBChanged();
     this.portAChanged();
+    this.serialChanged();
   }
 
   reset() {
     // CIA2 /RESET turns every port pin into an input, so the C64 side floats high.
     this.portBChanged();
     this.portAChanged();
+    this.serialChanged();
     const dev = this.device;
     if (dev !== null && dev.reset) {
       try { dev.reset(); } catch (err) { this._fail(err); }
     }
   }
 
+  // Port B as the C64 drives it, PB6/PB7 included when they are timer outputs.
   _c64PB() {
     const cia = this.cia2;
-    return ((cia.portB & cia.portBDir) | ~cia.portBDir) & 0xFF;
+    const pb = ((cia.portB & cia.portBDir) | ~cia.portBDir) & 0xFF;
+    return ((cia.cra | cia.crb) & 0x02) ? cia.applyTimerOutputs(pb) : pb;
+  }
+
+  _c64Serial() {
+    const one = this.cia1 ? this.cia1.serialPins() : 3;
+    return one | (this.cia2.serialPins() << 2);
+  }
+
+  _driveSerial(levels) {
+    const changed = levels ^ this.devSerial;
+    if (!changed) return;
+    this.devSerial = levels;
+    const one = this.cia1, two = this.cia2;
+    if (one && (changed & SP1)) one.setSp(levels & SP1 ? 1 : 0);
+    if (one && (changed & CNT1)) one.setCnt(levels & CNT1 ? 1 : 0);
+    if (changed & SP2) two.setSp(levels & SP2 ? 1 : 0);
+    if (changed & CNT2) two.setCnt(levels & CNT2 ? 1 : 0);
   }
 
   _c64PA2() {
@@ -206,6 +251,8 @@ export class UserPort {
       lastC64PB: this.lastC64PB,
       lastPA2: this.lastPA2,
       flagLevel: this.flagLevel,
+      devSerial: this.devSerial,
+      lastSerial: this.lastSerial,
       device,
     };
   }
@@ -222,6 +269,8 @@ export class UserPort {
     this.lastC64PB = s.lastC64PB & 0xFF;
     this.lastPA2 = s.lastPA2 & 1;
     this.flagLevel = s.flagLevel & 1;
+    this.devSerial = (s.devSerial ?? 0x0F) & 0x0F;
+    this.lastSerial = (s.lastSerial ?? 0x0F) & 0x0F;
     if (s.device != null && this.device !== null && this.device.deserialize) {
       try { this.device.deserialize(s.device); } catch (err) { this._fail(err); }
     }

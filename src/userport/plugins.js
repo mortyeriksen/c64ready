@@ -6,7 +6,7 @@
 
 import { USERPORT_API_VERSION } from '../userport.js';
 
-export const SUPPORTED_API_VERSIONS = [USERPORT_API_VERSION];
+export const SUPPORTED_API_VERSIONS = [1, USERPORT_API_VERSION];
 export const MAX_DEVICE_BYTES = 1024 * 1024;
 const ID = /^[a-z0-9][a-z0-9.-]{0,63}$/;
 

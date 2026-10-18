@@ -355,7 +355,8 @@ right button sets `potXOverride`. NEOS state is not part of a savestate, and
 
 **The user port** (`userport.js`) exists only while a device is plugged in.
 `attachUserport` hooks CIA2's port B read and write, its PC strobe and the
-port A write (PA2). The master cycle ticks it after the datasette, behind a
+port A write (PA2), CIA2's PB6/PB7 timer outputs, and both CIAs' SP and CNT
+pins (`serialPinsChanged`, `setSp`, `setCnt`). The master cycle ticks it after the datasette, behind a
 null check, and a tick only works when a device timer or a PC2 pulse is due.
 Input pins read the pull-ups ANDed with the device. FLAG2 goes through
 `cia2.setFlag` to the NMI. A throwing device is unplugged and reported through

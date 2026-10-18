@@ -247,6 +247,60 @@ function recorder() {
   ok('after a restore without its state, the device is told the C64 lines');
 }
 
+// ── API 2: the serial pins (SP1 5, CNT1 4, SP2 7, CNT2 6) ──────────────────
+{
+  const m = makeMachine();
+  let port = null;
+  m.attachUserport('test.serial', (p) => { port = p; return {}; });
+  expect(port.apiVersion === 2, `API version 2: ${port.apiVersion}`);
+  expect(port.c64Serial() === 0x0F, 'both CIAs in input mode leave all four lines high');
+  for (const bit of [0, 1, 1, 0, 1, 0, 0, 1]) {
+    port.driveSerial(0x0C, bit ? 0x04 : 0x00);   // SP2 = bit, CNT2 low
+    cycle(m);
+    port.driveSerial(0x0C, (bit ? 0x04 : 0x00) | 0x08);   // CNT2 rises
+    cycle(m);
+  }
+  expect(m.cia2.read(0x0C) === 0x69, `8 bits on SP2 clocked by CNT2 fill CIA2's SDR: $${m.cia2.read(0x0C).toString(16)}`);
+  expect((m.cia2.read(0x0D) & 0x08) !== 0, 'and set ICR bit 3');
+  ok('API 2: a device clocks bits into CIA2 through SP2 and CNT2');
+}
+
+{
+  const m = makeMachine();
+  const heard = [];
+  m.attachUserport('test.serial', () => ({ onSerial: (v) => heard.push(v) }));
+  m.cia1.write(0x04, 3); m.cia1.write(0x05, 0);
+  m.cia1.write(0x0E, 0x51);                      // CIA1 output mode, Timer A running
+  m.cia1.write(0x0C, 0x00);
+  cycle(m, 120);
+  const sp1Lows = heard.filter((v) => !(v & 0x01)).length;
+  expect(heard.length >= 16 && sp1Lows > 0, `the device hears CIA1 send on SP1/CNT1: ${heard.length} changes`);
+  expect(heard.every((v) => (v & 0x0C) === 0x0C), 'CIA2 lines stay high');
+  ok('API 2: onSerial reports CIA1 sending on SP1 and CNT1');
+}
+
+{
+  const m = makeMachine();
+  const seen = [];
+  m.attachUserport('test.pb7', () => ({ onPortB: (v) => seen.push(v & 0x80) }));
+  m.cia2.write(0x06, 9); m.cia2.write(0x07, 0);
+  m.cia2.write(0x0F, 0x13);                      // Timer B, pulse on PB7
+  cycle(m, 40);
+  expect(seen[0] === 0 && seen.filter((v) => v).length >= 3, `PB7 drops, then pulses: ${seen.map((v) => v ? 1 : 0).join('')}`);
+  ok('API 2: PB7 as a timer output reaches the device through onPortB');
+}
+
+{
+  const m = makeMachine();
+  let port = null;
+  m.attachUserport('test.serial', (p) => { port = p; return {}; });
+  port.driveSerial(0x0F, 0x00);
+  m.detachUserport();
+  expect(m.cia1._spLevel === 1 && m.cia1._cntLevel === 1 && m.cia2._spLevel === 1 && m.cia2._cntLevel === 1,
+    'unplugging releases SP and CNT on both CIAs');
+  ok('API 2: unplugging releases the serial lines');
+}
+
 // ── Through the facade, as the UI uses it ───────────────────────────────────
 {
   const m = makeMachine();
