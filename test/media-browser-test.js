@@ -214,6 +214,27 @@ for (const type of ['prg', 'd64', 'd71', 'd81', 'crt', 'tap', 'reu']) {
     assert.equal(port.calls[0][0], type === 'd64' || type === 'd71' || type === 'd81' ? 'disk' : type);
   });
 }
+test('An opened file tells the slot it went into its release and kind', async () => {
+  // The chat names rooms from this: the Assembly64 release with the file to
+  // fetch it again, under the slot the file was mounted in.
+  const noted = [];
+  const port = mediaPort({ noteLoaded: (...args) => noted.push(args) });
+  await createOpenMedia(port)({
+    name: 'nine.d64', bytes: sampleMedia('d64'), mediaType: 'd64', targetDrive: 9, saveToLibrary: false,
+    metadata: { source: 'assembly64', releaseTitle: 'Nine', provenance: { version: 1, provider: 'assembly64', itemId: '["3","42"]', itemRef: { id: '42', categoryId: 3 }, fileId: '7', fileRef: { itemId: '42', categoryId: 3, id: '7', size: 174848 } } },
+  });
+  assert.equal(noted.length, 1);
+  const [slot, facts, fileName] = noted[0];
+  assert.equal(slot, 'drive9');
+  assert.equal(fileName, 'nine.d64');
+  assert.deepEqual(facts.release, { title: 'Nine', a64: { item: '42', cat: 3, file: '7', name: 'nine.d64' } });
+});
+test('Saving to the Library alone tells no slot anything', async () => {
+  const noted = [];
+  const port = mediaPort({ noteLoaded: (...args) => noted.push(args) });
+  await createOpenMedia(port)({ name: 'x.prg', bytes: sampleMedia('prg'), mediaType: 'prg', action: 'save' });
+  assert.equal(noted.length, 0);
+});
 test('A D81 mounts as a 1581 disk and tells the drive prompt its kind', async () => {
   const prepared = [];
   const port = mediaPort({ prepareDisk: async opts => prepared.push(opts) });

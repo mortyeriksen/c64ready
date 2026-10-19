@@ -242,6 +242,8 @@
         <button class="credits-link" id="btn-credits"
             title="About C64 READY. — what it is, how it was built, and the credits." type="button">ABOUT</button>
         <a class="credits-link" id="docs-link" href="/docs/" title="Documentation">DOCS</a>
+        <button class="credits-link chat-open-btn" id="btn-chat" type="button" aria-label="Chat"
+            aria-expanded="false" title="Chat with other C64 READY users">CHAT<span class="chat-badge" hidden></span></button>
         <!-- Icon-only, and desktop-only: the mobile header has no room for them,
              and all three destinations are reachable from ABOUT. -->
         <a class="credits-link icon-link" id="github-link" href="https://github.com/mortyeriksen/c64ready"
@@ -1159,6 +1161,10 @@
   </div>
 
   <button class="fs-close-btn" id="btn-fs-close" title="Exit fullscreen (ESC)" aria-label="Exit fullscreen">✕</button>
+  <button class="fs-chat-btn" id="btn-fs-chat" type="button" title="Chat" aria-label="Chat" aria-expanded="false"><svg
+      viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"
+      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path
+      d="M4 5h16v11H9l-5 4z"/></svg><span class="chat-badge" hidden></span></button>
 
   <!-- Retro Vibes — 3D model viewer (opened by the 🌇 Retro Vibes button). Fills
        the browser window; the Three.js canvas is injected into .model-viewer-stage.

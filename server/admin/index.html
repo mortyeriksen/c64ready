@@ -1,0 +1,47 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright © 2026 Morten Øien Eriksen -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Chat SYSOP</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+  <script type="module" src="/admin/admin.js"></script>
+</head>
+<body>
+  <header class="top">
+    <h1>C64 READY chat <span class="sysop">SYSOP</span></h1>
+    <span class="top-right"><span class="stats" id="stats">connecting…</span> <a href="/admin/logs">Logs</a></span>
+  </header>
+  <main class="cols">
+    <section class="col rooms" aria-labelledby="rooms-h">
+      <h2 id="rooms-h">Rooms</h2>
+      <button type="button" class="room-item all" id="all-rooms" aria-pressed="true">All rooms (live feed)</button>
+      <ul id="room-list" class="list"></ul>
+    </section>
+    <section class="col feed" aria-labelledby="feed-h">
+      <div class="room-head" id="room-head" hidden>
+        <div class="room-title"><h2 id="room-name"></h2><span class="meta" id="room-meta"></span></div>
+        <div class="row">
+          <button type="button" id="close-room" class="danger">Close room</button>
+        </div>
+        <ul id="members" class="members"></ul>
+      </div>
+      <h2 id="feed-h" class="feed-h">Live feed</h2>
+      <ol id="feed" class="messages" aria-live="polite"></ol>
+      <form id="say" class="say" hidden>
+        <input id="say-text" maxlength="280" autocomplete="off" placeholder="Say something as SYSOP" aria-label="Message as SYSOP">
+        <button type="submit">Send</button>
+      </form>
+    </section>
+    <section class="col side">
+      <h2>Reports</h2>
+      <ul id="reports" class="list"></ul>
+      <h2>Bans</h2>
+      <ul id="bans" class="list"></ul>
+    </section>
+  </main>
+</body>
+</html>

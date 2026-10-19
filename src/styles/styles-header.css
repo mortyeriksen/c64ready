@@ -322,6 +322,37 @@ body.crt-hum .logo-text::before,
     padding: 7px 11px;
   }
 }
+/* On a phone the buttons stand taller than the logo, so centring the two
+   leaves the buttons hanging above it: they line up with its bottom instead. */
+@media (max-width: 680px) {
+  header {
+    align-items: flex-end;
+  }
+  /* The logo's box carries a little padding under its glyphs. */
+  .header-right {
+    margin-bottom: 1px;
+  }
+}
+/* A small phone fits the logo and all four buttons on one line only with a
+   little less air around the buttons' labels. */
+@media (max-width: 440px) {
+  .header-links {
+    gap: 6px;
+  }
+  .credits-link {
+    padding: 4px 7px;
+    letter-spacing: 1px;
+  }
+}
+@media (max-width: 359px) {
+  .header-links {
+    gap: 4px;
+  }
+  .credits-link {
+    padding: 4px 5px;
+    letter-spacing: 0;
+  }
+}
 
 /* ── Credits modal (retro demoscene flavor) ─────────────────────────── */
 .credits-modal .modal-card {

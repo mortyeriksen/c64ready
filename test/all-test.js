@@ -27,12 +27,16 @@ import { fileURLToPath } from 'url';
 const TESTS = [
   // Slowest first (a dev server and a browser), so it runs alongside the rest.
   'test/userport/userport-card-browser-test.js',
+  'test/chat/chat-window-browser-test.js',
+  'test/chat/chat-injection-browser-test.js',
   'test/vic2/vic2-graphics-foreground-spec-test.js',
   'test/vic2/vic2-collision-overlay-spec-test.js',
   'test/vic2/vic2-render-history-spec-test.js',
   'test/vic2/vic2-fetch-feed-spec-test.js',
   // Quick unit tests (deterministic, fast)
   'test/cli/cli-sid-spec-test.js',
+  'test/chat/chat-server-spec-test.js',
+  'test/chat/now-loaded-spec-test.js',
   'test/assembly64-test.js',
   'test/media-browser-test.js',
   'test/docs-sitemap-spec-test.js',

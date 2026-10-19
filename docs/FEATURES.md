@@ -296,6 +296,22 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **Cached in the browser**: provide them once; they auto-restore on later
   visits. A **CLEAR** button wipes the cache.
 
+## Chat
+
+- **Rooms with no sign-up**: a nickname is all it takes. Rooms live only while
+  people are in them. The chat is logged for 90 days, so abuse can be
+  investigated (see [Chat](GUIDE-INTERFACE.md#chat)).
+- **Rooms about what is loaded**: one tap starts a room named after the disk,
+  cartridge or tape in the machine. A room about an Assembly64 release offers
+  to load it for everyone who joins.
+- **Open to everyone**: every room is listed in the lobby, and anyone can
+  join it.
+- **Moderated by the members**: the host mutes and removes people, a majority
+  vote removes anyone, and anyone can hide someone's messages or report them
+  to the admin.
+- **A floating window**: dragged and resized on a desktop, full screen on a
+  phone, and counting unread messages on the **CHAT** button while closed.
+
 ## Extras & conveniences
 
 - **Retro Vibes 3D viewer**: a full-screen 3D scene of the C64 whose on-screen

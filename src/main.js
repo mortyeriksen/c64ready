@@ -42,6 +42,7 @@ import {
   _cachedTapDeck, _restoreDeck,
 } from './media.js';
 import { initializeAssembly64 } from './assembly64/start.js';
+import { initChat } from './chat/start.js';
 import { initInput, updateJoyPorts, _releaseAllLatched, softKeyboardInput } from './input.js';
 import { pushEscapeLayer, popEscapeLayer } from './ui/escape-stack.js';
 import { createAvMarker, avMarkerEnabled } from './av-marker.js';
@@ -3169,6 +3170,8 @@ initMedia({
 });
 
 void initializeAssembly64();
+// The CHAT buttons and invite links; the window itself loads on first use.
+initChat();
 
 // ── Wire recorder.js ─────────────────────────────────────────────────────────
 // Screen + audio recorder (RECORD button). Audio is tapped live at record time

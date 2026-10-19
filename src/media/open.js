@@ -62,6 +62,24 @@ export function validateMedia(bytes, type) {
   return null;
 }
 
+// What a load knows beyond the device: the kind the person picked (a .sid or
+// .t64 reaches the drive as a program), a tune's own title, and the Assembly64
+// release with the file to fetch it again.
+function loadedFacts(mediaType, name, load, metadata) {
+  const facts = {};
+  if (mediaType === 'sid' || mediaType === 't64') facts.kind = mediaType;
+  if (load.tune?.title) facts.embeddedTitle = load.tune.title;
+  const meta = sourceMetadata(metadata);
+  const p = meta.provenance;
+  if (meta.source === 'assembly64' && meta.releaseTitle) {
+    facts.release = {
+      title: meta.releaseTitle,
+      a64: p?.itemRef && p?.fileRef ? { item: String(p.itemRef.id), cat: p.itemRef.categoryId, file: String(p.fileRef.id), name } : null,
+    };
+  }
+  return facts;
+}
+
 export function createOpenMedia(port) {
   let busy = false;
   return async function openMedia(request) {
@@ -125,6 +143,8 @@ export function createOpenMedia(port) {
           await port[load.type](load.data, load.name, { autorun });
           message = { prg: 'PRG loaded', crt: 'Cartridge started', tap: 'Tape loaded', reu: 'Loaded into RAM Expansion' }[load.type];
         }
+        const slot = DISK_MEDIA.includes(load.type) ? `drive${targetDrive}` : { prg: 'drive8', crt: 'cart', tap: 'tape' }[load.type];
+        if (slot) port.noteLoaded?.(slot, loadedFacts(mediaType, name, load, request.metadata), load.type === 'crt' ? undefined : load.name);
       }
       let saved = false;
       if (saveToLibrary || action === 'save') saved = await port.save(mediaType, name, data, sourceMetadata(request.metadata));

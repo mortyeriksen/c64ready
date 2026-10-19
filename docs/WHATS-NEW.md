@@ -9,6 +9,20 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
+## 2026.10.6 — October 20, 2026
+
+C64 READY. gets a chat. Talk with other players about what you are playing,
+in rooms you start from the game or demo you have loaded, with no sign-up.
+
+- **Chat.** A **CHAT** button in the header opens a chat with other C64 READY.
+  users. There is no sign-up, just a nickname. Start a room about the game or
+  demo you have loaded with one tap, or join any room in the lobby, and when
+  the room is about an Assembly64 release, everyone can load it with one click.
+  A room closes when everyone has left, and the chat is logged for 90 days so
+  abuse can be investigated. See [Chat](GUIDE-INTERFACE.md#chat).
+
+---
+
 ## 2026.10.5 — October 18, 2026
 
 The user port arrives, and its devices are pluggable: a built-in WiFi modem

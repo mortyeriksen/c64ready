@@ -171,6 +171,13 @@ export function createAssembly64Control(root, controller, store, perform) {
   window.addEventListener('online', network); window.addEventListener('offline', network);
   syncFilters();
   return {
+    /** Open the browser on a title search, across every category. */
+    searchFor(name) {
+      cancelQuick();
+      controller.setQuery({ name }, defaultSort({ name }));
+      if (!browser || browser.closed) browser = openBrowserDialog(controller, store, perform, { view: 'results' });
+      controller.search();
+    },
     dispose() {
       cancelQuick(); browser?.close(); unsubscribe(); controller.dispose();
       window.removeEventListener('online', network); window.removeEventListener('offline', network);

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
+import crypto from 'node:crypto';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { buildDocs } from './tools/build-docs.mjs';
 import { attachRelay } from './cli/relay.mjs';
+import { createChatServer } from './server/chat.mjs';
 import { switchOn } from './src/switches.js';
 
 // Cross-origin isolation for the SID worklet's SharedArrayBuffer. Dev + preview only;
@@ -67,6 +69,32 @@ const userportRelayPlugin = {
   configurePreviewServer: (server) => { if (server.httpServer) attachRelay(server.httpServer, relayOptions(server)); },
 };
 
+// A chat server of the dev server's own (/chat), with its admin console at
+// /admin, for the tests and for trying changes to the server. The app uses
+// the production chat unless localStorage's c64emu.chat.server names this one
+// (ws://localhost:<port>/chat). The console's password is made fresh at each
+// start and printed with the server's address, so a dev server reachable from
+// the network never has a known one. There is no chat log in development.
+const chatDevPlugin = {
+  name: 'c64:chat',
+  configureServer: (server) => {
+    if (!server.httpServer) return;
+    const password = crypto.randomBytes(9).toString('base64url');
+    const chat = createChatServer({
+      admin: { user: 'sysop', passwordSha256: crypto.createHash('sha256').update(password).digest('hex') },
+      log: (t) => server.config.logger.warn(t),
+    });
+    server.middlewares.use((req, res, next) => {
+      if (!(req.url || '').startsWith('/admin') || !chat.handleRequest(req, res)) next();
+    });
+    server.httpServer.on('upgrade', (req, sock, head) => { chat.handleUpgrade(req, sock, head); });
+    server.httpServer.on('close', () => chat.close());
+    server.httpServer.once('listening', () => {
+      server.config.logger.info(`  chat admin: /admin  (user sysop, password ${password})`);
+    });
+  },
+};
+
 // Match Netlify: /docs/ and /docs/about serve the built files at the requested URL;
 // only the missing trailing slash redirects.
 function docsPaths(req, res, next) {
@@ -97,6 +125,7 @@ export default defineConfig({
   plugins: [
     buildDocsPlugin,
     userportRelayPlugin,
+    chatDevPlugin,
     sidWorkletFullReload,
     VitePWA({
       strategies: 'injectManifest',   // custom SW (src/sw.js) — needed for COI header re-stamping

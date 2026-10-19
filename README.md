@@ -129,8 +129,10 @@ Hosted at **[c64ready.com/docs](https://www.c64ready.com/docs/)**; sources in [`
 │   ├── reu.js        # RAM Expansion Unit, the 8726 REC as a second bus master
 │   ├── cartridges/   # .crt types: generic, Action Replay, Final Cartridge III, Magic Desk, EasyFlash
 │   ├── ui/           # dialogs, panels, splash, appearance and themes
+│   ├── chat/         # the chat window and its connection, loaded on first use
 │   ├── styles/       # the stylesheets, styles.css first
 │   └── …             # datasette, control ports, CRT, input, Retro Vibes
+├── server/           # the chat server (Node, no dependencies) and its admin console
 ├── rust/             # reSID engine in Rust, compiled to the WebAssembly SID
 ├── docs/             # Markdown docs, compiled to HTML by tools/build-docs.mjs
 ├── test/             # unit + spec + hardware-testprog suites (npm test)
@@ -140,6 +142,42 @@ Hosted at **[c64ready.com/docs](https://www.c64ready.com/docs/)**; sources in [`
 ├── roms/             # your own C64 ROMs, read by npm test (git-ignored)
 └── index.html        # app entry point
 ```
+
+## Chat server
+
+The chat talks to a small Node server in `server/` (Node 22 or later, no
+dependencies). The `server/` folder deploys by itself to Railway, and the app,
+in development too, connects to the service's own Railway address,
+`CHAT_SERVER` in `src/chat/connection.js`. `npm run dev` also runs a chat
+server of its own at `/chat`, with its admin console at `/admin` (user
+`sysop`, and a fresh password printed when the dev server starts), for the
+tests and for trying changes to the server. Point the app at it with
+`localStorage.setItem('c64emu.chat.server', 'ws://localhost:5173/chat')` (the
+dev server's port) and back with `localStorage.removeItem('c64emu.chat.server')`.
+
+To deploy:
+
+1. In `server/`, run `railway init` once, naming the service `c64ready-chat`,
+   then `railway up`.
+2. Run `railway domain` for the service's public address. Railway names it
+   `<service>-production.up.railway.app`, which is what `CHAT_SERVER` expects.
+   If Railway gives another name, put that in `CHAT_SERVER`.
+3. Set the variables: `CHAT_ORIGINS=https://c64ready.com`, `CHAT_TRUST_PROXY=2`
+   (two Railway proxies append to `X-Forwarded-For`: the edge adds the client's
+   address, then an internal proxy adds its own),
+   and for the admin console `CHAT_ADMIN_USER` and `CHAT_ADMIN_PASSWORD_SHA256`
+   (`printf %s 'password' | shasum -a 256`). `CHAT_NOTIFY_URL`, an ntfy topic
+   or a Discord webhook, gets a line on every report.
+4. Attach a Railway Volume (for example at `/data`) and set
+   `CHAT_LOG_DIR=/data/logs`. The chat log goes there, one file per day,
+   deleted after `CHAT_LOG_DAYS` (default 90). Without a volume the files
+   vanish on every redeploy, and without `CHAT_LOG_DIR` nothing is logged. The
+   console's **Logs** page downloads them.
+5. Keep App Sleeping off: a sleeping server drops every room.
+
+After deploying, check that two people on different connections get different
+address codes in the console at `/admin`. If everyone shares one, the proxy
+setting is wrong. All settings are listed at the top of `server/main.mjs`.
 
 ## Reporting a problem
 
@@ -168,7 +206,12 @@ dialog and in [Specifications & sources](docs/SPECIFICATIONS.md).
 ## Privacy
 
 Everything runs in your browser. ROMs, disks, tapes, cartridges and save states are kept in
-the browser's own storage (localStorage / IndexedDB) and are never uploaded. The site sets no
+the browser's own storage (localStorage / IndexedDB) and are never uploaded. The optional
+chat connects to the chat server only once it is opened. It sends the nickname and messages
+to the room and the admin, and the server logs every message, join, leave and moderation
+step with the nickname and IP address, keeping the log for 90 days (`CHAT_LOG_DAYS`) so
+abuse and crime can be investigated. The admin's live view shows only a keyed hash of the
+address. The site sets no
 cookies and loads no third-party scripts. The only telemetry is a few empty marker pages the
 app requests (`/pwa.html`, `/pwa-installed.html`, `/roms-loaded.html`, `/roms-vice.html`,
 `/returned.html`, and one `/roms-theme-<theme>.html` per built-in theme plus `custom` for

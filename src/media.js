@@ -45,6 +45,7 @@ import { libList, libLoad, libSave, libDelete, libClear, libExport, libImport } 
 import { tapDirectory, tapeFacts } from './media/tap-directory.js';
 import { themeColor, isLightMode } from './ui/appearance.js';
 import { openT64 } from './media/choose-file.js';
+import { setLoaded, enrichLoaded } from './media/now-loaded.js';
 import { stateList, stateSave, stateLoad, stateDelete, stateRename, stateClear, stateExport, stateExportAll, stateImportFile } from './statelibrary.js';
 
 // ── Injected core dependencies (assigned by initMedia) ───────────────────────
@@ -77,6 +78,7 @@ function _cacheTap(data, name) {
 function _clearCachedTap() {
   _cachedTapData = null; _cachedTapName = null; _cachedTapProtected = null;
   _cachedTapDeck = null;
+  setLoaded('tape', null);
 }
 
 // Re-cache the tape from the live deck so a recording survives the machine being
@@ -571,6 +573,8 @@ async function _loadState(entry) {
   //    here for whichever drive holds an image.
   if (currentD64) { try { showD64Directory(currentD64); } catch {} }
   if (currentD64Drive9) { try { showD64Directory(currentD64Drive9, DRIVE9_UI); } catch {} }
+  setLoaded('drive8', currentD64 && _diskEntry(currentD64));
+  setLoaded('drive9', currentD64Drive9 && _diskEntry(currentD64Drive9));
   setRunning(true);
   _syncPowerStateClass();
   _punchLogo();
@@ -1090,6 +1094,7 @@ function _setElementVisible(el, visible) {
 
 export function _onCRTLoaded(info) {
   _currentCartInfo = info;
+  setLoaded('cart', { ref: _cachedCartData, kind: 'crt', embeddedTitle: info.name === 'cartridge' ? '' : info.name });
   if (crtLabel) crtLabel.textContent = `${info.name} (${info.mode})`;
   if (crtDropzone) crtDropzone.classList.add('loaded');
   _syncCRTEjectButton();
@@ -1135,6 +1140,7 @@ function _releaseCartridgeFreeze() {
 function _forgetCartridgeUi() {
   _releaseCartridgeFreeze();
   _currentCartInfo = null;
+  setLoaded('cart', null);
   if (crtLabel) crtLabel.textContent = '';
   if (crtDropzone) crtDropzone.classList.remove('loaded');
 }
@@ -1148,6 +1154,7 @@ function _ejectCRT() {
   if (crtDropzone) crtDropzone.classList.remove('loaded');
   _syncCRTEjectButton();
   _currentCartInfo = null;
+  setLoaded('cart', null);
   _syncCartridgeControls();
   setStatus('Cartridge ejected' + (c64?.ready ? ' – Reset' : ''),
     c64?.ready ? 'running' : 'idle');
@@ -1237,8 +1244,16 @@ if (crtFreezeBtn) {
 }
 
 // ── D64 loader ───────────────────────────────────────────────────────────────
+// What the slot list knows of a disk: its file name (for a PRG, the program's)
+// and its header name.
+function _diskEntry(disk) {
+  const ext = /\.([a-z0-9]+)$/i.exec(disk._libName || '')?.[1]?.toLowerCase();
+  return { ref: disk, kind: ext === 'prg' ? 'prg' : _diskType(disk), fileName: disk._libName || null, headerName: disk.diskName };
+}
+
 function _onD64Loaded(disk) {
   currentD64 = disk;
+  setLoaded('drive8', _diskEntry(disk));
   if (c64?.ready) c64.setD64(disk);
   showD64Directory(disk);
   _expandPanelOf(driveDropzone);
@@ -1253,6 +1268,7 @@ function _ejectD64() {
   c64?.commitDriveWrites?.();
   _persistDirtyDisk(currentD64);
   currentD64 = null;
+  setLoaded('drive8', null);
   if (c64?.ready) c64.setD64(null);
   if (driveEmptyHint) driveEmptyHint.style.display = '';
   _setElementVisible(driveLoaded, false);
@@ -1606,6 +1622,7 @@ export function drive9LedActive() {
 // draws.
 function _onD64Drive9Loaded(disk, { autorun = false, startCmd = 'RUN\r' } = {}) {
   currentD64Drive9 = disk;
+  setLoaded('drive9', _diskEntry(disk));
   if (c64?.ready) c64.setD64Drive9(disk);
   showD64Directory(disk, DRIVE9_UI);
   _expandPanelOf(DRIVE9_UI.deck);
@@ -1620,6 +1637,7 @@ function _ejectD64Drive9() {
   c64?.commitDriveWrites?.();
   _persistDirtyDisk(currentD64Drive9);
   currentD64Drive9 = null;
+  setLoaded('drive9', null);
   if (c64?.ready) c64.setD64Drive9(null);
   if (DRIVE9_UI.emptyHint) DRIVE9_UI.emptyHint.style.display = '';
   _setElementVisible(DRIVE9_UI.loadedEl, false);
@@ -2116,6 +2134,7 @@ if (tapBtn && tapInput) {
 
 export function _onTapLoaded(name, data) {
   const label = name.replace(/\.tap$/i, '');
+  setLoaded('tape', { ref: name, kind: 'tap', fileName: name });
   if (tapLabel) tapLabel.textContent = label;
   _syncTapEjectButton();
   _syncTapeButtons();
@@ -3416,6 +3435,7 @@ export const openMedia = createOpenMedia({
     });
   },
   configureSid: tune => configureSidTune(tune),
+  noteLoaded: enrichLoaded,
   isRunning: () => running,
   powerOn: () => _powerOn(),
   getAutorunEnabled: () => getAutorunEnabled(),

@@ -52,7 +52,7 @@ The same interface with a demo running:
 
 ## Topics
 
-- **[The interface](GUIDE-INTERFACE.md)**: The header, the display and the cards that run the machine, and how to arrange them.
+- **[The interface](GUIDE-INTERFACE.md)**: The header, the display and the cards that run the machine, how to arrange them, and the chat.
 - **[Media and drives](GUIDE-MEDIA.md)**: Loading programs, disks, cartridges, tapes and tunes, and the Assembly64 catalog.
 - **[Input](GUIDE-INPUT.md)**: Joysticks, mice, paddles and the keyboard and touch sticks on the two control ports.
 - **[Looks and Retro Vibes](GUIDE-LOOKS.md)**: Themes and their file format, the Retro Vibes 3D viewer, and recording what you play.

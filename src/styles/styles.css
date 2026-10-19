@@ -15,6 +15,7 @@
 @import './styles-decks.css';
 @import './styles-ports.css';
 @import './styles-userport.css';
+@import './styles-chat.css';
 @import '../vibes/styles-vibes.css';
 @import './styles-splash.css';
 @import './styles-splash-themes.css';

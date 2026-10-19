@@ -26,6 +26,9 @@
 //                        relay, from the dial to its title screen. Needs the
 //                        'ccgms' asset, img2webp, the network and the BBS's one
 //                        line free. GUIDE_BBS=host:port picks another board.
+//   chat.webp            the chat window over Commando running, in a room started
+//                        from the loaded game, two guests talking in it. Uses the
+//                        dev server's own chat (/chat), never the production one.
 //
 // Drives the LIVE dev server (start your Vite first). Shots land in public/guide/
 // as 1920-capped WebP (guide-image.mjs).
@@ -490,6 +493,72 @@ if (want('user-port-bbs')) {
     fs.rmSync(frames, { recursive: true, force: true });
     await ctx.close();
   }
+}
+
+// ── desktop: the chat, floating over a game, in a room about it ──────────────────
+if (want('chat')) {
+  const guests = [];
+  try {
+    const chatUrl = `${BASE.replace(/^http/, 'ws')}/chat`;
+    const ctx = await browser.newContext({ colorScheme: 'dark',
+      viewport: { width: 1460, height: 900 }, deviceScaleFactor: 2, reducedMotion: 'reduce',
+    });
+    await ctx.addInitScript((url) => {
+      try {
+        localStorage.setItem('c64emu.installDismissed', '1');
+        localStorage.setItem('c64emu.splashSeen', '1');
+        localStorage.setItem('c64emu.chat.server', url);
+        localStorage.setItem('c64emu.chat.nick', 'RetroMorty');
+        localStorage.removeItem('c64emu.chat.rect');
+      } catch {}
+    }, chatUrl);
+    const page = await bootPage(ctx);
+    if (!(GAME && fs.existsSync(GAME))) throw new Error(`no game to talk about (${GAME || 'commando asset unset'})`);
+    await page.setInputFiles('#prg-input', GAME);
+    const offer = page.locator('#confirm-modal:not([hidden])');
+    if (await offer.waitFor({ timeout: 3000 }).then(() => true, () => false)) await page.locator('#btn-confirm-ok').click();
+    await sleep(8000);   // load + autorun → the game's title screen
+    await page.locator('#btn-chat').click();
+    await page.locator('.chat-chip', { hasText: 'Commando' }).first().click();
+    await page.locator('.chat-view-room').waitFor({ state: 'visible', timeout: 10000 });
+
+    // Two guests find the room in the lobby and join it.
+    const guest = (nick) => new Promise((resolve, reject) => {
+      const w = new WebSocket(chatUrl, { headers: { origin: new URL(BASE).origin } });
+      guests.push(w);
+      let id = 0;
+      const req = (msg) => w.send(JSON.stringify({ id: ++id, ...msg }));
+      w.onopen = () => w.send(JSON.stringify({ t: 'hello', v: 1 }));
+      w.onmessage = (e) => {
+        const d = JSON.parse(e.data);
+        if (d.t === 'welcome') req({ t: 'lobby' });
+        else if (d.t === 'lobby' && !w.joined) {
+          const room = d.rooms.find((r) => r.name === 'Commando');
+          if (!room) return;
+          w.joined = true;
+          req({ t: 'join', nick, code: room.code });
+        } else if (d.t === 'ok' && d.room) resolve((text) => req({ t: 'say', text }));
+        else if (d.t === 'err') reject(new Error(`${nick}: ${d.code}`));
+      };
+      w.onerror = () => reject(new Error(`${nick} could not connect to ${chatUrl}`));
+    });
+    const zak = await guest('Zak');
+    const ruby = await guest('Ruby');
+    const me = async (text) => { await page.fill('.chat-compose .chat-input', text); await page.press('.chat-compose .chat-input', 'Enter'); };
+    for (const say of [
+      () => me('Anyone else still stuck at the first gate?'),
+      () => zak('Stay left and lob grenades over the sandbags'),
+      () => ruby('That worked for me. The music still slaps after 40 years'),
+      () => me('Rob Hubbard at his best'),
+      () => zak('Turn it up!'),
+    ]) { await say(); await sleep(1100); }
+    await page.mouse.move(10, 890);   // no hover highlight in the shot
+    await sleep(500);
+    const info = saveGuideShot(await page.screenshot(), OUT, 'chat');
+    done.push('chat'); console.log('  ✓', shotLabel('chat', info));
+    await ctx.close();
+  } catch (e) { skipped.push('chat'); console.error('  ✗ chat —', e.message.split('\n')[0]); }
+  for (const w of guests) w.close();
 }
 
 await browser.close();

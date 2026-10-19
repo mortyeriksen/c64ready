@@ -1,0 +1,509 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2026 Morten Øien Eriksen */
+/* src/styles/styles-chat.css – the chat: the CHAT buttons with their unread
+   badge, and the window (src/chat/window.js), floating and resizable on a
+   desktop, full screen on a phone. */
+
+/* ── Ways in ───────────────────────────────────────────────────────────── */
+.chat-open-btn,
+.fs-chat-btn {
+  position: relative;
+}
+/* CHAT stands out in the header: filled with the theme's accent, with the
+   text colour each theme pairs with it. */
+.credits-link.chat-open-btn,
+.credits-link.chat-open-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.credits-link.chat-open-btn:hover {
+  filter: brightness(1.12);
+}
+.chat-badge {
+  display: inline-block;
+  min-width: 16px;
+  margin-left: 6px;
+  padding: 1px 4px;
+  border-radius: 8px;
+  background: var(--red);
+  color: #fff;
+  font-size: 0.6rem;
+  line-height: 1.3;
+  letter-spacing: 0;
+  text-align: center;
+}
+.chat-badge[hidden] {
+  display: none;
+}
+.fs-chat-btn .chat-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  margin: 0;
+}
+/* Beside the fullscreen close button, on the fullscreen toolbar only. */
+.fs-chat-btn {
+  display: none;
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  right: calc(max(12px, env(safe-area-inset-right)) + 46px);
+  z-index: 2000;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--accent);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+.fs-chat-btn:hover {
+  filter: brightness(1.2);
+}
+body.fullscreen-mode .fs-chat-btn {
+  display: flex;
+}
+
+/* ── The window ────────────────────────────────────────────────────────── */
+.chat-window {
+  position: fixed;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  background: var(--ui-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--shadow) 55%, transparent);
+  color: var(--text);
+  font-size: 0.86rem;
+  overflow: hidden;
+}
+.chat-window[hidden] {
+  display: none;
+}
+/* Below the modal dialogs (z 1000), so a confirm opened from the chat shows on
+   top. Fullscreen lifts the monitor to z 1000, so the window rises with it. */
+body.fullscreen-mode .chat-window {
+  z-index: 1500;
+}
+.chat-window.is-full {
+  left: 0;
+  right: 0;
+  top: var(--chat-top, 0px);
+  height: var(--chat-vh, 100dvh);
+  border: 0;
+  border-radius: 0;
+  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.chat-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-bg);
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.is-full .chat-head {
+  cursor: default;
+  padding-top: max(8px, env(safe-area-inset-top));
+}
+.chat-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 3px;
+  color: var(--accent);
+}
+.chat-status {
+  color: var(--dim);
+  font-size: 0.75rem;
+}
+.chat-close {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+.chat-close:hover {
+  border-color: var(--accent);
+}
+
+.chat-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.chat-view {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.chat-view[hidden] {
+  display: none;
+}
+.chat-view-room {
+  position: relative;
+  overflow: hidden;
+}
+
+.chat-intro {
+  margin: 0;
+  color: var(--text-bright);
+}
+.chat-facts {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--dim);
+  font-size: 0.8rem;
+}
+.chat-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--dim);
+  font-size: 0.8rem;
+}
+.chat-h {
+  margin: 6px 0 0;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: normal;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.chat-note {
+  margin: 0;
+  color: var(--dim);
+  font-size: 0.8rem;
+}
+.chat-error {
+  margin: 0;
+  color: var(--red);
+  font-size: 0.8rem;
+}
+.chat-error:empty {
+  display: none;
+}
+.chat-banner {
+  margin: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--amber);
+  border-radius: 6px;
+  color: var(--text-bright);
+  font-size: 0.8rem;
+}
+.chat-banner[hidden] {
+  display: none;
+}
+
+.chat-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.chat-input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--control-bg);
+  color: var(--text);
+  font: inherit;
+  /* 16px keeps iOS from zooming the page when the field takes focus. */
+  font-size: max(16px, 0.86rem);
+}
+.chat-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+/* .btn stretches to share a row in the side panel; here buttons keep their size. */
+.chat-window .btn {
+  flex: none;
+  padding: 7px 12px;
+}
+.chat-window .btn.chat-small {
+  padding: 4px 9px;
+  font-size: 0.68rem;
+}
+.chat-primary {
+  border-color: var(--accent);
+}
+.chat-link {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.chat-link.chat-danger {
+  color: var(--red);
+}
+.chat-who-row {
+  justify-content: space-between;
+  color: var(--dim);
+  font-size: 0.8rem;
+}
+
+.chat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chat-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--control-bg);
+  color: var(--text-bright);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.chat-chip:hover {
+  background: var(--row-hover);
+}
+.chat-chip-title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.chat-chip-meta {
+  color: var(--dim);
+  font-size: 0.72rem;
+}
+
+.chat-rooms {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.chat-room {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.chat-room.is-match {
+  border-color: var(--accent);
+}
+.chat-room-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.chat-room-name {
+  color: var(--text-bright);
+  overflow-wrap: anywhere;
+}
+.chat-room-meta {
+  color: var(--dim);
+  font-size: 0.75rem;
+}
+
+/* ── The room ──────────────────────────────────────────────────────────── */
+.chat-room-bar {
+  flex-wrap: wrap;
+}
+.chat-topic {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 8px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+}
+.chat-topic[hidden] {
+  display: none;
+}
+.chat-topic-text {
+  flex: 1;
+  color: var(--text-bright);
+}
+.chat-topic-have {
+  color: var(--green);
+  font-size: 0.75rem;
+}
+.chat-people {
+  max-height: 45%;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-bg);
+}
+.chat-people[hidden] {
+  display: none;
+}
+.chat-person {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+.chat-person.is-away {
+  opacity: 0.55;
+}
+.chat-person-tags {
+  color: var(--dim);
+  font-size: 0.75rem;
+}
+.chat-person-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+}
+
+.chat-log {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: contain;
+}
+.chat-msg {
+  padding: 2px 0;
+  overflow-wrap: anywhere;
+}
+.chat-time {
+  margin-right: 6px;
+  color: var(--dim);
+  font-size: 0.72rem;
+}
+.chat-nick {
+  margin-right: 6px;
+  font-weight: 600;
+}
+.chat-msg.is-me .chat-nick::after {
+  content: ' (you)';
+  font-weight: normal;
+  color: var(--dim);
+  font-size: 0.75rem;
+}
+.chat-msg.is-sysop .chat-nick {
+  color: var(--amber);
+}
+.chat-msg.is-sysop .chat-text {
+  color: var(--text-bright);
+}
+.chat-text {
+  white-space: pre-wrap;
+}
+.chat-notice {
+  padding: 2px 0;
+  color: var(--dim);
+  font-size: 0.78rem;
+  font-style: italic;
+}
+.chat-compose {
+  padding-top: 4px;
+}
+.chat-window .btn.chat-emoji-btn {
+  padding: 4px 10px;
+  font-size: 1.1rem;
+  line-height: 1;
+  letter-spacing: 0;
+}
+/* The emoji picker: a grid over the messages, just above the message box. */
+.chat-emoji {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 58px;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--shadow) 45%, transparent);
+}
+.chat-emoji[hidden] {
+  display: none;
+}
+.chat-emoji-pick {
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.chat-emoji-pick:hover,
+.chat-emoji-pick:focus-visible {
+  background: var(--row-hover);
+  outline: none;
+}
+.chat-say-note[hidden] {
+  display: none;
+}
+
+/* Name colours from the C64 palette, mixed toward the text colour so every
+   one stays readable on light and dark themes alike. */
+.chat-c0 { color: color-mix(in srgb, #9a6759 70%, var(--text)); }
+.chat-c1 { color: color-mix(in srgb, #6abfc6 70%, var(--text)); }
+.chat-c2 { color: color-mix(in srgb, #a057a3 70%, var(--text)); }
+.chat-c3 { color: color-mix(in srgb, #5cab5e 70%, var(--text)); }
+.chat-c4 { color: color-mix(in srgb, #7c70da 70%, var(--text)); }
+.chat-c5 { color: color-mix(in srgb, #c9d487 70%, var(--text)); }
+.chat-c6 { color: color-mix(in srgb, #a1683c 70%, var(--text)); }
+.chat-c7 { color: color-mix(in srgb, #9ae29b 70%, var(--text)); }
+
+/* ── Resize handles (desktop) ──────────────────────────────────────────── */
+.chat-resize {
+  position: absolute;
+  z-index: 1;
+  touch-action: none;
+}
+.chat-resize-e  { top: 40px; right: 0; bottom: 12px; width: 6px; cursor: ew-resize; }
+.chat-resize-w  { top: 40px; left: 0; bottom: 12px; width: 6px; cursor: ew-resize; }
+.chat-resize-s  { left: 12px; right: 12px; bottom: 0; height: 6px; cursor: ns-resize; }
+.chat-resize-se { right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize; }
+.chat-resize-sw { left: 0; bottom: 0; width: 14px; height: 14px; cursor: nesw-resize; }
+.is-full .chat-resize {
+  display: none;
+}
