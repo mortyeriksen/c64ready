@@ -332,6 +332,19 @@ body.fullscreen-mode .chat-window {
   color: var(--dim);
   font-size: 0.75rem;
 }
+.chat-online {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+.chat-online > li {
+  max-width: 100%;
+}
 
 /* ── The room ──────────────────────────────────────────────────────────── */
 .chat-room-bar {

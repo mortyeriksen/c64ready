@@ -179,6 +179,10 @@ After deploying, check that two people on different connections get different
 address codes in the console at `/admin`. If everyone shares one, the proxy
 setting is wrong. All settings are listed at the top of `server/main.mjs`.
 
+The admin console lists **Online users** below the rooms, across all rooms.
+Select a nickname to open its room and moderation controls. The list updates
+live and excludes disconnected members during their reconnect grace period.
+
 ## Reporting a problem
 
 Bug reports and pull requests are welcome. Check [Known issues](docs/KNOWN-ISSUES.md)

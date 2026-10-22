@@ -9,6 +9,16 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
+## Next release
+
+- **Who's online in chat.** The lobby lists online nicknames below the rooms,
+  so you can see who is chatting before joining. Names update as people join,
+  leave or reconnect.
+- **Chat admin.** A separate online-user list shows connected users across
+  all rooms. Select a nickname to open their room.
+
+---
+
 ## 2026.10.6 — October 20, 2026
 
 C64 READY. gets a chat. Talk with other players about what you are playing,

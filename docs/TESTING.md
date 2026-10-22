@@ -122,14 +122,14 @@ from the service worker cache. Browser capture output goes in
 
 The chat's tests live in `test/chat/`. `chat-server-spec-test.js` runs the
 chat server with real WebSocket clients and a clock it drives: rooms, the
-lobby, the grace period, moderation by members, limits, bans, the log and its
-retention, the admin console, and requests that try to pollute prototypes,
+lobby and its live online nicknames, the grace period, moderation by members,
+limits, bans, the log and its retention, the admin console, and requests that try to pollute prototypes,
 smuggle fields or write control characters to the log or a notification.
 `now-loaded-spec-test.js` checks how loaded media are named.
 
 `chat-window-browser-test.js` drives the window in headless Chromium against a
 dev server: dragging and resizing on a desktop, the phone view and joining
-from the lobby, messages, the unread count and removal.
+from the lobby, online nicknames before joining, messages, the unread count and removal.
 `chat-injection-browser-test.js` attacks the chat window and the admin console:
 HTML, script and URL payloads in room names, topics, nicknames, messages and a
 loaded file's name must all show as text, never run or become elements. It
@@ -137,6 +137,10 @@ also checks that a room's **LOAD** fetches the release from Assembly64
 (mocked), refuses a file the release does not have, and names what the
 catalog says. Both browser tests need no ROMs, and skip without Playwright's
 Chromium.
+
+The injection browser test also checks the admin's separate online-user list:
+names from multiple rooms, room navigation, joins, disconnects, reconnects,
+removal and room closure. Nicknames must remain plain text there too.
 
 The app connects to the production chat on Railway, in development too. The
 browser tests point it at the dev server's own chat instead (`/chat`, set in

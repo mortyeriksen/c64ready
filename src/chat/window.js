@@ -79,7 +79,7 @@ const hue = (id) => { let x = 0; for (const c of String(id)) x = (x * 31 + c.cha
  */
 export function createChatWindow({ onUnread, onOpenChange, onClose }) {
   const st = {
-    view: 'join', nick: storage.get(NICK_KEY) || '', me: null, room: null, log: [], lobby: [],
+    view: 'join', nick: storage.get(NICK_KEY) || '', me: null, room: null, log: [], lobby: [], online: null,
     hidden: new Set(), pendingCode: null, banner: '', status: 'offline', unread: 0, peopleOpen: false,
   };
   const conn = createChatConnection({ url: chatServerUrl(), onEvent, onStatus });
@@ -112,6 +112,7 @@ export function createChatWindow({ onUnread, onOpenChange, onClose }) {
   const newName = h('input', { class: 'chat-input', maxlength: String(LIMITS.roomName), autocomplete: 'off', placeholder: 'Room name', 'aria-label': 'Room name' });
   const lobbyErr = h('p', { class: 'chat-error', role: 'alert' });
   const roomsList = h('ul', { class: 'chat-rooms' });
+  const onlineList = h('ul', { class: 'chat-online', 'aria-label': 'Online nicknames' });
   const lobbyView = h('div', { class: 'chat-view chat-view-lobby', hidden: true },
     h('div', { class: 'chat-row chat-who-row' }, lobbyWho, h('button', { type: 'button', class: 'chat-link', onclick: () => show('join') }, 'change')),
     lobbyBanner,
@@ -119,7 +120,8 @@ export function createChatWindow({ onUnread, onOpenChange, onClose }) {
     h('form', { class: 'chat-row', onsubmit: (e) => { e.preventDefault(); create(newName.value, null); } },
       newName, h('button', { type: 'submit', class: 'btn' }, 'CREATE')),
     lobbyErr,
-    h('h3', { class: 'chat-h' }, 'Rooms'), roomsList);
+    h('h3', { class: 'chat-h' }, 'Rooms'), roomsList,
+    h('h3', { class: 'chat-h' }, 'Online'), onlineList);
 
   const topicEl = h('div', { class: 'chat-topic', hidden: true });
   const peopleBtn = h('button', { type: 'button', class: 'btn chat-small', 'aria-expanded': 'false', onclick: () => { st.peopleOpen = !st.peopleOpen; renderRoom(); } }, 'PEOPLE');
@@ -200,6 +202,11 @@ export function createChatWindow({ onUnread, onOpenChange, onClose }) {
           h('span', { class: 'chat-room-meta' }, [r.topic?.title, `${r.count} here`, match ? 'you have this loaded' : null].filter(Boolean).join(' · '))),
         h('button', { type: 'button', class: 'btn chat-small', onclick: () => join(r.code) }, 'JOIN')));
     }
+    onlineList.replaceChildren();
+    const online = st.status === 'online' ? st.online : null;
+    if (!online) onlineList.append(h('li', { class: 'chat-note' }, 'Online users unavailable.'));
+    else if (!online.length) onlineList.append(h('li', { class: 'chat-note' }, 'No one online in rooms right now.'));
+    else for (const nick of [...online].sort((a, b) => a.localeCompare(b))) onlineList.append(h('li', {}, nick));
   }
 
   function messageItem(m) {
@@ -351,6 +358,7 @@ export function createChatWindow({ onUnread, onOpenChange, onClose }) {
         break;
       case 'lobby':
         st.lobby = e.rooms;
+        st.online = Array.isArray(e.online) ? e.online : null;
         if (st.view === 'lobby') renderLobby();
         break;
       case 'room':

@@ -79,18 +79,19 @@ const vite = await createServer({ root, configFile: `${root}vite.config.js`, log
 await vite.listen();
 
 // An attacker with a raw socket: no maxlength, no client-side checks.
-function attacker(steps) {
+function attacker(steps, token) {
   return new Promise((resolve, reject) => {
     const w = new WebSocket(`ws://127.0.0.1:${CHAT_PORT}/chat`);
     let i = 0, room = null, said = 0;
-    w.onopen = () => w.send(JSON.stringify({ t: 'hello', v: 1 }));
+    w.onopen = () => w.send(JSON.stringify({ t: 'hello', v: 1, token }));
     w.onmessage = (e) => {
       const d = JSON.parse(e.data);
       if (d.t === 'err') { reject(new Error(`attacker step ${i} refused: ${d.code}`)); return; }
       if (d.t !== 'welcome' && d.t !== 'ok') return;
+      if (d.token) token = d.token;
       if (d.room) room = d.room;
       const next = steps[i++];
-      if (!next) { resolve({ w, room }); return; }
+      if (!next) { resolve({ w, room, token }); return; }
       const msg = { id: i, ...(typeof next === 'function' ? next(room) : next) };
       // Past the server's burst of five messages, one a second.
       const wait = msg.t === 'say' && ++said > 5 ? 1050 : 0;
@@ -159,6 +160,8 @@ try {
   await app.locator('.chat-room').first().waitFor({ timeout: 10_000 });
   await app.waitForTimeout(300);
   expect(await app.locator('.chat-room-name', { hasText: ROOM_NAME }).count() === 1, 'the lobby shows the payload room name as text');
+  expect((await app.locator('.chat-online').innerText()).includes(NICK), 'the lobby shows an online nickname payload as text');
+  expect(await app.locator('.chat-online b, .chat-online i').count() === 0, 'online nicknames never become HTML elements');
   const chipText = await app.locator('.chat-chips').innerText();
   expect(chipText.includes(FILE_TITLE), `a file name with markup is offered as text (saw "${chipText}")`);
   await app.locator('.chat-room', { hasText: ROOM_NAME }).locator('button').click();
@@ -210,11 +213,41 @@ try {
   await admin.waitForTimeout(500);
   const feed = await admin.locator('#feed').innerText();
   expect(PAYLOADS.slice(0, 11).every((p) => feed.includes(p)), 'the live feed shows every payload as text');
+  const online = admin.locator('#online-users');
+  expect((await online.innerText()).includes(NICK), 'the admin online list shows nickname payloads as text');
+  expect((await online.innerText()).includes('Liar'), 'the admin online list covers other rooms too');
+  expect(await online.locator('b, i').count() === 0, 'online nicknames never become HTML in the admin');
+  await online.getByRole('button', { name: NICK, exact: true }).click();
+  expect(await admin.locator('#room-name').innerText() === ROOM_NAME, 'selecting an online nickname opens its room');
   await admin.locator('#room-list .room-item', { hasText: ROOM_NAME }).click();
   await admin.waitForTimeout(300);
   expect((await admin.locator('#room-name').innerText()) === ROOM_NAME, 'the room view shows the name as text');
   expect(await injected(admin, 'main') === 0, 'no payload became an element in the console');
   ok('the admin console shows every payload as text');
+
+  const newcomer = await attacker([{ t: 'join', code: evil.room.code, nick: 'Online guest' }]);
+  const guestButton = online.getByRole('button', { name: 'Online guest', exact: true });
+  await guestButton.waitFor();
+  expect(await guestButton.count() === 1, 'a joined user appears in the admin online list');
+  newcomer.w.close();
+  await guestButton.waitFor({ state: 'detached' });
+  expect((await admin.locator('#members .away').innerText()).includes('Online guest'), 'a disconnected member keeps their room place but is absent from online users');
+  const resumed = await attacker([], newcomer.token);
+  await guestButton.waitFor();
+  expect(await guestButton.count() === 1, 'a reconnecting user appears exactly once');
+  await admin.locator('#members li', { hasText: 'Online guest' }).getByRole('button', { name: 'kick', exact: true }).click();
+  await guestButton.waitFor({ state: 'detached' });
+  expect(await guestButton.count() === 0, 'a removed user disappears from online users');
+  resumed.w.close();
+
+  const temporary = await attacker([{ t: 'create', nick: 'Temporary', name: 'Presence room' }]);
+  const temporaryButton = online.getByRole('button', { name: 'Temporary', exact: true });
+  await temporaryButton.waitFor();
+  temporary.w.send(JSON.stringify({ t: 'leave', id: 50 }));
+  await temporaryButton.waitFor({ state: 'detached' });
+  expect(await admin.locator('#room-list .room-item', { hasText: 'Presence room' }).count() === 0, 'closing a room also removes its online user');
+  temporary.w.close();
+  ok('the admin online list follows joins, disconnects, reconnects, removal and room closure');
 
   for (const [name, page] of [['chat window', app], ['admin console', admin]]) {
     expect(await pwned(page) === null, `no payload ran in the ${name}`);

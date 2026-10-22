@@ -99,6 +99,7 @@ export function createChatServer({
       .sort((a, b) => b.members.size - a.members.size || b.createdAt - a.createdAt)
       .slice(0, L.lobbySize)
       .map((r) => ({ code: r.code, name: r.name, topic: r.topic, key: r.key, count: r.members.size })),
+    online: [...rooms.values()].flatMap((r) => [...r.members.values()].filter((m) => m.connected).map((m) => m.nick)),
   });
   const banList = () => [...bans.values()];
 

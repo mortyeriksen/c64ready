@@ -219,6 +219,43 @@ const basic = (user, pass) => `Basic ${Buffer.from(`${user}:${pass}`).toString('
 // ── Rooms and the lobby ──────────────────────────────────────────────────────
 {
   const watcher = await guest();
+  await watcher.req('lobby');
+  await watcher.next((m) => m.t === 'lobby');
+  const { host, code } = await roomWith(1);
+  const view = async () => {
+    advance(1000);
+    const lobby = await watcher.next((m) => m.t === 'lobby');
+    return { ...lobby.rooms.find((r) => r.code === code), online: lobby.online };
+  };
+  expect(JSON.stringify((await view()).online) === '["Host"]', 'the lobby lists connected room members by nickname only');
+  const member = await guest();
+  await member.req('join', { code, nick: 'Visitor' });
+  expect(JSON.stringify((await view()).online) === '["Host","Visitor"]', 'joining updates the lobby online list');
+  member.ws.close();
+  await member.closed;
+  await host.next((m) => m.t === 'room' && m.room.members.some((x) => x.id === member.id && !x.here));
+  const away = await view();
+  expect(!away.online.includes('Visitor'), 'disconnected members are excluded from online users during the grace period');
+  expect(away.count === 2, 'the room keeps a disconnected member during the grace period');
+  const back = await guest({ token: member.token });
+  expect(JSON.stringify((await view()).online) === '["Host","Visitor"]', 'reconnecting restores the nickname once in the lobby');
+  await back.req('leave');
+  expect(JSON.stringify((await view()).online) === '["Host"]', 'leaving removes the nickname from the lobby');
+  await back.req('join', { code, nick: 'Returned' });
+  await view();
+  await host.req('kick', { member: back.id });
+  expect(JSON.stringify((await view()).online) === '["Host"]', 'removing a member updates online users');
+  host.ws.close();
+  await host.closed;
+  expect((await view()).online.length === 0, 'a room with only disconnected members has no online users');
+  advance(DEFAULTS.graceMs);
+  const closed = await watcher.next((m) => m.t === 'lobby');
+  expect(!closed.rooms.some((r) => r.code === code), 'closing a room removes its online list');
+  watcher.ws.close(); back.ws.close();
+  ok('the lobby tracks online nicknames through membership and connection changes');
+}
+{
+  const watcher = await guest();
   const first = await watcher.req('lobby');
   expect(first.t === 'ok', 'subscribing to the lobby is accepted');
   await watcher.next((m) => m.t === 'lobby');
@@ -232,6 +269,7 @@ const basic = (user, pass) => `Basic ${Buffer.from(`${user}:${pass}`).toString('
   expect(lobby.rooms.some((r) => r.code === made.room.code && r.count === 1), 'a room is listed with its member count');
   expect(lobby.rooms.some((r) => r.code === code), 'every room is listed, whatever its creator asked for');
   expect(lobby.rooms.find((r) => r.code === made.room.code)?.key === 't:nine', 'a listed room carries its topic key');
+  expect(lobby.online.includes('Host') && lobby.online.includes('Ann'), 'the online list includes nicknames across different rooms');
   await pub.req('leave');
   advance(1000);
   const after = await watcher.next((m) => m.t === 'lobby');

@@ -14,6 +14,7 @@ let selected = null;         // room code, or null for the live feed
 let ws = null;
 let nextId = 1;
 let failures = 0;
+let live = false;
 
 function el(tag, text, cls) {
   const n = document.createElement(tag);
@@ -69,6 +70,31 @@ function renderRooms() {
     list.append(li);
   }
   renderStats();
+  renderOnline();
+}
+
+function renderOnline() {
+  const list = $('online-users');
+  list.replaceChildren();
+  if (!live) {
+    $('online-h').textContent = 'Online users';
+    list.append(el('li', 'Waiting for live connection…', 'meta'));
+    return;
+  }
+  const online = [];
+  for (const r of rooms.values()) {
+    for (const m of r.members) if (m.here) online.push({ nick: m.nick, room: r.code });
+  }
+  online.sort((a, b) => a.nick.localeCompare(b.nick) || a.room.localeCompare(b.room));
+  $('online-h').textContent = `Online users (${online.length})`;
+  if (!online.length) list.append(el('li', 'No one online in rooms.', 'meta'));
+  for (const m of online) {
+    const li = el('li');
+    const b = button(m.nick, () => select(m.room), 'online-user');
+    b.title = 'Open room';
+    li.append(b);
+    list.append(li);
+  }
 }
 
 function messageItem(code, m, withRoom) {
@@ -162,6 +188,7 @@ function select(code) {
 function onEvent(e) {
   switch (e.t) {
     case 'snapshot':
+      live = true;
       rooms.clear();
       feed = [];
       for (const r of e.rooms) {
@@ -229,6 +256,8 @@ function connect() {
   ws.addEventListener('open', () => { failures = 0; });
   ws.addEventListener('message', (m) => { try { onEvent(JSON.parse(m.data)); } catch { /* ignore a bad event */ } });
   ws.addEventListener('close', () => {
+    live = false;
+    renderOnline();
     $('stats').textContent = 'disconnected, retrying…';
     // A refused socket usually means the console cookie expired: reloading asks for the password again.
     if (++failures >= 3) location.reload();

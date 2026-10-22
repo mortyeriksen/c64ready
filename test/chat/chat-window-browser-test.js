@@ -137,7 +137,11 @@ try {
   await phone.click('.chat-view-join button[type=submit]');
   const listed = phone.locator('.chat-room', { hasText: 'Commando' });
   await listed.waitFor({ timeout: 10_000 });
-  expect(/1 here/.test(await listed.innerText()), 'the room is listed for everyone, with how many are in it');
+  expect(/1 here/.test(await listed.innerText()), 'the room is listed with its member count');
+  expect(await phone.locator('.chat-online').innerText() === 'Hostess', 'the lobby shows who is online before joining');
+  expect(!/Hostess/.test(await listed.innerText()), 'nicknames appear separately from the rooms');
+  expect(await phone.locator('.chat-online').evaluate((el) => el.scrollWidth <= el.clientWidth), 'online nicknames fit on a phone');
+  expect(await listed.evaluate((el) => el.scrollWidth <= el.clientWidth), 'the room and its users fit on a phone');
   await listed.locator('button', { hasText: 'JOIN' }).click();
   await phone.locator('.chat-view-room').waitFor({ state: 'visible', timeout: 10_000 });
   expect(await phone.locator('.chat-title').innerText() === 'Chat about Commando', 'the phone is in the same room');
@@ -188,6 +192,8 @@ try {
   if (await confirmOk.count()) await confirmOk.first().click();
   await phone.locator('.chat-banner', { hasText: 'removed you' }).waitFor({ timeout: 5000 });
   expect(await phone.locator('.chat-view-lobby').isVisible(), 'the removed member is back in the lobby');
+  await phone.waitForFunction(() => document.querySelector('.chat-online')?.textContent === 'Hostess');
+  expect(!await phone.locator('.chat-online li').filter({ hasText: 'Pocket' }).count(), 'the lobby no longer lists the removed user');
   await phone.locator('.chat-room', { hasText: 'Commando' }).locator('button', { hasText: 'JOIN' }).click();
   await phone.locator('.chat-view-lobby .chat-error', { hasText: 'removed' }).waitFor({ timeout: 5000 });
   ok('the host removes a member, who cannot come back');

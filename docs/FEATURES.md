@@ -305,7 +305,8 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   cartridge or tape in the machine. A room about an Assembly64 release offers
   to load it for everyone who joins.
 - **Open to everyone**: every room is listed in the lobby, and anyone can
-  join it.
+  join it. A separate list below the rooms shows online nicknames from all
+  chatrooms, updated live.
 - **Moderated by the members**: the host mutes and removes people, a majority
   vote removes anyone, and anyone can hide someone's messages or report them
   to the admin.

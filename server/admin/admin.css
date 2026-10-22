@@ -26,6 +26,7 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var
 #room-list > li { border: 0; padding: 0; background: none; margin: 0; }
 .room-item { display: block; width: 100%; text-align: left; margin-bottom: 6px; padding: 6px 8px; }
 .room-item[aria-pressed="true"] { border-color: var(--accent); background: #26264f; }
+.online-user { width: 100%; text-align: left; overflow-wrap: anywhere; }
 .room-item .meta, .meta { color: var(--dim); font-size: 12px; }
 .badge { display: inline-block; padding: 0 5px; border-radius: 3px; font-size: 11px; margin-left: 4px; border: 1px solid var(--line); }
 .badge.rep { color: var(--warn); border-color: var(--warn); }

@@ -182,7 +182,9 @@ investigated (see [What is shared](#what-is-shared)).
 
 Every room is open to everyone. **Rooms** in the lobby lists them all, with
 how many people are in each, those about something you have loaded first.
-**JOIN** takes you in.
+**JOIN** takes you in. Below the rooms, **Online** lists connected users'
+nicknames from all chatrooms, updating as people join, leave or reconnect.
+Disconnected users are not listed as online during the one-minute grace period.
 
 ### In a room
 
@@ -220,7 +222,8 @@ it. In fullscreen mode a chat button sits next to the close button.
 
 ### What is shared
 
-Your nickname and messages go to the people in your room and to the C64 READY.
+Your nickname is also visible in the lobby while you are connected to a room.
+Your messages go to the people in your room and to the C64 READY.
 admin, who can see every room live. The admin's live view shows a short code
 made from your IP address, not the address itself.
 
