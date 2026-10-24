@@ -11,6 +11,10 @@ The version you are running is shown at the bottom of the About dialog.
 
 ## Next release
 
+- **CLI devices.** Headless runs connect IEC plugins alongside the User Port,
+  with printer jobs saved as SVG or printable HTML. The local server detects
+  either connector and reloads plugin edits.
+
 - **IEC devices.** Connect plugins alongside drives 8 and 9. IEC Printer captures
   Commodore text and bitmap graphics, saves jobs and prints to paper or PDF.
   Multiple devices can use different addresses.

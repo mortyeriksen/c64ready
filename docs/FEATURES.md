@@ -379,7 +379,9 @@ booted headless and tiled into one captioned sheet. Node 20.19 or newer,
 no dependencies; the [CLI guide](GUIDE-CLI.md) walks every command.
 
 `c64rdy serve` runs the app on your computer with the relay the Hayes Modem
-needs, and `run --userport` plugs a user port device into a headless run.
+needs. Headless runs accept `--userport` and repeatable `--iec ADDRESS:FILE`
+plugins. `--iec-output` saves printer jobs as SVG or printable HTML.
+`serve --device` recognizes either connector and reloads edits.
 
 `sid2prg` wraps SID tunes with the same C64 music player as the browser UI.
 `sid2wav` renders a selected song as 16-bit WAV audio (mono for one SID, stereo for two), with duration,

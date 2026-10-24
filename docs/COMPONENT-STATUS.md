@@ -77,7 +77,7 @@ implementation is to documented hardware behavior for that component.
 | Expansion | User port | Implemented | Medium | CIA2 PB0-PB7, PA2, PC2 and FLAG2, and the SP and CNT pins of both CIAs, brought out to one pluggable device, with installable devices (see [Writing device plugins](DEVICE-PLUGINS.md)). |
 | Expansion | Hayes Modem (user port) | Implemented | Medium | Zimodem-style Hayes modem: 8N1 and other formats from 300 to 2400 baud with autobaud, and 9600 with UP9600 drivers. Telnet, phonebook, RTS/CTS and DTR handling. Reaches the network through a WebSocket relay. Optional synthesized speaker effects share master volume and mute. |
 | Expansion | IEC device plugins | Implemented | Medium | Multiple participants on the shared ATN/CLK/DATA bus, independent of drives 8 and 9. Raw pin API, timers, save states, isolated errors and installable devices. Standard serial listener helper handles addressing, channels, byte acknowledgement and EOI. |
-| Expansion | IEC Printer | Partial | Medium | Commodore MPS-style text and seven-pin bitmap graphics, repeat and position commands, direct browser print dialog, saved jobs and activity status. Text uses a browser font, native printer fonts, full PETSCII graphics and advanced commands are not implemented. |
+| Expansion | IEC Printer | Partial | Medium | Commodore MPS-style text and seven-pin bitmap graphics, repeat and position commands, browser printing, CLI SVG/HTML export, saved jobs and activity status. Text uses a browser font, native printer fonts, full PETSCII graphics and advanced commands are not implemented. |
 | Expansion | Other cartridge types / ACIA cartridges | Missing | Low | Not implemented. |
 
 ## Unmodelled quirks, for the record

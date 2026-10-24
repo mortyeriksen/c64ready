@@ -22,7 +22,7 @@ const GLOBAL = {
 
 /**
  * @param {string[]} argv  everything after the command word
- * @param {object} spec   { longName: { value?: true, alias?: 'x' } }
+ * @param {object} spec   { longName: { value?: true, alias?: 'x', repeat?: true } }
  * @returns {{ args: string[], flags: object }}
  */
 export function parseArgs(argv, spec = {}) {
@@ -62,7 +62,8 @@ export function parseArgs(argv, spec = {}) {
       if (i + 1 >= argv.length) throw new UsageError(`--${name} needs a value`);
       v = argv[++i];
     }
-    flags[name] = v;
+    if (s.repeat) (flags[name] ??= []).push(v);
+    else flags[name] = v;
   }
   return { args, flags };
 }

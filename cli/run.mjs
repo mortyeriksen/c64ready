@@ -30,6 +30,7 @@ import {
 } from './tapeload.mjs';
 import { jobsFor, inParallel } from './jobs.mjs';
 import { plugDevice } from './userport.mjs';
+import { parseIecSpecs, plugIecDevices } from './iec.mjs';
 const BOOT_CAP = 400;                            // frames to give the KERNAL before giving up on it
 const ANIM_FPS = 5;                              // screens a --anim film takes per second
 
@@ -69,9 +70,12 @@ export async function run(argv) {
     frames: { value: true }, roms: { value: true }, file: { value: true }, all: {},
     anim: {}, fps: { value: true }, speed: { value: true }, jobs: { value: true },
     'no-press': {}, collage: {}, userport: { value: true },
+    iec: { value: true, repeat: true }, 'iec-output': { value: true, repeat: true },
   });
-  if (args.length !== 1) throw new UsageError('Usage: c64rdy run <prg|tap|d64|d71|d81|g64|t64|crt> [--file NAME | --all] [-o out.png] [--frames N] [--anim [--fps N] [--speed N]] [--jobs N] [--roms <dir>] [--userport <device.js|modem>]');
+  if (args.length !== 1) throw new UsageError('Usage: c64rdy run <prg|tap|d64|d71|d81|g64|t64|crt> [--file NAME | --all] [-o out.png] [--frames N] [--anim [--fps N] [--speed N]] [--jobs N] [--roms <dir>] [--userport <device.js|modem>] [--iec ADDRESS:FILE] [--iec-output ADDRESS:FILE.svg|html]');
   const p = args[0];
+  const iecSpecs = parseIecSpecs(flags.iec), iecOutputs = parseIecSpecs(flags['iec-output'], 'iec-output');
+  for (const output of iecOutputs) if (!iecSpecs.some(spec => spec.address === output.address)) throw new UsageError(`--iec-output: no IEC device at ${output.address}`);
   let bytes = fs.readFileSync(p);
   let kind = sniff(bytes, p);
   // A .t64 holds no signal to boot, but it is a bag of programs — so it runs as
@@ -92,6 +96,7 @@ export async function run(argv) {
   if (flags.all && flags.out) throw new UsageError('--all writes one PNG per program; use --out-dir, not -o');
   if (flags.collage && !flags.all) throw new UsageError('--collage gathers a --all run into one sheet; add --all');
   if (flags.userport && (flags.all || kind === 'tap')) throw new UsageError('--userport plugs a device into one machine; it works with a single .prg, disk or cartridge run');
+  if ((iecSpecs.length || iecOutputs.length) && (flags.all || kind === 'tap')) throw new UsageError('--iec works with a single .prg, disk or cartridge run, without --all');
   const frames = countFlag(flags, 'frames') ?? RUN_FRAMES[kind];
   // Both film knobs ask for a film by being named: --anim can stay unsaid.
   const anim = Boolean(flags.anim || flags.fps !== undefined || flags.speed !== undefined);
@@ -173,69 +178,74 @@ export async function run(argv) {
   // A user port device is plugged in before the machine starts, as it would be
   // on the desk. The run then keeps to real time so its network has a chance.
   const device = flags.userport ? await plugDevice(m, flags.userport) : null;
+  let iec = null;
+  try {
+    iec = await plugIecDevices(m, iecSpecs);
+    const out = outFileFor(p, '.png', flags);
+    iec.validateOutputs(iecOutputs, flags, out);
 
-  if (kind === 'prg') {
-    // Wait for the prompt, do not count frames at it: the KERNAL does not finish
-    // its RAM test and clear the screen until about frame 110, so a .prg entered
-    // on a fixed count is jumped into on a machine that has not finished starting.
-    // What the machine owes us is a prompt, not a number of frames.
-    bootToReady(m);
-    const at = m.loadPRG(bytes);
-    // A program with a BASIC stub is RUN, which is the stub's whole purpose: it
-    // is a loader the program brought with it, and BASIC sets up the state it
-    // expects on the way through. Only a program that has no stub is entered
-    // with SYS at its load address, because then there is nothing to run.
-    //
-    // The test is whether a stub is there, not where the program loads. Both of
-    // the rules this replaces got that wrong in opposite directions. Jumping
-    // the program counter at a SYS token found in the BASIC text skips BASIC
-    // altogether, and a stub that counts on having been RUN does not survive
-    // it — Moon Patrol comes off a tape running and came out of a .prg at a
-    // READY prompt. Keying on a $0801 load address instead only asks where the
-    // program sits, which is a guess about the stub rather than a look at it.
-    if (sysTarget(bytes) !== null) m.injectRun(); else m.injectSys(at);
-  } else if (isDisk) {
-    if (kind === 'g64') {
-      // A raw disk boots through the emulated 1541, the only thing that can
-      // read its tracks: the drive is on the bus before the machine starts.
-      m.attachDrive(roms.drive1541);
-      m.setTrueDrive(true);
+    if (kind === 'prg') {
+      // Wait for the prompt, do not count frames at it: the KERNAL does not finish
+      // its RAM test and clear the screen until about frame 110, so a .prg entered
+      // on a fixed count is jumped into on a machine that has not finished starting.
+      // What the machine owes us is a prompt, not a number of frames.
       bootToReady(m);
+      const at = m.loadPRG(bytes);
+      // A program with a BASIC stub is RUN, which is the stub's whole purpose: it
+      // is a loader the program brought with it, and BASIC sets up the state it
+      // expects on the way through. Only a program that has no stub is entered
+      // with SYS at its load address, because then there is nothing to run.
+      //
+      // The test is whether a stub is there, not where the program loads. Both of
+      // the rules this replaces got that wrong in opposite directions. Jumping
+      // the program counter at a SYS token found in the BASIC text skips BASIC
+      // altogether, and a stub that counts on having been RUN does not survive
+      // it — Moon Patrol comes off a tape running and came out of a .prg at a
+      // READY prompt. Keying on a $0801 load address instead only asks where the
+      // program sits, which is a guess about the stub rather than a look at it.
+      if (sysTarget(bytes) !== null) m.injectRun(); else m.injectSys(at);
+    } else if (isDisk) {
+      if (kind === 'g64') {
+        // A raw disk boots through the emulated 1541, the only thing that can
+        // read its tracks: the drive is on the bus before the machine starts.
+        m.attachDrive(roms.drive1541);
+        m.setTrueDrive(true);
+        bootToReady(m);
+      } else {
+        bootToReady(m);
+        // The KERNAL load trap serves the disk; for D71/D81 it is the only way in,
+        // since the 1541 cannot read these disk geometries.
+        m.setTrueDrive(false);
+      }
+      m.setD64(disk);
+      if (loadName || kind === 'g64') {
+        // A named program instead of the first one. LOAD"NAME",8,1 is longer than
+        // the 10-byte keyboard buffer, so it is typed the way a person types —
+        // fed in as the KERNAL drains it — with RUN queued behind the load. A
+        // .g64's LOAD"*" goes the same way: the deferred RUN of injectLoadAndRun
+        // hangs off the load trap, and the real drive never reaches it.
+        type(m, `LOAD"${loadName ?? '*'}",8,1\rRUN\r`);
+      } else {
+        m.injectLoadAndRun();
+      }
     } else {
-      bootToReady(m);
-      // The KERNAL load trap serves the disk; for D71/D81 it is the only way in,
-      // since the 1541 cannot read these disk geometries.
-      m.setTrueDrive(false);
+      m.loadCartridge(bytes);                      // resets; the cartridge boots the machine
     }
-    m.setD64(disk);
-    if (loadName || kind === 'g64') {
-      // A named program instead of the first one. LOAD"NAME",8,1 is longer than
-      // the 10-byte keyboard buffer, so it is typed the way a person types —
-      // fed in as the KERNAL drains it — with RUN queued behind the load. A
-      // .g64's LOAD"*" goes the same way: the deferred RUN of injectLoadAndRun
-      // hangs off the load trap, and the real drive never reaches it.
-      type(m, `LOAD"${loadName ?? '*'}",8,1\rRUN\r`);
-    } else {
-      m.injectLoadAndRun();
-    }
-  } else {
-    m.loadCartridge(bytes);                      // resets; the cartridge boots the machine
-  }
 
-  // A film plays at fps × speed: one machine-second of screens, shown in one
-  // second divided by the speed.
-  const film = anim ? new Apng(CANVAS_W, CANVAS_H, fps * speed) : null;
-  const { pressed } = device
-    ? await runFramesLive(m, frames, film, fps, { press, afterFrame: device.frame })
-    : runFrames(m, frames, film, fps, { press });
-  if (device) {
-    if (device.error()) say(`user port: ${device.meta.name} stopped: ${device.error().message}`);
-    device.dispose();
-  }
-  const out = outFileFor(p, '.png', flags);
-  if (film) film.write(out); else writePng(out, m.vic2.fb32, CANVAS_W, CANVAS_H);
-  say(`${out}  (${frames} frames after start${filmSaid(film, { fps, speed })}${pressSaid(pressed)})`);
-  return 0;
+    // A film plays at fps × speed: one machine-second of screens, shown in one
+    // second divided by the speed.
+    const film = anim ? new Apng(CANVAS_W, CANVAS_H, fps * speed) : null;
+    const { pressed } = device || iecSpecs.length
+      ? await runFramesLive(m, frames, film, fps, { press, afterFrame: () => { device?.frame(); iec.frame(); } })
+      : runFrames(m, frames, film, fps, { press });
+    iec.check();
+    if (device?.error()) say(`user port: ${device.meta.name} stopped: ${device.error().message}`);
+    iec.writeOutputs(iecOutputs, flags);
+    for (const output of iecOutputs) say(`IEC ${output.address} output → ${output.file}`);
+    if (film) film.write(out); else writePng(out, m.vic2.fb32, CANVAS_W, CANVAS_H);
+    say(`${out}  (${frames} frames after start${filmSaid(film, { fps, speed })}${pressSaid(pressed)})`);
+    return 0;
+  } finally { iec?.dispose(); device?.dispose(); }
 }
 
 // ── run, on a tape ───────────────────────────────────────────────────────────

@@ -7,8 +7,8 @@
 import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { validateDeviceModule } from '../src/userport/plugins.js';
+import { loadDeviceFile } from './devices.mjs';
 
 // Literal imports, so tools/build-cli.mjs packs the built-in devices.
 const loadModem = () => import('../src/userport/devices/modem.js');
@@ -25,9 +25,7 @@ export async function loadDevice(spec) {
   }
   const file = path.resolve(spec);
   if (!fs.existsSync(file)) throw new Error(`no device file at ${spec} (built-in devices: ${BUILTIN_DEVICE_NAMES.join(', ')})`);
-  // A query per modification time, so a changed file is imported afresh.
-  const mod = await import(`${pathToFileURL(file).href}?t=${fs.statSync(file).mtimeMs}`);
-  return { file, mod, meta: validateDeviceModule(mod) };
+  return loadDeviceFile(file, { bus: 'userport' });
 }
 
 function nodeSocket(hostName, port) {

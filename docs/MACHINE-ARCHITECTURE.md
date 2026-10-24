@@ -371,13 +371,18 @@ accepted files are imported.
 `_syncIecBus` combines their CLK/DATA pulls while preserving the delayed C64 view.
 Addresses 8 and 9 stay reserved for drives. Devices receive line changes and timers,
 with faults isolated per device and no per-cycle allocations. The standard serial
-helper (`iec/listener.js`) handles addressed reception and EOI. Snapshots match
+helper (`iec/listener.js`) handles addressed reception and EOI. ATN asserted with
+CLK high holds the DATA acknowledgement until the talker first pulls CLK low,
+before entering the byte-ready handshake. Snapshots retain this phase and match
 device ids and addresses. See [Device API](DEVICE-PLUGINS.md#iec-device-plugins).
 
 **IEC Printer** (`iec/devices/printer.js`, `iec/print-job.js`) receives into a fixed
 512 KB spool, withholding acknowledgement when full. Storage, UI, MPS rendering
 and browser printing run outside the emulation loop. Snapshots include the spool
 and listener state.
+The CLI uses the same bus and a Node host for plugin frame hooks, storage and
+TCP sockets. Printer export renders the shared MPS page operations as SVG or
+HTML outside the cycle loop.
 
 **Memory map & banking live in `memory.js`**, not here. `_rebuildMemoryMap()`
 builds per-page read/write tables from the 6510 port ($01) LORAM/HIRAM/CHAREN

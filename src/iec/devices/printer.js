@@ -87,5 +87,6 @@ export function create(port, host) {
     detach() { serial.detach(); job.detach(); },
     serialize: () => ({ job: job.serialize(), serial: serial.serialize() }),
     deserialize(state) { if (state?.job) job.deserialize(state.job); serial.deserialize(state?.serial); },
+    exportOutput: format => job.exportOutput(format),
   };
 }

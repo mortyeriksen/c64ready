@@ -21,6 +21,8 @@ const TESTS = [
   'cli-run-spec-test.js',
   'cli-serve-spec-test.js',
   'cli-userport-spec-test.js',
+  'cli-iec-spec-test.js',
+  'cli-iec-browser-test.js',
   'cli-tapeload-spec-test.js',
   'cli-loader-spec-test.js',
   'cli-t64-spec-test.js',

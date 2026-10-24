@@ -78,6 +78,21 @@ test('standard serial receives only addressed data, including EOI and binary byt
   assert.deepEqual(got, [[0, 7, false], [255, 7, true]]); assert.deepEqual(other, []);
   f.commands(0x3F);
 });
+test('attention asserted while CLK is high acknowledges until the talker starts the ready handshake', () => {
+  const f = busFixture(), a = [], b = [];
+  f.bus.plug(4, 'a', port => port.createListener({ onCommand: value => a.push(value) }));
+  f.bus.plug(5, 'b', port => port.createListener({ onCommand: value => b.push(value) }));
+  f.set(3); f.tick(20);
+  assert.equal(f.bus.inputs & 1, 0, 'IEC listeners acknowledge ATN with DATA low even while CLK is still high');
+  const saved = f.bus.serialize();
+  f.bus.deserialize(saved);
+  assert.equal(f.bus.inputs & 1, 0, 'restoring an ATN acknowledgement keeps DATA low until the initial CLK fall');
+  f.set(0);
+  assert.equal(f.bus.inputs & 1, 0, 'ATN acknowledgement remains asserted through the initial CLK fall');
+  f.byte(0x25); f.byte(0x60);
+  assert.deepEqual(a, [0x25, 0x60], 'the first listener decodes every ATN bit without counting the ready handshake');
+  assert.deepEqual(b, a, 'all listeners decode the same command stream');
+});
 test('multiple LISTEN addresses receive the same stream and TALK to another device preserves listeners', () => {
   const f = busFixture(), a = [], b = [];
   f.bus.plug(4, 'a', p => p.createListener({ onByte: (value, channel) => a.push([value, channel]) }));
@@ -101,15 +116,17 @@ test('IEC works without either drive and remains independent of the user port', 
 });
 const kernal = readAsset('kernal'), basic = readAsset('basic'), charRom = readAsset('chargen');
 if (!kernal || !basic || !charRom) console.log('ok  - KERNAL PRINT# to IEC #4 # SKIP local C64 ROMs missing');
-else test('unmodified KERNAL prints to device 4 on the real IEC lines', () => {
+else test('unmodified KERNAL switches between addressed printers on the real IEC lines', () => {
   const m = new C64Machine(); m.loadROMs({ kernal, basic, charRom }); m.reset();
-  const got = [];
+  const got = [], other = [];
   m.attachIecDevice(4, 'receiver', p => p.createListener({ onByte: (b, sa, eoi, kind) => { if (kind === 'data') got.push(b); } }));
+  m.attachIecDevice(5, 'other', p => p.createListener({ onByte: (b, sa, eoi, kind) => { if (kind === 'data') other.push(b); } }));
   for (let i = 0; i < 160; i++) m.runFrame();
-  const command = 'OPEN1,4:PRINT#1,"HELLO":CLOSE1\r';
+  const command = 'OPEN1,4:PRINT#1,"HELLO":CLOSE1:OPEN1,5:PRINT#1,"FIVE":CLOSE1\r';
   let typed = 0;
   for (let i = 0; i < 200; i++) { typed += m.bufferKeyboardText(command.slice(typed)); m.runFrame(); }
   assert.equal(Buffer.from(got).toString('ascii'), 'HELLO\r');
+  assert.equal(Buffer.from(other).toString('ascii'), 'FIVE\r', 'LISTEN after UNLISTEN selects only the new address');
 });
 const driveRom = readAsset('drive1541');
 if (kernal && basic && charRom && driveRom) test('IEC device 4 coexists with physical drives 8 and 9', () => {

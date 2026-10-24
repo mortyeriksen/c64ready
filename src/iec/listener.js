@@ -4,11 +4,12 @@
 // ATN commands are received by every device. Data bytes are accepted only by
 // addressed listeners. EOI is a >=200 us delay, acknowledged for >=60 us.
 export function createIecListener(port, callbacks = {}) {
-  const WAIT_READY = 0, WAIT_START = 1, BITS = 2, END = 3, ACK = 4, EOI = 5, BLOCKED = 6;
+  const WAIT_READY = 0, WAIT_START = 1, BITS = 2, END = 3, ACK = 4, EOI = 5, BLOCKED = 6, ATN_CLOCK = 7;
   let phase = WAIT_READY, lines = port.lines(), attention = !(lines & 4);
   let listening = false, channel = 0, kind = 'data', value = 0, bits = 0, eoi = false, due = 0;
   const timeout = Math.ceil(port.cyclesPerSecond * 200e-6);
   const hold = Math.ceil(port.cyclesPerSecond * 60e-6);
+  if (attention && (lines & 2)) phase = ATN_CLOCK;
   const drive = level => port.drive(1, level);
   const cancel = () => { due = 0; port.cancelWake(); };
   const active = () => attention || listening;
@@ -31,8 +32,10 @@ export function createIecListener(port, callbacks = {}) {
     if (!attention) { due = port.now() + timeout; port.wakeAt(due); }
   }
   function reset() {
-    cancel(); listening = false; phase = WAIT_READY; value = bits = 0; eoi = false;
-    lines = port.lines(); attention = !(lines & 4); drive(attention ? 0 : 1);
+    cancel(); listening = false; value = bits = 0; eoi = false;
+    lines = port.lines(); attention = !(lines & 4);
+    phase = attention && (lines & 2) ? ATN_CLOCK : WAIT_READY;
+    drive(attention ? 0 : 1);
   }
   drive(attention ? 0 : 1);
   return {
@@ -40,11 +43,14 @@ export function createIecListener(port, callbacks = {}) {
       const old = lines; lines = next;
       const atn = !(next & 4), clk = !!(next & 2), oldClk = !!(old & 2);
       if (atn !== attention) {
-        attention = atn; cancel(); value = bits = 0; eoi = false; phase = WAIT_READY;
+        attention = atn; cancel(); value = bits = 0; eoi = false;
+        phase = atn && clk ? ATN_CLOCK : WAIT_READY;
         drive(active() ? 0 : 1);
         return;
       }
       if (!active()) { drive(1); return; }
+      // ATN acknowledges on DATA before the talker's initial CLK fall.
+      if (phase === ATN_CLOCK) { if (!clk) phase = WAIT_READY; return; }
       if (phase === WAIT_READY || phase === ACK) {
         if (clk) beginReady();
       } else if (phase === WAIT_START && !clk) {
@@ -71,7 +77,7 @@ export function createIecListener(port, callbacks = {}) {
       phase = s.phase; lines = s.lines; attention = !!s.attention; listening = !!s.listening;
       channel = s.channel & 31; kind = s.kind; value = s.value & 255; bits = s.bits | 0; eoi = !!s.eoi;
       if (s.remaining > 0) { due = port.now() + s.remaining; port.wakeAt(due); }
-      drive(phase === ACK || phase === EOI || (phase === WAIT_READY && active()) ? 0 : 1);
+      drive(phase === ACK || phase === EOI || phase === ATN_CLOCK || (phase === WAIT_READY && active()) ? 0 : 1);
     },
   };
 }

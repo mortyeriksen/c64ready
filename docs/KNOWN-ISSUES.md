@@ -53,6 +53,7 @@ tests. See the [VIC-II architecture](VIC2-ARCHITECTURE.md#fetch-fed-graphics).
   printer driver and disk version, its Epson output uses different commands.
   Jobs hold up to 512 KB, and each print action shows at most 100 Letter pages.
   The browser controls the print dialog and available PDF destinations.
+  Headless CLI runs export SVG or HTML, with PDF saving through a browser.
 
 ## Unmodelled hardware quirks
 

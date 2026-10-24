@@ -1119,9 +1119,9 @@ function maybeEquipmentHint() {
 }
 window.addEventListener('c64-splash-dismissed', maybeEquipmentHint);
 document.addEventListener('visibilitychange', maybeEquipmentHint);
-userportCard = initUserportCard({ getMachine: () => c64, getAudio: () => userportAudio, safeMode: switchOn('userportSafeMode') });
+userportCard = initUserportCard({ getMachine: () => c64, getAudio: () => userportAudio, safeMode: switchOn('userportSafeMode'), revealPanel: () => panelOrder?.reveal('userport', { onlyIfHidden: true }) });
 userportCard.attach(c64);
-iecCard = initIecCard({ getMachine: () => c64, getAudio: () => userportAudio, safeMode: switchOn('iecSafeMode') });
+iecCard = initIecCard({ getMachine: () => c64, getAudio: () => userportAudio, safeMode: switchOn('iecSafeMode'), revealPanel: () => panelOrder?.reveal('iec', { onlyIfHidden: true }) });
 iecCard.attach(c64);
 
 loader.bindInputs(kernalInput, basicInput, charInput, drive1541Input);

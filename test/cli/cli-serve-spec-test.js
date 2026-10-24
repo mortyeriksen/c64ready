@@ -60,6 +60,7 @@ try {
   {
     const info = await (await fetch(`${base}/__c64rdy/info`)).json();
     expect(info.relay === '/relay' && info.device && info.events, `info names the relay, device and events: ${JSON.stringify(info)}`);
+    expect(info.bus === 'userport', 'User Port metadata selects the User Port card');
     const src = await (await fetch(`${base}${info.device}`)).text();
     expect(src === fs.readFileSync(deviceFile, 'utf8'), 'the --device file is served as it is on disk');
     ok('--device: the app finds the device through /__c64rdy/info');
@@ -192,6 +193,17 @@ try {
     expect(first.includes('event: device') && second.includes('event: device'), `every rename-save reloads: ${JSON.stringify([first, second])}`);
     reader.cancel();
     ok('--device: saves that rename a new file over the old one keep reloading');
+  }
+  {
+    const iecFile = path.join(tmp, 'iec.js');
+    fs.copyFileSync(new URL('../../public/iec/printer.js', import.meta.url), iecFile);
+    const iec = await startServe({ port: 0, app: tmp, device: iecFile, log: () => {} });
+    try {
+      const info = await (await fetch(`${iec.url}__c64rdy/info`)).json();
+      expect(info.bus === 'iec', 'IEC metadata selects the IEC card');
+      expect(await (await fetch(`${iec.url}__c64rdy/device.js`)).text() === fs.readFileSync(iecFile, 'utf8'), 'IEC source is served intact');
+    } finally { await iec.close(); }
+    ok('--device recognizes and serves IEC plugins');
   }
   {
     // No --app: the app comes from the site, is cached, and the cache answers

@@ -68,6 +68,11 @@ into one installable file by `npm run build:devices` (also run by
 the app build). IEC Monitor at `/iec/monitor.js` is a smaller example.
 Type declarations are at `/iec/iec-device.d.ts`.
 
+An optional `exportOutput(format)` method returns UTF-8 text or a `Uint8Array`
+for `svg` or `html`. The CLI calls it after a run, outside emulated cycles,
+when `--iec-output ADDRESS:FILE` is requested. IEC Printer uses the same MPS
+decoder for browser printing and CLI exports. See [CLI devices](GUIDE-CLI.md#iec-devices-and-printer-output).
+
 ## User port device plugins
 
 A user port device is one JavaScript file that plugs into the emulated C64's
@@ -140,7 +145,8 @@ Callbacks the device can return:
 
 ## The host
 
-`host` is the app around the device, in real time.
+`host` is the app around the device, in real time. CLI runs provide no panel
+or audio, keep settings in memory and connect sockets directly to TCP.
 
 | Member | What it does |
 | --- | --- |

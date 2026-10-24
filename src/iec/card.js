@@ -2,7 +2,7 @@
 // Copyright © 2026 Morten Øien Eriksen
 import { inspectIecSource, loadIecSource } from './plugins.js';
 import { listIecInstalled, putIecInstalled, removeIecInstalled } from './store.js';
-import { createBrowserHost } from '../userport/host.js';
+import { createBrowserHost, defaultRelayBase } from '../userport/host.js';
 import { createDeviceInstallReview } from '../ui/device-install-review.js';
 import { validIecAddress } from '../iec.js';
 import { pushEscapeLayer, popEscapeLayer } from '../ui/escape-stack.js';
@@ -19,7 +19,7 @@ function download(name, source) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function initIecCard({ getMachine, getAudio, safeMode = false }) {
+export function initIecCard({ getMachine, getAudio, safeMode = false, revealPanel = () => {} }) {
   const card = $('iec-card'), power = $('iec-power'), select = $('iec-device'), address = $('iec-address');
   const status = $('iec-status'), list = $('iec-connections'), modal = $('iec-modal');
   const body = $('iec-modal-body'), actions = $('iec-modal-actions'), title = $('iec-modal-title');
@@ -203,6 +203,46 @@ export function initIecCard({ getMachine, getAudio, safeMode = false }) {
     e.preventDefault(); e.stopPropagation(); await offer(await file.text(), file.name);
   });
   const ready = refresh();
+  async function syncDevServer() {
+    if (safeMode || !defaultRelayBase()) return;
+    let info;
+    try {
+      const response = await fetch('/__c64rdy/info', { cache: 'no-store' });
+      if (!response.ok) return;
+      info = await response.json();
+    } catch { return; }
+    if (!info.device || info.bus !== 'iec') return;
+    let pulling = false, again = false;
+    const pull = async () => {
+      if (pulling) { again = true; return; }
+      pulling = true;
+      try {
+        const response = await fetch(info.device, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Server answered ${response.status}`);
+        const source = await response.text(), checked = await inspectIecSource(source);
+        const had = installed.find(record => record.id === checked.meta.id);
+        if (had?.hash === checked.hash) return;
+        const loaded = await loadIecSource(source);
+        if (JSON.stringify(loaded.meta) !== JSON.stringify(checked.meta)) throw new Error('Plugin metadata changed while loading.');
+        const existing = configs.filter(c => c.id === checked.meta.id);
+        const target = existing[0]?.address ?? checked.meta.address;
+        if (!existing.length && configs.some(c => c.address === target)) throw new Error(`IEC address ${target} is already in use. Disconnect it before reloading the development plugin.`);
+        await putIecInstalled({ id: checked.meta.id, source, meta: checked.meta, hash: checked.hash, origin: 'c64rdy serve --device' });
+        for (const config of existing) { stop(config.address); list.querySelector(`[data-address="${config.address}"]`)?.remove(); }
+        modules.set(checked.meta.id, loaded);
+        if (!existing.length) configs.push({ id: checked.meta.id, address: target });
+        if (!had) { powered = true; write(POWER, true); }
+        save(); await refresh();
+        select.value = checked.meta.id; address.value = String(target);
+        revealPanel();
+        message(`${checked.meta.name} ${checked.meta.version} loaded from c64rdy serve.`);
+      } catch (error) { message(`c64rdy serve --device: ${error.message}`); }
+      finally { pulling = false; if (again) { again = false; void pull(); } }
+    };
+    await pull();
+    if (info.events && typeof EventSource !== 'undefined') new EventSource(info.events).addEventListener('device', pull);
+  }
+  ready.then(syncDevServer);
   return {
     attach(m) {
       stopAll(); facade = m; generation++;

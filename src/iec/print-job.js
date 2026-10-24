@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
+import { renderPrintOutput } from './print-output.js';
 const CAPACITY = 512 * 1024;
 const SVG = 'http://www.w3.org/2000/svg';
 
@@ -147,5 +148,11 @@ export function createPrintJob(host, { decodePages, onClear } = {}) {
     detach() { save(); ownerWindow?.removeEventListener('pagehide', save); },
     serialize: () => ({ data: encode(bytes.subarray(0, length)) }),
     deserialize: restore,
+    exportOutput(format) {
+      const result = decodePages(bytes.subarray(0, length));
+      if (result.incomplete || result.unsupported || result.limited) host?.log?.('Printer export:',
+        result.incomplete ? 'incomplete command' : '', result.unsupported ? `${result.unsupported} unsupported commands` : '', result.limited ? 'limited to 100 pages' : '');
+      return renderPrintOutput(result.pages, format);
+    },
   };
 }

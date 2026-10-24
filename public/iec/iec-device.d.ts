@@ -15,6 +15,8 @@ export interface IecDevice {
   detach?(): void;
   serialize?(): unknown;
   deserialize?(state: any): void;
+  /** Optional headless export, called outside emulated cycles. */
+  exportOutput?(format: 'svg' | 'html'): string | Uint8Array;
 }
 export interface IecListener extends IecDevice { resume(): void; }
 export interface IecPort {

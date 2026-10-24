@@ -35,7 +35,7 @@ function download(name, text) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function initUserportCard({ getMachine, getAudio, safeMode = false }) {
+export function initUserportCard({ getMachine, getAudio, safeMode = false, revealPanel = () => {} }) {
   const ui = {
     card: $('userport-card'),
     power: $('userport-power'),
@@ -441,7 +441,7 @@ export function initUserportCard({ getMachine, getAudio, safeMode = false }) {
       if (!res.ok) return;
       info = await res.json();
     } catch { return; }
-    if (!info.device) return;
+    if (!info.device || info.bus === 'iec') return;
     const pull = async () => {
       try {
         const src = await (await fetch(info.device, { cache: 'no-store' })).text();
@@ -449,7 +449,8 @@ export function initUserportCard({ getMachine, getAudio, safeMode = false }) {
         const had = installed.find((r) => r.id === meta.id);
         if (had && had.hash === hash) return;
         await install(src, meta, hash, 'c64rdy serve --device');
-        if (!powered) { powered = true; ui.power.checked = true; writePref(KEY_POWER, 'on'); setExpanded(true); await apply(); }
+        revealPanel();
+        if (!powered && !had) { powered = true; ui.power.checked = true; writePref(KEY_POWER, 'on'); setExpanded(true); await apply(); }
         showStatus(`${meta.name} ${meta.version} loaded from c64rdy serve.`);
       } catch (err) {
         showStatus(`c64rdy serve --device: ${err.message}`, true);

@@ -109,9 +109,11 @@ inputs, and a quoted wildcard works on any shell: c64rdy wav2tap "tapes/*.wav"
               --anim [--fps <n>] [--speed <n>]  Film the run: an animated PNG
               --no-press  Leave a waiting screen alone (SPACE, then fire)
               --userport <device.js|modem>  Plug a user port device in
-              (the run then keeps to real time)
+              --iec <address:file.js>  Plug in an IEC device (repeatable)
+              --iec-output <address:file.svg|html>  Export device output (repeatable)
+              (device runs keep to real time, single PRG/disk/cartridge only)
     serve:    --port <n> (6464)  --app <dir> serve a local build
-              --device <file.js> install a user port device, reload on change
+              --device <file.js> install a User Port or IEC device, reload on change
               --allow-local  let the relay reach this computer and its network
               --open  open it in the browser
     disk new: --name <NAME> --id <ID>

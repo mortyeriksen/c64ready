@@ -111,11 +111,17 @@ changes to the main page.
 
 ## IEC plugin tests
 
+`test/cli/cli-iec-spec-test.js` covers repeatable address arguments, exports,
+overwrite protection, fault cleanup and KERNAL printing with two IEC devices
+and the User Port. `test/cli/cli-iec-browser-test.js` checks `serve --device`
+against a production build, including connector selection, reload and power
+switches. Both run with `npm --prefix cli test` and the CLI package build.
+
 `test/iec/iec-device-spec-test.js` checks address reservation and conflicts,
 wired-AND pulls, detached handles, isolated errors, timers, snapshots,
-addressed byte reception and EOI. With local ROMs it runs unmodified KERNAL
+addressed byte reception, ATN acknowledgement with CLK high and EOI. With local ROMs it runs unmodified KERNAL
 `PRINT#` on the physical IEC lines, both without drives and alongside physical
-drives 8 and 9. Existing IEC edge-latency and two-bit drive tests cover shared
+drives 8 and 9, and switches between two printer addresses. Existing IEC edge-latency and two-bit drive tests cover shared
 bus timing. The receiver helper is tested against the published serial rules.
 
 `test/iec/iec-printer-spec-test.js` checks plugin bus validation and standalone

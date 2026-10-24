@@ -44,6 +44,10 @@ function throwsUsage(fn, msg) {
 }
 
 // Unknown flags are refused by name, not ignored.
+{
+  const { flags } = parseArgs(['--iec', '4:a.js', '--iec=5:b.js'], { iec: { value: true, repeat: true } });
+  eq(flags.iec, ['4:a.js', '5:b.js'], 'repeatable flags retain every value in order');
+}
 throwsUsage(() => parseArgs(['--nope']), 'unknown long flag is refused');
 throwsUsage(() => parseArgs(['-z'], {}), 'unknown alias is refused');
 

@@ -1,5 +1,17 @@
 import assert from 'node:assert/strict';
 import { createPrintJob } from '../../src/iec/print-job.js';
+import { renderPrintOutput } from '../../src/iec/print-output.js';
+
+{
+  const pages = [[{ text: '<script>&"', x: 0, y: 80, width: 720 }], [{ path: 'M0 0h12v10h-12z' }]];
+  const svg = renderPrintOutput(pages, 'svg'), html = renderPrintOutput(pages, 'html');
+  assert.match(svg, /viewBox="0 0 6120 15840"/, 'SVG stacks two Letter pages');
+  assert.match(svg, /translate\(0 7920\)/, 'the second page begins one Letter page below the first');
+  assert.match(svg, /&lt;script&gt;&amp;&quot;/, 'text is XML escaped');
+  assert.equal((html.match(/<svg /g) || []).length, 2, 'HTML keeps two printable pages');
+  assert.match(html, /@page \{ size: letter/, 'HTML declares Letter paper');
+  assert.throws(() => renderPrintOutput(pages, 'pdf'), /svg or html/);
+}
 
 function fixture(store = new Map()) {
   let frame, status, resumed = 0;

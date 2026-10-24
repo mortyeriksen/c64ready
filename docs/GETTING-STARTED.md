@@ -233,7 +233,8 @@ audio blip and no catch-up stutter.
   own controls, and a user port modem can stay connected at the same time.
   IEC Printer's Preview / Print button opens the browser print dialog for
   printing or saving as PDF.
-
+- **[Command line](GUIDE-CLI.md)**: work with media, run programs and export
+  IEC printer output as SVG or printable HTML.
 - **[User Guide](USER-GUIDE.md)**: the full reference for every control, card
   and dialog.
 - **[Features](FEATURES.md)**: everything the emulator supports, from the

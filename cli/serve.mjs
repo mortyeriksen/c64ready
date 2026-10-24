@@ -6,7 +6,7 @@
 //
 // The app comes from the public site and is kept in a local cache, so it stays
 // current while online and still starts offline. --app <dir> serves a local
-// build instead. --device <file> pre-installs a user port device in the app and
+// build instead. --device <file> pre-installs a User Port or IEC device and
 // reloads it whenever the file changes: the loop for writing devices.
 
 import fs from 'node:fs';
@@ -17,7 +17,7 @@ import { spawn } from 'node:child_process';
 import { parseArgs, UsageError } from './args.mjs';
 import { say, fail } from './report.mjs';
 import { attachRelay } from './relay.mjs';
-import { loadDevice } from './userport.mjs';
+import { loadDeviceFile } from './devices.mjs';
 import { scanDeviceSource } from '../src/userport/scan.js';
 
 // What users will be warned about when they install this device.
@@ -130,8 +130,9 @@ function openBrowser(url) {
  */
 export async function startServe({ port = DEFAULT_PORT, app = null, device = null, site = DEFAULT_SITE, allowLocal = false, log = say, block = fail } = {}) {
   if (app && !fs.existsSync(path.join(app, 'index.html'))) throw new Error(`${app} has no index.html: build the app first (npm run build)`);
+  let bus = null;
   if (device) {
-    await loadDevice(device);                     // fail now on a broken file, not in the browser
+    ({ bus } = await loadDeviceFile(device));
     reportScan(path.resolve(device), log);
   }
   const appDir = app ? path.resolve(app) : null;
@@ -162,6 +163,7 @@ export async function startServe({ port = DEFAULT_PORT, app = null, device = nul
       return send(res, 200, JSON.stringify({
         relay: '/relay',
         device: deviceFile ? '/__c64rdy/device.js' : null,
+        bus,
         events: deviceFile ? '/__c64rdy/events' : null,
       }), 'application/json', { 'Cache-Control': 'no-store' });
     }
@@ -200,6 +202,7 @@ export async function startServe({ port = DEFAULT_PORT, app = null, device = nul
   return {
     server,
     url,
+    bus,
     close: () => new Promise((resolve) => {
       watcher?.close();
       for (const res of listeners) res.end();
@@ -217,10 +220,10 @@ export async function serve(argv) {
   const port = flags.port === undefined ? DEFAULT_PORT : Number(flags.port);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new UsageError('--port takes a port number, 1 to 65535');
   const allowLocal = Boolean(flags['allow-local']);
-  const { url } = await startServe({ port, app: flags.app ?? null, device: flags.device ?? null, site: flags.site ?? DEFAULT_SITE, allowLocal });
+  const { url, bus } = await startServe({ port, app: flags.app ?? null, device: flags.device ?? null, site: flags.site ?? DEFAULT_SITE, allowLocal });
   say(`C64 READY. at ${url}  (user port relay at ${url.replace('http', 'ws')}relay)`);
   say(flags.app ? `serving ${flags.app}` : `app from ${flags.site ?? DEFAULT_SITE}, cached for offline use`);
-  if (flags.device) say(`user port device ${flags.device} is installed in the app and reloads when the file changes`);
+  if (flags.device) say(`${bus === 'iec' ? 'IEC' : 'User Port'} device ${flags.device} is installed in the app and reloads when the file changes`);
   if (allowLocal) say('the relay also reaches this computer and its local network');
   say('Ctrl+C stops it.');
   if (flags.open) openBrowser(url);

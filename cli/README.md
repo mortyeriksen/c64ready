@@ -78,11 +78,35 @@ c64rdy --version
 | **Programs into containers** | `prg2d64`, `prg2crt`, `prg2tap`, `prg2turbo` |
 | **SID music into player or audio** | `sid2prg`, `sid2wav` |
 | **Questions about a file** | `dir`, `info`, `loadtest`, `loader` |
-| **Boot the machine** | `run` (a PNG of the screen, or an animated one), with `--userport` for a user port device |
+| **Boot the machine** | `run` (PNG or animation), with `--userport` and repeatable `--iec` devices |
 | **Local server** | `serve`, with the relay the Hayes Modem needs |
 | **A disk's interior** | `disk new`, `disk add`, `disk rm`, `disk extract` |
 
 `c64rdy --help` lists every command and flag.
+
+## Device plugins and printing
+
+```sh
+c64rdy run print.prg --iec 4:printer.js --iec-output 4:job.html --frames 300
+c64rdy run print.prg --iec 4:printer.js --iec 5:monitor.js --userport modem
+c64rdy serve --device printer.js
+```
+
+Use the [IEC Printer plugin](https://c64ready.com/iec/printer.js) for `printer.js`.
+`--iec` takes `ADDRESS:FILE`, with addresses 4 to 30 except drive slots 8 and 9.
+Device runs keep to real time, support one PRG, disk or cartridge and can
+combine IEC devices with the User Port. Tape and `--all` runs do not accept devices.
+
+Repeat `--iec-output` to save SVG or HTML from devices that provide an export
+method. SVG stacks pages in one image, HTML keeps separate Letter pages for
+browser printing or saving as PDF. Exports preserve existing files unless
+`--force` is given. The screenshot is still produced.
+
+`serve --device` detects the connector from metadata, shows its card and
+reloads edits. An off switch stays off. Use `--app dist` with a local app build.
+Device file arguments are trusted executable code.
+
+## SID music
 
 Turn a SID tune into a runnable PRG with the same music player as the browser UI,
 or render it as 16-bit WAV audio (mono for one SID, stereo for two):
@@ -145,6 +169,10 @@ rest) are credited in
 ## Release notes
 
 ### Next version
+
+- **IEC devices.** `run --iec ADDRESS:FILE` connects multiple plugins alongside
+  the User Port. `--iec-output ADDRESS:FILE.svg` or `.html` exports printer
+  jobs. `serve --device` detects either connector and reloads edits.
 
 - **Device install review.** Base64 decoding is described as data handling,
   while executing decoded code still reports code execution. XML namespace

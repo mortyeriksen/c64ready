@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 // Bundle the IEC printer and print-job UI into one installable module.
-// Run after changing src/iec/devices/printer.js or src/iec/print-job.js.
+// Run after changing the printer, print-job controls or print-output renderer.
 import { build } from 'vite';
 import { writeFileSync } from 'node:fs';
 const result = await build({ configFile: false, logLevel: 'silent', build: {

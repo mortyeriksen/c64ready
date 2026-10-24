@@ -238,6 +238,8 @@ loads only after acceptance. See [Build device plugins](DEVICE-PLUGINS.md).
   The listener helper recognizes a 200 microsecond ready-to-start delay and
   acknowledges EOI for at least 60 microseconds. Byte bits arrive least
   significant first on released CLK, and reception is acknowledged on DATA.
+  ATN acknowledgement holds DATA low through the talker's initial CLK fall,
+  before the normal byte-ready handshake begins.
   <https://www.pagetable.com/201>
 - **Michael Steil, Commodore Peripheral Bus: Part 2, Bus Arbitration, TALK/LISTEN**: LISTEN addresses,
   UNLISTEN and secondary-address command groups. Every connected device
@@ -267,6 +269,9 @@ Letter pages per print action. Parsing, DOM work and browser storage stay out of
 byte callbacks. Text uses a browser monospace font with approximate character
 mapping. No printer firmware or driver code is ported.
 Letter paper, form feeds and job limits are browser output choices.
+Headless CLI export uses the same MPS decoding and limits. SVG stacks Letter
+pages in one image, HTML uses separate print pages. No PDF library or additional
+printer firmware is ported.
 
 Additional devices expose physical ATN/CLK/DATA levels and one emulated-time
 timer per instance. ATN belongs to the C64, plugins only pull or release CLK
