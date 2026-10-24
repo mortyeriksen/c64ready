@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 // src/userport/scan.js – a look through a device file before it is installed,
-// for the ten things a harmful device would most likely do. It reads the code
+// for capabilities and code patterns worth reviewing. It reads the code
 // as text: anything it finds is shown in the install dialog. Code can always
 // hide what it does, so finding nothing is not a guarantee.
 
@@ -49,8 +49,8 @@ const RULES = [
     test: /\beval\s*\(|\bnew\s+Function\b|(^|[^.\w$])Function\s*\(|\bimport\s*\(|\bset(Timeout|Interval)\s*\(\s*['"`]/,
   },
   {
-    id: 'input', severity: 'high', title: 'Listens to the keyboard or clipboard',
-    why: 'could record what you type or copy',
+    id: 'input', severity: 'high', title: 'Listens to keyboard, form input or clipboard',
+    why: 'can read typing, pasted text or values entered in a form',
     test: /addEventListener\s*\(\s*['"`](key(down|up|press)|paste|copy|cut|input|beforeinput)['"`]|\bnavigator\s*\.\s*clipboard\b|\bonkey(down|up|press)\b/,
   },
   {
@@ -69,10 +69,25 @@ const RULES = [
     test: /\blocation\s*(\.\s*(href|assign|replace)\b|=(?!=))|\bwindow\s*\.\s*open\s*\(|\bhistory\s*\.\s*(pushState|replaceState)\b|\.submit\s*\(/,
   },
   {
-    id: 'hidden', severity: 'high', title: 'Hides what it does',
-    why: 'disguised code is a common sign of a harmful file',
-    test: /\b(globalThis|window|self|top|parent)\s*\[|\batob\s*\(|String\s*\.\s*fromCharCode\s*\(\s*\d+\s*(,\s*\d+\s*){5,}\)|['"`][A-Za-z0-9+/=]{200,}['"`]|(\\x[0-9a-fA-F]{2}){8,}/,
+    id: 'hidden', severity: 'high', title: 'Contains code that is harder to review',
+    why: 'computed global names, long encoded literals or compressed code can conceal behavior',
+    test: /\b(globalThis|window|self|top|parent)\s*\[|String\s*\.\s*fromCharCode\s*\(\s*\d+\s*(,\s*\d+\s*){5,}\)|['"`][A-Za-z0-9+/=]{200,}['"`]|(\\x[0-9a-fA-F]{2}){8,}/,
     lineTest: (line) => line.length > 1000,
+  },
+  {
+    id: 'encoded-data', severity: 'info', title: 'Decodes Base64 data',
+    why: 'often used for saved binary data. Decoding alone does not run code',
+    test: /\batob\s*\(/,
+  },
+  {
+    id: 'printing', severity: 'info', title: 'Opens the browser print dialog',
+    why: 'uses browser printing for paper output or saving as PDF',
+    test: /\.\s*print\s*\(/,
+  },
+  {
+    id: 'embedded-document', severity: 'medium', title: 'Creates an embedded document',
+    why: 'can display content or run scripts in an embedded page, including print layouts',
+    test: /\.\s*srcdoc\s*=|\bcreateElement\s*\(\s*['"`]iframe['"`]/,
   },
   {
     id: 'page', severity: 'medium', title: 'Changes the page outside its own panel',
@@ -87,10 +102,12 @@ const RULES = [
 ];
 
 const ADDRESS = /\b(https?|wss?):\/\/[^\s'"`)<>]+/g;
+const NAMESPACES = new Set(['http://www.w3.org/2000/svg', 'http://www.w3.org/1999/xhtml', 'http://www.w3.org/1999/xlink', 'http://www.w3.org/XML/1998/namespace']);
+const SEVERITY = { high: 0, medium: 1, info: 2 };
 
 /**
  * Look through a device's source. Returns findings, most serious first:
- * { id, severity: 'high'|'medium', title, why, lines: [line numbers] }.
+ * { id, severity: 'high'|'medium'|'info', title, why, lines: [line numbers] }.
  * Network findings also carry `addresses`, any URLs written in the code.
  */
 export function scanDeviceSource(source) {
@@ -103,11 +120,14 @@ export function scanDeviceSource(source) {
     });
     if (hit.length) findings.push({ id: rule.id, severity: rule.severity, title: rule.title, why: rule.why, lines: hit });
   }
-  const addresses = [...new Set(lines.join('\n').match(ADDRESS) || [])];
+  const addresses = [...new Set(lines.join('\n').match(ADDRESS) || [])].filter(address => {
+    if (NAMESPACES.has(address)) return false;
+    try { return /[a-z0-9]/i.test(new URL(address).hostname); } catch { return false; }
+  });
   if (addresses.length) {
     const net = findings.find((f) => f.id === 'network');
     if (net) net.addresses = addresses;
     else findings.unshift({ id: 'network', severity: 'high', title: 'Contains web addresses', why: 'may contact these servers', lines: [], addresses });
   }
-  return findings.sort((a, b) => (a.severity === b.severity ? 0 : a.severity === 'high' ? -1 : 1));
+  return findings.sort((a, b) => SEVERITY[a.severity] - SEVERITY[b.severity]);
 }

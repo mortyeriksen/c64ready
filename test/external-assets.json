@@ -214,6 +214,48 @@
     "~/projects/c64ready-workspace/c64media/prg/OrbitUntold.prg"
    ],
    "note": "Demoscene production \u2014 bring your own; not distributed with this repo"
+  },
+  "guide-library-lunatico": {
+   "description": "Lunatico disk for the populated guide Library",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/d64/lft-lunatico/lft-lunatico-side1.d64"
+   ],
+   "note": "External demo disk, not distributed with this repository"
+  },
+  "guide-library-next-level": {
+   "description": "Next Level disk for the populated guide Library",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/d64/next_level_performers/image1.d64"
+   ],
+   "note": "External demo disk, not distributed with this repository"
+  },
+  "guide-library-the-hat": {
+   "description": "The Hat disk for the populated guide Library",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/d64/05 the hat - flt & gp/the-hat-7a825b1-a.d64"
+   ],
+   "note": "External demo disk, not distributed with this repository"
+  },
+  "guide-state-plasma": {
+   "description": "Named save state and thumbnail for the populated guide dialog",
+   "paths": [
+    "~/Downloads/Code_D1_-_Plasma.c64state"
+   ],
+   "note": "External save state, not distributed with this repository"
+  },
+  "guide-state-commando": {
+   "description": "Named save state and thumbnail for the populated guide dialog",
+   "paths": [
+    "~/Downloads/COMMANDO_-_Title.c64state"
+   ],
+   "note": "External save state, not distributed with this repository"
+  },
+  "guide-state-nine": {
+   "description": "Named save state and thumbnail for the populated guide dialog",
+   "paths": [
+    "~/Downloads/Nine_-_Hyperscreen.c64state"
+   ],
+   "note": "External save state, not distributed with this repository"
   }
  }
 }

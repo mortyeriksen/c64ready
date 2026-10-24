@@ -183,6 +183,13 @@ the [machine orchestrator](MACHINE-ARCHITECTURE.md) §6. The drive sees the
 *reflected* composite bus (`setIecLines`), never just its own output: it must
 re-sync on every VIA1-PB read or the wired-AND can deadlock.
 
+Additional IEC plugins share those same CLK and DATA lines through `iec.js`.
+They are independent participants, their addresses cannot replace drive 8 or 9.
+Drive output propagation and each drive's own line feedback retain the same
+timing rules when plugins are attached. The bus remains available to plugins
+when no drive is attached. The IEC Devices card follows Drive 9 by default,
+with an independent switch that disconnects only the added participants.
+
 ---
 
 ## 5. VIA2: drive mechanics & read/write head
@@ -556,3 +563,26 @@ idle scheduler before the first LOAD, so the C64 doesn't time out racing the boo
 - **Idle 1541 cycles are skipped, not free-run forever**: only after the drive
   is in a recognized idle loop with bus/motor/LED/IRQ quiet; VIA timer time is
   batched and settled on wake.
+
+## Drive 8 queue in the media layer
+
+`src/media/disk-queue.js` owns an ordered set of validated disk objects outside
+both drive implementations. The mounted object identifies the current entry,
+so reordering does not switch disks. Removing an entry never ejects it.
+`disk-queue-dialog.js` provides drag and arrow sorting and individual insertion.
+Library and Assembly64 queue actions copy image bytes without booting or
+resetting the machine. The next-disk shortcut uses the same insertion path.
+
+Queue images and preferences are saved atomically in the separate
+`c64emu-disk-queue` IndexedDB database. Library deletion or same-name replacement
+cannot alter queued images. Restoring this database never mounts a disk, and a
+machine-state restore remains authoritative for the inserted media.
+
+Insertion commits outgoing writes and saves them before starting the existing
+eject and disk-change delay. It saves again after eject commits final writes,
+then attaches with autorun disabled. Storage failure prevents attachment and
+restores the outgoing disk when necessary. A media generation counter prevents
+a delayed attachment from overriding a newer manual media operation. Queue
+operations serialize while asynchronous storage or compatibility checks run.
+D64 swaps retain the current drive mode, while raw GCR and virtual-only formats
+use the existing compatibility checks. Drive 9 has no queue state.

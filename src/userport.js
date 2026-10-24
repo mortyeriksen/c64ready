@@ -6,7 +6,7 @@
 // attached and calls tick() from the master cycle, which only does work when a
 // device timer or a PC2 strobe is due, so a device costs nothing between its
 // own events. The API devices are written against is documented in
-// docs/USERPORT-DEVICES.md.
+// docs/DEVICE-PLUGINS.md.
 //
 // Lines are TTL levels at the connector, 1 = high. Every line is pulled up, and
 // a line is low when either side pulls it low (wired-AND), which is how the

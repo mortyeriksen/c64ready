@@ -15,6 +15,7 @@
 // `img2webp` binary on PATH (brew install webp), which also spares a GIF encoder
 // dependency: a palette-free animation is ~30x smaller than the dithered GIF.
 import { chromium } from 'playwright';
+import { createGuideContext } from './guide-context.mjs';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -28,7 +29,7 @@ const { PNG } = require('pngjs');
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 // Argument first, else the registry — same resolution order as the other guide tools.
 const TAP = process.argv[2] || assetPath('demo-tape') || '';
-const OUT = process.argv[3] || path.join(REPO, 'public/guide/datasette-loading.webp');
+const OUT = process.argv[3] || path.join(process.env.GUIDE_OUT || path.join(REPO, 'public/guide'), 'datasette-loading.webp');
 const FRAMES = path.join(os.tmpdir(), 'ds-frames');
 fs.mkdirSync(FRAMES, { recursive: true });
 if (!TAP || !fs.existsSync(TAP)) {
@@ -44,13 +45,13 @@ const OUT_W = 760;                // downscale target width
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const b = await chromium.launch();
-const ctx = await b.newContext({ colorScheme: 'dark', viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 2, reducedMotion: 'reduce' });
+const ctx = await createGuideContext(b, { colorScheme: 'dark', viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 2, reducedMotion: 'reduce' });
 // splashSeen too: the splash covers the page and its teaser video swallows the
 // POWER click.
 await ctx.addInitScript(() => {
   try {
     localStorage.setItem('c64emu.installDismissed', '1');
-    localStorage.setItem('c64emu.splashSeen', '1');
+    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
   } catch {}
 });
 const p = await ctx.newPage();
@@ -60,13 +61,10 @@ await p.locator('#btn-power').click();
 await p.waitForSelector('body.powered-on').catch(() => {});
 await sleep(3500);                // boot to READY.
 
-// Expand the Datasette card so the transport + bar are visible.
-if (await p.locator('#datasette-card:not(.expanded)').count()) { await p.locator('#datasette-card .expand-btn').click(); await sleep(400); }
-const card = p.locator('#datasette-card');
-
-// Insert the tape — running + AUTORUN auto-runs LOAD + PLAY (_autoLoadTape),
-// so the motor spins and the bar starts filling on its own.
+// Loading the tape reveals its controls even in a fresh default layout.
 await p.setInputFiles('#tap-input', TAP);
+const card = p.locator('#datasette-card');
+await card.waitFor({ state: 'visible' });
 
 const t0 = Date.now();            // align captures to a steady grid
 for (let i = 0; i < N; i++) {

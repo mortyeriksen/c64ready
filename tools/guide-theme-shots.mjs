@@ -10,9 +10,8 @@
 // demo's disk in drive 8 (autorun off), so the directory colours show; the disk comes from
 // the asset registry (raster-time-demo) and is skipped when missing.
 // Output: public/guide/theme-<id>.webp (GUIDE_OUT redirects it). It also shoots
-// overview-<id>.webp for every theme but Classic: the guide's opening overview
-// in that theme's dark mode, taken the way guide-shots.mjs takes overview.webp
-// (Classic's slide), so the opening gallery's slides match.
+// overview-<id>.webp for every theme, including Classic. The theme gallery uses
+// these explicit images independently of the shared screenshot theme.
 import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
@@ -44,8 +43,9 @@ async function capture(theme, mode, overview = false) {
   const ctx = await browser.newContext({ colorScheme: mode, viewport: { width: 1460, height: 1180 }, deviceScaleFactor: overview ? 2 : 1, reducedMotion: 'reduce' });
   await ctx.addInitScript(({ cache, theme, mode }) => {
     try {
+      localStorage.setItem('c64emu.equipmentHintShown', '1');
       localStorage.setItem('c64emu.installDismissed', '1');
-      localStorage.setItem('c64emu.splashSeen', '1');
+      localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
       localStorage.setItem('c64emu.appearance', mode);
       localStorage.setItem('c64emu.autorun', 'off');   // a disk goes in without loading
       if (theme !== 'classic') localStorage.setItem('c64emu.theme', theme);
@@ -109,7 +109,6 @@ for (const theme of THEMES) {
   } catch (e) {
     console.error('  ✗', `theme-${theme}`, '—', e.message.split('\n')[0]);
   }
-  if (theme === 'classic') continue;
   try {
     const info = saveGuideShot(await capture(theme, 'dark', true), OUT, `overview-${theme}`);
     console.log('  ✓', shotLabel(`overview-${theme}`, info));

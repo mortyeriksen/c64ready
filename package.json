@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "guide:shots": "node tools/guide-all-shots.mjs",
+    "build": "npm run build:devices && vite build",
+    "build:devices": "node tools/build-iec-printer.mjs",
     "build:docs": "node tools/build-docs.mjs",
     "build:splash-themes": "node tools/splash-themes.mjs",
     "build:cli": "node tools/build-cli.mjs",
@@ -24,6 +26,7 @@
     "vite-plugin-pwa": "^1.3.0"
   },
   "dependencies": {
+    "acorn": "^8.18.0",
     "three": "^0.185.1"
   }
 }

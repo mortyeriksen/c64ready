@@ -2,6 +2,7 @@ import fs from 'fs';
 import {
   parseSavedLayout, resolveLayout, isDefaultLayout, parseHiddenKeys, initPanelOrder,
   PANEL_ORDER_KEY, PANEL_HIDDEN_KEY,
+  EQUIPMENT_HINT_KEY,
 } from '../src/ui/panel-order.js';
 import { handleEscape, escapeLayerCount } from '../src/ui/escape-stack.js';
 import { installMiniDom, fire } from './_mini-dom.js';
@@ -12,12 +13,30 @@ function expect(cond, msg) {
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
+{
+  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const panelHtml = html.slice(html.indexOf('<div class="panel-cols">'), html.indexOf('</div><!-- /.panel-cols -->'));
+  const columns = panelHtml.split(/<div class="panel-col" data-col="\d">/).slice(1)
+    .map(column => [...column.matchAll(/<div class="panel-card[^>]*data-panel="([^"]+)"[^>]*>/g)]);
+  const visible = columns.map(column => column.filter(match => !match[0].includes('data-panel-default-hidden')).map(match => match[1]));
+  expect(same(visible, [['status', 'controls', 'ports'], ['media', 'media-browser', 'drive8']]), 'fresh users see the requested three panels in each column');
+  const optional = columns.flat().filter(match => match[0].includes('data-panel-default-hidden')).map(match => match[1]);
+  expect(same(optional, ['drive9', 'iec', 'cartridge', 'datasette', 'reu', 'userport']), 'optional device panels start hidden');
+}
+
 // Mirrors the authored layout in index.html, so the fixture reads like the real
 // thing. Only its shape matters to the assertions, not the particular keys.
 const DEFAULT = [
   ['status', 'controls', 'ports'],
   ['media', 'drive8', 'drive9', 'cartridge', 'datasette'],
 ];
+{
+  const withIec = DEFAULT.map(col => [...col]); withIec[1].push('iec');
+  const resolved = resolveLayout(withIec, DEFAULT, { iec: 'drive9' });
+  expect(resolved[1][resolved[1].indexOf('drive9') + 1] === 'iec', 'a newly available IEC card follows drive 9');
+  const customized = [['iec', ...DEFAULT[0]], DEFAULT[1]];
+  expect(same(resolveLayout(withIec, customized, { iec: 'drive9' }), customized), 'an explicitly saved IEC position remains the user choice');
+}
 
 // ── parseSavedLayout: storage holds whatever a hand-edit or an older build left ──
 
@@ -458,7 +477,7 @@ console.log('ok  - side panel card layout persistence, arranging and drop-to-hid
   fire(dialog.querySelector('.panel-restore-item'), 'click');
   expect(!ports.classList.contains('is-panel-hidden') && keysIn(cols[1]).at(-1) === 'ports',
     `picking it puts the card back at the bottom of its column (${keysIn(cols[1])})`);
-  expect(dialog.hidden && !restoreBtn.classList.contains('is-shown') && localStorage.getItem(PANEL_HIDDEN_KEY) === null,
+  expect(dialog.hidden && !restoreBtn.classList.contains('is-shown') && localStorage.getItem(PANEL_HIDDEN_KEY) === '[]',
     'nothing hidden any more: picker closed, + gone, set cleared');
   expect(live() === 'Ports shown again', `and it is announced (${live()})`);
 
@@ -533,6 +552,43 @@ console.log('ok  - side panel card layout persistence, arranging and drop-to-hid
   handleOf('media').focus();
   down('media', 17, 250, 20); move(17, 250, 180); up(17);
   expect(document.activeElement === handleOf('media'), 'a drag from a focused handle returns the focus');
+
+  localStorage.clear();
+  cols = page();
+  for (const key of ['controls', 'media']) document.querySelector(`[data-panel="${key}"]`).setAttribute('data-panel-default-hidden', '');
+  const order = initPanelOrder();
+  expect(document.querySelector('[data-panel="controls"]').classList.contains('is-panel-hidden'), 'fresh layout applies default hidden panels');
+  expect(order.showEquipmentHint() === true, 'the equipment hint can be shown when hidden panels are available');
+  expect(localStorage.getItem(EQUIPMENT_HINT_KEY) === null, 'showing the equipment hint waits for the equipment click before recording completion');
+  expect(order.showEquipmentHint() === false, 'the equipment hint is shown only once');
+  fire(document.querySelector('.panel-restore-btn'), 'click');
+  expect(localStorage.getItem(EQUIPMENT_HINT_KEY) === '1', 'clicking equipment records the one-time preference');
+  expect(document.querySelector('.panel-equipment-hint').hidden, 'opening equipment dismisses the hint');
+  handleEscape();
+  order.reveal('controls'); order.reveal('media');
+  expect(keysIn(cols[0]).join() === 'status,ports,controls' && keysIn(cols[1]).join() === 'drive8,media', 'newly loaded panels alternate between columns one and two');
+  expect(!document.querySelector('.is-panel-hidden') && localStorage.getItem(PANEL_HIDDEN_KEY) === '[]', 'revealing every panel persists an explicitly empty hidden set');
+  expect(document.querySelector('[data-panel="media"]').classList.contains('expanded'), 'revealed media controls are expanded');
+  expect(order.reveal('missing') === false, 'unknown media panels leave the layout unchanged');
+  cols = page();
+  for (const key of ['controls', 'media']) document.querySelector(`[data-panel="${key}"]`).setAttribute('data-panel-default-hidden', '');
+  initPanelOrder();
+  expect(!document.querySelector('.is-panel-hidden'), 'explicitly shown panels stay shown after reload');
+  fire(document.getElementById('btn-panel-order-reset'), 'click');
+  expect(document.querySelectorAll('.is-panel-hidden').length === 2, 'RESET PANELS restores default visibility as well as order');
+  const batch = initPanelOrder();
+  batch.revealMany(['controls', 'media']);
+  expect(keysIn(cols[0]).at(-1) === 'controls' && keysIn(cols[1]).at(-1) === 'media', 'a state batch starts in column one and alternates');
+  const before = cols.map(keysIn);
+  batch.revealMany(['media', 'controls']);
+  expect(same(cols.map(keysIn), before), 'loading already visible controls preserves their positions');
+  localStorage.clear();
+  localStorage.setItem(PANEL_HIDDEN_KEY, '["ports"]');
+  cols = page();
+  initPanelOrder();
+  expect(keysIn(cols[0]).join() === 'status,controls,ports,media' && keysIn(cols[1]).join() === 'drive8', 'a setup that customized only hidden panels keeps its existing column order');
+  expect(document.querySelector('[data-panel="ports"]').classList.contains('is-panel-hidden'), 'existing customized visibility is preserved');
+
 
   console.log('ok  - side panel handles, dragging, hiding and restoring behave (stand-in DOM)');
 }

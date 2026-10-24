@@ -15,6 +15,7 @@ export function validateDeviceModule(mod, { allowBuiltin = false } = {}) {
   if (!mod || typeof mod !== 'object') throw new Error('The file is not a JavaScript module.');
   const meta = mod.meta;
   if (!meta || typeof meta !== 'object') throw new Error('The module has no "meta" export.');
+  if (meta.bus && meta.bus !== 'userport') throw new Error('This is not a user port device. Install IEC plugins on the IEC Devices card.');
   if (typeof mod.create !== 'function') throw new Error('The module has no "create" function export.');
   for (const key of ['id', 'name', 'version']) {
     if (typeof meta[key] !== 'string' || !meta[key].trim()) throw new Error(`meta.${key} is missing.`);
@@ -57,13 +58,4 @@ export async function sha256Hex(text) {
   const bytes = new TextEncoder().encode(text);
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-// Read a device file's source, import it and check it: what the install
-// dialog shows before anything is stored.
-export async function inspectDeviceSource(source) {
-  const mod = await importDeviceSource(source);
-  const meta = validateDeviceModule(mod);
-  const hash = await sha256Hex(source);
-  return { meta, hash, size: new TextEncoder().encode(source).length };
 }

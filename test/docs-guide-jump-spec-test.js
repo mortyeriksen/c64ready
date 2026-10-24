@@ -10,7 +10,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let failures = 0;
 function expect(cond, msg) { if (!cond) { failures++; console.log(`FAIL - ${msg}`); } }
 
-const PAGES = ['USER-GUIDE', 'GUIDE-INTERFACE', 'GUIDE-MEDIA', 'GUIDE-INPUT', 'GUIDE-LOOKS', 'GUIDE-OPTIONS', 'GUIDE-CLI'];
+const PAGES = ['USER-GUIDE', 'GUIDE-INTERFACE', 'GUIDE-MEDIA', 'GUIDE-INPUT', 'GUIDE-LOOKS', 'GUIDE-CHAT', 'GUIDE-OPTIONS', 'GUIDE-CLI'];
 const tocs = new Map(PAGES.map((n) => [n, [
   { level: 2, id: 'topics', text: 'Topics' },
   { level: 2, id: `${n.toLowerCase()}-a`, text: `${n} chapter <A>` },

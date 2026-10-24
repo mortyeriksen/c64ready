@@ -84,7 +84,7 @@ const IS_WINDOWS =
   /Windows/i.test(navigator.userAgent || '');
 
 // ── Injected core hooks (assigned by initInput) ──────────────────────────────
-let downloadSnapshot, clearPendingPaste, toggleCrtPanel, toggleVibesZoom, pasteFromShortcut;
+let downloadSnapshot, clearPendingPaste, toggleCrtPanel, toggleVibesZoom, pasteFromShortcut, nextQueuedDisk;
 let toggleVibesStudio, cycleTheme;
 
 // ── Control Port state ──────────────────────────────────────────────────────
@@ -1874,6 +1874,7 @@ registerAppShortcut({
   code: 'KeyS', label: 'Debug snapshot',
   run: () => { if (c64) downloadSnapshot(); },
 });
+registerAppShortcut({ code: 'Digit8', label: 'Next queued disk in drive 8', run: () => nextQueuedDisk?.(), noRepeat: true });
 
 if (APP_SHORTCUTS.some(s => RESERVED_CODES.has(s.code))) {
   throw new Error('app shortcut bound to a key the browser will not release');
@@ -1899,7 +1900,7 @@ document.addEventListener('keydown', e => {
     const hit = APP_SHORTCUTS.find(s => s.code === e.code);
     if (hit) {
       e.preventDefault();
-      hit.run();
+      if (!hit.noRepeat || !e.repeat) hit.run();
       return;
     }
   }
@@ -2272,5 +2273,5 @@ document.addEventListener('pointerlockchange', () => {
 // ── Dependency injection ─────────────────────────────────────────────────────
 export function initInput(deps) {
   ({ downloadSnapshot, clearPendingPaste, toggleCrtPanel, toggleVibesZoom, pasteFromShortcut,
-     toggleVibesStudio, cycleTheme } = deps);
+     toggleVibesStudio, cycleTheme, nextQueuedDisk } = deps);
 }

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
-// Pixel-art speaker glyph for the Settings ▸ Sound mute toggle, drawn in the
+// Shared pixel-art speaker glyph for mute, Datasette and device speakers, drawn in the
 // C64/PETSCII block-graphics spirit: chunky pixels on a 16×12 grid emitted as
 // crisp merged <rect> runs, so it stays sharp at any size and inherits the
 // button's currentColor (light text normally, red when muted). Two glyphs share
 // the same speaker body — ON adds two sound-wave arcs, MUTE adds an X. Both are
-// injected into #btn-mute-toggle once; CSS shows the right one per state.
+// injected together into each speaker toggle; CSS shows the right one per state.
 const COLS = 16, ROWS = 12;
 
 // Build the merged-rect run string for the shared speaker body plus whatever

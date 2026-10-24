@@ -52,6 +52,9 @@ export interface Socket {
 export interface Host {
   /** The device's panel in the User Port card. `null` in the CLI. */
   readonly panel: ShadowRoot | null;
+  readonly relay?: { get(): string; set(url: string): boolean; defaultBase(): string };
+  audio?(): { context: AudioContext | OfflineAudioContext; destination: AudioNode } | null;
+  readonly icons?: { speakerOn: string; speakerMute: string };
   css(text: string): CSSStyleSheet | null;
   /** Called once per displayed frame: the place to update the page. */
   onFrame(fn: () => void): void;

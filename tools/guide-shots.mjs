@@ -23,7 +23,7 @@
 // named shots and skips the slow retro-vibes / overview-running passes — a
 // targeted refresh that won't rewrite every tracked shot.
 //
-// The script captures 22 UI shots: overview, overview-running, the main feature
+// The script captures 21 UI shots: overview, overview-running, the main feature
 // cards, the modals, the CRT settings panel, directory zoom, Retro Vibes, and
 // the SID player. It pre-seeds localStorage for reproducibility, including
 // hiding the PWA card and pinning the lighter VIBES model, and loads the app
@@ -33,21 +33,27 @@
 // slow step prints a warning.
 //
 // FULL REGENERATION of public/guide/ — start your Vite first, then, in order:
-//   node tools/guide-shots.mjs                     20 shots (above)
-//   node tools/guide-extra-shots.mjs               5 shots needing their own setup
-//   node tools/guide-setup-shot.mjs                setup-dialog (fresh, ROM-less ctx)
+//   npm run guide:shots                          all screenshot passes below
+// Shared guide contexts use Phosphor dark. Theme galleries use their named themes.
+//   node tools/guide-shots.mjs                     21 shots (above)
+//   node tools/guide-extra-shots.mjs               13 shots needing their own setup
+//   node tools/guide-mobile-shots.mjs              portrait and landscape phone mockups
+//   node tools/guide-assembly64-shots.mjs          Assembly64 card and browser
+//   node tools/guide-setup-shot.mjs                ROM setup and theme picker
 //   node tools/guide-theme-shots.mjs               theme-<id>: each theme, dark and light
-//   node tools/guide-dialog-shots.mjs [baseURL] <demoDir> <statesDir>
+//   node tools/guide-dialog-shots.mjs
 //                                                  the populated Library + Save-States
 //   node tools/vibes-guide-shots.mjs <baseURL> <paneDir>    3 panes per 3D scene
-//   node tools/vibes-strip.mjs <paneDir> public/guide       stitched into 5 strips
+//   node tools/vibes-strip.mjs <paneDir> public/guide       stitched into 6 strips
 // Both vibes tools take trailing scene slugs to shoot/stitch just those scenes.
 //   node tools/datasette-anim.mjs                  the Datasette loading animation
 // Bring your own inputs: a raster-demo .d64 and a game .tap (both registry), plus
-// a dir of .d64s and a dir of .c64state files for the dialogs. Every tool
+// the curated guide disks and states (also registry) for the dialogs. Every tool
 // takes GUIDE_OUT to write elsewhere, so a trial run leaves public/ untouched.
 // tools/pick-frames.mjs dumps a
 // per-second burst of a demo when a specific overview-running frame is wanted.
+import assert from 'node:assert/strict';
+import { createGuideContext } from './guide-context.mjs';
 import { launchShotBrowser, reportRenderer, slowWarning } from './shot-browser.mjs';
 import fs from 'fs';
 import path from 'path';
@@ -86,7 +92,7 @@ const done = [];
 const skipped = [];
 
 const browser = await launchShotBrowser();             // headless, on the GPU when there is one
-const ctx = await browser.newContext({ colorScheme: 'dark',
+const ctx = await createGuideContext(browser, { colorScheme: 'dark',
   viewport: { width: 1460, height: 1180 },
   deviceScaleFactor: 2,                                 // crisp retina PNGs
   reducedMotion: 'reduce',                              // freeze CRT roll / animations
@@ -101,10 +107,11 @@ const ctx = await browser.newContext({ colorScheme: 'dark',
 // scene's hero pane.
 await ctx.addInitScript(() => {
   try {
+    localStorage.setItem('c64emu.equipmentHintShown', '1');
     localStorage.setItem('c64emu.installDismissed', '1');
-    localStorage.setItem('c64emu.splashSeen', '1');
+    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
     localStorage.setItem('c64emu.vibesModel', 'small');
-    localStorage.setItem('c64emu.modelViewerScene', '4');
+    localStorage.setItem('c64emu.modelViewerScene', '5');
   } catch {}
 });
 // Keep externally supplied ROMs in the browser cache, as the setup UI does.
@@ -131,12 +138,13 @@ if (TUNE && fs.existsSync(TUNE)) {
 // because the app freezes a machine whose page is not the focused one.
 console.log('\n[sid player]');
 if (want('sid-player') && TUNE && fs.existsSync(TUNE)) {
-  const sidCtx = await browser.newContext({ colorScheme: 'dark',
+  const sidCtx = await createGuideContext(browser, { colorScheme: 'dark',
     viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 2, reducedMotion: 'reduce',
   });
   try {
     await sidCtx.addInitScript(() => {
-      try { localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); } catch {}
+      try { localStorage.setItem('c64emu.equipmentHintShown', '1');
+    localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); } catch {}
     });
     await sidCtx.addInitScript(cache => {
       for (const [key, value] of Object.entries(cache)) localStorage.setItem(key, value);
@@ -177,7 +185,7 @@ if (want('sid-player') && TUNE && fs.existsSync(TUNE)) {
     : TUNE ? `no tune at ${TUNE}` : 'no tune (asset registry: guide-sid)');
 }
 
-const page = await ctx.newPage();
+let page = await ctx.newPage();
 page.on('pageerror', (e) => console.error('  page error:', e.message));
 
 async function shot(sel, name) {
@@ -257,6 +265,12 @@ await sleep(4200);                                     // blue screen settles to
 // ── Full-interface overview (clean READY. screen) ───────────────────────
 console.log('\n[overview + panels]');
 await shotCropped('overview');
+if (await page.locator('.panel-restore-btn').isVisible()) {
+  await click('.panel-restore-btn');
+  while (await page.locator('.panel-restore-modal:not([hidden]) .panel-restore-item').count()) {
+    await page.locator('.panel-restore-item').first().click();
+  }
+}
 await shot('header', 'header');
 await shot('.panel-card:has(#status)', 'status');
 await shot('#controls-card', 'controls');
@@ -403,6 +417,7 @@ let vibesDone = () => {};
 if (want('retro-vibes')) try {
   vibesDone = slowWarning('The Retro Vibes shot', 15);
   await click('#btn-vibes');
+  await page.waitForSelector('.model-viewer-overlay.scene-bedroom', { timeout: 60000 });
   // Wait until the loader overlay is hidden (_setLoading(null) → display:none).
   await page.waitForFunction(() => {
     const l = document.querySelector('.model-viewer-loading');
@@ -454,26 +469,23 @@ if (hasDisk && (want('drive8-loaded') || want('directory-zoom'))) {
 // the woven raster bars). The demo animates every frame, so a re-run lands on an
 // equivalent frame rather than the identical one; tools/pick-frames.mjs dumps a
 // per-second burst to choose from when a particular frame is wanted.
-// Runs last: eject + reset so the earlier disk's load doesn't bleed
-// in; restore the default collapsed panel layout; TDE OFF so LOAD"*",8,1 is
-// instant (a true-drive load would blow past the mark before the demo even
-// starts).
+// A separate context keeps the fresh default panel layout and excludes media
+// and preferences from the individual feature shots. TDE OFF makes loading instant.
 console.log('\n[in action]');
 if (want('overview-running') && fs.existsSync(RASTER)) {
   const runningDone = slowWarning('The overview-running shot', 70, 2);   // most of it is a timed 58 s wait
   try {
-    try { await click('#btn-d64-eject'); await sleep(400); } catch {}
-    await click('#btn-reset');
-    await sleep(2800);                                 // cold boot back to READY.
-    // Collapse cartridge/datasette + power drive 9 back off (all opened earlier
-    // for their own shots) so the layout matches the picked frame.
-    try {
-      if (await page.locator('#drive9-deck').isVisible().catch(() => false))
-        await page.locator('#drive9-power').evaluate((el) => { el.checked = false; el.dispatchEvent(new Event('change', { bubbles: true })); });
-      for (const id of ['#cartridge-card', '#datasette-card'])
-        if (await page.locator(`${id}.expanded`).count()) { await click(`${id} .expand-btn`); await sleep(150); }
-      await sleep(300);
-    } catch {}
+    const runningContext = await createGuideContext(browser, { colorScheme: 'dark',
+      viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 2, reducedMotion: 'reduce' });
+    await runningContext.addInitScript(() => {
+      localStorage.setItem('c64emu.installDismissed', '1');
+      localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+    });
+    page = await runningContext.newPage();
+    await page.goto(`${BASE}/?CRT_SHADER_SOFTWARE=1`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#btn-power:not([disabled])');
+    await click('#btn-power');
+    await sleep(4200);
     const tde = page.locator('#btn-tde-toggle');
     if (/ON/.test(await tde.textContent().catch(() => '')))
       { await tde.click().catch(() => {}); await sleep(300); }
@@ -484,7 +496,11 @@ if (want('overview-running') && fs.existsSync(RASTER)) {
     if (await offer.waitFor({ timeout: 3000 }).then(() => true, () => false)) await click('#btn-confirm-cancel');
     await sleep(2500);                                 // autoload + RUN hand off to the demo
     await sleep(58000);                                // ~58 s in — "PROJECT" logo over the raster bars
+    assert.deepEqual(await page.locator('.panel-col').evaluateAll(columns => columns.map(column =>
+      [...column.querySelectorAll('[data-panel]')].filter(card => !card.classList.contains('is-panel-hidden')).map(card => card.dataset.panel))),
+    [['status', 'controls', 'ports'], ['media', 'media-browser', 'drive8']], 'overview-running uses the fresh default layout');
     await shotCropped('overview-running');
+    await runningContext.close();
     runningDone();
   } catch (e) {
     runningDone();

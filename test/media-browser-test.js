@@ -71,10 +71,10 @@ test('A missing file size remains unknown', () => assert.equal(normalizeFiles({ 
 test('Malformed file collections are errors', () => assert.throws(() => normalizeFiles({}, {}), /invalid file list/));
 test('A full page advances by the number received', () => assert.equal(normalizePage([{ id: 'x', category: 0 }], { offset: 20, limit: 1 }).nextOffset, 21));
 test('A short page ends pagination', () => assert.equal(normalizePage([], { offset: 20, limit: 10 }).hasMore, false));
-test('D64 actions include mount and run', () => assert.deepEqual(allowedActions('d64'), ['mount', 'run', 'save', 'download']));
-test('G64 actions include mount and run', () => assert.deepEqual(allowedActions('g64'), ['mount', 'run', 'save', 'download']));
-test('D71 actions include mount and run', () => assert.deepEqual(allowedActions('d71'), ['mount', 'run', 'save', 'download']));
-test('D81 actions include mount and run', () => assert.deepEqual(allowedActions('d81'), ['mount', 'run', 'save', 'download']));
+test('D64 actions include mount and run', () => assert.deepEqual(allowedActions('d64'), ['mount', 'run', 'queue', 'save', 'download']));
+test('G64 actions include mount and run', () => assert.deepEqual(allowedActions('g64'), ['mount', 'run', 'queue', 'save', 'download']));
+test('D71 actions include mount and run', () => assert.deepEqual(allowedActions('d71'), ['mount', 'run', 'queue', 'save', 'download']));
+test('D81 actions include mount and run', () => assert.deepEqual(allowedActions('d81'), ['mount', 'run', 'queue', 'save', 'download']));
 test('Every openable media type but REU can be kept in the Library', () => {
   // An REU image is the one exception: a 16 MB image would evict the rest.
   assert.deepEqual(SUPPORTED_MEDIA.filter(type => !isLibraryType(type)), []);

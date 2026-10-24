@@ -1,6 +1,5 @@
-// The install check (src/userport/scan.js): each of the ten risks is found in
-// a typical example, comments do not count, what devices legitimately need is
-// not flagged, and the two shipped devices come out clean.
+// The install check describes source capabilities without inferring intent.
+// Binary data and XML namespaces are distinct from code execution and networking.
 
 import fs from 'node:fs';
 import { scanDeviceSource } from '../../src/userport/scan.js';
@@ -42,11 +41,14 @@ const CASES = [
   ['navigation', "window.open('https://ads.example');"],
   ['navigation', "history.pushState({}, '', '/login');"],
   ['hidden', "globalThis['fe' + 'tch'](u);"],
-  ['hidden', "const s = atob('ZmV0Y2g=');"],
+  ['encoded-data', "const s = atob('ZmV0Y2g=');"],
+  ['printing', 'win.print();'],
   ['hidden', 'String.fromCharCode(102, 101, 116, 99, 104, 40);'],
   ['hidden', `const blob = '${'QUFB'.repeat(60)}';`],
   ['hidden', `const x = 1;${' '.repeat(1100)}const y = 2;`],
   ['page', "document.body.append(fakeDialog);"],
+  ['embedded-document', "frame.srcdoc = '<html><body>output</body></html>';"],
+  ['embedded-document', "doc.createElement('iframe');"],
   ['page', "document.querySelector('#btn-power').click();"],
   ['page', 'window.top.postMessage(x);'],
   ['background', "new Worker('miner.js');"],
@@ -59,8 +61,8 @@ const CASES = [
     expect(ids(src).includes(id), `${id} not found in: ${src.slice(0, 60)}`);
   }
   const seen = new Set(CASES.map(([id]) => id));
-  expect(seen.size === 10, `ten risks covered, got ${seen.size}`);
-  ok('each of the ten risks is found in typical code');
+  expect(seen.size === 13, `thirteen review categories covered, got ${seen.size}`);
+  ok('each review category is found in typical code');
 }
 
 {
@@ -91,17 +93,40 @@ const CASES = [
 }
 
 {
-  const order = scanDeviceSource("new Worker('w.js');\nlocalStorage.x = 1;").map((f) => f.severity);
-  expect(order.join(',') === 'high,medium', `most serious first: ${order}`);
-  ok('high findings come before medium ones');
+  const order = scanDeviceSource("atob(s);\nnew Worker('w.js');\nlocalStorage.x = 1;").map((f) => f.severity);
+  expect(order.join(',') === 'high,medium,info', `most serious first: ${order}`);
+  ok('high and medium findings precede informational findings');
 }
 
 {
-  for (const f of ['../../src/userport/devices/wifi-modem.js', '../../public/userport/led-board.js']) {
+  for (const f of ['../../public/userport/led-board.js']) {
     const found = scanDeviceSource(fs.readFileSync(new URL(f, import.meta.url), 'utf8'));
     expect(found.length === 0, `${f.split('/').pop()} is clean: ${JSON.stringify(found)}`);
   }
-  ok('the shipped devices pass the check with nothing to report');
+  ok('the LED board has no review findings');
+}
+
+{
+  const result = scanDeviceSource("const bytes = atob(host.storage.get('job')); ");
+  expect(result.length === 1 && result[0].id === 'encoded-data' && result[0].severity === 'info', 'Base64 decoding is informational, not a claim of concealed behavior');
+  expect(ids("eval(atob(payload));").includes('dynamic-code'), 'executing decoded data remains a high code-execution finding');
+  expect(ids("new Function(atob(payload));").includes('dynamic-code'), 'constructing a function from decoded data remains a code-execution finding');
+  ok('binary decoding is distinguished from executing encoded code');
+}
+
+{
+  expect(ids("document.createElementNS('http://www.w3.org/2000/svg', 'svg');").length === 0, 'the SVG namespace is an identifier, not a network destination');
+  expect(ids("fetch('http://www.w3.org/2000/svg');").includes('network'), 'fetching even a namespace URL is still network activity');
+  expect(ids("const url = 'http://www.w3.org/2000/svg.evil.example';").includes('network'), 'namespace lookalikes are still listed as web addresses');
+  ok('exact XML namespaces are not mistaken for network requests');
+}
+
+{
+  const printer = scanDeviceSource(fs.readFileSync(new URL('../../public/iec/printer.js', import.meta.url), 'utf8'));
+  expect(['embedded-document', 'encoded-data', 'printing'].every(id => printer.some(f => f.id === id)) && !printer.some(f => ['page', 'navigation', 'network', 'hidden', 'dynamic-code'].includes(f.id)), `printer review shows its print document, native print dialog and data decoding: ${JSON.stringify(printer)}`);
+  const modem = scanDeviceSource(fs.readFileSync(new URL('../../src/userport/devices/modem.js', import.meta.url), 'utf8'));
+  expect(modem.length === 1 && modem[0].id === 'input', `modem review describes its relay form events: ${JSON.stringify(modem)}`);
+  ok('printer and modem reviews describe their actual capabilities');
 }
 
 console.log(failing ? `\n${failing} of ${testNo} FAILED` : `\nall ${testNo} passed`);

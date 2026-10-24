@@ -422,6 +422,9 @@
             </div>
           </div>
 
+        </div>
+
+        <div class="panel-col" data-col="1">
           <!-- Media load -->
           <div class="panel-card" id="media-load-card" data-panel="media">
             <div class="panel-card-header">
@@ -444,9 +447,6 @@
             </div>
           </div>
 
-        </div>
-
-        <div class="panel-col" data-col="1">
           <div class="panel-card expanded" id="media-browser-card" data-panel="media-browser" data-persist-expanded="media-browser">
             <div class="panel-card-header">
               <h2>Assembly64</h2>
@@ -481,6 +481,10 @@
                     <button class="btn btn-d64-export" id="btn-d64-export" disabled title="Download this disk as a .d64 file"><span class="dl-ico">⤓</span>.D64</button>
                   </div>
                 </div>
+                <div class="disk-queue-controls">
+                  <button class="btn" id="btn-d64-next" type="button" disabled>INSERT FIRST</button>
+                  <button class="btn" id="btn-d64-queue" type="button">QUEUE (0)</button>
+                </div>
                 <div class="drive-dropzone" id="drive-dropzone">
                   <span id="drive-empty-hint">click LOAD or drop a .d64, .d71, .d81, .g64 or .nbz onto the screen</span>
                   <div id="drive-loaded" hidden>
@@ -499,7 +503,7 @@
 
           <!-- Disk drive 9 (secondary, IEC device 9). Off by default and invisible
                to the C64 until switched on. -->
-          <div class="panel-card" id="diskdrive9-card" data-panel="drive9" data-persist-expanded="diskdrive9">
+          <div class="panel-card is-panel-hidden" id="diskdrive9-card" data-panel-default-hidden data-panel="drive9" data-persist-expanded="diskdrive9">
             <div class="panel-card-header">
               <h2>Disk drive 9</h2>
               <label class="power-switch" id="drive9-power-switch" title="Connect disk drive 9 (IEC device 9)">
@@ -545,8 +549,39 @@
             </div>
           </div>
 
+          <div class="panel-card is-panel-hidden" id="iec-card" data-panel-default-hidden data-panel="iec" data-panel-after="drive9">
+            <div class="panel-card-header header-clickable">
+              <h2>IEC Devices</h2>
+              <label class="power-switch" id="iec-power-switch" title="Connect additional IEC devices">
+                <input type="checkbox" id="iec-power" aria-label="IEC devices connected">
+                <span class="power-track"><span class="power-thumb"></span></span>
+              </label>
+              <button class="expand-btn" title="Expand" aria-label="Toggle IEC Devices">▼</button>
+            </div>
+            <div class="panel-body">
+              <div class="iec-connect">
+                <div class="iec-select-row">
+                  <label class="cp-port-name" for="iec-device">Device</label>
+                  <select class="cp-device-select" id="iec-device"></select>
+                </div>
+                <div class="iec-address-controls">
+                  <label>Address <select class="cp-device-select" id="iec-address" aria-label="IEC address"></select></label>
+                  <button type="button" class="btn" id="btn-iec-connect">CONNECT</button>
+                </div>
+              </div>
+              <div id="iec-connections" class="userport-panel"></div>
+              <div id="iec-status" class="reu-status userport-status"></div>
+              <div class="userport-actions">
+                <button type="button" class="btn" id="btn-iec-install">INSTALL…</button>
+                <input id="iec-file" type="file" accept=".js,.mjs,text/javascript" hidden>
+                <button type="button" class="btn" id="btn-iec-url">FROM URL…</button>
+                <button type="button" class="btn" id="btn-iec-manage">MANAGE</button>
+              </div>
+            </div>
+          </div>
+
           <!-- Cartridge -->
-          <div class="panel-card" id="cartridge-card" data-panel="cartridge" data-persist-expanded="cartridge">
+          <div class="panel-card is-panel-hidden" id="cartridge-card" data-panel-default-hidden data-panel="cartridge" data-persist-expanded="cartridge">
             <div class="panel-card-header">
               <h2>Cartridge</h2>
               <button class="expand-btn" title="Expand" aria-label="Toggle Cartridge">▼</button>
@@ -573,7 +608,7 @@
           </div>
 
           <!-- Datasette -->
-          <div class="panel-card" id="datasette-card" data-panel="datasette" data-persist-expanded="datasette">
+          <div class="panel-card is-panel-hidden" id="datasette-card" data-panel-default-hidden data-panel="datasette" data-persist-expanded="datasette">
             <div class="panel-card-header">
               <h2>Datasette</h2>
               <button class="btn-icon tape-scope" id="btn-tape-scope" disabled
@@ -642,7 +677,7 @@
           </div>
 
           <!-- RAM Expansion (REU) -->
-          <div class="panel-card" id="reu-card" data-panel="reu">
+          <div class="panel-card is-panel-hidden" id="reu-card" data-panel-default-hidden data-panel="reu">
             <div class="panel-card-header">
               <h2>RAM Expansion</h2>
               <label class="power-switch" id="reu-power-switch" title="Plug a RAM Expansion Unit into the expansion port">
@@ -686,7 +721,7 @@
               </div>
             </div>
           </div>
-          <div class="panel-card" id="userport-card" data-panel="userport">
+          <div class="panel-card is-panel-hidden" id="userport-card" data-panel-default-hidden data-panel="userport">
             <div class="panel-card-header">
               <h2>User Port</h2>
               <label class="power-switch" id="userport-power-switch" title="Plug the chosen device into the user port">
@@ -706,22 +741,18 @@
               </div>
               <div class="userport-panel" id="userport-panel"></div>
               <div class="reu-status userport-status" id="userport-status">nothing plugged in</div>
-              <label class="userport-relay" title="Where network devices connect through. Empty uses the relay of the app served by c64rdy serve.">
-                <span class="cp-port-name">Relay</span>
-                <input type="text" id="userport-relay" spellcheck="false" autocomplete="off">
-              </label>
-              <div class="reu-status userport-relay-note" id="userport-relay-note" role="status" aria-live="polite"></div>
               <div class="userport-actions">
                 <button class="btn" id="btn-userport-install"
                   title="Install a device from a .js file on this computer (or drop one on this card).">INSTALL…</button>
                 <input type="file" id="userport-file" accept=".js,.mjs,text/javascript" hidden>
                 <button class="btn" id="btn-userport-url"
-                  title="Install a device from a web address.">FROM URL…</button>
+                  title="Choose a ready-made plugin or install from a custom URL.">FROM URL…</button>
                 <button class="btn" id="btn-userport-manage"
                   title="See, export or remove the devices installed in this browser.">MANAGE</button>
               </div>
             </div>
           </div>
+
         </div>
       </div><!-- /.panel-cols -->
 
@@ -732,7 +763,7 @@
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="keymap-modal-title">
       <div class="panel-card-header">
         <h2 id="keymap-modal-title">Key Map</h2>
-        <button class="expand-btn" id="btn-keymap-close" aria-label="Close">✕</button>
+        <button class="dialog-close" type="button" id="btn-keymap-close" aria-label="Close"></button>
       </div>
       <div class="keymap-grid" id="keymap-grid"></div>
       <p class="keymap-hint">Click the screen to capture keyboard focus.</p>
@@ -744,8 +775,8 @@
   <div class="modal-backdrop vibes-zoom-modal" id="vibes-zoom-modal" hidden>
     <div class="vibes-zoom-dialog" role="dialog" aria-modal="true" aria-label="VIBES button at 10x">
       <div class="vibes-zoom-stage" id="vibes-zoom-stage"></div>
-      <button class="expand-btn vibes-zoom-close" id="btn-vibes-zoom-close"
-        title="Close the zoom (Esc, or Cmd+Shift+Z / Ctrl+Shift+Z)" aria-label="Close">✕</button>
+      <button class="dialog-close vibes-zoom-close" type="button" id="btn-vibes-zoom-close"
+        title="Close the zoom (Esc, or Cmd+Shift+Z / Ctrl+Shift+Z)" aria-label="Close"></button>
     </div>
   </div>
 
@@ -753,10 +784,10 @@
     <div class="modal-card settings-card" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
       <div class="panel-card-header">
         <h2 id="settings-modal-title">Options</h2>
-        <button class="expand-btn" id="btn-settings-close"
-            title="Close Options" aria-label="Close">✕</button>
+        <button class="dialog-close" type="button" id="btn-settings-close"
+            title="Close Options" aria-label="Close"></button>
       </div>
-      <div class="settings-body">
+      <div class="settings-body dialog-scroll">
 
       <div class="settings-section">
         <h3>Display</h3>
@@ -782,7 +813,7 @@
         <h3>Theme</h3>
         <div class="btn-group btn-group-toggles btn-group-theme">
           <button class="btn" id="btn-theme-cycle"
-            title="The colour theme: Classic (the default), GEOS, and any you import.">THEME: CLASSIC</button>
+            title="Choose a colour theme from the visual gallery.">THEME: CLASSIC</button>
           <button class="btn" id="btn-appearance-toggle"
             title="Dark, light, or follow your system's setting (the default). The button in the header does the same.">APPEARANCE: SYSTEM</button>
           <button class="btn" id="btn-theme-import"
@@ -895,7 +926,7 @@
     <div class="modal-card setup-card" role="dialog" aria-modal="true" aria-labelledby="setup-modal-title">
       <div class="panel-card-header">
         <h2 id="setup-modal-title">Setup C64 READY.</h2>
-        <button class="expand-btn" id="btn-setup-close" aria-label="Close">✕</button>
+        <button class="dialog-close" type="button" id="btn-setup-close" aria-label="Close"></button>
       </div>
       <p class="setup-hint">C64 READY. needs Commodore's ROMs. They are copyrighted, so bring your own.
         Add them once and this browser remembers them.</p>
@@ -913,7 +944,7 @@
       <h3 class="setup-section">Upload each ROM file</h3>
       <p class="setup-hint setup-hint-tight">Load each file yourself. No idea where to find them? Press
         <strong>🔍 help me find it</strong> to search the web, or buy a licensed set from c64forever.com.</p>
-      <div class="rom-details setup-roms">
+      <div class="rom-details setup-roms dialog-scroll">
         <div class="rom-row">
           <div><span>KERNAL</span> <button type="button" class="rom-find" data-rom-search="kernal.901227-03.bin">🔍 help me find it</button><br><small>8 192 bytes</small><br><small class="rom-fn" id="setup-fn-kernal"></small></div>
           <label class="rom-file-btn" for="setup-rom-kernal" title="Load a KERNAL image (.bin or .rom). Kept in this browser.">LOAD…</label>
@@ -948,10 +979,10 @@
         <h2 id="library-modal-title">Library</h2>
         <input type="search" id="library-filter" class="library-filter" placeholder="Filter…"
           aria-label="Filter loaded files" autocomplete="off" spellcheck="false">
-        <button class="expand-btn" id="btn-library-close" aria-label="Close">✕</button>
+        <button class="dialog-close" type="button" id="btn-library-close" aria-label="Close"></button>
       </div>
-      <p class="library-hint">Files you've loaded before, cached in this browser. Click one to load it again.</p>
-      <div class="library-list" id="library-list"></div>
+      <p class="library-hint">Files you've loaded before, cached in this browser. Click a name to load it, or click QUEUE to add a disk to the drive 8 queue.</p>
+      <div class="library-list dialog-scroll" id="library-list"></div>
       <p class="library-empty" id="library-empty" hidden>
         No cached files yet. Load a .PRG, .D64, .D71, .D81, .G64, .CRT, .TAP, .T64, .SID, .WAV or .DMP and it'll show up here.
       </p>
@@ -976,10 +1007,10 @@
         <h2 id="state-modal-title">Save States</h2>
         <input type="search" id="state-filter" class="library-filter" placeholder="Filter…"
           aria-label="Filter save states" autocomplete="off" spellcheck="false">
-        <button class="expand-btn" id="btn-state-close" aria-label="Close">✕</button>
+        <button class="dialog-close" type="button" id="btn-state-close" aria-label="Close"></button>
       </div>
       <p class="library-hint">Frozen machine states saved in this browser — full RAM, registers and inserted media. Click one to restore it.</p>
-      <div class="library-list" id="state-list"></div>
+      <div class="library-list dialog-scroll" id="state-list"></div>
       <p class="library-empty" id="state-empty" hidden>
         No save states yet. Press 💾 SAVE STATE while a program is running to create one.
       </p>
@@ -998,11 +1029,22 @@
     </div>
   </div>
 
+  <div class="modal-backdrop" id="iec-modal" hidden>
+    <div class="modal-card userport-modal-card" role="dialog" aria-modal="true" aria-labelledby="iec-modal-title">
+      <div class="panel-card-header">
+        <h2 id="iec-modal-title">IEC plugins</h2>
+        <button class="dialog-close" type="button" id="btn-iec-modal-x" aria-label="Close"></button>
+      </div>
+      <div class="userport-modal-body" id="iec-modal-body"></div>
+      <div class="confirm-actions" id="iec-modal-actions"></div>
+    </div>
+  </div>
+
   <div class="modal-backdrop" id="userport-modal" hidden>
     <div class="modal-card userport-modal-card" role="dialog" aria-modal="true" aria-labelledby="userport-modal-title">
       <div class="panel-card-header">
         <h2 id="userport-modal-title">User port devices</h2>
-        <button class="expand-btn" id="btn-userport-modal-x" aria-label="Close">✕</button>
+        <button class="dialog-close" type="button" id="btn-userport-modal-x" aria-label="Close"></button>
       </div>
       <div class="userport-modal-body" id="userport-modal-body"></div>
       <div class="confirm-actions" id="userport-modal-actions"></div>
@@ -1013,7 +1055,7 @@
     <div class="modal-card confirm-card" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
       <div class="panel-card-header">
         <h2 id="confirm-modal-title">Confirm</h2>
-        <button class="expand-btn" id="btn-confirm-cancel-x" aria-label="Cancel">✕</button>
+        <button class="dialog-close" type="button" id="btn-confirm-cancel-x" aria-label="Cancel"></button>
       </div>
       <p class="confirm-message" id="confirm-modal-message"></p>
       <div class="confirm-actions">
@@ -1027,7 +1069,7 @@
     <div class="modal-card confirm-card" role="dialog" aria-modal="true" aria-labelledby="prompt-modal-title">
       <div class="panel-card-header">
         <h2 id="prompt-modal-title">Prompt</h2>
-        <button class="expand-btn" id="btn-prompt-cancel-x" aria-label="Cancel">✕</button>
+        <button class="dialog-close" type="button" id="btn-prompt-cancel-x" aria-label="Cancel"></button>
       </div>
       <p class="confirm-message" id="prompt-modal-message"></p>
       <input type="text" class="prompt-input" id="prompt-modal-input" autocomplete="off" spellcheck="false">
@@ -1059,7 +1101,7 @@
     <div class="modal-card joykeys-card" role="dialog" aria-modal="true" aria-labelledby="joykeys-modal-title">
       <div class="panel-card-header">
         <h2 id="joykeys-modal-title">Key Joystick</h2>
-        <button class="expand-btn" id="btn-joykeys-close" aria-label="Close">✕</button>
+        <button class="dialog-close" type="button" id="btn-joykeys-close" aria-label="Close"></button>
       </div>
       <p class="joykeys-hint" id="joykeys-hint"></p>
       <div class="joykeys-grid" id="joykeys-grid"></div>
@@ -1081,7 +1123,7 @@
     <div class="modal-card dirzoom-card" role="dialog" aria-modal="true" aria-labelledby="dirzoom-title">
       <div class="panel-card-header">
         <h2 id="dirzoom-title">Directory</h2>
-        <button class="expand-btn" id="btn-dirzoom-close" aria-label="Close">✕</button>
+        <button class="dialog-close" type="button" id="btn-dirzoom-close" aria-label="Close"></button>
       </div>
       <div class="dirzoom-disk">
         <span class="dirzoom-diskname" id="dirzoom-diskname"></span>
@@ -1098,10 +1140,10 @@
     <div class="modal-card library-card" role="dialog" aria-modal="true" aria-labelledby="tapedir-modal-title">
       <div class="panel-card-header">
         <h2 id="tapedir-modal-title">Tape</h2>
-        <button class="expand-btn" id="btn-tapedir-close" aria-label="Close">✕</button>
+        <button class="dialog-close" type="button" id="btn-tapedir-close" aria-label="Close"></button>
       </div>
       <p class="library-hint" id="tapedir-hint"></p>
-      <div class="library-list" id="tapedir-list"></div>
+      <div class="library-list dialog-scroll" id="tapedir-list"></div>
       <p class="library-empty" id="tapedir-empty" hidden></p>
       <p class="tapedir-note" id="tapedir-note" hidden></p>
     </div>
@@ -1130,7 +1172,7 @@
     <div class="modal-card tapescope-card" role="dialog" aria-modal="true" aria-labelledby="tapescope-title">
       <div class="panel-card-header">
         <h2 id="tapescope-title">Tape signal</h2>
-        <button class="expand-btn" id="btn-tapescope-close" aria-label="Close">✕</button>
+        <button class="dialog-close" type="button" id="btn-tapescope-close" aria-label="Close"></button>
       </div>
       <canvas id="tapescope-canvas" width="720" height="200" aria-label="Tape signal waveform"></canvas>
       <div class="tapescope-readout">
@@ -1144,7 +1186,7 @@
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="credits-modal-title">
       <div class="panel-card-header">
         <h2 id="credits-modal-title">ABOUT</h2>
-        <button class="expand-btn" id="btn-credits-close" aria-label="Close">✕</button>
+        <button class="dialog-close" type="button" id="btn-credits-close" aria-label="Close"></button>
       </div>
       <div class="credits-body">
         <!-- Body copy is authored once in docs/ABOUT.md (compiled to the
@@ -1160,7 +1202,7 @@
     </div>
   </div>
 
-  <button class="fs-close-btn" id="btn-fs-close" title="Exit fullscreen (ESC)" aria-label="Exit fullscreen">✕</button>
+  <button class="dialog-close fs-close-btn" id="btn-fs-close" title="Exit fullscreen (ESC)" aria-label="Exit fullscreen"></button>
   <button class="fs-chat-btn" id="btn-fs-chat" type="button" title="Chat" aria-label="Chat" aria-expanded="false"><svg
       viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"
       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path
@@ -1193,8 +1235,8 @@
     </button>
     <button class="model-viewer-vr" id="btn-model-viewer-vr" type="button" hidden
       title="View in VR (needs a headset or the WebXR emulator)" aria-label="Enter VR">🥽 ENTER VR</button>
-    <button class="model-viewer-close" id="btn-model-viewer-close" type="button"
-      title="Close (Esc)" aria-label="Close 3D view">✕</button>
+    <button class="dialog-close model-viewer-close" id="btn-model-viewer-close" type="button"
+      title="Close (Esc)" aria-label="Close 3D view"></button>
     <!-- Studio mode (Cmd+Shift+X / Ctrl+Shift+X): every control above is hidden and
          this is all that's left over the scene. -->
     <img class="model-viewer-studio-logo" src="/logos/c64ready-logo.png" width="1003" height="94"

@@ -70,7 +70,7 @@ export async function run(argv) {
     anim: {}, fps: { value: true }, speed: { value: true }, jobs: { value: true },
     'no-press': {}, collage: {}, userport: { value: true },
   });
-  if (args.length !== 1) throw new UsageError('Usage: c64rdy run <prg|tap|d64|d71|d81|g64|t64|crt> [--file NAME | --all] [-o out.png] [--frames N] [--anim [--fps N] [--speed N]] [--jobs N] [--roms <dir>] [--userport <device.js|wifi-modem>]');
+  if (args.length !== 1) throw new UsageError('Usage: c64rdy run <prg|tap|d64|d71|d81|g64|t64|crt> [--file NAME | --all] [-o out.png] [--frames N] [--anim [--fps N] [--speed N]] [--jobs N] [--roms <dir>] [--userport <device.js|modem>]');
   const p = args[0];
   let bytes = fs.readFileSync(p);
   let kind = sniff(bytes, p);

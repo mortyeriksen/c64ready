@@ -30,3 +30,6 @@ https://c64ready.netlify.app/*  https://c64ready.com/:splat  301!
 # change, and a browser keeps the #fragment across the redirect.
 /docs/user-guide-cli.html  /docs/guide-cli.html  301
 /docs/user-guide-cli       /docs/guide-cli.html  301
+
+/docs/userport-devices.html  /docs/device-plugins.html  301
+/docs/userport-devices       /docs/device-plugins.html  301

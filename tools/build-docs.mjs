@@ -17,7 +17,8 @@ import { createHash } from 'crypto';
 import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { USER_GUIDE_ANCHORS } from './user-guide-anchors.mjs';
+import { USER_GUIDE_ANCHORS, CHAT_GUIDE_ANCHORS } from './user-guide-anchors.mjs';
+import { build as buildBrowserModule } from 'vite';
 import { marked } from 'marked';
 import { VERSION } from '../src/version.js';
 
@@ -48,13 +49,14 @@ const ORDER = [
   'GUIDE-MEDIA',
   'GUIDE-INPUT',
   'GUIDE-LOOKS',
+  'GUIDE-CHAT',
   'GUIDE-OPTIONS',
   'GUIDE-CLI',
   'SPECIFICATIONS',
   'FEATURES',
   'KNOWN-ISSUES',
   'TAPE-RESTORATION',
-  'USERPORT-DEVICES',
+  'DEVICE-PLUGINS',
   'C64READY-AND-VICE',
   'COMPONENT-STATUS',
   'ARCHITECTURE',
@@ -74,19 +76,18 @@ const ORDER = [
 // lead the landing page in their own "Overview & guides" band; everything else
 // falls into the "Architecture & internals" grid.
 const GUIDES = new Set([
-  'WHATS-NEW', 'GETTING-STARTED', 'USER-GUIDE', 'TAPE-RESTORATION', 'USERPORT-DEVICES', 'C64READY-AND-VICE', 'FEATURES',
+  'WHATS-NEW', 'GETTING-STARTED', 'USER-GUIDE', 'TAPE-RESTORATION', 'DEVICE-PLUGINS', 'C64READY-AND-VICE', 'FEATURES',
   'KNOWN-ISSUES', 'SPECIFICATIONS', 'ABOUT',
 ]);
 
 // The User Guide is a hub (USER-GUIDE.md) and these topic pages, in reading
 // order. Each gets a "User Guide" breadcrumb and previous/next links, and all
 // of them share a left menu listing the guide's pages (renderGuideNav).
-const GUIDE_PAGES = ['GUIDE-INTERFACE', 'GUIDE-MEDIA', 'GUIDE-INPUT', 'GUIDE-LOOKS', 'GUIDE-OPTIONS', 'GUIDE-CLI'];
+const GUIDE_PAGES = ['GUIDE-INTERFACE', 'GUIDE-MEDIA', 'GUIDE-INPUT', 'GUIDE-LOOKS', 'GUIDE-CHAT', 'GUIDE-OPTIONS', 'GUIDE-CLI'];
 
-// Sources kept only so an old link to the file (GitHub, the CLI's published
-// README) still says where it went; they are not built into pages. Their old
-// page URLs redirect in public/_redirects.
-const MOVED_SOURCES = new Set(['USER-GUIDE-CLI.md']);
+// Old page URLs redirect in public/_redirects. Exclude any retained source stubs
+// from the generated pages and remove stale HTML at these paths.
+const MOVED_SOURCES = new Set(['USER-GUIDE-CLI.md', 'USERPORT-DEVICES.md']);
 
 // The guide was one page; a link to a heading that moved to a topic page
 // (bookmarks, other sites, older release notes) is sent on to it by a small
@@ -504,10 +505,18 @@ const FACEBOOK_SVG =
 // order. These mirror src/ui/appearance.js (APPEARANCE_KEY, nextAppearance and
 // its icons); test/appearance-spec-test.js checks that the two agree.
 const APPEARANCE_PREPAINT = `(function () {
-    var a = null, dark = true;
+    var a = null, dark = true, pinned = null;
     try { a = localStorage.getItem('c64emu.appearance'); } catch (e) {}
+    try {
+      if (localStorage.getItem('c64emu.theme')) {
+        var css = localStorage.getItem('c64emu.themeCss');
+        pinned = localStorage.getItem('c64emu.themeModes');
+        if (css) { var style = document.createElement('style'); style.id = 'c64-theme'; style.textContent = css; document.head.appendChild(style); }
+        if (pinned === 'dark' || pinned === 'light') document.documentElement.setAttribute('data-theme-modes', pinned);
+      }
+    } catch (e) {}
     try { dark = window.matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) {}
-    var mode = a === 'dark' || a === 'light' ? a : (dark ? 'dark' : 'light');
+    var mode = pinned === 'dark' || pinned === 'light' ? pinned : a === 'dark' || a === 'light' ? a : (dark ? 'dark' : 'light');
     document.documentElement.setAttribute('data-mode', mode);
     document.documentElement.style.colorScheme = mode;
   })();`;
@@ -530,6 +539,8 @@ const APPEARANCE_BUTTON = `(function () {
     var appearance = read();
     function apply() {
       var mode = appearance === 'system' ? (osDark() ? 'dark' : 'light') : appearance;
+      var pinned = document.documentElement.getAttribute('data-theme-modes');
+      if (pinned === 'dark' || pinned === 'light') mode = pinned;
       document.documentElement.setAttribute('data-mode', mode);
       document.documentElement.style.colorScheme = mode;
       if (!btn) return;
@@ -545,6 +556,7 @@ const APPEARANCE_BUTTON = `(function () {
       apply();
     });
     if (query && query.addEventListener) query.addEventListener('change', apply);
+    window.addEventListener('c64-theme', apply);
     window.addEventListener('storage', function (e) { if (e.key === KEY) { appearance = read(); apply(); } });
     apply();
   })();`;
@@ -572,12 +584,14 @@ const topbar = `  <header class="doc-top">
     </nav>
   </header>`;
 
-const foot = `  <footer class="doc-foot">
+let DOC_THEME_VERSION = '';
+const foot = () => `  <footer class="doc-foot">
     <span>C64 READY. — serious emulation, retro vibes.</span>
     <span>© 2026 Morten Øien Eriksen · <a href="/docs/whats-new.html"
       title="What changed in each release">v${VERSION}</a> · GPL-3.0-or-later</span>
   </footer>
   <script>${APPEARANCE_BUTTON}</script>
+  <script src="/docs/theme.js?v=${DOC_THEME_VERSION}"></script>
 </body>
 </html>`;
 
@@ -595,13 +609,13 @@ function guidePager(name) {
   return `      <nav class="guide-pager" aria-label="User Guide pages">${link(GUIDE_PAGES[i - 1], 'prev')}${link(GUIDE_PAGES[i + 1], 'next')}</nav>`;
 }
 
-// On the hub: send a link to a heading that has moved on to its topic page.
-const guideRedirectScript = () => `  <script>
+// Send bookmarked headings to their current guide page.
+const guideRedirectScript = (anchors = GUIDE_REDIRECTS, force = false) => `  <script>
     (function () {
-      var moved = ${JSON.stringify(GUIDE_REDIRECTS)};
+      var moved = ${JSON.stringify(anchors)};
       function go() {
         var id = decodeURIComponent(location.hash.slice(1));
-        if (id && !document.getElementById(id) && moved[id]) location.replace('/docs/' + moved[id]);
+        if (id && moved[id] && (${force} || !document.getElementById(id))) location.replace('/docs/' + moved[id]);
       }
       go();
       window.addEventListener('hashchange', go);
@@ -627,7 +641,7 @@ ${tocHtml}
 ${bodyHtml}
 ${inGuide ? guidePager(meta.name) + '\n' : ''}    </article>
   </main>
-${meta.name === 'USER-GUIDE' ? guideRedirectScript() + '\n' : ''}${guidePage ? guideJumpScript() + '\n' : ''}${foot}`;
+${meta.name === 'USER-GUIDE' ? guideRedirectScript() + '\n' : meta.name === 'GUIDE-INTERFACE' ? guideRedirectScript(CHAT_GUIDE_ANCHORS, true) + '\n' : ''}${guidePage ? guideJumpScript() + '\n' : ''}${foot()}`;
 }
 
 // Compile a plain-text file (LICENSE, NOTICE.txt) verbatim into a styled doc
@@ -718,7 +732,7 @@ const INDEX_LIST = {
     ['ABOUT', 'About', 'what it is and who made it'],
     ['SPECIFICATIONS', 'Specifications & credits', 'references, formats and thanks'],
     ['TAPE-RESTORATION', 'Tape restoration', 'bringing worn cassettes back'],
-    ['USERPORT-DEVICES', 'User port devices', 'write and install your own'],
+    ['DEVICE-PLUGINS', 'Build Device plugins', 'write for User Port and IEC'],
     ['C64READY-AND-VICE', 'C64 READY. and VICE', 'how the two compare'],
   ],
   internals: [
@@ -788,7 +802,7 @@ ${internals}
       </ul>
     </article>
   </main>
-${foot}`;
+${foot()}`;
 }
 
 export function renderSitemap(docs, options = {}) {
@@ -872,13 +886,26 @@ const CSS = `/* Generated by tools/build-docs.mjs — do not edit by hand. */
   --ramp-1: #c9c8ec;
 }
 :root[data-mode="light"] .logo-text::after { display: none; }   /* scanlines are for the dark tube */
+:root:root {
+  --topbar-bg: color-mix(in srgb, var(--ui-bg) 88%, transparent);
+  --accent-hover: color-mix(in srgb, var(--accent) 80%, var(--text-bright));
+  --zebra: color-mix(in srgb, var(--text) 3%, transparent);
+  --logo-c64: var(--text-bright);
+  --logo-glow: color-mix(in srgb, var(--accent) 65%, transparent);
+  --logo-shadow: var(--crt-bg);
+  --ramp-4: var(--logo-ramp-4, var(--accent));
+  --ramp-2: var(--logo-ramp-2, var(--accent));
+  --ramp-1: var(--logo-ramp-1, var(--border));
+}
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 84px; }
 body {
   margin: 0;
   background:
+    var(--page-pattern, none),
     radial-gradient(1200px 600px at 50% -10%, var(--page-glow) 0%, transparent 60%),
     var(--crt-bg);
+  background-size: var(--page-pattern-size, auto), auto;
   color: var(--text);
   font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   font-size: 16px;
@@ -954,7 +981,7 @@ button.nav-btn { background: transparent; cursor: pointer; line-height: 1; }
 .top-nav .nav-btn:hover {
   color: var(--text-bright);
   border-color: var(--accent);
-  box-shadow: 0 0 12px rgba(112, 109, 235, 0.45);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 .nav-icon { display: inline-flex; align-items: center; justify-content: center; padding: 7px 11px; }
 /* Launch emulator: filled in Classic's accent, labelled in its on-accent ink
@@ -1017,7 +1044,7 @@ button.nav-btn { background: transparent; cursor: pointer; line-height: 1; }
 .doc-content h2 {
   font-size: 1.4rem; margin: 60px 0 14px; padding-bottom: 8px;
   border-bottom: 1px solid var(--border); color: var(--accent);
-  text-shadow: 0 0 8px rgba(112, 109, 235, 0.3);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 .doc-content h3 { font-size: 1.12rem; margin: 30px 0 10px; color: var(--green); }
 .doc-content h4 { font-size: 1rem; margin: 24px 0 8px; color: var(--amber); }
@@ -1044,6 +1071,10 @@ button.nav-btn { background: transparent; cursor: pointer; line-height: 1; }
    corners. The full-window shots (overviews, header, 3D scene) have no frame of
    their own and sit on a near-identical page background, so they get one back. */
 .doc-content img { max-width: 100%; height: auto; display: block; margin: 22px 0; border-radius: 8px; }
+.mobile-views { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.15fr); align-items: center; gap: clamp(8px, 2vw, 24px); margin: 24px 0; }
+.mobile-views figure { min-width: 0; margin: 0; text-align: center; }
+.mobile-views img { width: 100%; margin: 0 0 8px; }
+.mobile-views figcaption { color: var(--dim); font-size: 0.85rem; }
 .doc-content img[src*="overview"],
 .doc-content img[src*="/guide/header"],
 .doc-content img[src*="retro-vibes"],
@@ -1072,7 +1103,7 @@ button.nav-btn { background: transparent; cursor: pointer; line-height: 1; }
 
 /* underline inline prose links only — not the block-level doc cards */
 .doc-content p a, .doc-content li a, .doc-content td a, .doc-content blockquote a {
-  text-decoration: underline; text-underline-offset: 2px; text-decoration-color: rgba(112, 109, 235, 0.4);
+  text-decoration: underline; text-underline-offset: 2px; text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
 }
 h1 .anchor, h2 .anchor, h3 .anchor, h4 .anchor, h5 .anchor, h6 .anchor {
   margin-left: 10px; color: var(--dim); opacity: 0; text-decoration: none;
@@ -1104,7 +1135,7 @@ h4:hover .anchor, h5:hover .anchor, h6:hover .anchor { opacity: 0.6; }
 .doc-content blockquote {
   margin: 18px 0; padding: 2px 18px; color: var(--dim);
   border-left: 3px solid var(--accent);
-  background: rgba(112, 109, 235, 0.06); border-radius: 0 8px 8px 0;
+  background: color-mix(in srgb, var(--accent) 6%, transparent); border-radius: 0 8px 8px 0;
 }
 
 /* tables */
@@ -1235,6 +1266,15 @@ export async function buildDocs() {
     return; // no docs/ dir — nothing to build
   }
   mkdirSync(DOCS_OUT, { recursive: true });
+  const bundle = await buildBrowserModule({
+    configFile: false, logLevel: 'silent',
+    build: { write: false, minify: true,
+      lib: { entry: join(ROOT, 'src/ui/docs-theme.js'), name: 'C64DocsTheme', formats: ['iife'] },
+    },
+  });
+  const themeCode = (Array.isArray(bundle) ? bundle[0] : bundle).output.find(item => item.type === 'chunk').code;
+  DOC_THEME_VERSION = createHash('sha256').update(themeCode).digest('hex').slice(0, 8);
+  writeFileSync(join(DOCS_OUT, 'theme.js'), themeCode);
   const history = sourceHistory();   // two git calls for every date below
 
   const compiled = files.map((file) => {

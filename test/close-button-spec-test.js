@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import { installMiniDom, fire } from './_mini-dom.js';
+import { createCloseButton, initCloseButtons } from '../src/ui/close-button.js';
+
+installMiniDom();
+let closed = 0, dragged = 0, bubbled = 0;
+const header = document.createElement('div');
+header.addEventListener('pointerdown', () => dragged++);
+header.addEventListener('click', () => bubbled++);
+document.body.appendChild(header);
+const button = createCloseButton({ label: 'Close queue', onClose: () => closed++ });
+header.appendChild(button);
+assert.equal(button.getAttribute('type'), 'button', 'closing a dialog cannot submit a form');
+assert.equal(button.getAttribute('aria-label'), 'Close queue', 'the close action has an accessible name');
+assert.equal(button.querySelector('svg').getAttribute('aria-hidden'), 'true', 'the icon does not repeat the accessible name');
+fire(button, 'pointerdown');
+assert.equal(dragged, 0, 'pressing close cannot start a title-bar drag');
+fire(button, 'click');
+assert.equal(closed, 1, 'activation invokes the close action once');
+assert.equal(bubbled, 1, 'activation remains available to delegated dialog close handlers');
+
+const authored = document.createElement('button');
+authored.className = 'dialog-close';
+authored.setAttribute('aria-label', 'Cancel');
+authored.setAttribute('title', 'Discard and close');
+header.appendChild(authored);
+initCloseButtons(header);
+initCloseButtons(header);
+assert.equal(authored.getAttribute('aria-label'), 'Cancel', 'an authored cancel action keeps its accessible name');
+assert.equal(authored.getAttribute('title'), 'Discard and close', 'a contextual tooltip is preserved');
+assert.equal(authored.listenerCount('pointerdown'), 1, 'initializing authored controls twice never duplicates handlers');
+assert.equal(authored.querySelectorAll('svg').length, 1, 'an authored button uses one shared icon');
+console.log('ok  - shared close button accessibility, activation and drag isolation');

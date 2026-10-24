@@ -54,10 +54,10 @@ expect(m2.cia2.read(0x01) === 0x7E, 'switch positions come back with a save stat
 ok('the switches survive a save state');
 
 {
-  const doc = fs.readFileSync(new URL('../../docs/USERPORT-DEVICES.md', import.meta.url), 'utf8');
+  const doc = fs.readFileSync(new URL('../../docs/DEVICE-PLUGINS.md', import.meta.url), 'utf8');
   const m = /<!-- example: public\/userport\/led-board\.js -->\n```js\n([\s\S]*?)```/.exec(doc);
   expect(m && m[1] === src, 'the docs show the LED board exactly as shipped');
-  ok('the example in docs/USERPORT-DEVICES.md is the shipped file');
+  ok('the example in docs/DEVICE-PLUGINS.md is the shipped file');
 }
 
 console.log(failing ? `\n${failing} of ${testNo} FAILED` : `\nall ${testNo} passed`);

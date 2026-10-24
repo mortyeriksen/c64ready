@@ -29,14 +29,13 @@ read the same files, and many people will want both.
 ## In short
 
 **Pick VICE** when you need NTSC, a C128, VIC-20, PET or Plus/4, a
-machine-language monitor and debugger, warp speed, a printer, RS-232 beyond a modem, IDE64
+machine-language monitor and debugger, warp speed, broader printer emulation, RS-232 beyond a modem, IDE64
 or network cartridge, a less common cartridge type, or three decades of proven
 compatibility.
 
 **Pick C64 READY.** when you want nothing to install, a C64 on a phone or
 tablet, an app that runs offline, worn cassettes recovered from `.wav`
-recordings, demos found and started from the Assembly64 catalog, or the five Retro
-Vibes 3D scenes.
+recordings, demos found and started from the Assembly64 catalog, browser printing, or the six Retro Vibes 3D scenes.
 
 ---
 
@@ -59,15 +58,16 @@ release notes. The C64 READY. column comes from the
 | SID chips | 6581 or 8580 through reSID or FastSID, or a real SID chip over USB and other interfaces | 6581 or 8580 through reSID, the same code VICE 3.10 ships, compiled to WebAssembly |
 | CIA chips | 6526 or 6526A, per CIA | One generic 6526 |
 | 1541 drive | True drive emulation | True drive emulation |
+| Demos and fast loaders | PAL and NTSC demos, with cycle-based, pixel-accurate VIC-II emulation in [`x64sc`](https://vice-emu.sourceforge.io/vice_1.html). [True drive emulation](https://vice-emu.sourceforge.io/vice_6.html) runs the drive hardware for custom disk loaders | PAL VIC-II effects including raster splits, opened borders, sprite multiplexing, FLD, FLI and VSP. Use a 1541 ROM and TDE for custom serial fast loaders. D71 and D81 cannot run uploaded drive code. See [remaining limits](KNOWN-ISSUES.md) |
 | How it is checked | Thirty years of real-world use, and the VICE test programs, which are maintained alongside it | The VICE test programs, comparison with headless `x64sc`, and a suite of labelled unit tests. Remaining differences are listed in [Component status](COMPONENT-STATUS.md) |
-| Known gaps for the C64 | Few, tracked in the VICE bug tracker | NTSC, printers, ACIA modem cartridges, and cartridge types beyond the families it supports, listed in [Known issues](KNOWN-ISSUES.md) |
+| Known gaps for the C64 | Few, tracked in the VICE bug tracker | NTSC, complete printer emulation, ACIA modem cartridges, and cartridge types beyond the families it supports, listed in [Known issues](KNOWN-ISSUES.md) |
 
 ### Portability and installation
 
 | | VICE | C64 READY. |
 | --- | --- | --- |
 | Desktop | Windows and macOS downloads, and Linux and other Unix systems from source or a distribution's package, with a GTK3 or SDL2 interface | A modern browser on any desktop system |
-| Phones and tablets | No official builds since VICE 3.0. Third-party apps such as C64.emu use parts of VICE | Runs in the phone's browser, with a touch keyboard and a touch joystick |
+| Phones and tablets | No official builds since VICE 3.0. Third-party apps such as C64.emu use parts of VICE | Portrait and landscape layouts, with a touch keyboard and joystick. See [Mobile support](GUIDE-INTERFACE.md#mobile-support) |
 | Installing | Unpack a zip on Windows, open a disk image on macOS, and on Linux use your distribution's package or build from source | Nothing to install. It can be added to a home screen or desktop as an app |
 | Offline | Yes, it is a desktop program | Yes, after the first visit |
 | ROMs | Included in the official downloads | You supply them once and the browser keeps them. The setup can read them from a VICE folder |
@@ -80,11 +80,12 @@ release notes. The C64 READY. column comes from the
 | | VICE | C64 READY. |
 | --- | --- | --- |
 | Drive models | 1541, 1541-II, 1570, 1571, 1581, CMD FD and HD, and IEEE-488 drives such as the 4040 and 8050 | The 1541. 1571 and 1581 disks are served at file level, without the drive's own computer |
-| Drives at once | Four, units 8 to 11 | Two, units 8 and 9 |
+| Drives at once | Four, units 8 to 11 | Two disk drives, units 8 and 9, plus IEC plugins at other addresses |
 | Disk images | D64, D67, D71, D81, D80, D82, D90, G64, G71, P64 and the CMD formats | D64 (35, 40 or 42 tracks), G64, D71, D81, and the Preservation Project's NBZ dumps |
 | A folder on your computer as a drive | Yes, its files load and save as plain files | No |
 | Writing to disks | Yes | Yes, with changes kept in the browser's library and exported as an image |
 | Software that runs its own code in a 1571 or 1581 | Yes | No |
+| Disk queues | Fliplists for swapping images | Drive 8 queue from Assembly64 or Library, with drag sorting, looping and a next-disk shortcut |
 
 ### Tape
 
@@ -124,9 +125,12 @@ release notes. The C64 READY. column comes from the
 | Touch screens | No | An on-screen stick and the device's own keyboard |
 | Mice | 1351, NEOS, Amiga, Atari ST, CX22 trackball, SmartMouse, Micromys | 1351 and NEOS |
 | Paddles, light pens and guns | Paddles, KoalaPad, several light pens and light guns | Paddles driven by the mouse. The light-pen line is wired, with no pointer device for it |
-| User port | RS-232, joystick adapters, DigiMAX and more | A WiFi modem, and devices you write and install yourself |
-| Printers | MPS-801, 802 and 803, the 1520 plotter and others, to text or picture files | No |
+| User port | RS-232, joystick adapters, DigiMAX and more | A Hayes TCP/Telnet modem with optional connection sounds, plus installable devices |
+| Printers | MPS-801, 802 and 803, the 1520 plotter and others, to text or picture files | Installable IEC Printer with MPS-style text and bitmap graphics, printed through the browser to paper or PDF |
 | RS-232 and modems | RS-232 on the user port or an ACIA cartridge such as Swiftlink, linked to a serial port, a file or a network socket. A modem means a real one or the external tcpser tool | RS-232 on the user port with a built-in Hayes modem, through a WebSocket relay |
+
+C64 READY.’s [IEC Devices](GUIDE-MEDIA.md#iec-devices) card accepts JavaScript
+plugins alongside the drives. IEC and User Port have independent switches.
 
 ### Display and sound
 
@@ -136,7 +140,7 @@ release notes. The C64 READY. column comes from the
 | Palettes | Many, plus colour adjustment | Colodore and Pepto |
 | SID chips | Up to eight in total | Up to two in total, in stereo or mono |
 | Recording | Screenshots, sound to WAV, MP3, FLAC and other formats, video as lossless ZMBV or through an external FFmpeg | The whole window with sound, as MP4 |
-| Appearance | The system GTK theme on Linux, with no theme setting of its own | Six built-in themes or your own, in dark or light |
+| Appearance | The system GTK theme on Linux, with no theme setting of its own | Eight built-in themes in a visual picker, or import your own. Dark or light, including the docs |
 
 ### Tools for power users and developers
 
@@ -155,7 +159,7 @@ release notes. The C64 READY. column comes from the
 | --- | --- | --- |
 | Finding software | You bring your own files | The Assembly64 catalog is built in: search, charts, load in one click |
 | Opening any file | Smart attach works out what a file is, and dropping one on the window starts it | LOAD ANY works out what a file is, and dropping one on the screen puts it in the right slot |
-| Library | Your own folders, plus a fliplist of disk images to swap between | Everything you open, kept in the browser and searchable |
+| Library | Your own folders | Everything you open, kept in the browser and searchable |
 | SID music | VSID, a dedicated player | A `.sid` plays on the emulated C64 in its own player screen |
 | 3D and VR | No | Retro Vibes: the machine in six 3D scenes, from an 80s bedroom to a synthwave neon grid, with experimental VR |
 

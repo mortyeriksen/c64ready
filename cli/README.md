@@ -79,7 +79,7 @@ c64rdy --version
 | **SID music into player or audio** | `sid2prg`, `sid2wav` |
 | **Questions about a file** | `dir`, `info`, `loadtest`, `loader` |
 | **Boot the machine** | `run` (a PNG of the screen, or an animated one), with `--userport` for a user port device |
-| **Local server** | `serve`, with the relay the WiFi modem needs |
+| **Local server** | `serve`, with the relay the Hayes Modem needs |
 | **A disk's interior** | `disk new`, `disk add`, `disk rm`, `disk extract` |
 
 `c64rdy --help` lists every command and flag.
@@ -143,6 +143,15 @@ rest) are credited in
 [NOTICE.txt](https://github.com/mortyeriksen/c64ready/blob/main/NOTICE.txt).
 
 ## Release notes
+
+### Next version
+
+- **Device install review.** Base64 decoding is described as data handling,
+  while executing decoded code still reports code execution. XML namespace
+  identifiers are no longer listed as network destinations.
+
+- **Modem naming.** The built-in device is called **Hayes Modem**, with the description
+  “Hayes-compatible TCP/Telnet modem.” Use `--userport modem` for headless runs.
 
 ### 0.9.5
 

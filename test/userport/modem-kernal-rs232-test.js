@@ -1,4 +1,4 @@
-// The KERNAL's own RS-232 driver talking to the WiFi modem through the user
+// The KERNAL's own RS-232 driver talking to the Modem through the user
 // port: BASIC opens device 2, sends commands with PRINT# and collects the
 // answer with GET#.
 // The control register baud codes are the Programmer's Reference Guide's
@@ -37,6 +37,7 @@ async function run(controlCode, lines, seconds) {
   m.loadROMs({ kernal: new Uint8Array(kernal), basic: new Uint8Array(basic), charRom: new Uint8Array(charRom) });
   const dev = await plugDevice(m, 'wifi-modem');
   for (let i = 0; i < 400 && !/READY\./.test(screen(m)); i++) m.runFrame();
+  m.mem.ram.fill(0, BUF, BUF + 256);
   type(m, [`10 OPEN 2,2,0,CHR$(${controlCode})`, '15 GET#2,A$', ...lines, 'RUN', ''].join('\r'));
   for (let i = 0; i < 50 * seconds; i++) { m.runFrame(); dev.frame(); }
   let text = '';
@@ -64,7 +65,7 @@ async function run(controlCode, lines, seconds) {
     '40 GOTO 30',
   ], 14);
   expect(!err, `the device ran without error: ${err?.message}`);
-  expect(text.startsWith('\r\nC64 READY. WIFI MODEM'), `the ATI answer arrived intact, got ${JSON.stringify(text)}`);
+  expect(text.startsWith('\r\nC64 READY. MODEM'), `the ATI answer arrived intact, got ${JSON.stringify(text)}`);
   expect(/\r\nOK\r\n$/.test(text), `the answer ends with OK, got ${JSON.stringify(text.slice(-12))}`);
   ok('KERNAL RS-232 at 300 baud (control register 6): ATI out with PRINT#, answer back with GET#');
 }

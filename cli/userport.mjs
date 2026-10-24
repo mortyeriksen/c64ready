@@ -11,12 +11,13 @@ import { pathToFileURL } from 'node:url';
 import { validateDeviceModule } from '../src/userport/plugins.js';
 
 // Literal imports, so tools/build-cli.mjs packs the built-in devices.
-const BUILTINS = { 'wifi-modem': () => import('../src/userport/devices/wifi-modem.js') };
+const loadModem = () => import('../src/userport/devices/modem.js');
+const BUILTINS = { modem: loadModem, 'wifi-modem': loadModem };
 const LOOPBACK = new Set(['echo', 'loopback']);
 
 export const BUILTIN_DEVICE_NAMES = Object.keys(BUILTINS);
 
-// `spec` is a device file path or the name of a built-in device (`wifi-modem`).
+// `spec` is a device file path or the name of a built-in device (`modem`).
 export async function loadDevice(spec) {
   if (Object.hasOwn(BUILTINS, spec)) {
     const mod = await BUILTINS[spec]();
@@ -58,6 +59,7 @@ export function createNodeHost(meta, { onStatus = () => {} } = {}) {
   const sockets = new Set();
   const host = Object.freeze({
     panel: null,
+    audio: () => null,
     css: () => null,
     onFrame(fn) { if (typeof fn === 'function') frameHooks.push(fn); },
     status(text) { onStatus(String(text ?? '')); },

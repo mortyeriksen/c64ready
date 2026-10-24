@@ -4,6 +4,7 @@
 // browser: its panel, a per-frame hook, a status line, settings storage and
 // TCP connections through the relay. Everything here runs in wall-clock time,
 // between emulated frames.
+import { SPEAKER_ON_SVG, SPEAKER_MUTE_SVG } from '../ui/pixel-speaker.js';
 
 const LOOPBACK_HOSTS = new Set(['echo', 'loopback']);
 const CONNECT_TIMEOUT_MS = 15000;
@@ -109,7 +110,7 @@ function openRelay(base, host, port) {
  *   relayBase   () => string, the relay currently configured
  * Returns { host, frame(), dispose() }.
  */
-export function createBrowserHost({ meta, panelHost, setStatus, relayBase }) {
+export function createBrowserHost({ meta, panelHost, setStatus, relayBase = defaultRelayBase, getAudio = () => null }) {
   const frameHooks = [];
   const sockets = new Set();
   let panel = null;
@@ -121,8 +122,28 @@ export function createBrowserHost({ meta, panelHost, setStatus, relayBase }) {
     panel = box.attachShadow({ mode: 'open' });
   }
   const keyFor = (key) => `c64emu.userport.dev.${meta.id}.${key}`;
+  let relayAddress = '';
+  try {
+    const saved = localStorage.getItem(keyFor('relay'));
+    relayAddress = saved == null ? localStorage.getItem('c64emu.userport.relay') || '' : JSON.parse(saved);
+    if (typeof relayAddress !== 'string') relayAddress = '';
+  } catch { /* storage blocked */ }
   const host = Object.freeze({
     panel,
+    relay: Object.freeze({
+      get: () => relayAddress,
+      defaultBase: () => relayBase(),
+      set(value) {
+        const v = String(value).trim();
+        if (v) {
+          try { if (!/^wss?:$/.test(new URL(v).protocol)) return false; } catch { return false; }
+        }
+        relayAddress = v;
+        try { localStorage.setItem(keyFor('relay'), JSON.stringify(v)); return true; } catch { return false; }
+      },
+    }),
+    audio: () => getAudio(),
+    icons: Object.freeze({ speakerOn: SPEAKER_ON_SVG, speakerMute: SPEAKER_MUTE_SVG }),
     css(text) {
       const sheet = new CSSStyleSheet();
       sheet.replaceSync(String(text));
@@ -147,7 +168,7 @@ export function createBrowserHost({ meta, panelHost, setStatus, relayBase }) {
     }),
     openSocket(hostName, port) {
       const name = String(hostName).toLowerCase();
-      const s = LOOPBACK_HOSTS.has(name) ? openLoopback() : openRelay(relayBase(), name, port | 0);
+      const s = LOOPBACK_HOSTS.has(name) ? openLoopback() : openRelay(relayAddress || relayBase(), name, port | 0);
       sockets.add(s);
       const userClose = s.close;
       s.close = () => { sockets.delete(s); userClose(); };

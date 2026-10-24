@@ -10,6 +10,7 @@
 // there is one (see shot-browser.mjs); under software GL a full run can stall on
 // an animated scene, and a step that runs long prints a warning.
 import { launchShotBrowser, reportRenderer, slowWarning } from './shot-browser.mjs';
+import { createGuideContext } from './guide-context.mjs';
 import fs from 'node:fs';
 import { collectionDir } from '../test/external-assets.js';
 
@@ -22,13 +23,14 @@ const browser = await launchShotBrowser();
 // Block the PWA service worker (its app-shell fallback would answer
 // /roms/*.bin with index.html) and serve the ROMs straight from the
 // repo-root roms/ dir — works against dev server and preview alike.
-const ctx = await browser.newContext({ colorScheme: 'dark', serviceWorkers: 'block', viewport: { width: 1280, height: 800 } });
+const ctx = await createGuideContext(browser, { colorScheme: 'dark', serviceWorkers: 'block', viewport: { width: 1280, height: 800 } });
 // Pre-seed localStorage before the app runs: the splash screen covers the whole
 // page (its teaser video swallows the POWER / VIBES clicks) and the PWA install
 // card pushes the side panel around a couple of seconds in.
 await ctx.addInitScript(() => {
   try {
-    localStorage.setItem('c64emu.splashSeen', '1');
+    localStorage.setItem('c64emu.equipmentHintShown', '1');
+    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
     localStorage.setItem('c64emu.installDismissed', '1');
   } catch {}
 });

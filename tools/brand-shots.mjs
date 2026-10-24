@@ -24,6 +24,8 @@
 // HERO=az,el,dist (env, degrees + distance multiplier) overrides the camera pose
 // while dialling a new one in; SCENE=n does the same for the Retro Vibes scene.
 import { launchShotBrowser, reportRenderer, slowWarning } from './shot-browser.mjs';
+import assert from 'node:assert/strict';
+import { createGuideContext } from './guide-context.mjs';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -80,7 +82,7 @@ const SHOTS = {
   vibes:    { out: 'screens/c64rdy-3d-vibes',   width: 1000, height: 628,  scale: 2, vibes: true,
               suffix: '-v4', scene: 2, webp: 2000 },
   emulator: { out: 'screens/c64rdy-emulator',   width: 1512, height: 813,  scale: 2, vibes: false,
-              suffix: '-v6' },
+              suffix: '-v7' },
   // Splash card art: it sits in the landing page's own card, captioned there, so
   // it carries no lockup and no viewer chrome — and it moves in close, because at
   // card size the whole desk would read as clutter around a tiny screen. Nearly
@@ -97,23 +99,22 @@ const done = [];
 
 for (const [name, s] of Object.entries(SHOTS)) {
   if (!want(name)) continue;
-  // Dark, as the brand art has always been; the app would follow headless
-  // Chromium's light system setting otherwise.
-  const ctx = await browser.newContext({ colorScheme: 'dark',
+  // Shared screenshot contexts use Phosphor dark and the browser ROM cache.
+  const ctx = await createGuideContext(browser, { colorScheme: 'dark',
     viewport: { width: s.width, height: s.height },
     deviceScaleFactor: s.scale,
   });
-  await ctx.addInitScript((scene) => {
+  await ctx.addInitScript(({ scene, vibes }) => {
     try {
       localStorage.setItem('c64emu.installDismissed', '1');
-      localStorage.setItem('c64emu.splashSeen', '1');
+      localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
       localStorage.setItem('c64emu.vibesModel', 'small');
-      localStorage.setItem('c64emu.sizeMode', '15x');               // bigger picture than the 1X default
+      if (vibes) localStorage.setItem('c64emu.sizeMode', '15x');
       localStorage.setItem('c64emu.modelViewerScene', scene);
       localStorage.setItem('c64emu.modelViewerAutoRotate', '0');   // a drifting spin would pick a random azimuth
       localStorage.removeItem('c64emu.modelViewerCamera');         // ignore any saved hand-posed view
     } catch {}
-  }, String(process.env.SCENE != null ? SCENE : (s.scene ?? SCENE)));
+  }, { scene: String(process.env.SCENE != null ? SCENE : (s.scene ?? SCENE)), vibes: s.vibes });
   const page = await ctx.newPage();
   page.on('pageerror', e => console.error('  page error:', e.message));
   await page.goto(BASE, { waitUntil: 'networkidle' });
@@ -184,6 +185,10 @@ for (const [name, s] of Object.entries(SHOTS)) {
     await sleep(150);
   }
 
+  if (!s.vibes) assert.deepEqual(await page.locator('.panel-col').evaluateAll(columns => columns.map(column =>
+    [...column.querySelectorAll('[data-panel]')].filter(card => !card.classList.contains('is-panel-hidden')).map(card => card.dataset.panel))),
+  [['status', 'controls', 'ports'], ['media', 'media-browser', 'drive8']], 'emulator brand shot uses the fresh default layout');
+  await page.mouse.move(0, 0);
   const base = path.join(ROOT, `public/${s.out}${s.suffix ?? SUFFIX}`);
   fs.mkdirSync(path.dirname(base), { recursive: true });
   // The 80s Bedroom (two 2048² shadow maps + bloom) renders a frame slowly

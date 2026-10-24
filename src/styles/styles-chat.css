@@ -128,19 +128,6 @@ body.fullscreen-mode .chat-window {
   color: var(--dim);
   font-size: 0.75rem;
 }
-.chat-close {
-  flex: none;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
-}
-.chat-close:hover {
-  border-color: var(--accent);
-}
 
 .chat-body {
   flex: 1;

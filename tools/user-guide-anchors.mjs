@@ -56,3 +56,8 @@ export const USER_GUIDE_ANCHORS = {
   'key-map': 'guide-interface.html#key-map',
   'directory-zoom': 'guide-interface.html#directory-zoom',
 };
+
+export const CHAT_GUIDE_ANCHORS = Object.fromEntries([
+  'chat', 'joining', 'starting-a-room', 'joining-a-room', 'in-a-room',
+  'on-a-desktop-and-on-a-phone', 'what-is-shared',
+].map(id => [id, `guide-chat.html#${id}`]));

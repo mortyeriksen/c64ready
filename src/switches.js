@@ -13,6 +13,15 @@
 // This module has no imports.
 
 const SWITCHES = {
+  themePicker: {
+    default: false,
+    env: ['THEME_PICKER'],
+  },
+  equipmentHint: {
+    default: false,
+    env: ['EQUIPMENT_HINT'],
+  },
+
   // Tint collision participants over the display: graphics green, sprites blue,
   // overlapping participants red. Reload with ?VIC_COLLISION_OVERLAY=1.
   vicCollisionOverlay: {
@@ -71,6 +80,10 @@ const SWITCHES = {
   userportSafeMode: {
     default: false,
     env: ['USERPORT_SAFE'],
+  },
+  iecSafeMode: {
+    default: false,
+    env: ['IEC_SAFE'],
   },
 
   // Let the dev server's user port relay reach this computer and its local

@@ -14,6 +14,7 @@ import { loadedItems } from '../media/now-loaded.js';
 import { openAssembly64File, searchAssembly64 } from '../assembly64/start.js';
 import { pushEscapeLayer, popEscapeLayer } from '../ui/escape-stack.js';
 import { confirmDialog } from '../ui/dialogs.js';
+import { createCloseButton } from '../ui/close-button.js';
 
 const NICK_KEY = 'c64emu.chat.nick';
 const RECT_KEY = 'c64emu.chat.rect';
@@ -85,7 +86,7 @@ export function createChatWindow({ onUnread, onOpenChange, onClose }) {
   const conn = createChatConnection({ url: chatServerUrl(), onEvent, onStatus });
 
   // ── Skeleton ─────────────────────────────────────────────────────────────
-  const closeBtn = h('button', { type: 'button', class: 'chat-close', 'aria-label': 'Close chat', title: 'Close (you stay in the room)' }, '✕');
+  const closeBtn = createCloseButton({ className: 'chat-close', label: 'Close chat', title: 'Close (you stay in the room)' });
   const titleEl = h('span', { class: 'chat-title' }, 'CHAT');
   const statusEl = h('span', { class: 'chat-status', role: 'status' });
   const head = h('div', { class: 'chat-head' }, titleEl, statusEl, closeBtn);

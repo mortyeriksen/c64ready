@@ -21,7 +21,9 @@
 //   panel-hide.webp       a side-panel card held over the Hide square — a real
 //                        pointer drag, held open for the shot
 //   panel-restore.webp    the "Show hidden panels" picker the + button opens
-//   user-port-bbs.webp    animated: CCGMS on the built-in WiFi modem calling a
+//   user-port-modem.webp the Hayes Modem controls, ready with its speaker on
+//   iec-printer.webp     IEC Printer connected at address 4 with a captured job
+//   user-port-bbs.webp    animated: CCGMS on the built-in Modem calling a
 //                        real C64 BBS (The Oasis BBS) through the dev server's
 //                        relay, from the dial to its title screen. Needs the
 //                        'ccgms' asset, img2webp, the network and the BBS's one
@@ -36,6 +38,7 @@
 // drive8D64 defaults to the 'raster-time-demo' asset (test/external-assets.json).
 // Set GUIDE_ONLY=update-toast (comma-separated) to regenerate only some shots.
 import { chromium } from 'playwright';
+import { createGuideContext } from './guide-context.mjs';
 import { execFileSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
@@ -105,10 +108,10 @@ const browser = await chromium.launch();
 //    the datasette's tape listing ───────────────────────────────────────────────
 if (want('update-toast') || want('drive8-loaded') || want('directory-zoom') || want('tape-listing')
     || want('tape-scope')) {
-  const ctx = await browser.newContext({ colorScheme: 'dark',
+  const ctx = await createGuideContext(browser, { colorScheme: 'dark',
     viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 2, reducedMotion: 'reduce',
   });
-  await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); } catch {} });
+  await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); } catch {} });
   const page = await bootPage(ctx);
 
   if (want('update-toast')) {
@@ -231,10 +234,10 @@ if (want('update-toast') || want('drive8-loaded') || want('directory-zoom') || w
 // cartridge card. Isolated context: applying a cart cold-boots the machine, so it
 // must not share a page with the other shots.
 if (want('cartridge-freezer')) {
-  const ctx = await browser.newContext({ colorScheme: 'dark',
+  const ctx = await createGuideContext(browser, { colorScheme: 'dark',
     viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 2, reducedMotion: 'reduce',
   });
-  await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); } catch {} });
+  await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); } catch {} });
   const page = await bootPage(ctx);
   try {
     const tmp = path.join(os.tmpdir(), 'guide-freezer.crt');
@@ -259,13 +262,13 @@ if (want('cartridge-freezer')) {
 // already hidden. Own context so the pre-hidden cards can't leak into any other
 // shot's panel.
 if (want('panel-hide') || want('panel-restore')) {
-  const ctx = await browser.newContext({ colorScheme: 'dark',
+  const ctx = await createGuideContext(browser, { colorScheme: 'dark',
     // Much shorter than the other desktop shots: the panel ends well above 1180
     // and the target sits in the corner of the VIEWPORT, so spare height lands
     // as a band of empty page between the two things the shot is about.
     viewport: { width: 1460, height: 780 }, deviceScaleFactor: 2, reducedMotion: 'reduce',
   });
-  await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); } catch {} });
+  await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); } catch {} });
 
   if (want('panel-hide')) {
     const page = await bootPage(ctx);
@@ -319,14 +322,14 @@ if (want('panel-hide') || want('panel-restore')) {
 // ── touch joystick over the display, landscape phone ──────────────────────────
 if (want('touch-joystick')) {
   try {
-    const mctx = await browser.newContext({ colorScheme: 'dark',
+    const mctx = await createGuideContext(browser, { colorScheme: 'dark',
       viewport: { width: 844, height: 390 }, deviceScaleFactor: 3,
       isMobile: true, hasTouch: true, reducedMotion: 'reduce',
     });
     await mctx.addInitScript(() => {
       try {
-        localStorage.setItem('c64emu.installDismissed', '1');
-        localStorage.setItem('c64emu.splashSeen', '1');
+        localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1');
+        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
         // Port 2 = Touch Joystick so the overlay shows once the machine is running.
         localStorage.setItem('c64emu.controlPorts', JSON.stringify({ 1: 'none', 2: 'touchJoystick' }));
       } catch {}
@@ -353,7 +356,7 @@ if (want('touch-joystick')) {
   } catch (e) { skipped.push('touch-joystick'); console.error('  ✗ touch-joystick —', e.message.split('\n')[0]); }
 }
 
-// ── the user port: CCGMS on the WiFi modem, calling a BBS ─────────────────────
+// ── the user port: CCGMS on the Modem, calling a BBS ─────────────────────
 // An animated WebP of a whole call at 9600 baud, CCGMS set to its UP9600 driver
 // first: the dial typed at a person's pace, CONNECT, the board asking for
 // RETURN and whether the terminal shows Commodore graphics, then its title
@@ -376,6 +379,90 @@ const screenHas = (word) => {
   }
   return text.toLowerCase().includes(word);
 };
+if (want('user-port-modem')) {
+  const roms = {};
+  for (const [slot, asset] of Object.entries({ kernal: 'kernal', basic: 'basic', charRom: 'chargen' })) {
+    const file = assetPath(asset);
+    if (file) roms[`c64emu.rom.${slot}`] = fs.readFileSync(file).toString('base64');
+  }
+  if (Object.keys(roms).length !== 3) {
+    skipped.push('user-port-modem');
+    console.log('  # SKIP user-port-modem: local C64 ROMs are required');
+  } else {
+    const ctx = await createGuideContext(browser, { colorScheme: 'dark',
+      viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 2, reducedMotion: 'reduce' });
+    try {
+      await ctx.addInitScript(cache => {
+        for (const [key, value] of Object.entries(cache)) localStorage.setItem(key, value);
+        localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1');
+        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+        localStorage.setItem('c64emu.userport', 'on');
+        localStorage.setItem('c64emu.userport.device', 'builtin.wifi-modem');
+        localStorage.setItem('c64emu.userport.dev.builtin.wifi-modem.speaker', 'true');
+      }, roms);
+      const page = await bootPage(ctx);
+      await page.locator('#userport-panel button[aria-label="Modem speaker"]').waitFor();
+      await page.evaluate(() => document.fonts.ready);
+      const card = page.locator('#userport-card');
+      await card.scrollIntoViewIfNeeded();
+      await page.mouse.move(0, 0);
+      await sleep(400);
+      console.log(`  ✓ ${shotLabel('user-port-modem', saveGuideShot(await card.screenshot(), OUT, 'user-port-modem'))}`);
+      done.push('user-port-modem');
+    } finally { await ctx.close(); }
+  }
+}
+
+if (want('iec-printer')) {
+  const roms = {};
+  for (const [slot, asset] of Object.entries({ kernal: 'kernal', basic: 'basic', charRom: 'chargen' })) {
+    const file = assetPath(asset);
+    if (file) roms[`c64emu.rom.${slot}`] = fs.readFileSync(file).toString('base64');
+  }
+  if (Object.keys(roms).length !== 3) {
+    skipped.push('iec-printer');
+    console.log('  # SKIP iec-printer: local C64 ROMs are required');
+  } else {
+    const ctx = await createGuideContext(browser, { colorScheme: 'dark',
+      viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 2, reducedMotion: 'reduce' });
+    try {
+      await ctx.addInitScript(cache => {
+        for (const [key, value] of Object.entries(cache)) localStorage.setItem(key, value);
+        localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1');
+        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+      }, roms);
+      const page = await bootPage(ctx);
+      await page.locator('#iec-card .panel-card-header h2').click();
+      await page.click('#btn-iec-url');
+      await page.selectOption('#iec-plugin-choice', 'printer');
+      await page.locator('#iec-modal-actions').getByRole('button', { name: 'FETCH', exact: true }).click();
+      await page.check('#iec-install-trust');
+      await page.locator('#iec-modal-actions').getByRole('button', { name: 'INSTALL', exact: true }).click();
+      await page.waitForFunction(() => document.querySelector('#iec-device').value === 'c64ready.iec-printer');
+      await page.selectOption('#iec-address', '4');
+      await page.click('#btn-iec-connect');
+      await page.waitForFunction(() => window.machine?.iec?.devices.has(4));
+      await page.evaluate(() => {
+        const command = 'OPEN1,4:PRINT#1,"HELLO WORLD":CLOSE1\r';
+        let at = 0;
+        for (let frame = 0; frame < 180; frame++) {
+          at += window.machine.bufferKeyboardText(command.slice(at));
+          window.machine.runFrame();
+        }
+      });
+      await page.waitForFunction(() => /^Idle · [1-9]\d* bytes received$/.test(
+        document.querySelector('.iec-connected[data-address="4"] .iec-device-status').textContent), null, { timeout: 15000 });
+      await page.evaluate(() => document.fonts.ready);
+      const card = page.locator('#iec-card');
+      await card.scrollIntoViewIfNeeded();
+      await page.mouse.move(0, 0);
+      await sleep(400);
+      console.log(`  ✓ ${shotLabel('iec-printer', saveGuideShot(await card.screenshot(), OUT, 'iec-printer'))}`);
+      done.push('iec-printer');
+    } finally { await ctx.close(); }
+  }
+}
+
 if (want('user-port-bbs')) {
   const ccgms = assetPath('ccgms');
   const bbs = process.env.GUIDE_BBS || 'oasisbbs.hopto.org:6400';
@@ -386,7 +473,7 @@ if (want('user-port-bbs')) {
     console.log(`  # SKIP user-port-bbs — ${!ccgms ? missingNote('ccgms') : 'img2webp not found (brew install webp)'}`);
   } else {
     // At 1x the 384x272 screen is drawn at twice its pixels, crisp and small.
-    const ctx = await browser.newContext({ colorScheme: 'dark',
+    const ctx = await createGuideContext(browser, { colorScheme: 'dark',
       viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 1, reducedMotion: 'reduce',
     });
     // ROMs into the browser's cache, as the setup dialog keeps them.
@@ -398,8 +485,8 @@ if (want('user-port-bbs')) {
     await ctx.addInitScript((cache) => {
       try {
         for (const [key, value] of Object.entries(cache)) localStorage.setItem(key, value);
-        localStorage.setItem('c64emu.installDismissed', '1');
-        localStorage.setItem('c64emu.splashSeen', '1');
+        localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1');
+        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
         localStorage.setItem('c64emu.userport', 'on');
         localStorage.setItem('c64emu.userport.device', 'builtin.wifi-modem');
       } catch {}
@@ -500,13 +587,13 @@ if (want('chat')) {
   const guests = [];
   try {
     const chatUrl = `${BASE.replace(/^http/, 'ws')}/chat`;
-    const ctx = await browser.newContext({ colorScheme: 'dark',
+    const ctx = await createGuideContext(browser, { colorScheme: 'dark',
       viewport: { width: 1460, height: 900 }, deviceScaleFactor: 2, reducedMotion: 'reduce',
     });
     await ctx.addInitScript((url) => {
       try {
-        localStorage.setItem('c64emu.installDismissed', '1');
-        localStorage.setItem('c64emu.splashSeen', '1');
+        localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1');
+        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
         localStorage.setItem('c64emu.chat.server', url);
         localStorage.setItem('c64emu.chat.nick', 'RetroMorty');
         localStorage.removeItem('c64emu.chat.rect');

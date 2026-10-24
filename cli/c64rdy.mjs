@@ -108,7 +108,7 @@ inputs, and a quoted wildcard works on any shell: c64rdy wav2tap "tapes/*.wav"
               --collage  Tile a --all run into one sheet (animated if --anim)
               --anim [--fps <n>] [--speed <n>]  Film the run: an animated PNG
               --no-press  Leave a waiting screen alone (SPACE, then fire)
-              --userport <device.js|wifi-modem>  Plug a user port device in
+              --userport <device.js|modem>  Plug a user port device in
               (the run then keeps to real time)
     serve:    --port <n> (6464)  --app <dir> serve a local build
               --device <file.js> install a user port device, reload on change

@@ -128,7 +128,11 @@ async function watch(page) {
 const pwned = (page) => page.evaluate(() => window.__pwned ?? parent.__pwned ?? null);
 const injected = (page, scope) => page.evaluate((sel) => {
   const box = document.querySelector(sel);
-  return box ? box.querySelectorAll('img, script, svg, iframe, object, embed, a, style, details, link').length : -1;
+  if (!box) return -1;
+  // Only the header's static close icon is outside user-controlled content.
+  const closeIcon = box.querySelector(':scope > .chat-head > .chat-close > svg');
+  return [...box.querySelectorAll('img, script, svg, iframe, object, embed, a, style, details, link')]
+    .filter(element => element !== closeIcon).length;
 }, scope);
 
 try {
@@ -148,7 +152,7 @@ try {
   const app = await ctx.newPage();
   await watch(app);
   await app.addInitScript((port) => {
-    localStorage.setItem('c64emu.splashSeen', '1');
+    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
     localStorage.setItem('c64emu.chat.server', `ws://127.0.0.1:${port}/chat`);
   }, CHAT_PORT);
   await app.goto(`http://127.0.0.1:${APP_PORT}/`, { waitUntil: 'domcontentloaded' });

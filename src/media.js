@@ -14,6 +14,9 @@
 import { rovingList, rovingListKey } from './ui/roving-list.js';
 import { createOpenMedia } from './media/open.js';
 import { createDiskCompatibilityPrompt } from './media/disk-compatibility.js';
+import { createDiskQueue, createDiskQueueStore } from './media/disk-queue.js';
+import { createDiskQueueView } from './media/disk-queue-dialog.js';
+import { DISK_MEDIA } from './media/formats.js';
 import {
   canvas, resetBtn, pauseBtn, prgBtn, pasteBtn, prgInput, saveStateBtn, loadStateBtn, crtBtn, crtInput, crtEjectBtn, crtResetBtn, crtFreezeBtn, crtLabel, crtDropzone, d64Btn, d64Input, d64NewBtn, d64EjectBtn, d64WpBtn, d64FormatBtn, d64ExportBtn, d64DirEl, driveDropzone, driveEmptyHint, driveLoaded, tapBtn, tapInput, tapPlayBtn, tapStopBtn, tapRewBtn, tapFfBtn, tapRecBtn, tapStartBtn, tapNewBtn, tapWpBtn, tapExportBtn, tapExportWavBtn, tapEjectBtn, tapLabel, tapeBar, tapeBarWrap, tapeMotorDot, tapeTime, tapeCounter, tapeDropzone, driveLed, DRIVE8_UI, DRIVE9_UI, libraryModal, libraryBtn, libraryClose, libraryClear, libraryExport, libraryImport, libraryImportInput, libraryImportStatusEl, libraryFilterEl, libraryListEl, libraryEmptyEl, stateModal, stateFilterEl, stateListEl, stateEmptyEl, stateCloseBtn, stateClearBtn, stateExportBtn, stateImportBtn, stateImportInput, stateImportStatusEl, _dropZone,
   dirzoomModal, dirzoomTitle, dirzoomDiskName, dirzoomDiskMeta, dirzoomListEl, dirzoomCloseBtn,
@@ -50,10 +53,13 @@ import { stateList, stateSave, stateLoad, stateDelete, stateRename, stateClear, 
 
 // ── Injected core dependencies (assigned by initMedia) ───────────────────────
 let configureSidTune, syncSidState, getSecondSidConfig;
+let revealMediaPanel, revealMediaPanels;
 let setStatus, _powerOn, _hardReset, _createAndWireMachine, _setPaused, startLoop, resumeAudio, suspendAudio, resetSidWorklet, _syncPowerStateClass, _punchLogo, _syncToggleLabels, _stopBootHint, _queueAutoLoad, _basicReady, stopPauseDemo, cancelAutoLoad, resetFrameTiming, resyncSid, releaseAllLatched, applyLoadedVariants, getIs8580, getVicVariantPref, getAutorunEnabled, getTdeEnabled, setTdeEnabled, isPaused;
 
 // ── Media-domain state: media is the sole writer; main.js reads via import ────
 export let currentD64 = null;
+let drive8Queue = null, drive8QueueView = null;
+let disk8SwapGeneration = 0;
 export let _cachedCartData = null;
 export let _cachedTapData = null;
 let _currentCartInfo = null;
@@ -216,9 +222,17 @@ async function _renderLibrary() {
         <span class="lib-type lib-type-${e.type}">${e.type.toUpperCase()}</span>
         <span class="lib-name" role="button" tabindex="-1" aria-label="Load ${name}">${name}</span>
         <span class="lib-meta">${_libFormatSize(e.size)}<span class="lib-date" title="${_libEscapeHtml(whenAbs)}"> · ${_libEscapeHtml(whenRel)}</span></span>
+        ${DISK_MEDIA.includes(e.type) ? `<button class="lib-queue btn" data-queue="${_libEscapeHtml(e.id)}" title="Queue to drive 8" aria-label="Queue ${name}">QUEUE</button>` : ''}
         <button class="lib-del" data-del="${_libEscapeHtml(e.id)}" title="Remove from library" aria-label="Remove">✕</button>
       </div>`;
   }).join('');
+  _syncLibraryQueue();
+}
+
+function _syncLibraryQueue() {
+  for (const button of libraryListEl?.querySelectorAll('[data-queue]') || []) {
+    button.disabled = !!drive8Queue?.state.busy;
+  }
 }
 
 // Apply a library entry's bytes via the same paths a fresh disk-load uses.
@@ -345,6 +359,18 @@ for (const ui of [DRIVE8_UI, DRIVE9_UI]) if (ui.dirEl) rovingList(ui.dirEl, '.d6
 
 if (libraryListEl) {
   libraryListEl.addEventListener('click', async e => {
+    const queueButton = e.target.closest('[data-queue]');
+    if (queueButton) {
+      queueButton.disabled = true;
+      try {
+        const entry = await libLoad(queueButton.getAttribute('data-queue'));
+        if (!entry) throw new Error('This disk is missing from Library.');
+        const count = await queueDisks([{ name: entry.name, bytes: entry.data, mediaType: entry.type, metadata: entry }]);
+        _setImportStatus(count ? `${entry.name} added to the drive 8 queue.` : `${entry.name} is already queued.`);
+      } catch (error) { _setImportStatus(error.message); }
+      finally { _syncLibraryQueue(); }
+      return;
+    }
     const del = e.target.closest('[data-del]');
     if (del) {
       await libDelete(del.getAttribute('data-del'));
@@ -574,7 +600,14 @@ async function _loadState(entry) {
   if (currentD64) { try { showD64Directory(currentD64); } catch {} }
   if (currentD64Drive9) { try { showD64Directory(currentD64Drive9, DRIVE9_UI); } catch {} }
   setLoaded('drive8', currentD64 && _diskEntry(currentD64));
+  disk8SwapGeneration++;
+  drive8Queue?.refresh();
   setLoaded('drive9', currentD64Drive9 && _diskEntry(currentD64Drive9));
+  revealMediaPanels?.([
+    currentD64 && 'drive8', drive9Enabled && 'drive9', _cachedCartData && 'cartridge',
+    _cachedTapData && 'datasette', reuEnabled && 'reu', c64.userportDeviceId && 'userport',
+    c64.iecDeviceCount && 'iec',
+  ].filter(Boolean));
   setRunning(true);
   _syncPowerStateClass();
   _punchLogo();
@@ -1186,6 +1219,7 @@ function _applyCart(data) {
       hasReset: hasButtons, hasFreeze: hasButtons,
     });
   }
+  revealMediaPanel?.('cartridge');
 }
 
 if (crtBtn && crtInput) {
@@ -1252,6 +1286,8 @@ function _diskEntry(disk) {
 }
 
 function _onD64Loaded(disk) {
+  revealMediaPanel?.('drive8', { onlyIfHidden: true });
+  disk8SwapGeneration++;
   currentD64 = disk;
   setLoaded('drive8', _diskEntry(disk));
   if (c64?.ready) c64.setD64(disk);
@@ -1261,9 +1297,11 @@ function _onD64Loaded(disk) {
   _syncWriteButtons();
   const suffix = c64?.ready ? '' : ' (cached — applies on POWER ON)';
   setStatus(`${_diskType(disk).toUpperCase()}: "${disk.diskName}" inserted${suffix}`, c64?.ready ? 'running' : 'idle');
+  drive8Queue?.refresh();
 }
 
 function _ejectD64() {
+  disk8SwapGeneration++;
   // Save any pending writes before the disk leaves the drive.
   c64?.commitDriveWrites?.();
   _persistDirtyDisk(currentD64);
@@ -1277,6 +1315,7 @@ function _ejectD64() {
   _syncD64EjectButton();
   _syncWriteButtons();
   setStatus('Disk ejected', c64?.ready ? 'running' : 'idle');
+  drive8Queue?.refresh();
 }
 
 // Insert a disk image (no reset — continues from the current state). With
@@ -1292,14 +1331,25 @@ function _ejectD64() {
 // genuinely empty for that window — the same as ejecting then reinserting by
 // hand.
 const DISK_SWAP_EJECT_MS = 700;
-async function _loadDisk(disk, { autorun = true, startCmd = 'RUN\r', respectPreference = true } = {}) {
+async function _loadDisk(disk, { autorun = true, startCmd = 'RUN\r', respectPreference = true, beforeAttach } = {}) {
   if (currentD64 && c64?.ready) {
+    const outgoing = currentD64;
     _ejectD64();                          // eject the installed disk now
-    await new Promise(resolve => setTimeout(resolve, DISK_SWAP_EJECT_MS));
+    const generation = disk8SwapGeneration;
+    try {
+      await new Promise(resolve => setTimeout(resolve, DISK_SWAP_EJECT_MS));
+      if (generation !== disk8SwapGeneration) return false;
+      await beforeAttach?.();
+    } catch (error) {
+      if (generation === disk8SwapGeneration) _attachDisk(outgoing, false);
+      throw error;
+    }
+    if (generation !== disk8SwapGeneration) return false;
     _attachDisk(disk, autorun, startCmd, respectPreference);
-    return;
+    return true;
   }
   _attachDisk(disk, autorun, startCmd, respectPreference);
+  return true;
 }
 
 function _attachDisk(disk, autorun = true, startCmd = 'RUN\r', respectPreference = true) {
@@ -1418,6 +1468,7 @@ function _toggleWriteProtect(d) {
   const nextProtected = disk.writeProtected === false;   // flip
   disk.writeProtected = nextProtected;
   d.drive()?.setWriteProtect?.(nextProtected);
+  if (d.num === 8) _checkpointDiskQueue();
   _syncWriteButtons();
   setStatus(
     `Drive ${d.num}: ${nextProtected ? 'disk write-protected' : 'writing enabled'}`,
@@ -1500,6 +1551,12 @@ for (const d of WRITE_DRIVES) {
 function _persistDirtyDisk(disk) {
   if (!disk || !disk.dirty) return;
   _libRemember(_diskType(disk), disk._libName || _diskExportName(disk), disk.img.slice());
+  if (disk === currentD64) _checkpointDiskQueue();
+}
+
+function _checkpointDiskQueue() {
+  if (!drive8Queue || drive8Queue.state.busy) return;
+  void drive8Queue.checkpoint().catch(error => setStatus?.(error.message, 'error'));
 }
 
 // Directory signature — a cheap fingerprint of what the listing shows, so we only
@@ -1621,6 +1678,7 @@ export function drive9LedActive() {
 // restore and NEW/FORMAT paths mount silently, the same distinction drive 8
 // draws.
 function _onD64Drive9Loaded(disk, { autorun = false, startCmd = 'RUN\r' } = {}) {
+  revealMediaPanel?.('drive9', { onlyIfHidden: true });
   currentD64Drive9 = disk;
   setLoaded('drive9', _diskEntry(disk));
   if (c64?.ready) c64.setD64Drive9(disk);
@@ -1922,6 +1980,7 @@ function _loadReuImage(data, name) {
     return false;
   }
   reu.loadImage(data);
+  revealMediaPanel?.('reu');
   _reuImageName = name;
   _syncReuUI();
   const short = data.length > reu.ram.length
@@ -1975,6 +2034,7 @@ function _applyTap(data, name) {
   _cacheTap(data, name);
   if (c64?.ready) c64.loadTap(data);
   _onTapLoaded(name, data);
+  revealMediaPanel?.('datasette');
 }
 
 // Which files on a tape will not load, read off the tape rather than taken from
@@ -3393,6 +3453,7 @@ _dropZone.addEventListener('drop', async e => {
 // ── Dependency injection + deferred import-time restore ──────────────────────
 export function initMedia(deps) {
   ({
+    revealMediaPanel, revealMediaPanels,
     configureSidTune, syncSidState, getSecondSidConfig, setStatus, _powerOn, _hardReset, _createAndWireMachine, _setPaused, startLoop, resumeAudio, suspendAudio, resetSidWorklet, _syncPowerStateClass, _punchLogo, _syncToggleLabels, _stopBootHint, _queueAutoLoad, _basicReady, stopPauseDemo, cancelAutoLoad, resetFrameTiming, resyncSid, releaseAllLatched, applyLoadedVariants, getIs8580, getVicVariantPref, getAutorunEnabled, getTdeEnabled, setTdeEnabled, isPaused,
   } = deps);
   // Deferred from import time: reads loader, which main.js creates AFTER this
@@ -3424,7 +3485,51 @@ const _prepareD64 = createDiskCompatibilityPrompt({
   },
 });
 
+drive8Queue = createDiskQueue({
+  store: createDiskQueueStore(),
+  current: () => currentD64,
+  commit: () => c64?.commitDriveWrites?.(),
+  prepare: async disk => {
+    // A D64 swap keeps the running loader's drive mode. Raw tracks and
+    // virtual-only formats still need their respective device modes.
+    if (disk.isG64 || disk.kind === 'd71' || disk.kind === 'd81') {
+      await _prepareD64({ targetDrive: 8, rawGcr: !!disk.isG64, kind: disk.kind });
+    }
+  },
+  persistDisk: async disk => {
+    if (!(await libSave(_diskType(disk), disk._libName || _diskExportName(disk), disk.img.slice()))) {
+      throw new Error('Could not save the changed disk to Library. The disk is still inserted.');
+    }
+  },
+  mount: async (disk, metadata, beforeAttach) => {
+    cancelAutoLoad?.();
+    const mounted = await _loadDisk(disk, { autorun: false, beforeAttach });
+    if (mounted) {
+      const p = metadata.provenance;
+      if (metadata.releaseTitle) enrichLoaded('drive8', { release: { title: metadata.releaseTitle,
+        a64: p?.itemRef && p?.fileRef ? { item: String(p.itemRef.id), cat: p.itemRef.categoryId, file: String(p.fileRef.id), name: disk._libName } : null,
+      } }, disk._libName);
+      setStatus?.(`Drive 8: ${disk._libName} inserted`, c64?.ready ? 'running' : 'idle');
+    }
+    return mounted;
+  },
+  changed: () => { drive8QueueView?.render(); _syncLibraryQueue(); },
+});
+drive8QueueView = createDiskQueueView(drive8Queue, {
+  nextButton: document.getElementById('btn-d64-next'),
+  queueButton: document.getElementById('btn-d64-queue'),
+  notify: (message, type) => setStatus?.(message, type),
+});
+
+export async function queueDisks(requests) { return drive8Queue.add(requests); }
+export async function nextQueuedDisk() {
+  if (drive8Queue.state.busy) return;
+  try { await drive8Queue.next(); }
+  catch (error) { setStatus?.(error.message, 'error'); }
+}
+
 export const openMedia = createOpenMedia({
+  queue: request => queueDisks([request]),
   confirmSid: tune => {
     if (!tune.secondSidAddress) return true;
     const current = getSecondSidConfig();

@@ -14,6 +14,7 @@ import { VirtualDrive } from './media/virtual-drive.js';
 import { Datasette } from './datasette.js';
 import { REU, REU_DEFAULT_MODEL } from './reu.js';
 import { UserPort } from './userport.js';
+import { IecDevices, validIecAddress } from './iec.js';
 import { parseCRT } from './media/crt.js';
 import { createCartridgeFromCRT } from './cartridges/registry.js';
 import { makeVoiceTrio, computeSyncPulses } from './sid/sid-voice.js';
@@ -230,6 +231,8 @@ export class C64Machine {
     // User port device host. Non-null only while a device is plugged in, so the
     // master cycle's test for it stays a single null check.
     this.userport = null;
+    this.iec = null;
+    this.iecRestoreMismatches = null;
     // Device id a restored snapshot was made with, when that device is not the
     // one plugged in now (the UI says so). Null otherwise.
     this.userportRestoreMismatch = null;
@@ -271,7 +274,7 @@ export class C64Machine {
     // old `{busAtn, busClk, busData}` literal fed the mobile GC one throw-
     // away object per poll. Only cia2.readPortA consumes the return.
     this._syncIecBus = () => {
-      if (!this.drive1541) return 0b111;
+      if (!this.drive1541 && !this.drive1541b && !this.iec) return 0b111;
       const portA = this.cia2.portA;
       const ddr = this.cia2.portADir;
 
@@ -284,8 +287,8 @@ export class C64Machine {
       const c64Data = c64IecLineLow(portA, ddr, 0x20);
 
       // Drive internal signals (0 = Pull/0V, 1 = Release)
-      const drvClk = this.drive1541.clkOut_pin;
-      const drvData = this.drive1541.dataOut;
+      const drvClk = this.drive1541 ? this.drive1541.clkOut_pin : 1;
+      const drvData = this.drive1541 ? this.drive1541.dataOut : 1;
 
       // Wired-AND logic: Final bus level is 0 if ANY device pulls it low
       const busAtn = c64atn; // Drives don't pull ATN
@@ -296,6 +299,12 @@ export class C64Machine {
       if (this.drive1541b) {
         if (this.drive1541b.clkOut_pin === 0) busClk = 0;
         if (this.drive1541b.dataOut === 0) busData = 0;
+      }
+
+      if (this.iec) {
+        busClk &= (this.iec.outputs >> 1) & 1;
+        busData &= this.iec.outputs & 1;
+        this.iec.inputs = (busAtn << 2) | (busClk << 1) | busData;
       }
 
       const busChanged =
@@ -309,7 +318,7 @@ export class C64Machine {
       if (this._driveIdleSkipping && busChanged) this._wakeDriveIdleSkip();
 
       // Feed high-fidelity bus state BACK to the drive(s) so they see the reflection
-      this.drive1541.setIecLines(busAtn, busClk, busData);
+      if (this.drive1541) this.drive1541.setIecLines(busAtn, busClk, busData);
       if (this.drive1541b) this.drive1541b.setIecLines(busAtn, busClk, busData);
 
       // C64-facing view for readPortA: own pulls live, drive pins through
@@ -321,6 +330,7 @@ export class C64Machine {
         if (this._iecDrvVisClk9 === 0) rClk = 0;
         if (this._iecDrvVisData9 === 0) rData = 0;
       }
+      if (this.iec) { rClk &= (this.iec.visible >> 1) & 1; rData &= this.iec.visible & 1; }
       return (busAtn << 2) | (rClk << 1) | rData;
 
     };
@@ -333,14 +343,15 @@ export class C64Machine {
       const d = this.drive1541;
       this._iecDrvVisClk = this._iecDrvPrevClk;
       this._iecDrvVisData = this._iecDrvPrevData;
-      this._iecDrvPrevClk = d.clkOut_pin;
-      this._iecDrvPrevData = d.dataOut;
+      this._iecDrvPrevClk = d ? d.clkOut_pin : 1;
+      this._iecDrvPrevData = d ? d.dataOut : 1;
       if (this.drive1541b) {
         this._iecDrvVisClk9 = this._iecDrvPrevClk9;
         this._iecDrvVisData9 = this._iecDrvPrevData9;
         this._iecDrvPrevClk9 = this.drive1541b.clkOut_pin;
         this._iecDrvPrevData9 = this.drive1541b.dataOut;
       }
+      if (this.iec) this.iec.advanceVisible();
     };
 
     this.cia2.writePortA = (val, viaDir = false, oldDdra = 0) => {
@@ -983,6 +994,7 @@ export class C64Machine {
 
     this.datasette.reset();
     if (this.userport !== null) this.userport.reset();
+    if (this.iec) this.iec.reset();
     this._resetSidAudioQueue();
 
     // 1541 needs a fresh CPU/VIA state so its DOS ROM boots into its idle loop
@@ -1373,8 +1385,26 @@ export class C64Machine {
     return reu;
   }
 
-  // Plug a device into the user port. `factory(port)` builds it against the
-  // device API in userport.js. Replaces any device already plugged in.
+  // Attach an additional IEC participant, preserving the disk-drive slots.
+  attachIecDevice(address, id, factory, version = null) {
+    if (!validIecAddress(address)) throw new Error('IEC addresses are 4 to 30, with 8 and 9 reserved for disk drives.');
+    if (!this.iec) this.iec = new IecDevices(CYCLES_PER_SECOND_PAL, () => this._syncIecBus());
+    try { return this.iec.plug(address, id, factory, version); }
+    catch (error) {
+      if (!this.iec.devices.size) this.iec = null;
+      this._syncIecBus();
+      throw error;
+    }
+  }
+
+  detachIecDevice(address) {
+    if (!this.iec) return;
+    this.iec.unplug(address);
+    if (!this.iec.devices.size) this.iec = null;
+    this._syncIecBus();
+  }
+
+  // Plug a device into the user port, replacing the current device.
   attachUserport(id, factory, version = null) {
     if (this.userport === null) {
       const up = new UserPort(this.cia2, CYCLES_PER_SECOND_PAL, this.cia1);
@@ -1749,6 +1779,7 @@ export class C64Machine {
       cia2: this.cia2.serialize(),
       datasette: this.datasette.serialize(),
       userport: this.userport !== null ? this.userport.serialize() : null,
+      iec: this.iec ? this.iec.serialize() : null,
       drive1541: (this.drive1541 && this.truedriveEnabled) ? this.drive1541.serialize() : null,
       reu: this.reu ? this.reu.serialize() : null,
       sid2: this.sid2 ? { ...this.secondSidConfig(), regs: this.sid2.proxy.regs.slice(),
@@ -1804,6 +1835,7 @@ export class C64Machine {
     }
     // A device the snapshot did not restore still has to see the restored lines.
     if (this.userport !== null && !userportRestored) this.userport.resync();
+    this.iecRestoreMismatches = this.iec ? this.iec.deserialize(s.iec) : (s.iec?.devices || []).map(d => ({ address: d.address, id: d.id }));
     if (s.drive1541 && this.drive1541) this.drive1541.deserialize(s.drive1541);
     // The REU re-drives its own bus-hold and /IRQ lines from the restored
     // register file, so the machine-level latches below need no REU entry.
@@ -1927,7 +1959,7 @@ export class C64Machine {
     // IEC edge-propagation pipeline step: make last
     // cycle's C64 output edges visible to the drive and advance the
     // drive-pin delay line the C64's $DD00 reads sample from.
-    if (this.drive1541) this._iecClock();
+    if (this.drive1541 || this.drive1541b || this.iec) this._iecClock();
 
     // Apply the PREVIOUS cycle's pending IRQ/NMI state to the CPU before
     // cpu.clock runs this cycle (the per-source delay pipeline). This reads
@@ -2072,6 +2104,7 @@ export class C64Machine {
     // _motorStartupRemaining only counts down while motorOn — behavior-identical.
     if (this.datasette.motorOn) this.datasette.clock(1);
     if (this.userport) this.userport.tick();
+    if (this.iec) this.iec.tick();
 
     this.cia1.endMasterCycle?.();
     this.cia2.endMasterCycle?.();

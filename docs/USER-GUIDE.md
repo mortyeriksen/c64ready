@@ -11,17 +11,17 @@ from blank screen to running demo, start with
 
 <!-- gallery overview label="Theme" -->
 
+**Phosphor**
+![The interface in the Phosphor theme's dark mode: amber on black.](/guide/overview-phosphor.webp)
+
 **Classic**
-![The C64 READY. interface: the CRT display on the left showing the blue BASIC boot screen, with the side panel of controls on the right.](/guide/overview.webp)
+![The C64 READY. interface: the CRT display on the left showing the blue BASIC boot screen, with the side panel of controls on the right.](/guide/overview-classic.webp)
 
 **GEOS**
 ![The interface in the GEOS theme's dark mode: white on black.](/guide/overview-geos.webp)
 
 **Breadbin**
 ![The interface in the Breadbin theme's dark mode: the brown keyboard with cream text.](/guide/overview-breadbin.webp)
-
-**Phosphor**
-![The interface in the Phosphor theme's dark mode: amber on black.](/guide/overview-phosphor.webp)
 
 **Out Run**
 ![The interface in the Out Run theme's dark mode: a magenta horizon glow over violet night.](/guide/overview-outrun.webp)
@@ -41,7 +41,7 @@ Three regions: the **header** (branding and links), the **display** (the
 emulated CRT), and the **side panel** of control cards.
 
 The panel is two columns at the default **2X**, narrows as the picture grows,
-and is a single column at **MAX**. On a phone it moves below the screen. Most of
+and is a single column at **MAX**. On a phone it moves [below the screen](GUIDE-INTERFACE.md#mobile-support). Most of
 it stays greyed out until the ROMs load and you power on.
 
 The same interface with a demo running:
@@ -52,10 +52,11 @@ The same interface with a demo running:
 
 ## Topics
 
-- **[The interface](GUIDE-INTERFACE.md)**: The header, the display and the cards that run the machine, how to arrange them, and the chat.
+- **[The interface](GUIDE-INTERFACE.md)**: The header, the display and the cards that run the machine, how to arrange them, on desktop and mobile.
 - **[Media and drives](GUIDE-MEDIA.md)**: Loading programs, disks, cartridges, tapes and tunes, and the Assembly64 catalog.
 - **[Input](GUIDE-INPUT.md)**: Joysticks, mice, paddles and the keyboard and touch sticks on the two control ports.
 - **[Looks and Retro Vibes](GUIDE-LOOKS.md)**: Themes and their file format, the Retro Vibes 3D viewer, and recording what you play.
+- **[Chat](GUIDE-CHAT.md)**: Rooms, shared games and moderation.
 - **[Options and setup](GUIDE-OPTIONS.md)**: Every setting in the Options dialog, and the first-run setup.
 - **[The command line](GUIDE-CLI.md)**: The `c64rdy` tool for your cassettes, cartridges and disks: convert, inspect, repair and run them in batches.
 

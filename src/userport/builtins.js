@@ -4,8 +4,8 @@
 // plugins like any other, loaded from their source text through the same path
 // as an installed device, so the built-ins exercise the public API.
 
-import wifiModemSource from './devices/wifi-modem.js?raw';
+import modemSource from './devices/modem.js?raw';
 
 export const BUILTIN_DEVICES = [
-  { id: 'builtin.wifi-modem', file: 'wifi-modem.js', source: wifiModemSource },
+  { id: 'builtin.wifi-modem', file: 'modem.js', source: modemSource },
 ];

@@ -36,11 +36,23 @@ tests. See the [VIC-II architecture](VIC2-ARCHITECTURE.md#fetch-fed-graphics).
 - **Three-SID tunes** are not supported. Two-SID tunes play in Safe view only;
   their Voices view is unavailable. Expansion addresses `$DE00-$DFFF` need an
   empty cartridge slot, and `$DF00-$DFFF` cannot share an attached REU.
-- **Cartridge families beyond the five in the Features list, printers and
+- **Cartridge families beyond the five in the Features list and
   ACIA modem cartridges** (SwiftLink) are not implemented.
-- **The WiFi modem needs a relay** to reach the internet. `c64rdy serve`
+- **The Hayes Modem needs a relay** to reach the internet. `c64rdy serve`
   provides one. A relay on your own computer used from the public site is
   blocked by Safari, and Chrome asks for permission first.
+
+## IEC plugin limits
+
+- The standard serial helper receives data. Custom TALK senders can use the raw
+  line API. SRQ, burst serial, JiffyDOS and printer firmware CPUs are not modelled
+  by the helper.
+- IEC Printer implements an MPS command subset, with browser text fonts and
+  approximate character mapping. Reverse text, full PETSCII graphics and printer
+  ROM fonts are not supported. Print Shop compatibility depends on its selected
+  printer driver and disk version, its Epson output uses different commands.
+  Jobs hold up to 512 KB, and each print action shows at most 100 Letter pages.
+  The browser controls the print dialog and available PDF destinations.
 
 ## Unmodelled hardware quirks
 

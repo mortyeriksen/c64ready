@@ -19,6 +19,12 @@ labelled tests, plus some unlabelled internal assertions.
 
 ## Running the suite
 
+Guide screenshots use Phosphor dark. With the dev server running,
+`npm run guide:shots` refreshes the full set, including curated Library and Save
+States examples. The theme gallery keeps each named theme's dark and light views.
+`node tools/guide-setup-shot.mjs` regenerates the ROM setup and theme picker
+images for Getting Started.
+
 ```bash
 # Full default suite (6-way parallel)
 npm test                         # alias for: node test/all-test.js
@@ -37,6 +43,9 @@ node test/<folder>/<name>-spec-test.js
 
 Every file the tests use that is not part of the repository (the ROMs, hardware test programs, and demo fixtures) resolves through `test/external-assets.json`: edit the paths there, or set the per-entry environment variable, to match your machine. Spec tests that depend on such a file SKIP with a note when it is absent, so the suite passes without the optional fixtures. The ROMs are the exception: the runner checks for them up front.
 
+`test/docs-redirects-spec-test.js` checks that moved documentation URLs redirect
+to their canonical pages in dev and preview, using the production redirect rules.
+
 A skipping test exits 0, which on its own is indistinguishable from a pass, so it announces the skip with a TAP-style directive that `all-test.js` picks up:
 
 | Directive | Meaning | Reported as |
@@ -45,6 +54,83 @@ A skipping test exits 0, which on its own is indistinguishable from a pass, so i
 | `ok  - <check> # SKIP <reason>` | the file ran; one check did not | `PASS`, listed under **Partially skipped** |
 
 Both lists print the reason (from `missingNote(key)`, which names the manifest entry and its environment variable), so a green run still shows exactly which fixtures went missing. A test that skips without a directive is reported as a plain `PASS`: that is the bug the directive exists to prevent.
+
+## Dialog close controls
+
+`test/theme-picker-browser-test.js` checks the theme gallery on desktop and
+phone, keyboard selection, cancellation, persistence, themed docs and the
+side-by-side mobile guide images. The panel media test checks that first ROM
+setup shows the picker before the equipment hint.
+`?THEME_PICKER=1` previews the picker after ROM setup without changing its
+one-time setting.
+
+`test/close-button-spec-test.js` checks accessible names, non-submit activation,
+repeat initialization and title-bar drag isolation. `test/close-button-browser-test.js`
+checks consistent icon and target sizes in scaled and unscaled dialogs on desktop
+and phone, close-button padding, wrapping titles, keyboard activation, cancellation,
+nested Escape and focus restoration.
+Options and a populated Library also check header, content and footer alignment
+with both overlay and reserved scrollbar space.
+Both run in `npm test`, with browser checks skipped when Chromium is unavailable.
+
+## Default panels and media controls
+
+`test/panel-order-spec-test.js` checks default visibility, explicit visibility
+preferences, existing custom setups and panel revelation. `test/panel-media-browser-test.js` checks the
+fresh layout, hidden initialization before restoration, Load Any, drag and drop,
+width-based stacking in desktop windows and portrait phones,
+Library and saved-state restoration in a
+headless browser. New device controls alternate between columns, including multi-device states.
+The equipment hint waits for ROM setup, stays until **+** is clicked and respects
+reduced motion.
+`?EQUIPMENT_HINT=1` previews it without changing the saved one-time setting.
+
+## Drive 8 queue tests
+
+`test/disk-queue-spec-test.js` covers ordering, persistence, write protection,
+write preservation, storage failure, concurrent operations and queue actions
+that leave the running machine alone. `test/disk-queue-browser-test.js` starts
+its own dev server and checks Library and Assembly64 buttons, drag sorting,
+arrows, keyboard shortcuts, reload, offline insertion and phone layout. It uses
+fixture catalog data and local ROMs for live-machine checks, and skips browser
+checks when Playwright Chromium is unavailable. Both are in `npm test`.
+
+## User port plugin controls
+
+`test/device-install-trust-browser-test.js` verifies that neither install review
+executes plugin code, including after cancellation. Code runs only after trust
+is accepted and installation proceeds. Metadata tests reject getters and
+computed expressions without evaluating them.
+
+`test/userport/userport-card-browser-test.js` checks the LED board chooser and
+Custom URL, with the included modem available only in the main Device dropdown, install trust, reload persistence, export and
+removal. It covers dropdown bounds, trust checkbox alignment and device-owned
+relay controls. Scanner tests distinguish binary decoding from code execution,
+XML namespace identifiers from network URLs and embedded print documents from
+changes to the main page.
+
+## IEC plugin tests
+
+`test/iec/iec-device-spec-test.js` checks address reservation and conflicts,
+wired-AND pulls, detached handles, isolated errors, timers, snapshots,
+addressed byte reception and EOI. With local ROMs it runs unmodified KERNAL
+`PRINT#` on the physical IEC lines, both without drives and alongside physical
+drives 8 and 9. Existing IEC edge-latency and two-bit drive tests cover shared
+bus timing. The receiver helper is tested against the published serial rules.
+
+`test/iec/iec-printer-spec-test.js` checks plugin bus validation and standalone
+loading, MPS pin order, graphics density, repeat columns, position commands,
+text and bitmap feeds, business case, width and partial commands.
+`test/iec/print-job-spec-test.js` checks bounded storage, persistence, snapshot
+restore, backpressure recovery and Receiving/Idle status.
+`test/iec/iec-card-browser-test.js` checks the shared IEC and User Port install
+review layout on desktop and phone, metadata, findings, replacement and trust,
+independent addresses,
+collision handling, modem coexistence, real KERNAL text and bitmap output,
+direct browser print invocation, safe two-page PDF output, empty controls,
+activity status, clearing, the IEC card's switch, power-cycle persistence, reload,
+disconnection and phone layout. Browser tests skip without Chromium, and
+live-machine checks skip without local C64 ROMs. All four run in `npm test`.
 
 ## D71 virtual-drive tests
 
@@ -178,7 +264,7 @@ everything else sits in `test/` itself.
 | **Shared bus / open-bus** | Open IO1/IO2 and Color-RAM upper-nybble latch reads, `$00/$01` quirk, CPU-internal-cycle bus drive, sprite idle-fetch leak. |
 | **1541 / IEC / D64 / GCR** | 1541 boot, IEC wired-AND and edge-latency model, true drive-clock ratio (including save/restore phase continuity), 2-bit transfer, fast loaders, GCR read path, GCR write-back round trip with write head and write-protect polarity, end-to-end `SAVE` through the real DOS (drives 8 and 9), G64 images (header and table checks, half-track streams, recorded bit rate, DOS LOAD and SAVE from raw tracks, the read circuit: density mismatch, weak-bit noise, per-byte speed maps), nibbler dumps to G64 (LZ stream, NIB table, track cycle and alignment, killer, unformatted and fat tracks, sync reduction, real c64pp dumps when present), SOE gating, no-DOS bootstrap, wildcard LOAD, where a trap-served `$FFD5` LOAD stores the file (secondary address 0 vs. 1, and VERIFY storing nothing), D81 images (layout, BAM, allocation, partitions, error table, the empty-1541 rule, trap loads), and the virtual drive (status, files, directory, writes, commands, blocks) with its KERNAL-level channel test (OPEN, CHKIN, CHRIN, channel 15, SAVE, a D81, TDE on leaving the bus to the 1541). |
 | **Cartridges** | Device-registry loading; Generic / Action Replay / Final Cartridge III / Magic Desk / EasyFlash banking; Ultimax mapping; cartridge I/O, RAM, RESET/FREEZE, and NMI behaviour. |
-| **User port and WiFi modem** | CIA2 port pins against a plugged-in device (wired-AND, PC2 one cycle after a `$DD01` access, FLAG2 into ICR and NMI, timers, error unplugging, save states). Plugin checks, and the install check's ten risks. The modem's 8N1 framing and bit timing, autobaud, Hayes settings, `+++` guard times, Telnet negotiation, phonebook, RTS and DTR. The KERNAL's RS-232 driver against it at 300 and 1200 baud. The LED board example as installed. The browser host's sockets through the relay, and paste pacing. `c64rdy serve` (site proxy, offline cache, relay origin check) and `run --userport`. The User Port card and its device store in headless Chromium on a dev server of its own (SKIP without Playwright's Chromium). |
+| **User port and Hayes Modem** | CIA2 port pins against a plugged-in device (wired-AND, PC2 one cycle after a `$DD01` access, FLAG2 into ICR and NMI, timers, error unplugging, save states). Plugin checks, and the install review categories, Base64 information, XML namespaces and encoded-code execution. The modem's 8N1 framing and bit timing, autobaud, Hayes settings, `+++` guard times, Telnet negotiation, phonebook, RTS and DTR. The KERNAL's RS-232 driver against it at 300 and 1200 baud. The LED board example as installed. The browser host's sockets through the relay, and paste pacing. `c64rdy serve` (site proxy, offline cache, relay origin check) and `run --userport`. Speaker synthesis, shared Datasette icons, remembered sound selection, master mute, and unplugging cleanup. The User Port card and its device store in headless Chromium on a dev server of its own (SKIP without Playwright's Chromium). |
 | **RAM Expansion Unit** | 8726 REC register map and readback, stash/fetch/swap/verify transfers, DMA bus arbitration (CPU halted, VIC DMA takes precedence) and the documented transfer rates. |
 | **Datasette** | `.tap` v0/v1/v2 playback, FLAG pulses into CIA1, seeking to a file's lead-in, KERNAL tape LOAD and SAVE, turbo-tape record and load round trip at cycle resolution, `.wav` cassette import (level tracking, edge polarity, sample rates, repair of damaged blocks) and export, DC2N `.dmp` import. |
 | **Memory / PLA / banking** | PLA routing through the 6510 port, all 32 banking configurations, colour RAM, reset state. |

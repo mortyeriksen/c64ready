@@ -22,6 +22,7 @@ const upstreamDest = destination('upstream');
 const recorderDest = destination('recorder');
 const sidConnections = [];
 const driveConnections = [];
+const userportConnections = [];
 const sourceConnections = [];
 let sourceInput = null;
 let recorderOptions = null;
@@ -63,6 +64,10 @@ const driveMaster = {
   connect: (node) => driveConnections.push(node),
   disconnect: (node) => assert.equal(node, createdGains[0]),
 };
+const userportBus = {
+  connect: (node) => userportConnections.push(node),
+  disconnect: (node) => assert.equal(node, createdGains[0]),
+};
 class RecorderContext {
   constructor(options) {
     recorderOptions = options;
@@ -87,10 +92,12 @@ const bridge = createRecorderAudioBridge({
   audioCtx,
   sidNode,
   driveSounds: { master: driveMaster },
+  userportAudio: { destination: userportBus },
   AudioContextCtor: RecorderContext,
 });
 
 assert.ok(bridge, 'bridge is created for a live emulator AudioContext');
+assert.equal(userportConnections[0], createdGains[0], 'user port effects are included in recorded audio before master mute');
 assert.equal(bridge.track, recorderDest.stream.audioTrack,
   'MediaRecorder receives the recorder-context track, not the suspendable upstream track');
 assert.deepEqual(recorderOptions, { sampleRate: 44100 },

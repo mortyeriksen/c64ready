@@ -57,10 +57,30 @@ const until = (pred, ms = 3000) => new Promise((resolve) => {
   host.status('ready');
   expect(frames === 2 && status === 'ready', 'frame hooks and status reach the card');
   expect(host.panel === null, 'no panel without a panel element');
+  expect(host.audio() === null, 'audio is optional before the app initializes it');
+  expect(host.icons.speakerOn.includes('spk-on') && host.icons.speakerMute.includes('spk-mute'), 'the shared speaker icons are available to panels');
   ctl.dispose();
   ctl.frame();
   expect(frames === 2, 'dispose drops the frame hooks');
   ok('host storage is per device, frame hooks run per frame, dispose stops them');
+}
+
+{
+  const opts = { meta, panelHost: null, setStatus() {}, relayBase: () => 'ws://local.example/relay' };
+  mem.set('c64emu.userport.relay', 'wss://legacy.example/relay');
+  const ctl = createBrowserHost(opts);
+  expect(ctl.host.relay.get() === 'wss://legacy.example/relay', 'the device inherits the previous relay setting');
+  expect(ctl.host.relay.set('wss://device.example/relay'), 'a device saves its own relay');
+  expect(!ctl.host.relay.set('https://invalid.example/relay') && ctl.host.relay.get() === 'wss://device.example/relay', 'invalid relay schemes leave the current configuration alone');
+  ctl.dispose();
+  const again = createBrowserHost(opts);
+  expect(again.host.relay.get() === 'wss://device.example/relay', 'the per-device setting survives re-creation');
+  again.host.relay.set('');
+  expect(again.host.relay.get() === '' && again.host.relay.defaultBase() === 'ws://local.example/relay', 'empty selects the local default rather than reviving the old global setting');
+  again.dispose();
+  mem.delete('c64emu.userport.relay');
+  mem.delete(`c64emu.userport.dev.${meta.id}.relay`);
+  ok('device-owned relay controls have validated, persistent settings and a local default');
 }
 
 {

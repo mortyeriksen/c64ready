@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
-// Capture the "Setup C64 READY." first-run dialog for the User / Getting-Started
-// guides (setup-dialog.webp).
+// Capture ROM setup and the theme picker for the Getting Started guide:
+// setup-dialog.webp and theme-picker.webp, both in Phosphor dark.
 //
 // The Setup dialog only auto-opens on first run when NO ROMs are found (cache +
 // server both empty), which the normal guide-shots.mjs run can't reproduce (it
@@ -14,6 +14,7 @@
 // baseURL defaults to http://localhost:5173 (the live dev server). Output lands
 // in public/guide/ (tracked, served at /guide/); set GUIDE_OUT to redirect.
 import { chromium } from 'playwright';
+import { createGuideContext } from './guide-context.mjs';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -27,13 +28,13 @@ const BASE = process.argv[2] || 'http://localhost:5173';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const browser = await chromium.launch();                 // headless by default
-const ctx = await browser.newContext({ colorScheme: 'dark',
+const ctx = await createGuideContext(browser, { colorScheme: 'dark',
   viewport: { width: 1460, height: 1180 },
   deviceScaleFactor: 2,                                   // crisp retina PNG, matches the other guide shots
   reducedMotion: 'reduce',
-});
+}, { roms: false });
 // Hide the PWA install card so it can't intrude; storage is otherwise empty.
-await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); } catch {} });
+await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); } catch {} });
 const page = await ctx.newPage();
 page.on('pageerror', (e) => console.error('  page error:', e.message));
 // Defensive: even if /roms/ still holds files, block them so autoLoad finds none.
@@ -51,6 +52,24 @@ await sleep(500);
 console.log('  ✓', shotLabel('setup-dialog', saveGuideShot(
   await page.locator('#setup-modal .modal-card').first().screenshot(),
   OUT, 'setup-dialog')));
+
+const themeContext = await createGuideContext(browser, {
+  colorScheme: 'dark', viewport: { width: 1460, height: 1180 },
+  deviceScaleFactor: 2, reducedMotion: 'reduce',
+});
+await themeContext.addInitScript(() => {
+  localStorage.setItem('c64emu.installDismissed', '1');
+  localStorage.setItem('c64emu.splashSeen', '1');
+});
+const themePage = await themeContext.newPage();
+const themeUrl = new URL(BASE); themeUrl.searchParams.set('THEME_PICKER', '1');
+await themePage.goto(themeUrl.href, { waitUntil: 'networkidle' });
+await themePage.locator('.theme-picker').waitFor();
+await themePage.evaluate(() => document.fonts.ready);
+await themePage.locator('.theme-picker').evaluate(card => card.focus());
+await themePage.mouse.move(0, 0);
+console.log('  ✓', shotLabel('theme-picker', saveGuideShot(
+  await themePage.locator('.theme-picker').screenshot(), OUT, 'theme-picker')));
 
 await browser.close();
 console.log('\nDone.');

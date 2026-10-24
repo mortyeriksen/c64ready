@@ -152,6 +152,11 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 
 ## Disk drives
 
+- **Drive 8 queue**: add D64, D71, D81 or G64 disks with **QUEUE** in Assembly64
+  or Library. **NEXT DISK** or **Cmd/Ctrl+Shift+8** inserts the next disk without
+  resetting or autorunning. The queue dialog supports drag sorting, arrow
+  buttons, removal and optional looping. Images and order persist in this browser.
+
 - **Two drives**: device **8** and device **9**.
 - **Directory artwork viewer**: every inserted disk lists its files in the drive
   panel, and a **🔍** button reopens the listing enlarged in its own window,
@@ -231,9 +236,22 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   from a `.reu` image, saved back out to one, or wiped. It keeps its contents
   through RESET and through loading new media, and travels with save states.
   Nothing is fitted until you switch it on.
-- **User port**: one device at a time. A built-in WiFi modem (Zimodem
-  commands, 300 to 2400 baud and 9600 with UP9600, Telnet), and your own devices from a `.js` file
-  or a web address ([Writing a user port device](USERPORT-DEVICES.md)).
+- **Modem speaker**: optional ringing and connection effects that follow master
+  volume and mute.
+- **User port**: one device at a time. A built-in Hayes Modem (Zimodem
+  commands, 300 to 2400 baud and 9600 with UP9600, Telnet)
+  and your own devices from a `.js` file
+  or a web address ([Writing device plugins](DEVICE-PLUGINS.md)).
+- **Ready-made plugins**: **FROM URL…** offers the LED board
+  or **Custom URL** for another plugin. The included modem is selected in Device.
+
+- **IEC Devices**: installable serial-bus plugins in addition to drives 8 and 9.
+  Connect multiple devices at addresses 4 to 30, with 8 and 9 reserved for the
+  drives. The card follows Drive 9 by default and has its own power switch.
+  Each plugin owns its controls, saved state and settings. IEC Printer provides
+  Commodore MPS-style text and seven-pin bitmap output through the browser's
+  print dialog for paper or PDF, and IEC Monitor demonstrates receiving serial data.
+  Printer jobs are saved, with Receiving/Idle status and a Clear job control.
 
 ## Video & display
 
@@ -260,7 +278,8 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   and Lookout Point built in, and your own as a JSON file of colours and an
   optional page pattern, which can twinkle, with a dark mode, a light mode or
   both. Export any theme as a complete starting point (see
-  [Themes](GUIDE-LOOKS.md#themes)).
+  [Themes](GUIDE-LOOKS.md#themes)). A visual picker appears once ROMs are loaded
+  and opens from Options. Imported themes join its cards, and docs use the same look.
 - **FPS and per-frame timer** readout in the header.
 
 ## Sound
@@ -300,7 +319,7 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 
 - **Rooms with no sign-up**: a nickname is all it takes. Rooms live only while
   people are in them. The chat is logged for 90 days, so abuse can be
-  investigated (see [Chat](GUIDE-INTERFACE.md#chat)).
+  investigated (see [Chat](GUIDE-CHAT.md)).
 - **Rooms about what is loaded**: one tap starts a room named after the disk,
   cartridge or tape in the machine. A room about an Assembly64 release offers
   to load it for everyone who joins.
@@ -359,7 +378,7 @@ formats converted in every honest direction, or every program on a tape side
 booted headless and tiled into one captioned sheet. Node 20.19 or newer,
 no dependencies; the [CLI guide](GUIDE-CLI.md) walks every command.
 
-`c64rdy serve` runs the app on your computer with the relay the WiFi modem
+`c64rdy serve` runs the app on your computer with the relay the Hayes Modem
 needs, and `run --userport` plugs a user port device into a headless run.
 
 `sid2prg` wraps SID tunes with the same C64 music player as the browser UI.

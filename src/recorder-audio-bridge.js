@@ -13,6 +13,7 @@ export function createRecorderAudioBridge({
   audioCtx,
   sidNode,
   driveSounds,
+  userportAudio,
   AudioContextCtor = globalThis.AudioContext,
 } = {}) {
   if (!audioCtx || audioCtx.state === 'closed' || !AudioContextCtor) return null;
@@ -43,6 +44,10 @@ export function createRecorderAudioBridge({
     if (driveSounds?.master) {
       driveSounds.master.connect(sourceGate);
       tappedNodes.push(driveSounds.master);
+    }
+    if (userportAudio?.destination) {
+      userportAudio.destination.connect(sourceGate);
+      tappedNodes.push(userportAudio.destination);
     }
 
     // Bridge the emulator tap through a recorder-owned clock. App lifecycle

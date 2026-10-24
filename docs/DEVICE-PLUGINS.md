@@ -1,18 +1,91 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <!-- Copyright © 2026 Morten Øien Eriksen -->
-<!-- description: Write a user port device for C64 READY. as one JavaScript file and install it in your browser: the API, timing rules, trust model and an example. -->
+<!-- description: Write User Port and IEC device plugins for C64 READY., with connector APIs, shared browser controls, timing rules and examples. -->
 
-# Writing a user port device
+# Writing device plugins
+
+Device plugins are self-contained JavaScript files installed through the
+User Port or IEC Devices card. They share a browser host for controls, storage
+and networking, with a separate connector API for each bus. The install review
+reads metadata and scans source without executing it. Accepted plugins run
+when loaded.
+
+## IEC device plugins
+
+The IEC Devices card uses the same single-file plugin format and browser host,
+with a separate connector API and install store. IEC metadata includes
+`bus: 'iec'`, `apiVersion: 1` and an optional default `address` (4 by default).
+Addresses 4 to 30 are available, except 8 and 9, which belong to the disk drives.
+The user chooses the connection address, and each connected instance gets its
+own settings namespace. A user port plugin cannot be installed as an IEC device
+or the other way round.
+
+```js
+export const meta = {
+  id: 'example.iec-receiver', name: 'IEC receiver', version: '1.0.0',
+  bus: 'iec', apiVersion: 1, address: 5,
+};
+export function create(port, host) {
+  let count = 0, shown = -1;
+  const serial = port.createListener({ onByte() { count++; } });
+  host?.onFrame?.(() => {
+    if (shown !== count) { shown = count; host.status(`${count} bytes`); }
+  });
+  return serial;
+}
+```
+
+IEC handles use physical TTL levels, with DATA in bit 0, CLK in bit 1 and ATN
+in bit 2. One means released, zero means asserted. The C64 owns ATN, plugins
+can pull CLK and DATA low or release them. All participants see the shared
+wired-AND bus, including drives 8 and 9. Cable ordering does not change device
+addresses.
+
+| IEC member | Contract |
+| --- | --- |
+| `port.address` | configured address of this instance |
+| `port.cyclesPerSecond`, `.now()` | PAL clock rate and completed IEC master cycles |
+| `port.lines()` | current packed physical ATN/CLK/DATA levels |
+| `port.drive(mask, levels)` | drive CLK/DATA bits in mask, release other bits. A set level releases the line |
+| `port.wakeAt(cycle)`, `.cancelWake()` | one emulated-time timer per instance |
+| `onLines(levels)` | changed bus levels, dispatched at the end of a master cycle |
+| `onTimer(cycle)` | scheduled wake time |
+| `reset`, `detach`, `serialize`, `deserialize` | same lifecycle contract as user port devices |
+
+`port.createListener(callbacks)` provides a standard serial receiver with
+`onByte(byte, channel, eoi, kind)`, `onListen(channel)`, `onOpen(channel)`,
+`onClose(channel)`, `onUnlisten()` and `onCommand(byte)`. Kind is `data`, `open`
+or `close`. Return the helper's `onLines` and `onTimer` methods from the device,
+or delegate to them. Save and restore its state alongside the device state.
+The helper owns the port timer and DATA output. A custom TALK device uses the
+raw pin API instead. SRQ and burst protocols are outside this API.
+
+Returning false from `onByte` withholds acknowledgement. The helper retains
+that byte, `resume()` retries it when the device is ready. Keep these callbacks
+short and allocation-free, put DOM and host storage work in frame hooks or
+panel events. IEC Printer bundles its capture, rendering and print controls
+into one installable file by `npm run build:devices` (also run by
+the app build). IEC Monitor at `/iec/monitor.js` is a smaller example.
+Type declarations are at `/iec/iec-device.d.ts`.
+
+## User port device plugins
 
 A user port device is one JavaScript file that plugs into the emulated C64's
 user port, where programs reach it through CIA2 as on real hardware. The
-built-in WiFi modem is one too: export it from **MANAGE** to read a full
-device.
+built-in Hayes Modem is one too: export it from **MANAGE** to read a full
+device. **FROM URL…** offers the LED board plugin and **Custom URL**. The included
+modem is selected in the main Device dropdown. The LED board goes through the
+install review before joining that dropdown. The modem source is
+`src/userport/devices/modem.js`. Printing is provided by the separate IEC Devices
+card.
 
-## The file
+### The file
 
-One ES module with two exports, `meta` and `create`. No `import` of other
-files: bundle first if your source has several.
+One ES module with two exports, `meta` and `create`. Metadata uses constant
+values so the installer can read it without running the file. Bundle any
+imports into the file before installing. Metadata getters and function calls
+are rejected, and `create` must be a function declaration or expression.
+Bundled named exports and references to constants are supported.
 
 ```js
 export const meta = {
@@ -33,7 +106,7 @@ export function create(port, host) {
 of the machine and after loading a save state. Version 1 devices still run.
 Version 2 added the serial lines.
 
-## The port
+### The port
 
 `port` is the connector, in emulated time. Levels are TTL at the pins, 1 is
 high. Every line has a pull-up, and a line is low when either side pulls it
@@ -71,13 +144,21 @@ Callbacks the device can return:
 
 | Member | What it does |
 | --- | --- |
-| `host.panel` | a ShadowRoot in the User Port card for the device's own controls. `null` in the CLI |
+| `host.audio()` | the shared `{ context, destination }` audio graph, or `null` before audio is available or in the CLI. Route sound to `destination` so master volume and mute apply |
+| `host.icons.speakerOn`, `.speakerMute` | shared speaker SVG markup in the browser |
+| `host.panel` | a ShadowRoot in the User Port or IEC Devices card for the device's own controls. `null` in the CLI |
 | `host.css(text)` | a stylesheet for `host.panel.adoptedStyleSheets` |
 | `host.onFrame(fn)` | call `fn` once per displayed frame. The place to update the page |
-| `host.status(text)` | the status line under the device |
+| `host.status(text)` | the device's status line |
 | `host.storage.get(key)`, `.set(key, value)` | settings kept in this browser, JSON values |
+| `host.relay.get()`, `.set(url)`, `.defaultBase()` | browser relay preference and default URL. A device renders its own relay controls if it needs them. `set` validates ws/wss URLs and returns whether the setting was saved. Optional outside the browser |
 | `host.openSocket(host, port)` | a TCP connection through the relay (see below) |
 | `host.log(...args)` | console output with the device id in front |
+
+Sound effects belong in `onFrame` or panel events, never in port callbacks.
+Treat `host.audio` and `host.icons` as optional for compatibility with other
+hosts, and stop and disconnect every audio node in `detach()` and on state restore.
+The browser also includes sound sent to this destination in screen recordings.
 
 `openSocket` returns an object with `send(bytes)` and `close()`. Set its
 `onopen`, `ondata(bytes)` and `onclose(reason)` right after the call. The host
@@ -97,23 +178,32 @@ testing without a network.
 
 ## Installing and trust
 
-Users install devices from the User Port card
-([how](GUIDE-MEDIA.md#installing-devices)). The same id again replaces the old
+Users install plugins from the [User Port](GUIDE-MEDIA.md#installing-devices)
+or [IEC Devices](GUIDE-MEDIA.md#iec-devices) card. The same id again replaces the old
 version. Each browser, and each origin, keeps its own list.
 
 Device code has the app's full powers, with no sandbox: the C64 reads a pin
 mid-cycle, and only code running alongside it can answer in time. The install
-dialog lists what the code appears to do that could harm the user: network
-access, storage, keyboard or clipboard listeners, run-time code, reaching into
-the emulator, service workers, navigation, disguised code, changes outside the
-panel, workers and device APIs. Use `host.openSocket` and `host.storage` and a
-device passes clean. `c64rdy serve --device` prints the same check. Publish your
+dialog lists source patterns and capabilities for review: network access,
+storage, keyboard and form listeners, run-time code, reaching into the emulator,
+service workers, navigation, code that is harder to review, changes outside the
+panel, workers and device APIs. Base64 decoding is informational, since it can
+restore saved binary data without executing code. XML namespace identifiers
+are not network destinations. IEC Printer reports its embedded print document and browser print dialog.
+These findings describe capabilities, not an author’s intent. Use
+`host.openSocket` and `host.storage` for networking and settings. `c64rdy serve --device` prints the same check. Publish your
 file's SHA-256 so users can compare it. `?USERPORT_SAFE=1` starts the app with
-no device code loaded.
+no user port code loaded. `?IEC_SAFE=1` does the same for IEC plugins.
 
 ## Networking
 
-`openSocket` goes through the relay set in the User Port card, which
+A device owns its network controls inside `host.panel`. The modem uses
+`host.relay` to render and save its Relay field. IEC Printer and the LED board have no
+relay control. Relay preferences are per device, with the previous shared
+setting inherited until a device saves its own choice. Empty selects the local
+app relay. Changing it affects new sockets, leaving existing calls alone.
+
+`openSocket` goes through the relay configured by the device, which
 `c64rdy serve` provides. Any relay of the form
 `ws(s)://server/relay/<host>/<port>` works. `c64rdy serve` refuses hosts on
 the user's own computer and network unless started with `--allow-local`.
@@ -124,7 +214,7 @@ the user's own computer and network unless started with `--allow-local`.
 c64rdy serve --device ./my-device.js --open
 ```
 
-Serves the app with your device installed, reloading it on every save.
+Serves the app with your user port device installed, reloading it on every save.
 
 ```sh
 c64rdy run program.prg --userport ./my-device.js

@@ -1,4 +1,4 @@
-// The built-in WiFi modem (src/userport/devices/wifi-modem.js), driven through
+// The built-in Modem (src/userport/devices/modem.js), driven through
 // a stand-in port that plays the C64's side of the serial line. Expected values
 // come from the references the modem follows: asynchronous serial framing
 // (start bit low, data LSB first, stop bit high), the Hayes command set (echo,
@@ -9,7 +9,7 @@
 // SUPPRESS-GO-AHEAD = 3).
 
 import fs from 'node:fs';
-import { create, meta } from '../../src/userport/devices/wifi-modem.js';
+import { create, meta } from '../../src/userport/devices/modem.js';
 
 let testNo = 0, failing = 0, current = [];
 function expect(cond, msg) { if (!cond) current.push(msg); }
@@ -34,13 +34,14 @@ function memStore() {
   return { get: (k) => (m.has(k) ? JSON.parse(m.get(k)) : null), set: (k, v) => m.set(k, JSON.stringify(v)) };
 }
 
-function harness({ storage = memStore(), noNet = false } = {}) {
+function harness({ storage = memStore(), noNet = false, audio } = {}) {
   let clock = 0, wake = Infinity;
   let pb = 0xFF, devPB = 0xFF, pa2 = 1, sp1 = 1, devSerial = 0x0F;
   const rxEdges = [];
   const serialLog = [];
   const flagEdges = [];
   const sockets = [];
+  const frameHooks = [];
   const port = {
     apiVersion: 2, cyclesPerSecond: CPS,
     now: () => clock,
@@ -63,6 +64,8 @@ function harness({ storage = memStore(), noNet = false } = {}) {
   };
   const host = {
     storage,
+    audio,
+    onFrame: fn => frameHooks.push(fn),
     openSocket: noNet ? undefined : (h, p) => {
       const s = { host: h, port: p, sent: [], closed: false, onopen: null, ondata: null, onclose: null,
         send(b) { this.sent.push(...b); }, close() { this.closed = true; } };
@@ -78,6 +81,7 @@ function harness({ storage = memStore(), noNet = false } = {}) {
   let decodedTo = 0;
   return {
     dev, sockets, rxEdges, flagEdges, serialLog,
+    frame: () => { for (const fn of frameHooks) fn(); },
     get devPB() { return devPB; },
     get devSerial() { return devSerial; },
     setPB(v) { pb = v; dev.onPortB(v); },
@@ -234,7 +238,7 @@ const CRLF = '\r\n';
   expect(got.includes('043'), `S2 defaults to 43 ("+"), got ${show(got)}`);
   h.send('ATI\r');
   got = h.received();
-  expect(got.includes('C64 READY. WIFI MODEM') && got.endsWith(`OK${CRLF}`), `ATI identifies the modem, got ${show(got)}`);
+  expect(got.includes('C64 READY. MODEM') && got.endsWith(`OK${CRLF}`), `ATI identifies the modem, got ${show(got)}`);
   h.send('ATJ\r');
   got = h.received();
   expect(got.endsWith(`ERROR${CRLF}`), `an unknown command answers ERROR, got ${show(got)}`);
@@ -465,9 +469,10 @@ function connected(h, cmd = 'ATD"bbs.example:6400"\r') {
 
 // ── The plugin is self-contained ───────────────────────────────────────────
 {
-  const src = fs.readFileSync(new URL('../../src/userport/devices/wifi-modem.js', import.meta.url), 'utf8');
+  const src = fs.readFileSync(new URL('../../src/userport/devices/modem.js', import.meta.url), 'utf8');
   expect(!/^\s*import\s/m.test(src) && !/\bimport\s*\(/.test(src), 'no imports: one file, like any installed device');
   expect(meta.apiVersion === 2 && meta.id === 'builtin.wifi-modem', 'meta names API version 2');
+  expect(meta.name === 'Hayes Modem' && meta.description === 'Hayes-compatible TCP/Telnet modem.', 'the device has the Hayes Modem name and description');
   ok('the modem is a single self-contained plugin file');
 }
 
@@ -508,6 +513,115 @@ function connected(h, cmd = 'ATD"bbs.example:6400"\r') {
   h.setPB(0xFF);
   expect((h.devSerial & 0x08) === 0x08, 'PB7 high takes CNT2 high');
   ok('UP9600: RXD reaches SP2, and CNT2 follows PB7');
+}
+
+// The speaker's WebAudio graph is synthetic and must stay outside serial timing.
+function audioGraph() {
+  const oscillators = [], connections = [];
+  const parameter = () => ({ value: 0, events: [], setValueAtTime(value, time) { this.events.push(['set', value, time]); }, linearRampToValueAtTime(value, time) { this.events.push(['ramp', value, time]); } });
+  const node = () => ({
+    connect(target) { connections.push([this, target]); return target; },
+    disconnect() { this.disconnected = true; },
+  });
+  const context = {
+    state: 'running', currentTime: 0, sampleRate: 48000,
+    createBuffer: (channels, length, sampleRate) => { const data = new Float32Array(length); return { duration: length / sampleRate, getChannelData: () => data }; },
+    createBufferSource() {
+      const source = Object.assign(node(), { stops: [], start() {}, stop(when) { this.stops.push(when); } });
+      oscillators.push(source); return source;
+    },
+    createGain: () => Object.assign(node(), { gain: parameter() }),
+    createBiquadFilter: () => Object.assign(node(), { frequency: parameter(), Q: parameter() }),
+    createOscillator() {
+      const source = Object.assign(node(), { frequency: parameter(), stops: [], start() {}, stop(when) { this.stops.push(when); } });
+      oscillators.push(source); return source;
+    },
+  };
+  return { context, destination: {}, oscillators, connections };
+}
+
+// North American call progress: Cisco Feature Tones, ringing and reorder.
+// https://www.cisco.com/c/en/us/td/docs/voice_ip_comm/bts/6-0-4/maintenance/guide/OMr604/AppA.html
+{
+  const graph = audioGraph(), storage = memStore(); storage.set('speaker', true);
+  const h = harness({ storage, audio: () => graph });
+  h.send('ATD"echo"\r'); h.frame();
+  expect(graph.oscillators.map(source => source.frequency.value).join(',') === '440,480', 'ringing uses 440 + 480 Hz');
+  const envelope = graph.connections.find(([source]) => source === graph.oscillators[0])[1].gain;
+  expect(envelope.events.filter(([type, value]) => type === 'ramp' && value === 0).map(([, , time]) => time).join(',') === '2,8,14', 'ringing has 2 seconds on and 4 seconds off');
+  h.sockets[0].onclose(); h.frame();
+  expect(graph.oscillators.slice(2).map(source => source.frequency.value).join(',') === '480,620', 'network reorder uses 480 + 620 Hz');
+  const failure = graph.connections.find(([source]) => source === graph.oscillators[2])[1].gain;
+  expect(failure.events.filter(([type, value]) => type === 'ramp' && value === 0).map(([, , time]) => time).join(',') === '0.25,0.75,1.25', 'network reorder has 0.25 seconds on and 0.25 seconds off');
+  h.dev.detach();
+  ok('call progress frequencies and cadences match the published North American tone plan');
+}
+// Commodore 1670 User's Manual, Technical Information page 61: 2225 Hz answer.
+{
+  const graph = audioGraph(), storage = memStore(); storage.set('speaker', true);
+  const h = harness({ storage, audio: () => graph });
+  h.send('ATD"echo"\r'); h.sockets[0].onopen(); h.frame();
+  const buffer = graph.oscillators.find(source => source.buffer).buffer;
+  const samples = buffer.getChannelData(0), sampleRate = graph.context.sampleRate;
+  const energyAt = hz => {
+    let real = 0, imaginary = 0;
+    for (let i = Math.round(0.1 * sampleRate); i < Math.round(0.3 * sampleRate); i++) {
+      real += samples[i] * Math.cos(2 * Math.PI * hz * i / sampleRate);
+      imaginary += samples[i] * Math.sin(2 * Math.PI * hz * i / sampleRate);
+    }
+    return real * real + imaginary * imaginary;
+  };
+  expect(energyAt(2225) > energyAt(2100) * 100, 'the connection effect uses the 1670 answer frequency, not the international 2100 Hz tone');
+  h.dev.detach();
+  ok('the shortened 1670-style connection effect has the documented answer tone');
+}
+
+{
+  const graph = audioGraph(); let requests = 0;
+  const h = harness({ audio: () => { requests++; return graph; } });
+  h.send('ATD"echo"\r'); h.frame();
+  expect(requests === 0 && graph.oscillators.length === 0, 'the speaker starts off and builds no audio graph');
+  ok('speaker effects are off by default');
+}
+{
+  const graph = audioGraph(), storage = memStore(); storage.set('speaker', true);
+  const h = harness({ storage, audio: () => graph });
+  h.send('ATD"echo"\r');
+  expect(graph.oscillators.length === 0, 'serial callbacks only queue audio work');
+  h.frame();
+  expect(graph.oscillators.length > 0, 'the frame hook starts dialling audio');
+  expect(graph.connections.some(([, destination]) => destination === graph.destination), 'effects route through the shared master-volume destination');
+  const dial = graph.oscillators.slice();
+  h.sockets[0].onopen();
+  expect(h.dev.state.connected, 'CONNECT reaches the C64 without waiting for a sound sequence');
+  h.frame();
+  expect(dial.every(source => source.stops.at(-1) === undefined && source.disconnected), 'connecting cancels dialling audio');
+  const carrier = graph.oscillators.slice(dial.length);
+  expect(carrier.length > 0, 'connecting schedules the carrier effect');
+  h.dev.detach();
+  expect(carrier.every(source => source.stops.at(-1) === undefined && source.disconnected), 'unplugging immediately stops every sound source');
+  ok('enabled speaker effects follow connections without changing serial timing');
+}
+{
+  const graph = audioGraph(), storage = memStore(); storage.set('speaker', true);
+  const h = harness({ storage, audio: () => graph });
+  h.send('ATD"echo"\r'); h.frame();
+  const dial = graph.oscillators.slice();
+  h.sockets[0].onclose(); h.frame();
+  expect(dial.every(source => source.disconnected), 'a failed call stops dialling audio');
+  expect(graph.oscillators.length > dial.length, 'a failed call schedules an effect');
+  const saved = h.dev.serialize(); h.dev.deserialize(saved);
+  expect(graph.oscillators.every(source => source.disconnected), 'state restore cancels all sound sources');
+  const before = graph.oscillators.length; h.frame();
+  expect(graph.oscillators.length === before, 'state restore never replays a queued connection effect');
+  ok('failure and state restore clean up modem audio');
+}
+{
+  const storage = memStore(); storage.set('speaker', true);
+  const h = harness({ storage });
+  h.send('ATD"echo"\r'); h.sockets[0].onopen(); h.frame();
+  expect(h.dev.state.connected, 'a host without audio keeps the modem fully usable');
+  ok('speaker support is optional in headless and older hosts');
 }
 
 console.log(failing ? `\n${failing} of ${testNo} FAILED` : `\nall ${testNo} passed`);

@@ -62,7 +62,7 @@ async function newPage(opts = {}) {
   // Past the splash, and on the dev server's own chat, never the production one.
   await page.addInitScript((port) => {
     try {
-      localStorage.setItem('c64emu.splashSeen', '1');
+      localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
       localStorage.setItem('c64emu.chat.server', `ws://127.0.0.1:${port}/chat`);
     } catch { /* storage blocked */ }
   }, freePort);

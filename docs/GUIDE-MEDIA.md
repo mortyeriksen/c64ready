@@ -69,7 +69,7 @@ media selected from ZIP archives. Saved files can be loaded again offline.
 | Control | What it does |
 | --- | --- |
 | **Filter…** | Filters the list by name. |
-| *List item* | Click to load that file again. From the keyboard the list is one Tab stop: **↑** / **↓** move between files, **←** / **→** reach a file's ✕, and **Enter** loads. |
+| *List item* | Click to load that file again. From the keyboard the list is one Tab stop: **↑** / **↓** move between files, **←** / **→** reach a file's QUEUE and ✕ buttons, and **Enter** loads. |
 | **📥 IMPORT** | Imports a `.rdy` library archive. |
 | **📤 EXPORT** | Exports your library to a `.rdy` file (to move it to another browser / device). |
 | **🗑 CLEAR ALL** | Removes every cached file (asks first). |
@@ -82,7 +82,7 @@ Before you've loaded anything the list is empty, with just an **IMPORT** button:
 
 ## Disk drive 8
 
-![Disk drive 8 with a disk inserted: LOAD, BLANK, EJECT, write-protect, FORMAT and EXPORT buttons over a TDE toggle, the disk name, and the directory listing with a magnifier button.](/guide/drive8-loaded.webp)
+![Disk drive 8 with a disk inserted: LOAD, BLANK, EJECT, write-protect, FORMAT and EXPORT buttons, a TDE toggle, INSERT FIRST and QUEUE controls, the disk name, and the directory listing with a magnifier button.](/guide/drive8-loaded.webp)
 
 The primary 1541 floppy drive (IEC device 8).
 
@@ -91,6 +91,8 @@ The primary 1541 floppy drive (IEC device 8).
 | **💾 LOAD** | Inserts a `.d64`, `.d71`, `.d81` or `.g64` disk image (or drop one on the screen); a `.nbz` nibbler dump becomes a `.g64` on the way in. A `.prg` works too; see [Loading a .prg](#loading-a-prg). |
 | **💾 BLANK** | Inserts a **blank, unformatted** disk (shows 0 blocks free). Format it (with **FORMAT**, or from BASIC with `N:name,id`) before you can save to it. |
 | **⏏ EJECT** | Removes the disk. |
+| **NEXT DISK / INSERT FIRST** | Inserts the next queued disk without resetting or autorunning. Also **Cmd+Shift+8** or **Ctrl+Shift+8** when no dialog or text field owns the keys. |
+| **QUEUE (count)** | Opens the drive 8 queue to reorder, insert or remove disks, clear the queue or enable looping. |
 | **🔒 / 🔓** | Write-protect toggle. Loaded disks start **protected** (🔒); click to allow the drive to write (🔓). A freshly inserted blank disk starts writable. |
 | **🧹 FORMAT** | Erases the inserted disk to an empty format (asks for a name). Disabled while the disk is write-protected (🔒). Formatting a `.g64` replaces it with a standard blank `.d64`; D71 and D81 retain their formats. |
 | **⤓ .D64** | Downloads the disk, with your changes, as a `.d64` file; for other disk formats the button reads **.D71**, **.D81** or **.G64** and downloads one. **Enabled once the disk has changes** to save; disables again after you export. |
@@ -98,6 +100,23 @@ The primary 1541 floppy drive (IEC device 8).
 | **Drive LED** | Lights while the drive is active. |
 | **▼ *n* files** | Expands the directory: disk name, blocks free, and the file list. It updates itself when the running program changes the disk. Click a **PRG** or **USR** row to load and run that file; SEQ and REL rows are data, so they stay dim. From the keyboard, Tab into the list, use **↑** / **↓** and press **Enter**. |
 | **🔍** | Opens the [Directory zoom](GUIDE-INTERFACE.md#directory-zoom) viewer: enlarged, filenames only, so PETSCII directory art reads clearly. |
+
+### Disk queue
+
+Click **QUEUE** beside a D64, D71, D81 or G64 file in Assembly64 or Library.
+Adding a disk leaves the running program and inserted disk alone. When starting
+an empty queue with a disk already inserted, that disk becomes its first entry.
+
+Open **QUEUE** on drive 8 to see the list. Drag a grip or use **↑ / ↓** to reorder,
+**INSERT** to choose a particular disk, or **REMOVE** to take one out of the list.
+Removing a disk or clearing the queue does not eject the current disk.
+**NEXT DISK** stops at the end unless **Loop queue** is checked. If the inserted
+disk is outside the queue, **INSERT FIRST** starts at the first entry.
+
+The queue holds up to 64 disks and 128 MiB. Its images, order, write protection
+and loop setting are stored in this browser independently of Library. Removing
+files from Library does not remove queued disks. A reload restores the list
+without inserting anything. Drive 9 has no queue.
 
 **When you need TDE.** True Drive Emulation runs a real 1541 on the bus. You
 need it for `.g64` and `.nbz` images (raw tracks; it turns on by itself) and
@@ -141,9 +160,10 @@ or rename a file, and the change lands on the disk. Writing needs the disk unloc
 your browser Library** so they survive a reload, and the **⤓ .D64** button enables so
 you can download a copy; it goes quiet again once you have.
 
-Before a disk is inserted the card shows a hint and only **LOAD** and **BLANK** are active:
+With no disk inserted, **LOAD**, **BLANK** and **QUEUE** are available.
+**INSERT FIRST** enables after you add disks to the queue:
 
-![Empty Disk drive 8 showing the LOAD and BLANK buttons active.](/guide/drive8-empty.webp)
+![Empty Disk drive 8 showing LOAD, BLANK and QUEUE controls, with INSERT FIRST disabled until disks are queued.](/guide/drive8-empty.webp)
 
 ---
 
@@ -178,8 +198,8 @@ starts itself.
 
 ![Disk drive 9 powered on, showing its power switch and the same LOAD, BLANK, EJECT, write-protect, FORMAT, EXPORT and TDE controls as drive 8.](/guide/drive9.webp)
 
-An optional second drive (IEC device 9), off by default and invisible to the C64
-until you switch it on. It reads, writes, and formats just like drive 8.
+An optional second drive (IEC device 9). Add it with **+** and switch it on to
+connect it to the C64. It reads, writes, and formats just like drive 8.
 
 | Control | What it does |
 | --- | --- |
@@ -224,6 +244,8 @@ III). They remain visible but disabled while the C64 is powered off.
 ---
 
 ## RAM Expansion
+
+Add RAM Expansion with **+**, or load a `.reu` image to show it automatically.
 
 ![The RAM Expansion card switched on, with a Generic 16 MB unit selected, LOAD, BLANK and .REU buttons, and a loaded blu.reu image.](/guide/ram-expansion.webp)
 
@@ -284,42 +306,57 @@ that combination needs a port expander. Two limits:
 ## User Port
 
 The edge connector at the back of the C64, for modems, printers and home-made
-boards. The card holds one device at a time: pick it from the dropdown, then
+boards. Add User Port with **+**. The card holds one device at a time: pick a
+device from the dropdown, then
 switch the card on (or click its header) to plug it in.
 
-### WiFi modem
+<span id="wifi-modem"></span>
+<span id="modem"></span>
 
-A Hayes modem with the Zimodem command set, wired like the user port WiFi
-modems sold for the C64, including the UP9600 bridges for 9600 baud. Its
-lights show carrier (CD), receive (RX) and transmit (TX).
+### Hayes Modem
+
+![The User Port card with Hayes Modem selected, its speaker enabled, carrier and activity lights, relay field and plugin controls.](/guide/user-port-modem.webp)
+
+**Hayes-compatible TCP/Telnet modem.** It uses the Zimodem command set and user
+port RS-232 wiring, including the UP9600 bridges for 9600 baud. Its lights show
+carrier (CD), receive (RX) and transmit (TX).
+
+The speaker button beside the lights enables ringing, connection and failed-call
+sounds. It starts off, remembers your choice and follows master volume and mute.
+These are sound effects, independent of connection speed and timing.
 
 | Command | What it does |
 | --- | --- |
 | `ATDT"host:port"` | Dials a BBS over Telnet. `ATD"host:port"` connects raw. |
 | `+++` | Back to command mode, with a second's pause either side. `ATO` returns. |
 | `ATH` | Hangs up. |
-| `ATB9600` | Sets the speed. Otherwise it follows the terminal: 300 to 2400 baud, or 9600 with a UP9600 driver. |
+| `ATB9600` | Changes only the modem’s serial speed. The terminal must use the same speed. For CCGMS, select UP9600 and 9600 baud first, then send `AT` to let autobaud match it. |
 | `ATP"5551212=host:port"` | Stores a number for programs that dial digits. |
 | `AT&V` / `AT&W` | Shows the settings / saves them. |
 
 A web page cannot open internet connections, so the modem goes through a
-relay: run the app with `c64rdy serve`, or enter one under **Relay**.
+relay: run the app with `c64rdy serve`, or enter one under **Relay** in the
+modem’s controls.
 `ATD"echo"` connects to a loopback, for trying it without a network.
 
 ### Calling a BBS
 
-![An animation of a call at 9600 baud: CCGMS dials The Oasis BBS through the WiFi modem, the board asks for RETURN and whether the terminal shows Commodore graphics, then draws its palm tree title screen.](/guide/user-port-bbs.webp)
+![An animation of a call at 9600 baud: CCGMS dials The Oasis BBS through the Hayes Modem, the board asks for RETURN and whether the terminal shows Commodore graphics, then draws its palm tree title screen.](/guide/user-port-bbs.webp)
 
 1. Start the app with `c64rdy serve` and switch the User Port on.
 2. Load a terminal program such as CCGMS. Its defaults suit the modem. For
    9600 baud, press F7, then M until the modem type is UP9600 and B until the
-   baud rate is 9600.
-3. Click the C64 screen and type `ATDT"oasisbbs.hopto.org:6400"` to call
+   baud rate is 9600. Press RETURN to close the settings.
+3. Type `AT` and check that `OK` comes back. You do not need `ATB9600`:
+   autobaud follows the terminal. Sending it while CCGMS is still set to 2400
+   changes only the modem and makes communication appear to hang. F7 still opens
+   the settings, where you can select UP9600 and 9600 baud to recover.
+4. Click the C64 screen and type `ATDT"oasisbbs.hopto.org:6400"` to call
    [The Oasis BBS](https://theoasisbbs.com/), a Color 64 board on a real C64.
    What you type shows as the modem echoes it.
-4. Press RETURN when it asks, then Y for Commodore graphics. Other boards may
+5. Press RETURN when it asks, then Y for Commodore graphics. Other boards may
    ask for DEL instead.
-5. To hang up: pause, `+++`, pause, `ATH`.
+6. To hang up: pause, `+++`, pause, `ATH`.
 
 Boards to call: the [Commodore BBS Outpost](https://www.commodorebbs.com/) for
 Commodore boards, the [Telnet BBS Guide](https://www.telnetbbsguide.com/) for
@@ -330,14 +367,15 @@ all kinds.
 | Button | What it does |
 | --- | --- |
 | **INSTALL…** | Installs a device from a `.js` file. Dropping one on the card does the same. |
-| **FROM URL…** | Installs a device from a web address. |
+| **FROM URL…** | Choose LED board or **Custom URL** to fetch a device from a web address. |
 | **MANAGE** | Exports or removes installed devices. Built-ins can be exported as a starting point. |
 
 A device runs inside the app with no sandbox, so the install dialog warns first,
 lists anything risky it finds in the code (sending data, reading your storage,
 logging keys and the like), and keeps **INSTALL** off until you tick that you
-trust it. Finding nothing is not a guarantee.
-[Writing a user port device](USERPORT-DEVICES.md) shows how to make one, with
+trust it. Findings describe capabilities, such as printing or decoding saved
+data. Finding nothing is not a guarantee.
+[Writing device plugins](DEVICE-PLUGINS.md) shows how to make one, with
 an LED board to try.
 
 While a device is plugged in, **📋 PASTE** types about 12 characters a second,
@@ -345,11 +383,56 @@ so terminal programs keep up. Device state travels with save states.
 
 ---
 
+## IEC Devices
+
+Connect serial-bus plugins alongside drives 8 and 9.
+
+1. Add IEC Devices with **+** and switch it on. Use **FROM URL…** for a
+   ready-made plugin or custom URL, or **INSTALL…** for a local `.js` file.
+2. Choose the device and an address, then **CONNECT**. Addresses 4 to 30 are
+   available, except 8 and 9. Each connected device needs a different address.
+3. Use **DISCONNECT** for one device, or the card's switch for all IEC plugins.
+   Drives and User Port have their own switches.
+
+**MANAGE** exports or removes plugins. Connections and printer jobs stay in
+this browser between visits.
+
+### IEC Printer
+
+![IEC Printer connected at address 4, with its status above the Preview / Print and Clear job buttons.](/guide/iec-printer.webp)
+
+Connect at address **4** and select a Commodore MPS-801/803-compatible driver
+in your printing software. Text and bitmap graphics are supported. For Print
+Shop, use its Commodore-printer disk side.
+
+**Preview / Print** opens the browser's print dialog for paper output or saving
+as PDF. **Clear job** empties the captured output. The status above the buttons
+shows receiving activity and the amount received.
+
+Text uses an approximate browser font. Jobs hold up to 512 KB, then pause until
+cleared. Each print action shows up to 100 Letter pages.
+
+Try it from BASIC:
+
+```basic
+OPEN 1,4
+PRINT#1,"HELLO WORLD"
+CLOSE 1
+```
+
+### IEC Monitor
+
+An example plugin that displays received bytes. Connect at address **5** and
+try `OPEN 1,5:PRINT#1,"TEST":CLOSE 1`. **MANAGE → EXPORT** saves its source.
+
+---
+
 ## Datasette
 
 ![Animation of the Datasette card loading the Commando tape: PLAY latched, the motor dot lit green, the bar and timer climbing.](/guide/datasette-loading.webp)
 
-A 1530 Datasette for `.tap` tape images: it reads them, records them, and can
+A 1530 Datasette, shown when loading a tape or added with **+**. It reads `.tap`
+tape images, records them, and can
 play them out loud.
 
 It also takes `.wav` recordings of real cassettes (a C64 tape stores its data
@@ -568,6 +651,7 @@ Open a production's details to see its complete file list.
 - **DOWNLOAD** saves a file to your computer, including unsupported formats.
 - **LOAD** opens compatible PRG, D64, CRT, TAP and REU files in the emulator.
   SID and unsupported disk formats are available for download.
+- **QUEUE** adds a disk to drive 8’s queue, regardless of the selected drive.
 - **SAVE TO LIB** stores compatible files in Library. Files already there show
   **SAVED IN LIB**, and **LOAD** opens them from Library instead of downloading
   them again. **DOWNLOAD** always fetches a fresh copy, and a ZIP is always

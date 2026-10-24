@@ -424,7 +424,7 @@ function readClassic() {
   return out;
 }
 
-export function initThemes({ cycleButton, importButton, exportButton, removeButton, fileInput, notify, confirm }) {
+export function initThemes({ cycleButton, importButton, exportButton, removeButton, fileInput, notify, confirm, pick }) {
   const root = document.documentElement;
   let imported = (() => { try { return parseStoredThemes(localStorage.getItem(THEMES_KEY)); } catch { return []; } })();
   const all = () => [...BUILTIN, ...imported];
@@ -435,14 +435,14 @@ export function initThemes({ cycleButton, importButton, exportButton, removeButt
     catch { notify('The theme could not be saved in this browser: its storage is full or switched off. It applies until you reload.'); }
   };
 
-  const apply = () => {
+  const apply = (persist = true) => {
     const css = themeCss(current.theme);
     const modes = themeModes(current.theme);
     let style = document.getElementById('c64-theme');
     if (css && !style) { style = document.createElement('style'); style.id = 'c64-theme'; document.head.appendChild(style); }
     if (style) style.textContent = css;
     if (modes === 'both') delete root.dataset.themeModes; else root.dataset.themeModes = modes;
-    try {
+    if (persist) try {
       if (current === CLASSIC) { localStorage.removeItem(THEME_KEY); localStorage.removeItem(THEME_CSS_KEY); localStorage.removeItem(THEME_MODES_KEY); }
       else {
         localStorage.setItem(THEME_KEY, current.id);
@@ -463,7 +463,7 @@ export function initThemes({ cycleButton, importButton, exportButton, removeButt
     const list = all();
     select(list[(list.indexOf(current) + 1) % list.length]);
   };
-  cycleButton?.addEventListener('click', cycle);
+  cycleButton?.addEventListener('click', pick || cycle);
 
   importButton?.addEventListener('click', () => fileInput?.click());
   fileInput?.addEventListener('change', async () => {
@@ -513,7 +513,7 @@ export function initThemes({ cycleButton, importButton, exportButton, removeButt
     try { imported = parseStoredThemes(localStorage.getItem(THEMES_KEY)); } catch { imported = []; }
     let id = null; try { id = localStorage.getItem(THEME_KEY); } catch {}
     current = all().find((t) => t.id === id) || CLASSIC;
-    apply();
+    apply(false);
   });
 
   // A first visitor leaving the splash keeps the theme it wore (src/ui/splash.js),
@@ -525,5 +525,5 @@ export function initThemes({ cycleButton, importButton, exportButton, removeButt
   });
 
   apply();
-  return { current: () => current, themes: all, cycle };
+  return { current: () => current, themes: all, classic: readClassic, cycle, select(id) { const entry = all().find(t => t.id === id); if (entry) select(entry); } };
 }

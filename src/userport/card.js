@@ -2,26 +2,19 @@
 // Copyright © 2026 Morten Øien Eriksen
 // src/userport/card.js – the User Port card: choose a device, plug it in or
 // out, install devices from a file or a web address, and manage the installed
-// ones. Devices are plugins (see docs/USERPORT-DEVICES.md), built-ins included.
+// ones. Devices are plugins (see docs/DEVICE-PLUGINS.md), built-ins included.
 
 import { BUILTIN_DEVICES } from './builtins.js';
-import { importDeviceSource, validateDeviceModule, inspectDeviceSource, sha256Hex } from './plugins.js';
+import { importDeviceSource, validateDeviceModule, sha256Hex } from './plugins.js';
+import { inspectDeviceSource } from './inspect.js';
 import { listInstalled, getInstalled, putInstalled, removeInstalled } from './store.js';
 import { createBrowserHost, defaultRelayBase } from './host.js';
-import { scanDeviceSource } from './scan.js';
+import { createDeviceInstallReview } from '../ui/device-install-review.js';
 import { pushEscapeLayer, popEscapeLayer } from '../ui/escape-stack.js';
-import { promptDialog } from '../ui/dialogs.js';
 
 const KEY_POWER = 'c64emu.userport';
 const KEY_DEVICE = 'c64emu.userport.device';
-const KEY_RELAY = 'c64emu.userport.relay';
 const DEFAULT_DEVICE = 'builtin.wifi-modem';
-
-const WARNING_TITLE = 'Only install code you trust';
-const WARNING = 'A user port device is a program. It runs inside C64 READY. in this browser, with '
-  + 'everything the app can reach: your ROMs, saved states, settings and the network. There is no '
-  + 'sandbox. Install it only if you trust its author, and check the SHA-256 below against the one '
-  + 'they publish.';
 
 const $ = (id) => document.getElementById(id);
 
@@ -42,7 +35,7 @@ function download(name, text) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function initUserportCard({ getMachine, safeMode = false }) {
+export function initUserportCard({ getMachine, getAudio, safeMode = false }) {
   const ui = {
     card: $('userport-card'),
     power: $('userport-power'),
@@ -50,8 +43,6 @@ export function initUserportCard({ getMachine, safeMode = false }) {
     select: $('userport-device'),
     panel: $('userport-panel'),
     status: $('userport-status'),
-    relay: $('userport-relay'),
-    relayNote: $('userport-relay-note'),
     install: $('btn-userport-install'),
     file: $('userport-file'),
     url: $('btn-userport-url'),
@@ -152,8 +143,7 @@ export function initUserportCard({ getMachine, safeMode = false }) {
   // one cannot stop the app at every start. The card stays open on the error.
   function onDeviceError(id, err) {
     console.error(`User port device ${id} stopped:`, err);
-    pluggedInto = null;
-    if (hostCtl) { hostCtl.dispose(); hostCtl = null; }
+    unplug();
     powered = false;
     ui.power.checked = false;
     writePref(KEY_POWER, 'off');
@@ -168,11 +158,11 @@ export function initUserportCard({ getMachine, safeMode = false }) {
       meta,
       panelHost: ui.panel,
       setStatus: (t) => { deviceStatus = t; if (powered) showStatus(t); },
-      relayBase: currentRelay,
+      getAudio,
     });
+    pluggedInto = m;
     try {
       m.attachUserport(meta.id, (port) => mod.create(port, hostCtl.host), meta.version, onDeviceError);
-      pluggedInto = m;
     } catch (err) {
       onDeviceError(meta.id, err);
       return;
@@ -240,40 +230,11 @@ export function initUserportCard({ getMachine, safeMode = false }) {
     apply();
   });
 
-  function currentRelay() {
-    const v = ui.relay.value.trim();
-    return v || defaultRelayBase();
-  }
-  ui.relay.value = readPref(KEY_RELAY, '');
-  ui.relay.placeholder = defaultRelayBase() || 'none: run c64rdy serve, or enter a relay';
-  // A ws:// or wss:// address is saved as it is typed or pasted, and the note
-  // says so. Anything else is not saved, and says why once the field is left.
-  const relayValid = (v) => {
-    if (!v) return true;
-    try { return /^wss?:$/.test(new URL(v).protocol); } catch { return false; }
-  };
-  let relayNoteTimer = 0;
-  function relayNote(text, error = false) {
-    clearTimeout(relayNoteTimer);
-    ui.relayNote.textContent = text;
-    ui.relayNote.classList.toggle('error', error);
-    if (text && !error) relayNoteTimer = setTimeout(() => { ui.relayNote.textContent = ''; }, 4000);
-  }
-  ui.relay.addEventListener('input', () => {
-    const v = ui.relay.value.trim();
-    if (!relayValid(v)) { relayNote(''); return; }
-    if (v === readPref(KEY_RELAY, '')) return;
-    writePref(KEY_RELAY, v);
-    const via = currentRelay();
-    relayNote(via ? `Saved. New calls go through ${via}.` : 'Saved. No relay now: run c64rdy serve, or enter one.');
-  });
-  ui.relay.addEventListener('change', () => {
-    if (!relayValid(ui.relay.value.trim())) relayNote('Not saved: a relay address starts with ws:// or wss://.', true);
-  });
-
   // ── Modal ────────────────────────────────────────────────────────────────
+  let modalOpener = null;
   const layer = { close: () => closeModal(), isOpen: () => !ui.modal.hidden };
   function openModal(title, body, actions) {
+    if (ui.modal.hidden) modalOpener = document.activeElement;
     ui.modalTitle.textContent = title;
     ui.modalBody.replaceChildren(...body);
     ui.modalActions.replaceChildren(...actions);
@@ -284,62 +245,24 @@ export function initUserportCard({ getMachine, safeMode = false }) {
   function closeModal() {
     ui.modal.hidden = true;
     popEscapeLayer(layer);
+    modalOpener?.focus();
   }
   ui.modalX.addEventListener('click', closeModal);
   ui.modal.addEventListener('click', (e) => { if (e.target === ui.modal) closeModal(); });
 
   function button(label, onClick, cls = '') {
     const b = document.createElement('button');
+    b.type = 'button';
     b.className = `btn ${cls}`.trim();
     b.textContent = label;
     b.addEventListener('click', onClick);
     return b;
-  }
-  function facts(rows) {
-    const dl = document.createElement('dl');
-    dl.className = 'userport-facts';
-    for (const [k, v] of rows) {
-      if (!v) continue;
-      const dt = document.createElement('dt');
-      dt.textContent = k;
-      const dd = document.createElement('dd');
-      dd.textContent = v;
-      dl.append(dt, dd);
-    }
-    return dl;
   }
   function para(text, cls = '') {
     const p = document.createElement('p');
     if (cls) p.className = cls;
     p.textContent = text;
     return p;
-  }
-
-  // What the scan found, or that it found nothing (which proves nothing).
-  function findingsList(findings) {
-    const box = document.createElement('div');
-    box.className = 'userport-findings';
-    if (!findings.length) {
-      box.append(para('Nothing risky found in the code. That is not a guarantee: code can hide what it does.'));
-      return box;
-    }
-    const title = document.createElement('strong');
-    title.textContent = 'Found in the code';
-    const list = document.createElement('ul');
-    for (const f of findings) {
-      const li = document.createElement('li');
-      li.className = f.severity;
-      const where = f.lines.length ? ` (line ${f.lines.slice(0, 5).join(', ')}${f.lines.length > 5 ? ', …' : ''})` : '';
-      li.textContent = `${f.title}${where}: ${f.why}.`;
-      if (f.addresses) {
-        const small = document.createElement('small');
-        small.textContent = f.addresses.slice(0, 5).join('  ');
-        li.append(small);
-      }
-      list.append(li);
-    }
-    box.append(title, list);
-    return box;
   }
 
   // ── Installing ───────────────────────────────────────────────────────────
@@ -351,29 +274,9 @@ export function initUserportCard({ getMachine, safeMode = false }) {
       openModal('Not a user port device', [para(err.message)], [button('OK', closeModal)]);
       return;
     }
-    const { meta, hash, size } = info;
+    const { meta, hash } = info;
     const existing = await getInstalled(meta.id).catch(() => null);
-    const rows = [
-      ['Name', meta.name], ['Version', meta.version], ['Author', meta.author],
-      ['Id', meta.id], ['From', origin], ['Size', `${(size / 1024).toFixed(1)} KB`], ['SHA-256', hash],
-    ];
-    if (existing) rows.push(['Replaces', `version ${existing.meta.version}`]);
-    // The warning leads, and installing waits for an explicit "I trust this".
-    const warning = document.createElement('div');
-    warning.className = 'userport-warning';
-    warning.setAttribute('role', 'alert');
-    const heading = document.createElement('strong');
-    heading.textContent = `⚠ ${WARNING_TITLE}`;
-    warning.append(heading, para(WARNING));
-    const consent = document.createElement('label');
-    consent.className = 'userport-consent';
-    const tick = document.createElement('input');
-    tick.type = 'checkbox';
-    tick.id = 'userport-install-trust';
-    consent.append(tick, document.createTextNode(' I trust this file and its author'));
-    const body = [warning, findingsList(scanDeviceSource(source)), facts(rows)];
-    if (meta.description) body.push(para(meta.description));
-    body.push(consent);
+    const { body, tick } = createDeviceInstallReview({ info, source, origin, existing, connector: 'userport', trustId: 'userport-install-trust' });
     const go = button(existing ? 'REPLACE' : 'INSTALL', async () => {
       if (!tick.checked) return;
       closeModal();
@@ -413,11 +316,7 @@ export function initUserportCard({ getMachine, safeMode = false }) {
     if (f) await installFile(f);
   });
 
-  ui.url.addEventListener('click', async () => {
-    const url = await promptDialog('Web address of the device (.js). The server must allow cross-origin requests.', {
-      title: 'Install from URL', okLabel: 'FETCH', placeholder: 'https://…/device.js',
-    });
-    if (!url) return;
+  async function fetchDevice(url) {
     let text;
     try {
       const res = await fetch(url.trim(), { mode: 'cors', credentials: 'omit' });
@@ -430,6 +329,43 @@ export function initUserportCard({ getMachine, safeMode = false }) {
       return;
     }
     await offerInstall(text, url.trim());
+  }
+
+  ui.url.addEventListener('click', () => {
+    const label = document.createElement('label');
+    label.className = 'userport-source-field';
+    label.textContent = 'Choose a ready-made plugin or enter your own URL';
+    const choice = document.createElement('select');
+    choice.className = 'cp-device-select';
+    choice.id = 'userport-plugin-choice';
+    const entries = [['led-board', 'LED board'], ['custom', 'Custom URL']];
+    for (const [value, name] of entries) {
+      const option = document.createElement('option'); option.value = value; option.textContent = name; choice.append(option);
+    }
+    label.append(choice);
+    const address = document.createElement('label'); address.textContent = 'Plugin URL';
+    address.className = 'userport-source-field';
+    const input = document.createElement('input'); input.id = 'userport-plugin-url'; input.type = 'url';
+    input.placeholder = 'https://…/device.js'; address.append(input);
+    const description = para('');
+    const go = button('FETCH', async () => {
+      const url = choice.value === 'custom' ? input.value.trim()
+        : new URL(`/userport/${choice.value}.js`, location.href).href;
+      if (!url) { input.focus(); return; }
+      try { if (!/^https?:$/.test(new URL(url).protocol)) throw new Error(); }
+      catch { input.setCustomValidity('Enter an http:// or https:// plugin URL.'); input.reportValidity(); return; }
+      closeModal(); await fetchDevice(url);
+    });
+    input.addEventListener('input', () => input.setCustomValidity(''));
+    const update = () => {
+      address.hidden = choice.value !== 'custom';
+      description.textContent = choice.value === 'led-board' ? 'Eight LEDs and switches on PB0-PB7. Install the example plugin shipped with C64 READY.'
+          : 'Enter the URL of a .js plugin. Its server must allow cross-origin requests.';
+    };
+    choice.addEventListener('change', update);
+    update();
+    openModal('Install from URL', [label, address, description], [button('CANCEL', closeModal), go]);
+    choice.focus();
   });
 
   // Dropping a .js file on the card installs it.

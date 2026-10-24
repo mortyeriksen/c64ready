@@ -43,6 +43,12 @@ The button reads **Done** once the three required ROMs are in. This is a
 one-time step: they are cached in your browser, and **⚙ OPTIONS ▸ ROM Files**
 shows and clears them. See [Specifications](SPECIFICATIONS.md) on revisions.
 
+Once the ROMs are ready, **Choose your look** appears once. Pick a card and
+press **APPLY THEME**, or **KEEP CURRENT**. You can reopen it from
+**Options ▸ Theme** at any time.
+
+![The theme picker with eight illustrated cards, from Phosphor and Classic to Art Deco and Lookout Point.](/guide/theme-picker.webp)
+
 ---
 
 ## 2. Power on
@@ -221,6 +227,12 @@ audio blip and no catch-up stutter.
 ---
 
 ## Where to next
+
+- **[IEC Devices](GUIDE-MEDIA.md#iec-devices)**: install IEC Printer or another
+  serial-bus plugin, select an address and CONNECT. Drives 8 and 9 keep their
+  own controls, and a user port modem can stay connected at the same time.
+  IEC Printer's Preview / Print button opens the browser print dialog for
+  printing or saving as PDF.
 
 - **[User Guide](USER-GUIDE.md)**: the full reference for every control, card
   and dialog.

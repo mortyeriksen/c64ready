@@ -4,6 +4,11 @@
 
 # Performance
 
+IEC plugin polling advances a scalar clock and skips work while line levels
+are unchanged and no device timer is due. Changed-line dispatch uses a dense
+array with index loops, no iterator or event objects are allocated per cycle.
+Plugin UI and printer page rendering stay outside the emulation loop.
+
 This is a cycle-accurate C64: every master cycle it clocks the VIC-II, the 6510,
 two CIAs, the SID shadow voices and (when attached) the 1541's 6502. That
 per-cycle fidelity, not demo content, is what sets the cost, so the

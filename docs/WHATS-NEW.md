@@ -11,11 +11,31 @@ The version you are running is shown at the bottom of the About dialog.
 
 ## Next release
 
-- **Who's online in chat.** The lobby lists online nicknames below the rooms,
-  so you can see who is chatting before joining. Names update as people join,
-  leave or reconnect.
-- **Chat admin.** A separate online-user list shows connected users across
-  all rooms. Select a nickname to open their room.
+- **IEC devices.** Connect plugins alongside drives 8 and 9. IEC Printer captures
+  Commodore text and bitmap graphics, saves jobs and prints to paper or PDF.
+  Multiple devices can use different addresses.
+
+- **Plugin installation.** IEC and User Port share a clearer install review and
+  plugin guide, with ready-made plugins and custom URLs. Reviewing a file does
+  not run its code before you accept it.
+
+- **Hayes Modem speaker.** Optional ringing and connection sounds follow master
+  volume and mute.
+
+- **Interface.** Consistent dialog controls and spacing, a simpler fresh layout
+  and automatic controls for loaded equipment. Custom layouts are preserved.
+  A hint points to **+** after ROM setup. Refreshed guides include mobile layouts.
+  Narrow windows stack the controls like portrait phones.
+
+- **Themes.** A visual picker follows first ROM setup and opens from Options.
+  Documentation uses your chosen theme and appearance.
+
+- **Drive 8 disk queue.** Queue disks from Assembly64 or Library, then switch
+  with **NEXT DISK** or **Cmd/Ctrl+Shift+8**. Drag or use arrows to reorder,
+  remove disks or enable looping. The queue stays between visits.
+
+- **Online chat users.** The lobby lists online nicknames below the rooms.
+  Chat admin lists users across rooms, with nicknames that open their room.
 
 ---
 

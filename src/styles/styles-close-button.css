@@ -1,0 +1,57 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2026 Morten Øien Eriksen */
+
+.dialog-close {
+  appearance: none;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--button-bg);
+  color: var(--button-text);
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  zoom: calc(1 / var(--dialog-zoom, 1));
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.dialog-close svg {
+  display: block;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+}
+
+.dialog-close:hover:not(:disabled) {
+  color: var(--button-accent);
+  border-color: var(--button-accent);
+  background: color-mix(in srgb, var(--button-accent) 15%, var(--button-bg));
+}
+
+.dialog-close:active:not(:disabled) {
+  background: color-mix(in srgb, var(--button-accent) 25%, var(--button-bg));
+}
+
+.dialog-close.dialog-close:focus-visible {
+  outline: 2px solid var(--button-accent);
+  outline-offset: 3px;
+}
+
+.dialog-close:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.dialog-close[hidden] {
+  display: none;
+}

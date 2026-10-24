@@ -27,7 +27,7 @@ export function safeExternalUrl(value, hosts) {
   } catch { return null; }
 }
 export function allowedActions(type) {
-  if (DISK_MEDIA.includes(type)) return ['mount', 'run', 'save', 'download'];
+  if (DISK_MEDIA.includes(type)) return ['mount', 'run', 'queue', 'save', 'download'];
   if (SUPPORTED_MEDIA.includes(type)) return ['run', 'save', 'download'];
   if (type === 'zip') return ['extract', 'download'];
   return ['download'];

@@ -20,11 +20,18 @@
 // The order-independent parts (resolve, compare) are pure functions over key
 // arrays, unit-tested in test/panel-order-spec-test.js with no DOM.
 
+import { initCloseButtons } from './close-button.js';
 import { pushEscapeLayer, popEscapeLayer } from './escape-stack.js';
 import { rovingList } from './roving-list.js';
 
 export const PANEL_ORDER_KEY = 'c64emu.panelOrder';
 export const PANEL_HIDDEN_KEY = 'c64emu.panelHidden';
+export const EQUIPMENT_HINT_KEY = 'c64emu.equipmentHintShown';
+
+const FULL_LAYOUT = [
+  ['status', 'controls', 'ports', 'media'],
+  ['media-browser', 'drive8', 'drive9', 'iec', 'cartridge', 'datasette', 'reu', 'userport'],
+];
 
 // Movement below this many pixels is a click, not a drag — so tapping a handle
 // never leaves the card mid-flight.
@@ -63,9 +70,8 @@ export function parseHiddenKeys(raw) {
 //
 //   - a key naming a card that no longer exists is skipped, and a key repeated
 //     within or across columns counts once;
-//   - a card the saved layout never heard of — the normal case for every
-//     existing user the release after a panel is added — goes to the BOTTOM of
-//     the last column still in use, in authored order.
+//   - a new card follows its declared data-panel-after anchor, if present,
+//     otherwise it goes to the bottom of the last column still in use.
 //
 // Appending is the safe answer rather than the clever one. Threading a newcomer
 // back to the column and index it was authored at reads better on paper, but it
@@ -73,7 +79,7 @@ export function parseHiddenKeys(raw) {
 // never seen into a column they deliberately emptied — resurrecting that column
 // on its own, which reads as a fault. The bottom of a column already in use is
 // predictable, needs no special case, and is one drag away from anywhere else.
-export function resolveLayout(defaultLayout, savedLayout) {
+export function resolveLayout(defaultLayout, savedLayout, after = {}) {
   const known = new Set(defaultLayout.flat());
   const out = defaultLayout.map(() => []);
   const seen = new Set();
@@ -92,14 +98,15 @@ export function resolveLayout(defaultLayout, savedLayout) {
   // all. Without this every card would count as new and pile into one column.
   if (!out.some(col => col.length > 0)) return defaultLayout.map(col => [...col]);
 
-  // Everything the saved layout did not name goes to the bottom of the last
-  // column still in use, in authored order.
+  // New cards follow an explicit anchor or append to the last populated column.
   let last = 0;
   for (let c = 0; c < out.length; c++) if (out[c].length > 0) last = c;
   for (const key of defaultLayout.flat()) {
     if (seen.has(key)) continue;
     seen.add(key);
-    out[last].push(key);
+    const col = after[key] ? out.find(col => col.includes(after[key])) : null;
+    if (col) col.splice(col.indexOf(after[key]) + 1, 0, key);
+    else out[last].push(key);
   }
   return out;
 }
@@ -125,10 +132,11 @@ function _cardName(card) {
   return (h2.querySelector('span')?.textContent || h2.textContent || '').trim();
 }
 
-export function initPanelOrder() {
+export function initPanelOrder({ forceEquipmentHint = false } = {}) {
   const panel = document.querySelector('.side-panel');
+  const container = panel?.querySelector('.panel-cols');
   const cols = [...(panel?.querySelectorAll(':scope > .panel-cols > .panel-col') ?? [])];
-  if (!panel || cols.length < 2) return;
+  if (!panel || cols.length < 2) { container?.classList.add('is-layout-ready'); return; }
 
   const cardsIn = col => [...col.querySelectorAll(':scope > .panel-card[data-panel]')];
   const keysIn = col => cardsIn(col).map(c => c.getAttribute('data-panel'));
@@ -139,9 +147,11 @@ export function initPanelOrder() {
 
   const defaultLayout = cols.map(keysIn);
   const byKey = new Map(cols.flatMap(cardsIn).map(c => [c.getAttribute('data-panel'), c]));
-  if (byKey.size < 2) return;
+  if (byKey.size < 2) { container?.classList.add('is-layout-ready'); return; }
+  const defaultHidden = [...byKey].filter(([, card]) => card.hasAttribute('data-panel-default-hidden')).map(([key]) => key);
 
   let layout = defaultLayout;
+  let nextRevealColumn = 0;
 
   // Lives on <body>, not in the panel, where it cannot perturb the columns.
   const live = document.createElement('div');
@@ -178,6 +188,27 @@ export function initPanelOrder() {
     'stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
   document.body.appendChild(restoreBtn);
 
+  const equipmentHint = document.createElement('div');
+  equipmentHint.id = 'panel-equipment-hint';
+  equipmentHint.className = 'panel-equipment-hint';
+  equipmentHint.hidden = true;
+  equipmentHint.setAttribute('role', 'status');
+  equipmentHint.innerHTML = '<span>Add equipment</span><svg viewBox="0 0 48 36" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18h40m-10-10 10 10-10 10"/></svg>';
+  document.body.appendChild(equipmentHint);
+  let hintSeen = false, hintDisplayed = false;
+  try { hintSeen = localStorage.getItem(EQUIPMENT_HINT_KEY) === '1'; } catch {}
+  const dismissEquipmentHint = () => {
+    equipmentHint.hidden = true;
+    restoreBtn.removeAttribute('aria-describedby');
+  };
+  const showEquipmentHint = () => {
+    if (hintDisplayed || (!forceEquipmentHint && hintSeen) || !hidden.size || document.visibilityState === 'hidden') return false;
+    hintDisplayed = true;
+    equipmentHint.hidden = false;
+    restoreBtn.setAttribute('aria-describedby', equipmentHint.id);
+    return true;
+  };
+
   const restoreDialog = document.createElement('div');
   restoreDialog.className = 'modal-backdrop panel-restore-modal';
   restoreDialog.hidden = true;
@@ -185,10 +216,11 @@ export function initPanelOrder() {
     '<div class="modal-card panel-restore-card" role="dialog" aria-modal="true" ' +
     'aria-labelledby="panel-restore-title">' +
     '<div class="panel-card-header"><h2 id="panel-restore-title">Show hidden panels</h2>' +
-    '<button class="expand-btn" data-close aria-label="Close">✕</button></div>' +
+    '<button class="dialog-close" type="button" data-close aria-label="Close hidden panels"></button></div>' +
     '<p class="panel-restore-hint">Choose one to put it back at the bottom of its column.</p>' +
     '<div class="panel-restore-list"></div></div>';
   document.body.appendChild(restoreDialog);
+  initCloseButtons(restoreDialog);
   const restoreList = restoreDialog.querySelector('.panel-restore-list');
   rovingList(restoreList, '.panel-restore-item');   // one Tab stop; ↑ / ↓ move through the hidden panels
 
@@ -256,6 +288,11 @@ export function initPanelOrder() {
 
   const openRestore = () => {
     if (!hidden.size) return;
+    if (!forceEquipmentHint) {
+      hintSeen = true;
+      try { localStorage.setItem(EQUIPMENT_HINT_KEY, '1'); } catch {}
+    }
+    dismissEquipmentHint();
     fillRestoreList();
     restoreDialog.hidden = false;
     pushEscapeLayer(restoreLayer);
@@ -264,12 +301,13 @@ export function initPanelOrder() {
 
   restoreBtn.addEventListener('click', openRestore);
   restoreDialog.addEventListener('click', (e) => {
-    if (e.target === restoreDialog || e.target.hasAttribute('data-close')) closeRestore();
+    if (e.target === restoreDialog || e.target.closest('[data-close]')) closeRestore();
   });
 
   // The + and the hide oval share the corner, so the + stands down mid-drag.
   const syncRestoreUi = () => {
     restoreBtn.classList.toggle('is-shown', hidden.size > 0 && !drag?.active);
+    equipmentHint.classList.toggle('is-suspended', !hidden.size || !!drag?.active);
     if (!hidden.size && restoreIsOpen()) closeRestore();
   };
 
@@ -282,7 +320,7 @@ export function initPanelOrder() {
 
   const save = () => {
     try {
-      if (isDefaultLayout(defaultLayout, layout)) localStorage.removeItem(PANEL_ORDER_KEY);
+      if (isDefaultLayout(defaultLayout, layout) && !hidden.size && !defaultHidden.length) localStorage.removeItem(PANEL_ORDER_KEY);
       else localStorage.setItem(PANEL_ORDER_KEY, JSON.stringify(layout));
     } catch {}
   };
@@ -312,8 +350,7 @@ export function initPanelOrder() {
   const hidden = new Set();
   const saveHidden = () => {
     try {
-      if (hidden.size === 0) localStorage.removeItem(PANEL_HIDDEN_KEY);
-      else localStorage.setItem(PANEL_HIDDEN_KEY, JSON.stringify([...hidden]));
+      localStorage.setItem(PANEL_HIDDEN_KEY, JSON.stringify([...hidden]));
     } catch {}
   };
   const applyHidden = () => {
@@ -323,10 +360,12 @@ export function initPanelOrder() {
 
   let saved = null;
   try { saved = parseSavedLayout(localStorage.getItem(PANEL_ORDER_KEY)); } catch {}
-  applyLayout(resolveLayout(defaultLayout, saved));
   let savedHidden = null;
   try { savedHidden = parseHiddenKeys(localStorage.getItem(PANEL_HIDDEN_KEY)); } catch {}
-  for (const key of savedHidden ?? []) if (byKey.has(key)) hidden.add(key);
+  if (!saved && savedHidden !== null) saved = FULL_LAYOUT;
+  const after = Object.fromEntries([...byKey].map(([key, card]) => [key, card.getAttribute('data-panel-after')]).filter(([, anchor]) => anchor));
+  applyLayout(resolveLayout(defaultLayout, saved, after));
+  for (const key of savedHidden ?? (saved ? [] : defaultHidden)) if (byKey.has(key)) hidden.add(key);
   applyHidden();
 
   // ── Handles ───────────────────────────────────────────────────────────────
@@ -646,15 +685,40 @@ export function initPanelOrder() {
     resetBtn.addEventListener('click', () => {
       try { localStorage.removeItem(PANEL_ORDER_KEY); } catch {}
       hidden.clear();
-      saveHidden();
+      nextRevealColumn = 0;
+      for (const key of defaultHidden) hidden.add(key);
+      try { localStorage.removeItem(PANEL_HIDDEN_KEY); } catch {}
       applyHidden();
       applyLayout(defaultLayout);
       syncRestoreUi();
-      live.textContent = 'Panel layout reset — hidden cards are back';
+      live.textContent = 'Panel layout reset to defaults';
     });
   }
 
   // Last, not with the other init: syncRestoreUi reads `drag`, which is declared
   // further down, so calling it any earlier would hit the temporal dead zone.
   syncRestoreUi();
+  container.classList.add('is-layout-ready');
+  const reveal = (key, { column = nextRevealColumn, onlyIfHidden = false } = {}) => {
+    const card = byKey.get(key);
+    if (!card || (onlyIfHidden && !hidden.has(key))) return false;
+    if (hidden.delete(key)) {
+      (cols[column] ?? cols[0]).appendChild(card);
+      nextRevealColumn = (column + 1) % cols.length;
+    }
+    card.classList.add('expanded');
+    const toggle = card.querySelector('.expand-btn');
+    if (toggle) { toggle.setAttribute('aria-expanded', 'true'); toggle.title = 'Collapse'; }
+    applyHidden(); syncFromDom(); save(); saveHidden(); syncRestoreUi();
+    live.textContent = `${_cardName(card)} controls shown`;
+    return true;
+  };
+  return {
+    reveal,
+    showEquipmentHint,
+    revealMany(keys) {
+      nextRevealColumn = 0;
+      for (const key of keys) reveal(key);
+    },
+  };
 }

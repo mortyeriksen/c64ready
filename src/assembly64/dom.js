@@ -2,6 +2,7 @@
 // Copyright © 2026 Morten Øien Eriksen
 import { pushEscapeLayer, popEscapeLayer } from '../ui/escape-stack.js';
 import { rovingListKey } from '../ui/roving-list.js';
+import { createCloseButton } from '../ui/close-button.js';
 
 export function el(tag, text, attrs = {}) {
   const node = document.createElement(tag);
@@ -82,8 +83,10 @@ export function createDialog(title, onClose = () => {}) {
       else if (!event.shiftKey && (document.activeElement === last || !focusable.includes(document.activeElement))) { event.preventDefault(); first.focus(); }
     }
   }
-  const closeButton = button('✕', close, { class: 'btn mb-close', 'aria-label': `Close ${title}` });
-  card.append(heading, closeButton, body);
+  const closeButton = createCloseButton({ label: `Close ${title}`, className: 'mb-close', onClose: close });
+  const header = el('div', null, { class: 'mb-dialog-header' });
+  header.append(heading, closeButton);
+  card.append(header, body);
   overlay.append(card); document.body.append(overlay);
   dialogStack.push(overlay); pushEscapeLayer(layer);
   dialogClosers.set(overlay, close);

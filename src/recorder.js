@@ -109,12 +109,12 @@ function setButtonState(isRec) {
     : 'Record the browser window with sound to an .mp4 file';
 }
 
-// Fan out SID + drive sounds into a recorder-clocked media stream. This runs
+// Fan out SID, drive and user port sounds into a recorder-clocked media stream. This runs
 // synchronously in the RECORD click before the share picker can blur/freeze the
 // emulator, so the browser grants and starts the recorder AudioContext on the gesture.
 function attachAudio() {
-  const { audioCtx, sidNode, driveSounds } = getAudioGraph();
-  audioBridge = createRecorderAudioBridge({ audioCtx, sidNode, driveSounds });
+  const { audioCtx, sidNode, driveSounds, userportAudio } = getAudioGraph();
+  audioBridge = createRecorderAudioBridge({ audioCtx, sidNode, driveSounds, userportAudio });
   return audioBridge?.track || null;
 }
 

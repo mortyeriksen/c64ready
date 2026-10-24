@@ -47,7 +47,7 @@ It's a work in progress: a few small visual glitches remain, and there's more pe
 
 Everything runs in your browser. Your ROMs, disks, tapes, cartridges and save states stay in the browser's own storage and are never uploaded. There are no cookies and no third-party scripts. The only thing counted is a few anonymous page hits the app makes, once per launch or ROM setup. Those hits let the hosting service's server-side statistics show how many sessions run installed or with ROMs. They carry no data and no identifier.
 
-The optional [chat](/docs/guide-interface.html#chat) is the one thing that talks to a server of ours, and only once you open it. Your nickname and messages go to the people in your room and to the moderator. The chat server logs every message with your nickname and IP address and keeps the log for 90 days, so abuse and crime can be investigated. Only the moderator reads it, and it is shared only when the law requires it.
+The optional [chat](/docs/guide-chat.html) is the one thing that talks to a server of ours, and only once you open it. Your nickname and messages go to the people in your room and to the moderator. The chat server logs every message with your nickname and IP address and keeps the log for 90 days, so abuse and crime can be investigated. Only the moderator reads it, and it is shared only when the law requires it.
 
 ## About the author
 

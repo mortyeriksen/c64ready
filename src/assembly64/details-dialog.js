@@ -68,13 +68,13 @@ export async function openDetailsDialog(controller, reference, perform, details 
       const actions = allowedActions(file.mediaType);
       if (!actions.includes('run') && !actions.includes('extract')) info.append(el('p', 'Download only · this format cannot be opened.'));
       for (const action of actions) {
-        const label = { run: 'LOAD', mount: 'MOUNT ONLY', save: 'SAVE TO LIB', download: 'DOWNLOAD', extract: 'CHOOSE FROM ZIP' }[action];
+        const label = { run: 'LOAD', mount: 'MOUNT ONLY', queue: 'QUEUE', save: 'SAVE TO LIB', download: 'DOWNLOAD', extract: 'CHOOSE FROM ZIP' }[action];
         const btn = button(label, async () => {
           busy = true; updateActions();
           status.textContent = '';
           progress.start(file.name, { row, label: info.querySelector('.mb-meta') });
           try {
-            const result = await perform(item, file, { ...options, action: action === 'extract' ? 'run' : action }, dialog.signal, progress.update);
+            const result = await perform(item, file, { ...options, targetDrive: action === 'queue' ? 8 : options.targetDrive, action: action === 'extract' ? 'run' : action }, dialog.signal, progress.update);
             await progress.waitMinimum();
             if (!dialog.closed) {
               if (['run', 'extract'].includes(action) && result.mediaType) closeAssembly64Dialogs();
@@ -88,6 +88,7 @@ export async function openDetailsDialog(controller, reference, perform, details 
             if (!dialog.closed) updateActions();
           }
         });
+        if (action === 'queue') btn.title = 'Queue to drive 8';
         actionButtons.push({ button: btn, action, file }); buttons.append(btn);
       }
       files.append(row);

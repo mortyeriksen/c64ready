@@ -467,7 +467,7 @@ The **Options ▸ Sound** slider is a Web Audio `GainNode` (`masterGain` in
 `main.js`) *downstream* of the worklet and outside the SID model: a square-law
 perceptual taper on the slider position (default 70% ≈ −6 dB of headroom
 against the authentically hot 0 dBFS chip mix). MUTE pins the same node to 0,
-and the synthesised drive sounds route through it too. User-facing behaviour:
+and the synthesised drive and user port sounds route through it too. User-facing behaviour:
 the [User Guide](USER-GUIDE.md), Sound section.
 
 ---

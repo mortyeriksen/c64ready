@@ -4,6 +4,8 @@
 // Wires up auto-ROM loading, D64 disk images, joystick emulation, and PRG injection.
 
 import './ui/tooltips.js';   // must own `title` before any module writes one
+import { initCloseButtons } from './ui/close-button.js';
+import { initDialogLayout } from './ui/dialog-layout.js';
 import { validSecondSidAddress } from './sid/sid-config.js';
 import { C64Machine } from './machine.js';
 import { ROMLoader, pickViceRoms } from './roms.js';
@@ -34,7 +36,7 @@ import {
 } from './state.js';
 import { registerAudioContext } from './debug.js';
 import {
-  initMedia, _onCRTLoaded, _onTapLoaded, _syncCartridgeControls, _syncDrive9TdeBtn, _applyDrive9Tde,
+  initMedia, nextQueuedDisk, _onCRTLoaded, _onTapLoaded, _syncCartridgeControls, _syncDrive9TdeBtn, _applyDrive9Tde,
   _syncTapeButtons, _applyReu, reuEnabled,
   _flashDrive9Led, drive9LedActive, updateMediaIndicators, downloadSnapshot, rearmPrgTdeOffer,
   currentD64, currentD64Drive9, noteTrapDiskWrite, drive9Enabled, drive9TdeEnabled,
@@ -55,9 +57,11 @@ import {
 import { splashIsOpen } from './ui/splash.js';
 import { initPanelOrder } from './ui/panel-order.js';
 import { initUserportCard } from './userport/card.js';
+import { initIecCard } from './iec/card.js';
 import { createPasteQueue } from './paste-queue.js';
 import { initAppearance } from './ui/appearance.js';
 import { initThemes } from './ui/themes.js';
+import { createThemePicker } from './ui/theme-picker.js';
 import { confirmDialog } from './ui/dialogs.js';
 // ── Elements (see dom.js for the full inventory) ─────────────────────────────
 import {
@@ -76,6 +80,9 @@ import {
   setupModal, externalBrowserModal,
 } from './ui/dom.js';
 
+
+initCloseButtons();
+initDialogLayout();
 
 // Set native canvas resolution
 canvas.width  = CANVAS_W;
@@ -99,6 +106,7 @@ const ctx = presenter ? null : canvas.getContext('2d');
 // The User Port card (src/userport/card.js). Created once the panels exist;
 // machines built before then get their device when it is.
 let userportCard = null;
+let iecCard = null;
 const collisionIndicator = switchOn('vicCollisionOverlay')
   ? new CollisionIndicator(document.getElementById('collision-indicator')) : null;
 const crtShader = !!presenter && presenter.crtAvailable && switchOn('crtShader')
@@ -348,11 +356,12 @@ try {
 }
 
 let audioCtx  = null;
+let userportAudio = null;
 // Status card content to restore when an auto-freeze thaws (see _autoFreeze /
 // _autoThaw). Declared with the early state: setStatus() touches it and can
 // run from ROM-autoload microtasks before the freeze/thaw block is evaluated.
 let _preFreezeStatus = null;
-// Master output gain — everything (SID worklet + drive sounds) routes through
+// Master output gain — SID, drive and user port sounds route through
 // this node so a single control silences the lot. Created in initAudio();
 // null until then. MUTE toggles its gain 0 ↔ 1. See btn-mute-toggle.
 let masterGain = null;
@@ -863,14 +872,17 @@ if (muteToggleBtn || volumeSlider) {
 // setting. The inline script in index.html has already applied it before first
 // paint; this wires the controls and follows the OS while on 'system'.
 initAppearance({ headerButton: appearanceBtn, optionsButton: appearanceToggleBtn });
-// Colour themes (Options ▸ Theme): Classic, GEOS and imported ones. Applied
+// Colour themes (Options ▸ Theme): built-in and imported looks. Applied
 // before first paint by the same inline script; this wires the controls.
 const themes = initThemes({
   cycleButton: themeCycleBtn, importButton: themeImportBtn, exportButton: themeExportBtn,
   removeButton: themeRemoveBtn, fileInput: themeInput,
   notify: (message) => confirmDialog(message, { title: 'Theme', okOnly: true }),
   confirm: (message) => confirmDialog(message, { title: 'Remove theme', okLabel: 'REMOVE' }),
+  pick: () => { _closeSettings(); themePicker.open({ onClose: _openSettings }); },
 });
+const themePicker = createThemePicker(themes);
+let themePreviewPending = switchOn('themePicker');
 
 // Attract-mode toggle (Settings ▸ Display). Persisted; applies live — when
 // toggled while powered off it swaps between the animated demo and the static
@@ -1055,7 +1067,7 @@ for (const btn of document.querySelectorAll('.expand-btn')) {
   // Disk drive 9, the RAM Expansion and the User Port have headers that are
   // power affordances, not expanders (media.js and userport/card.js wire them to
   // their power switches); their expand state follows power, so skip them here.
-  if (panel.id === 'diskdrive9-card' || panel.id === 'reu-card' || panel.id === 'userport-card') continue;
+  if (panel.id === 'diskdrive9-card' || panel.id === 'reu-card' || panel.id === 'userport-card' || panel.id === 'iec-card') continue;
   // Toggle target is the whole header; the chevron is a button inside it, so a
   // click (mouse or keyboard) on the chevron bubbles here too — one handler
   // covers both, and no double-toggle.
@@ -1093,9 +1105,24 @@ for (const btn of document.querySelectorAll('.expand-btn')) {
 // Drag handles on the side-panel cards, and the saved card order. Runs after the
 // expand wiring above so the handle lands in a header that already knows how to
 // toggle — the handle stops its own clicks from reaching it.
-initPanelOrder();
-userportCard = initUserportCard({ getMachine: () => c64, safeMode: switchOn('userportSafeMode') });
+const panelOrder = initPanelOrder({ forceEquipmentHint: switchOn('equipmentHint') });
+function maybeEquipmentHint() {
+  if (!loader.allLoaded || splashIsOpen() || !(setupModal?.hidden ?? true) || !(settingsModal?.hidden ?? true)) return;
+  if (themePicker.isOpen) return;
+  if (themePreviewPending || !themePicker.hasBeenShown()) {
+    const preview = themePreviewPending;
+    themePreviewPending = false;
+    themePicker.open({ onClose: maybeEquipmentHint, remember: !preview });
+    return;
+  }
+  panelOrder?.showEquipmentHint();
+}
+window.addEventListener('c64-splash-dismissed', maybeEquipmentHint);
+document.addEventListener('visibilitychange', maybeEquipmentHint);
+userportCard = initUserportCard({ getMachine: () => c64, getAudio: () => userportAudio, safeMode: switchOn('userportSafeMode') });
 userportCard.attach(c64);
+iecCard = initIecCard({ getMachine: () => c64, getAudio: () => userportAudio, safeMode: switchOn('iecSafeMode') });
+iecCard.attach(c64);
 
 loader.bindInputs(kernalInput, basicInput, charInput, drive1541Input);
 loader.onReady(roms => {
@@ -1125,6 +1152,7 @@ loader.onReady(roms => {
   if (tapBtn) tapBtn.disabled = false;
   if (tapNewBtn) tapNewBtn.disabled = false;   // BLANK inserts like LOAD does
   if (crtBtn) crtBtn.disabled = false;
+  maybeEquipmentHint();
 });
 
 kernalInput.addEventListener('change', updateRomStatus);
@@ -1308,6 +1336,9 @@ async function initAudio() {
   masterGain = audioCtx.createGain();
   masterGain.gain.value = audioMuted ? 0 : volumeToGain(masterVolume);
   masterGain.connect(audioCtx.destination);
+  const userportBus = audioCtx.createGain();
+  userportBus.connect(masterGain);
+  userportAudio = { context: audioCtx, destination: userportBus };
   sidNode.connect(masterGain);
   registerAudioContext(audioCtx);        // debug surface: c64Trace.audioLatency()
 
@@ -1525,6 +1556,7 @@ function rafLoop(timestamp) {
 
   if (frameExecuted) {
     if (userportCard) userportCard.frame();
+    if (iecCard) iecCard.frame();
     if (collisionIndicator) collisionIndicator.update(timestamp, c64.collisionOverlay());
     if (presenter) presenter.present(c64.presentationBuffer());
     else c64.blit(ctx);
@@ -1756,6 +1788,7 @@ function _createAndWireMachine({ keepKey = true, reuRam = null } = {}) {
   // Plug the user port device back in. Before the cartridge and before a state
   // load's restoreState, so a snapshot finds its device.
   userportCard?.attach(c64);
+  iecCard?.attach(c64);
   // Re-apply cartridge if one was loaded; refresh UI label.
   if (_cachedCartData) {
     const info = c64.loadCartridge(_cachedCartData);
@@ -1865,6 +1898,7 @@ powerBtn.addEventListener('click', async () => {
     resetSidWorklet();
     updateMediaIndicators(false);   // stop the tape motor-dot pulse before the machine goes away
     _cacheTapeFromDeck();           // keep the tape (and any recording) for the next power-on
+    iecCard?.detach();
     userportCard?.detach();         // the user port device loses power too
     setMachine(null);
     _syncCartridgeControls();
@@ -2503,7 +2537,7 @@ if (creditLink && creditPopup) {
 // which are wired by id elsewhere, so they work unchanged from inside here).
 
 function _openSettings()  { if (settingsModal) { settingsModal.hidden = false; pushEscapeLayer(_settingsEscape); } }
-function _closeSettings() { if (settingsModal) settingsModal.hidden = true; popEscapeLayer(_settingsEscape); }
+function _closeSettings() { if (settingsModal) settingsModal.hidden = true; popEscapeLayer(_settingsEscape); queueMicrotask(maybeEquipmentHint); }
 const _settingsIsOpen = () => settingsModal && !settingsModal.hidden;
 const _settingsEscape = { close: _closeSettings, isOpen: _settingsIsOpen };
 
@@ -2540,7 +2574,7 @@ function _openSetup() {
   setupModal.hidden = false;
   pushEscapeLayer(_setupEscape);
 }
-function _closeSetup() { if (setupModal) setupModal.hidden = true; popEscapeLayer(_setupEscape); }
+function _closeSetup() { if (setupModal) setupModal.hidden = true; popEscapeLayer(_setupEscape); maybeEquipmentHint(); }
 const _setupIsOpen = () => setupModal && !setupModal.hidden;
 const _setupEscape = { close: _closeSetup, isOpen: _setupIsOpen };
 
@@ -3091,10 +3125,10 @@ setTimeout(() => {
 }, 2500);
 
 // ── Wire input.js ────────────────────────────────────────────────────────────
-// input.js registered its keyboard/joystick/mouse listeners at import; inject the
-// two core hooks it needs — the debug-snapshot download (from media.js) and clearing
-// the keyboard paste buffer on focus loss.
+// input.js registers its keyboard/joystick/mouse listeners at import. Inject
+// the app actions used by shortcuts and focus handling.
 initInput({
+  nextQueuedDisk,
   toggleCrtPanel: () => _toggleCrtPanel(),
   // The shortcut has no button to show the new name on, so the status line does.
   cycleTheme: () => {
@@ -3125,6 +3159,8 @@ initInput({
 // core-private state (loop timers, chip-variant prefs, pause flag, auto-load
 // sequencer) that media only needs to read or reset.
 initMedia({
+  revealMediaPanel: (key, options) => panelOrder?.reveal(key, options),
+  revealMediaPanels: keys => panelOrder?.revealMany(keys),
   getSecondSidConfig: () => sidSessionConfig?.second ?? secondSidPref,
   configureSidTune,
   syncSidState: () => {
@@ -3177,7 +3213,7 @@ initChat();
 // Screen + audio recorder (RECORD button). Audio is tapped live at record time
 // via this accessor, upstream of masterGain so MUTE / RESET never blank it.
 initRecorder({
-  getAudioGraph: () => ({ audioCtx, sidNode, driveSounds }),
+  getAudioGraph: () => ({ audioCtx, sidNode, driveSounds, userportAudio }),
   getCapturePresetId: () => recPreset,
   setStatus,
   restoreAfterCapturePicker: () => _autoThaw(),

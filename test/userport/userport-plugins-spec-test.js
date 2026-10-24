@@ -1,10 +1,12 @@
 // Device plugin checks (src/userport/plugins.js): what makes a file a valid
-// user port device, per the device API (docs/USERPORT-DEVICES.md): a `meta`
+// user port device, per the device API (docs/DEVICE-PLUGINS.md): a `meta`
 // export with id, name, version and a supported apiVersion, and a `create`
 // function. The "builtin." id prefix is reserved for the app's own devices.
 
 import fs from 'node:fs';
-import { validateDeviceModule, importDeviceSource, inspectDeviceSource, sha256Hex, MAX_DEVICE_BYTES } from '../../src/userport/plugins.js';
+import { validateDeviceModule, importDeviceSource, sha256Hex, MAX_DEVICE_BYTES } from '../../src/userport/plugins.js';
+import { inspectDeviceSource } from '../../src/userport/inspect.js';
+import { inspectIecSource } from '../../src/iec/plugins.js';
 
 let testNo = 0, failing = 0, current = [];
 function expect(cond, msg) { if (!cond) current.push(msg); }
@@ -67,11 +69,34 @@ export function create(port, host) { return { n: 1 }; }`;
 }
 
 {
-  const src = fs.readFileSync(new URL('../../src/userport/devices/wifi-modem.js', import.meta.url), 'utf8');
+  const src = fs.readFileSync(new URL('../../src/userport/devices/modem.js', import.meta.url), 'utf8');
   const mod = await importDeviceSource(src);
   const meta = validateDeviceModule(mod, { allowBuiltin: true });
   expect(meta.id === 'builtin.wifi-modem', 'the built-in modem loads through the plugin path');
   ok('the built-in modem passes the same checks as an installed device');
+}
+
+{
+  const source = `globalThis.__deviceReviewProbe = true;
+  export const meta = { id: 'example.review', name: 'Review', version: '1', apiVersion: 2 };
+  export function create() { return {}; }`;
+  const info = await inspectDeviceSource(source);
+  expect(info.meta.id === 'example.review' && globalThis.__deviceReviewProbe === undefined, 'user port review reads metadata without executing module code');
+  const iec = await inspectIecSource(source.replace("apiVersion: 2", "apiVersion: 1, bus: 'iec'"));
+  expect(iec.meta.address === 4 && globalThis.__deviceReviewProbe === undefined, 'IEC review reads metadata without executing module code');
+  const bundled = fs.readFileSync(new URL('../../public/iec/printer.js', import.meta.url), 'utf8');
+  expect((await inspectIecSource(bundled)).meta.id === 'c64ready.iec-printer', 'bundled named exports are inspected without importing them');
+  ok('plugin trust reviews never run top-level code');
+}
+{
+  for (const expression of ["{ get id() { globalThis.__deviceReviewProbe = true; return 'x'; } }", "(() => { globalThis.__deviceReviewProbe = true; return {}; })()"] ) {
+    let refused = false;
+    try { await inspectDeviceSource(`export const meta = ${expression}; export function create() {}`); } catch { refused = true; }
+    expect(refused && globalThis.__deviceReviewProbe === undefined, 'computed metadata is rejected without evaluating it');
+  }
+  const aliases = `const VERSION = 2; const m = { id: 'example.alias', name: 'Alias', version: '1', apiVersion: VERSION }; const c = () => ({}); export { m as meta, c as create };`;
+  expect((await inspectDeviceSource(aliases)).meta.apiVersion === 2, 'constant metadata references and export aliases are supported');
+  ok('metadata getters and expressions cannot execute during review');
 }
 
 console.log(failing ? `\n${failing} of ${testNo} FAILED` : `\nall ${testNo} passed`);

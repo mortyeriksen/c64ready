@@ -193,8 +193,22 @@ export class MachineFacade {
   // The fitted REU, or null.
   get reu()           { return this.machine.reu ? this._reu : null; }
   attachReu(modelId)  { this.machine.attachReu(modelId); }
-  // User port: plug a device in (see userport.js), pull it out, and hear about
-  // a device that threw. The error handler survives re-plugging.
+  // Additional devices on the shared IEC bus.
+  attachIecDevice(address, id, factory, version, onError) {
+    const dev = this.machine.attachIecDevice(address, id, factory, version);
+    this.machine.iec.onError = onError;
+    return dev;
+  }
+  detachIecDevice(address) { this.machine.detachIecDevice(address); }
+  iecDeviceId(address) { return this.machine.iec?.devices.get(address)?.id ?? null; }
+  get iecDeviceCount() { return this.machine.iec?.devices.size ?? 0; }
+  takeIecRestoreMismatches() {
+    const result = this.machine.iecRestoreMismatches;
+    this.machine.iecRestoreMismatches = null;
+    return result;
+  }
+
+  // User port: the error handler survives re-plugging.
   attachUserport(id, factory, version, onError) {
     const dev = this.machine.attachUserport(id, factory, version);
     this.machine.userport.onError = onError;

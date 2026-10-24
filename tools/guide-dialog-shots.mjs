@@ -1,31 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
-// Capture the POPULATED Library + Save-States dialogs for the User Guide.
+// Capture the curated Library and Save States dialogs for the User Guide.
+// Each shows the same three named items and real state thumbnails as the guide.
+// Media comes from guide-library-* and guide-state-* in external-assets.json.
+// Nothing is copied into the public tree except the screenshots.
 //
-// The plain guide-shots.mjs grabs those two modals right after boot, so they're
-// empty (just the placeholder text + a lone IMPORT button) and show none of the
-// list-row functionality. This harness populates both first, then screenshots
-// them:
-//   • Library     — loads every .d64 in <demoDir> into drive 8; loading a file
-//                    caches it in the library (no need to run the demo).
-//   • Save-States — imports every .c64state in <statesDir> (real thumbnails),
-//                    exactly as the IMPORT button does.
-// No power-on / demo run is needed — both dialogs read from browser storage.
+//   node tools/guide-dialog-shots.mjs [baseURL]
 //
-//   node tools/guide-dialog-shots.mjs [baseURL] <demoDir> <statesDir>
-//
-// A dialog whose source dir holds no matching files is SKIPPED, not shot — its
-// existing shot is left alone. That matters because both dialogs are captured in
-// one run: populating one and not the other used to overwrite the other's good
-// screenshot with an empty list. Pass one dir (or an empty one) to refresh a
-// single dialog.
-//
-// baseURL defaults to http://localhost:5173 (the live dev server). demoDir /
-// statesDir are directories you supply — their .d64 / .c64state contents are
-// NOT part of the repo (each under its own copyright), so bring your own.
-// Outputs land in public/guide/ (tracked, served at /guide/):
-//   library-loaded.webp, save-states-loaded.webp
+// Output: public/guide/{library,save-states}-loaded.webp (GUIDE_OUT redirects it).
 import { chromium } from 'playwright';
+import { createGuideContext } from './guide-context.mjs';
+import { assetPath, missingNote } from '../test/external-assets.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -38,25 +23,23 @@ const OUT = process.env.GUIDE_OUT ? path.resolve(process.env.GUIDE_OUT) : path.j
 fs.mkdirSync(OUT, { recursive: true });
 
 const BASE = process.argv[2] || 'http://localhost:5173';
-const DEMO_DIR = process.argv[3];
-const STATES_DIR = process.argv[4];
-if (!DEMO_DIR && !STATES_DIR) {
-  console.error('usage: node tools/guide-dialog-shots.mjs [baseURL] <demoDir> <statesDir>');
-  console.error('  (either dir may be empty or omitted — that dialog is then skipped)');
-  process.exit(1);
+function inputs(items) {
+  return items.flatMap(([key, name, days]) => {
+    const file = assetPath(key);
+    if (!file) { console.log(`# SKIP ${missingNote(key)}`); return []; }
+    return [{ file, name, days }];
+  });
 }
-
-// Library disks — every .d64 in demoDir, loaded in sorted order. The library
-// lists newest-first, so they appear top-to-bottom in reverse of load order;
-// the row label is the filename, so name the files for how they should read.
-const listFiles = (dir, ext) => (fs.existsSync(dir)
-  ? fs.readdirSync(dir).filter((f) => f.toLowerCase().endsWith(ext)).sort().map((f) => path.join(dir, f))
-  : []);
-const DISKS = listFiles(DEMO_DIR, '.d64');
-
-// Save-state files — every .c64state in statesDir. Imported in sorted order;
-// the list sorts by each state's own savedAt, so display order follows saves.
-const STATES = listFiles(STATES_DIR, '.c64state');
+const DISKS = inputs([
+  ['guide-library-lunatico', 'Lunatico.d64'],
+  ['guide-library-next-level', 'Next Level.d64'],
+  ['guide-library-the-hat', 'The Hat.d64'],
+]);
+const STATES = inputs([
+  ['guide-state-plasma', 'Code D1 - Plasma', 21],
+  ['guide-state-commando', 'COMMANDO - Title', 28],
+  ['guide-state-nine', 'Nine - Hyperscreen', 21],
+]);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const click = (page, sel) => page.locator(sel).first().click({ timeout: 8000 });
@@ -65,18 +48,18 @@ async function rowCount(page, listSel) {
 }
 
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ colorScheme: 'dark',
+const ctx = await createGuideContext(browser, { colorScheme: 'dark',
   viewport: { width: 1460, height: 1180 },
   deviceScaleFactor: 2,
   reducedMotion: 'reduce',
 });
-await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); } catch {} });
+await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); } catch {} });
 const page = await ctx.newPage();
 page.on('pageerror', (e) => console.error('  page error:', e.message));
 
 console.log(`\nPopulated-dialog shots → ${OUT}\n  base=${BASE}`);
-if (!DISKS.length) console.log(`  library skipped — no .d64 files in ${DEMO_DIR || '(no dir given)'}`);
-if (!STATES.length) console.log(`  save-states skipped — no .c64state files in ${STATES_DIR || '(no dir given)'}`);
+if (!DISKS.length) console.log('# SKIP Library guide inputs unavailable');
+if (!STATES.length) console.log('# SKIP Save States guide inputs unavailable');
 
 await page.goto(BASE, { waitUntil: 'networkidle' });
 // ROMs auto-load from /roms/ → the media buttons + inputs go live.
@@ -90,9 +73,8 @@ await sleep(300);
 // ── Library: load each disk (caches it) ─────────────────────────────────────
 console.log('\n[library] caching disks');
 for (const disk of DISKS) {
-  if (!fs.existsSync(disk)) continue;
-  await page.setInputFiles('#d64-input', disk);
-  console.log('  +', path.basename(disk));
+  await page.setInputFiles('#d64-input', { name: disk.name, mimeType: 'application/octet-stream', buffer: fs.readFileSync(disk.file) });
+  console.log('  +', disk.name);
   await sleep(1200);                       // let the IndexedDB write settle
 }
 await sleep(800);
@@ -103,15 +85,16 @@ console.log('\n[save-states] importing states');
 await click(page, '#btn-load-state');
 await page.waitForSelector('#state-modal:not([hidden])', { timeout: 5000 });
 for (const st of STATES) {
-  if (!fs.existsSync(st)) continue;
+  const sample = JSON.parse(fs.readFileSync(st.file, 'utf8'));
+  sample.name = st.name; sample.savedAt = Date.now() - st.days * 86400000;
   const before = await rowCount(page, '#state-list');
-  await page.setInputFiles('#state-import-input', st);
+  await page.setInputFiles('#state-import-input', { name: `${st.name}.c64state`, mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(sample)) });
   // Wait until the list re-renders with the new row (import is async).
   await page.waitForFunction(
     (n) => document.querySelectorAll('#state-list .lib-row').length > n,
     before, { timeout: 8000 },
-  ).catch(() => console.error('    (row did not appear:', path.basename(st), ')'));
-  console.log('  +', path.basename(st));
+  ).catch(() => console.error('    (row did not appear:', st.name, ')'));
+  console.log('  +', st.name);
 }
 await sleep(400);
 }

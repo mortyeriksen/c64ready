@@ -7,32 +7,13 @@
 /* ── Fullscreen mode ─────────────────────────────────────────────────── */
 /* FULL is a view toggle → neutral (uses the base .btn / .btn:hover styling). */
 
-.fs-close-btn {
+.fs-close-btn.dialog-close {
   display: none;
   position: fixed;
   /* Clear the notch / rounded corners in landscape (needs viewport-fit=cover). */
   top: max(12px, env(safe-area-inset-top));
   right: max(12px, env(safe-area-inset-right));
   z-index: 2000;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.6);
-  color: var(--text);
-  font-family: 'Inter', sans-serif;
-  font-size: 1.1rem;
-  line-height: 1;
-  cursor: pointer;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
-}
-
-.fs-close-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: rgba(0, 0, 0, 0.85);
 }
 
 /* ── Retro Vibes 3D model viewer ─────────────────────────────────────────── */
@@ -98,27 +79,6 @@
   top: 18px;
   right: 18px;
   z-index: 3;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 45, 149, 0.5);
-  background: rgba(10, 6, 24, 0.55);
-  color: #ff6fc0;
-  font-family: 'Inter', sans-serif;
-  font-size: 1.3rem;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(4px);
-  transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s;
-}
-.model-viewer-close:hover {
-  color: #fff;
-  border-color: #ff2d95;
-  background: rgba(255, 45, 149, 0.22);
-  box-shadow: 0 0 16px rgba(255, 45, 149, 0.5);
 }
 
 /* Scene toggler — top-left; cycles the lighting/backdrop moods. */
@@ -453,7 +413,8 @@ body.fullscreen-mode .fs-close-btn {
    targets to ~34-44px so the on-screen keys are reachable by finger. */
 @media (max-width: 1200px) {
   #keymap-modal .modal-card {
-    zoom: 1;
+    --dialog-zoom: 1;
+    zoom: var(--dialog-zoom);
   }
 }
 
@@ -465,7 +426,8 @@ body.fullscreen-mode .fs-close-btn {
   #state-modal .modal-card,
   #tapedir-modal .modal-card,
   #wavimport-modal .modal-card {
-    zoom: 1;
+    --dialog-zoom: 1;
+    zoom: var(--dialog-zoom);
   }
 
   /* Options, ROM setup and the name prompt: drop the zoom (528px at 1.2 renders
@@ -474,7 +436,8 @@ body.fullscreen-mode .fs-close-btn {
   #settings-modal .modal-card,
   #setup-modal .modal-card,
   #prompt-modal .modal-card {
-    zoom: 1;
+    --dialog-zoom: 1;
+    zoom: var(--dialog-zoom);
     max-height: 94vh;
     max-height: 94dvh;
   }

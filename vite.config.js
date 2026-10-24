@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { buildDocs } from './tools/build-docs.mjs';
+import { docsPaths } from './tools/docs-paths.mjs';
 import { attachRelay } from './cli/relay.mjs';
 import { createChatServer } from './server/chat.mjs';
 import { switchOn } from './src/switches.js';
@@ -94,21 +95,6 @@ const chatDevPlugin = {
     });
   },
 };
-
-// Match Netlify: /docs/ and /docs/about serve the built files at the requested URL;
-// only the missing trailing slash redirects.
-function docsPaths(req, res, next) {
-  const [pathname, search = ''] = req.url.split('?');
-  const q = search ? `?${search}` : '';
-  if (pathname === '/docs') {
-    res.writeHead(301, { location: `/docs/${q}` });
-    return res.end();
-  }
-  if (pathname === '/docs/') req.url = `/docs/index.html${q}`;
-  else if (pathname.startsWith('/docs/') && !pathname.slice(6).includes('.'))
-    req.url = `${pathname}.html${q}`;
-  next();
-}
 
 export default defineConfig({
   server: { headers: COI_HEADERS },

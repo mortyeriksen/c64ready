@@ -405,11 +405,6 @@ body.fullscreen-mode .crt-panel {
   padding: 6px 4px;
   font-size: 0.86rem;
 }
-.crt-panel .crt-panel-close {
-  flex: 0 0 auto;
-  padding: 2px 8px;
-  line-height: 1;
-}
 .crt-panel-presets {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -531,7 +526,10 @@ body.crt-off .crt-shine {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  visibility: hidden;
 }
+
+.panel-cols.is-layout-ready { visibility: visible; }
 
 .panel-col {
   display: contents;
@@ -542,14 +540,14 @@ body.crt-off .crt-shine {
    getting wrong. Beside a narrow window the panel is 260px and stays one
    column; stacked below a tablet it is full width and takes two.
 
-   440px is two cards plus the gap: a card stops being usable much under 215px
-   wide. Must follow the one-column rules above — same specificity, so source
+   600px gives each card about 300px including its padding. Must follow the
+   one-column rules above — same specificity, so source
    order is what decides. */
 .side-panel {
-  container-type: inline-size;
+  container: equipment-controls / inline-size;
 }
 
-@container (min-width: 440px) {
+@container equipment-controls (min-width: 600px) {
   .panel-cols {
     flex-direction: row;
     align-items: flex-start;
@@ -900,6 +898,50 @@ body.panels-reordering .panel-hide-target.is-over {
 .panel-restore-btn.is-shown { display: grid; }
 .panel-restore-btn svg { width: 22px; height: 22px; }
 
+.panel-equipment-hint {
+  position: fixed;
+  right: calc(max(20px, env(safe-area-inset-right)) + 54px);
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 881;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  max-width: calc(100vw - 110px);
+  color: var(--accent-bright);
+  font: .75rem 'Share Tech Mono', monospace;
+  pointer-events: none;
+  animation: equipment-arrow-point .9s ease-in-out infinite;
+}
+.panel-equipment-hint span {
+  padding: 8px 10px;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel-bg));
+  box-shadow: 0 6px 22px color-mix(in srgb, var(--shadow) 70%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.panel-equipment-hint[hidden], .panel-equipment-hint.is-suspended { display: none; }
+.panel-equipment-hint svg {
+  flex: none;
+  width: 48px;
+  height: 36px;
+  filter: drop-shadow(0 1px 1px var(--panel-bg))
+    drop-shadow(0 3px 5px color-mix(in srgb, var(--shadow) 85%, transparent));
+}
+@keyframes equipment-arrow-point {
+  0%, 100% { transform: translateX(-3px); }
+  50% { transform: translateX(3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel-equipment-hint { animation: none; }
+}
+@media (min-width: 1024px) {
+  .panel-equipment-hint { font-size: 1.05rem; }
+  .panel-equipment-hint span { padding: 10px 12px; }
+  .panel-equipment-hint svg { width: 64px; height: 48px; }
+}
+
 .panel-restore-btn:hover,
 .panel-restore-btn:focus-visible {
   color: var(--accent);
@@ -914,6 +956,10 @@ body.touch-input-capable:has(.touch-controls:not([hidden])) .panel-restore-btn {
   right: auto;
   left: 50%;
   margin-left: -22px;
+}
+body.touch-input-capable:has(.touch-controls:not([hidden])) .panel-equipment-hint {
+  right: calc(50% + 32px);
+  max-width: calc(50vw - 52px);
 }
 
 /* Announces each keyboard move to screen readers; never shown. */

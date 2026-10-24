@@ -1,4 +1,4 @@
-// A UP9600 driver talking to the WiFi modem at 9600 baud through the CIA shift
+// A UP9600 driver talking to the Modem at 9600 baud through the CIA shift
 // registers, the way Daniel Dallmann's UP9600 (used by CCGMS and Novaterm)
 // does it:
 //  - Sending: CIA1 Timer A at half the bit time clocks the SDR out on SP1,
@@ -144,7 +144,7 @@ async function run(message, seconds) {
 {
   const { text } = await run('ATE0I\r', 2);
   const lines = text.split('\r\n').filter(Boolean);
-  expect(text.startsWith('ATE0I\r') && lines.includes('OK') && /WIFI MODEM/.test(text),
+  expect(text.startsWith('ATE0I\r') && lines.includes('OK') && /C64 READY\. MODEM/.test(text),
     `a run of back-to-back bytes arrives whole: ${JSON.stringify(text)}`);
   ok('UP9600 at 9600 baud: a burst of back-to-back bytes arrives without loss');
 }

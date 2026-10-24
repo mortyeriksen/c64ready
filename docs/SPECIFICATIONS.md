@@ -198,7 +198,15 @@ revisions:
   500 KB/s for SWAP, the processor halted throughout, VIC DMA taking precedence.
   <https://www.zimmers.net/anonftp/pub/cbm/manuals/cmd/1750-CLONE-users-guide.txt>
 
-### User port and WiFi modem
+### User port and Hayes Modem
+
+- **Commodore Modem/1200 (1670) User's Manual**, Technical Information,
+  pages 61 and 62: 2225 Hz answer tone and Bell 212A 1200/2400 Hz carriers
+  used by the shortened speaker effect.
+  <https://www.pagetable.com/docs/cbm1670modem/cbm1670modem_manual.pdf>
+- **Cisco, Feature Tones**: North American ringing and network reorder frequencies
+  and cadences. These effects do not simulate an analogue telephone connection.
+  <https://www.cisco.com/c/en/us/td/docs/voice_ip_comm/bts/6-0-4/maintenance/guide/OMr604/AppA.html>
 
 - **_Commodore 64 Programmer's Reference Guide_**: the RS-232 control register baud codes.
 - **Michael Steil, _UP9600: How to Bit-Bang 9600 Baud RS-232 on the C64_**:
@@ -218,6 +226,55 @@ revisions:
   <https://www.rfc-editor.org/>
 - **Rick Parrish, fTelnet**: the relay URL convention.
   <https://www.ftelnet.ca/>
+
+### Pluggable IEC devices and printer
+
+Plugin install review uses the MIT-licensed [Acorn JavaScript parser](https://github.com/acornjs/acorn)
+to read constant metadata without executing the file. Executable device code
+loads only after acceptance. See [Build device plugins](DEVICE-PLUGINS.md).
+
+- **Michael Steil, Commodore Peripheral Bus: Standard Serial**: physical
+  open-collector lines, bit transfer, ATN command reception and timing-based EOI.
+  The listener helper recognizes a 200 microsecond ready-to-start delay and
+  acknowledges EOI for at least 60 microseconds. Byte bits arrive least
+  significant first on released CLK, and reception is acknowledged on DATA.
+  <https://www.pagetable.com/201>
+- **Michael Steil, Commodore Peripheral Bus: Part 2, Bus Arbitration, TALK/LISTEN**: LISTEN addresses,
+  UNLISTEN and secondary-address command groups. Every connected device
+  participates in ATN reception, only selected listeners receive data.
+  <https://www.pagetable.com/173>
+- **Commodore MPS-801 User Manual**, sections 5.3 to 5.6: common graphics
+  commands. Code 8 selects bit images, with bit 7 set and bit 0 at the top.
+  Code 16 takes two decimal position digits, ESC 16 takes high then low bytes.
+  <https://www.manualslib.com/manual/843571/Commodore-Mps-801.html>
+- **Commodore MPS-803 Service Manual**, June 1987, PN 314003-05, printed
+  pages 1-2 and 1-5 to 1-8: the renderer uses its 1/60 inch horizontal and
+  1/72 inch vertical dot pitch, 1/6 inch text feed and 7/72 inch graphics feed.
+  SUB 26 repeats a graphics column, with count zero meaning 256. Dot positions
+  are nine-bit, high byte first. Secondary address 7 selects business mode.
+  <https://retro-bobbel.de/zimmers/cbm/schematics/printers/MPS-803_Service_Manual_314003-05_%281987_Jun%29.pdf>
+- **Browser HTML printing**, `window.print()`, `afterprint` and CSS paged media:
+  IEC Printer builds SVG Letter pages in a hidden document and invokes the
+  browser print dialog directly, with no separate preview tab. The browser
+  handles printer selection and PDF saving. The hidden document is removed
+  after printing or cancelling.
+  <https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html#printing>
+  <https://www.w3.org/TR/css-page-3/>
+
+IEC Printer uses a fixed 512 KB raw spool. A full spool withholds acknowledgement,
+and Clear job resumes reception of the held byte. Rendering is limited to 100
+Letter pages per print action. Parsing, DOM work and browser storage stay out of
+byte callbacks. Text uses a browser monospace font with approximate character
+mapping. No printer firmware or driver code is ported.
+Letter paper, form feeds and job limits are browser output choices.
+
+Additional devices expose physical ATN/CLK/DATA levels and one emulated-time
+timer per instance. ATN belongs to the C64, plugins only pull or release CLK
+and DATA. Addresses 4 to 30 are available, except 8 and 9, which remain the
+existing drive slots. No drive ROM is required for IEC plugins. The bus folds
+all participants into wired-AND levels, preserving the existing drive-to-C64
+visibility pipeline. Each plugin instance is isolated by address in settings
+and snapshots. Snapshots contain device data, never executable plugin source.
 
 ### 1541 disk drive
 

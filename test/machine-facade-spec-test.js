@@ -12,7 +12,7 @@
 //      namespace reaches VIC flags, traces and bus latches.
 //   5. Guard: UI modules moved onto the facade do not reach into the raw
 //      machine or its chips.
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { C64Machine } from '../src/machine.js';
 import { machine, c64, setMachine } from '../src/state.js';
 import { MachineFacade } from '../src/machine-facade.js';
@@ -189,6 +189,11 @@ for (const port of [2, 1]) {
   expect(tape.hasMedia && c64.tape === tape, 'the same tape view follows a newly inserted tape');
 
   expect(c64.drive(8) === null && c64.drive(9) === null, 'no drive attached, no drive view');
+  expect(c64.iecDeviceCount === 0, 'no IEC devices are reported before attachment');
+  c64.attachIecDevice(4, 'test.iec', () => ({}), '1.0.0');
+  expect(c64.iecDeviceCount === 1, 'IEC device count reports attached participants through the facade');
+  c64.detachIecDevice(4);
+  expect(c64.iecDeviceCount === 0, 'IEC device count follows detachment');
   expect(c64.reu === null, 'no REU fitted, no REU view');
   c64.attachReu();
   const reu = c64.reu;
@@ -226,21 +231,34 @@ for (const port of [2, 1]) {
 // Strings are blanked first (template ${...} expressions are kept), so status
 // text and labels that mention the machine don't count.
 {
-  const RAW = /\bmachine\s*\??\.|window\.machine\b|(?<!\b(?:loader|roms)\??)\.(cia1|cia2|vic2|cpu|mem|datasette|drive1541b?)\b|\b(joyPort[12]|potXOverride|sidCycleCounter|_sidWrite)\b/;
+  const RAW = /\bmachine\s*\??\.|\b(?:c64|facade|m)(?:\??\.\w+)*\??\.\s*machine\b|\._(?:m|ds|drive)\b|window\.machine\b|(?<!\b(?:loader|roms)\??)\.(cia1|cia2|vic2|cpu|mem|datasette|drive1541b?)\b|\b(joyPort[12]|potXOverride|sidCycleCounter|_sidWrite)\b/;
   const stripStrings = code => code
     .replace(/`(?:\\.|[^`\\])*`/g, t => (t.match(/\$\{[^}]*\}/g) || []).join(' '))
     .replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"/g, "''");
   // loader.drive1541 / roms.drive1541 are the 1541 ROM image, not the drive.
   // main.js builds the machine and exposes it to the DevTools console.
   const ALLOWED = [/^\s*machine, c64, loader,/, /window\.machine = machine;/];
-  const FILES = [
+  const filesIn = dir => readdirSync(new URL(`../${dir}/`, import.meta.url), { withFileTypes: true })
+    .flatMap(entry => entry.isDirectory() ? filesIn(`${dir}/${entry.name}`) : entry.name.endsWith('.js') ? [`${dir}/${entry.name}`] : []);
+  const FILES = new Set([
     'src/input.js', 'src/vibes/keycap-press.js', 'src/media.js', 'src/main.js',
     'src/debug.js', 'src/ui/tape-scope.js', 'src/av-marker.js',
-  ];
+    'src/iec/card.js', 'src/userport/card.js', 'src/userport/host.js',
+    'src/recorder.js', 'src/recorder-audio-bridge.js', 'src/recording-support.js',
+    'src/media/disk-queue-dialog.js', 'src/media/choose-file.js', 'src/media/disk-compatibility.js',
+    ...filesIn('src/ui'), ...filesIn('src/vibes'), ...filesIn('src/assembly64'), ...filesIn('src/chat'),
+  ]);
+  expect(RAW.test('const raw = c64.machine;'), 'the UI boundary check catches bare raw-machine access');
+  expect(RAW.test('c64.tape._ds.read();'), 'the UI boundary check catches device-view internals');
+  expect(!RAW.test('const name = dump.machine;'), 'tape-dump machine-name metadata is data rather than raw-machine access');
   for (const file of FILES) {
-    const lines = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8').split('\n');
+    const source = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
+    if (file !== 'src/main.js') {
+      expect(!/import\s*\{[^}]*\b(?:machine|C64Machine)\b[^}]*\}\s*from\b/.test(source), `${file} imports no raw machine or constructor`);
+    }
+    const lines = source.split('\n');
     lines.forEach((line, i) => {
-      if (/^\s*(\/\/|\*)/.test(line) || ALLOWED.some(re => re.test(line))) return;
+      if (/^\s*(\/\/|\*)/.test(line) || (file === 'src/main.js' && ALLOWED.some(re => re.test(line)))) return;
       const code = stripStrings(line).replace(/\/\/.*$/, '');
       expect(!RAW.test(code), `${file}:${i + 1} reaches past the facade: ${line.trim()}`);
     });

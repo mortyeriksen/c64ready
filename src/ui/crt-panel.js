@@ -10,6 +10,7 @@
 import { CRT_PARAMS, CRT_MODES } from '../crt-params.js';
 import { pushEscapeLayer, popEscapeLayer } from './escape-stack.js';
 import { appAccel } from '../app-accel.js';
+import { initCloseButtons } from './close-button.js';
 
 const MODE_LABELS = { on: 'ON', tube: 'TUBE', bw: 'B&W', arcade: 'ARCADE', hum: 'HUM', off: 'OFF' };
 
@@ -49,13 +50,14 @@ export function createCrtPanel({ host, anchor, getMode, setMode, getParams, setP
   }).join('');
   el.innerHTML = `
     <div class="crt-panel-head"><span class="crt-panel-title">CRT</span>
-      <button type="button" class="btn crt-panel-close" aria-label="Close">✕</button></div>
+      <button type="button" class="dialog-close crt-panel-close" aria-label="Close CRT settings"></button></div>
     <div class="crt-panel-presets">${presets}</div>
     <div class="crt-panel-controls">${controls}</div>
     <div class="crt-panel-foot">
       <button type="button" class="btn crt-panel-reset">Reset preset</button>
       <span class="crt-panel-note"></span></div>`;
   host.appendChild(el);
+  initCloseButtons(el);
 
   const controlsEl = el.querySelector('.crt-panel-controls');
   const footEl = el.querySelector('.crt-panel-foot');

@@ -88,7 +88,7 @@ export function createOpenMedia(port) {
     try {
       const { bytes, mediaType, action = 'run', targetDrive = 8, writeProtected = true, saveToLibrary = true, reset = false, signal } = request;
       signal?.throwIfAborted();
-      if (!allowedActions(mediaType).includes(action) || !['run', 'mount', 'save'].includes(action)) throw new Error('Unsupported media action.');
+      if (!allowedActions(mediaType).includes(action) || !['run', 'mount', 'queue', 'save'].includes(action)) throw new Error('Unsupported media action.');
       if (![8, 9].includes(targetDrive)) throw new Error('Choose drive 8 or 9.');
       const data = bytes instanceof ArrayBuffer ? new Uint8Array(bytes).slice() : bytes?.slice();
       const name = safeFilename(request.name);
@@ -112,6 +112,12 @@ export function createOpenMedia(port) {
       }
       signal?.throwIfAborted();
       const disk = validateMedia(load.data, load.type);
+      if (action === 'queue') {
+        if (targetDrive !== 8) throw new Error('Disk queues are available for drive 8 only.');
+        const count = await port.queue({ name, bytes: data, mediaType, writeProtected, metadata: request.metadata });
+        const saved = saveToLibrary ? await port.save(mediaType, name, data, sourceMetadata(request.metadata)) : false;
+        return { message: count ? 'Added to drive 8 queue.' : 'Disk is already in the drive 8 queue.', saved, name, mediaType };
+      }
       const autorun = mediaType !== 'reu' && action !== 'mount' && (request.autorun ?? port.getAutorunEnabled());
       let message = 'Saved to Library';
       if (action !== 'save') {

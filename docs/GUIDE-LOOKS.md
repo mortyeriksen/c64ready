@@ -19,9 +19,15 @@ waves in light. The gallery below shows each in dark mode on the left and
 light mode on the right; step through it with **Previous** and **Next**. The screen, the CRT looks and Retro Vibes keep their
 own colours whatever the theme, and you can import your own too. On a first
 visit, the welcome screen wears one of the built-in themes at random, and the
-app keeps that theme when you leave it.
+app keeps that theme when you leave it. Once your ROMs are loaded, a visual
+picker appears once to let you choose another. The documentation follows your selected theme
+and dark or light appearance too.
 
 <!-- gallery themes -->
+
+**Phosphor**: An amber monitor in dark mode, green-bar printer paper in light.
+
+![Phosphor: amber on black in dark mode, black ink on white paper ruled in green over a green-bar page in light mode.](/guide/theme-phosphor.webp)
 
 **Classic**: The C64's own blue, from the boot screen.
 
@@ -34,10 +40,6 @@ app keeps that theme when you leave it.
 **Breadbin**: The machine itself: brown keys in dark mode, the beige case in light.
 
 ![Breadbin: brown keyboard with cream text and orange accents in dark mode, the beige case outlined in key brown with red and blue accents in light mode.](/guide/theme-breadbin.webp)
-
-**Phosphor**: An amber monitor in dark mode, green-bar printer paper in light.
-
-![Phosphor: amber on black in dark mode, black ink on white paper ruled in green over a green-bar page in light mode.](/guide/theme-phosphor.webp)
 
 **Out Run**: The sunset over the road: neon night in dark mode, a pink and orange sky in light.
 
@@ -57,7 +59,13 @@ app keeps that theme when you leave it.
 
 <!-- /gallery -->
 
-Pick one with **THEME** in [Options ▸ Theme](GUIDE-OPTIONS.md#theme). **IMPORT** loads a theme
+Open the visual picker with **THEME** in [Options ▸ Theme](GUIDE-OPTIONS.md#theme).
+Choose a card and press **APPLY THEME**, or **KEEP CURRENT** to leave your look as it is.
+Imported themes appear as extra cards with their own colours and a diamond icon.
+
+![Choose your look, with eight illustrated theme cards and Keep current and Apply theme buttons.](/guide/theme-picker.webp)
+
+**IMPORT** loads a theme
 file, which then stays in this browser; **REMOVE** takes an imported one
 out again. **EXPORT** saves the current theme with every colour filled in,
 so exporting Classic gives you a complete file to start your own from. The

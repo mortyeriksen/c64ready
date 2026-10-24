@@ -360,7 +360,24 @@ pins (`serialPinsChanged`, `setSp`, `setCnt`). The master cycle ticks it after t
 null check, and a tick only works when a device timer or a PC2 pulse is due.
 Input pins read the pull-ups ANDed with the device. FLAG2 goes through
 `cia2.setFlag` to the NMI. A throwing device is unplugged and reported through
-`userport.onError`. Device API: [Writing a user port device](USERPORT-DEVICES.md).
+`userport.onError`. Plugins own relay settings and optional audio through the
+browser host. Audio follows master volume and feeds the recorder before mute,
+without affecting emulated serial timing.
+Device API: [Writing device plugins](DEVICE-PLUGINS.md).
+Browser installers parse constant metadata without running the source. Only
+accepted files are imported.
+
+**Additional IEC devices** (`iec.js`) share the open-collector bus with the drives.
+`_syncIecBus` combines their CLK/DATA pulls while preserving the delayed C64 view.
+Addresses 8 and 9 stay reserved for drives. Devices receive line changes and timers,
+with faults isolated per device and no per-cycle allocations. The standard serial
+helper (`iec/listener.js`) handles addressed reception and EOI. Snapshots match
+device ids and addresses. See [Device API](DEVICE-PLUGINS.md#iec-device-plugins).
+
+**IEC Printer** (`iec/devices/printer.js`, `iec/print-job.js`) receives into a fixed
+512 KB spool, withholding acknowledgement when full. Storage, UI, MPS rendering
+and browser printing run outside the emulation loop. Snapshots include the spool
+and listener state.
 
 **Memory map & banking live in `memory.js`**, not here. `_rebuildMemoryMap()`
 builds per-page read/write tables from the 6510 port ($01) LORAM/HIRAM/CHAREN

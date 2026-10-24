@@ -26,8 +26,10 @@ const LED = new URL('../../public/userport/led-board.js', import.meta.url).pathn
 
 // ── Loading ────────────────────────────────────────────────────────────────
 {
-  const modem = await loadDevice('wifi-modem');
-  assert(modem.meta.id === 'builtin.wifi-modem' && modem.file === null, 'wifi-modem loads the built-in modem by name');
+  const modem = await loadDevice('modem');
+  const legacy = await loadDevice('wifi-modem');
+  assert(legacy.meta.id === modem.meta.id && modem.meta.name === 'Hayes Modem', 'modem and its legacy alias select the same device');
+  assert(modem.meta.id === 'builtin.wifi-modem' && modem.file === null, 'modem loads the built-in modem by name');
   const led = await loadDevice(LED);
   assert(led.meta.id === 'example.led-board' && typeof led.mod.create === 'function', 'a device file loads by path');
   const bad = path.join(tmp, 'bad.js');

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
-// WiFi modem: a user port device plugin (user port device API version 2).
+// Modem: a user port device plugin (user port device API version 2).
 //
 // A Hayes-compatible modem in the style of the Zimodem firmware, wired the way
 // user port WiFi modems are: RXD on PB0 and FLAG2, TXD on PA2, RTS on PB1,
@@ -15,11 +15,11 @@
 
 export const meta = {
   id: 'builtin.wifi-modem',
-  name: 'WiFi modem',
+  name: 'Hayes Modem',
   version: '1.1.0',
   apiVersion: 2,
   author: 'C64 READY.',
-  description: 'A Hayes-compatible WiFi modem with the Zimodem command set. Dial a BBS with ATDT"host:port".',
+  description: 'Hayes-compatible TCP/Telnet modem.',
 };
 
 const RXD = 0x01, RTS = 0x02, DTR = 0x04, DCD = 0x10, CTS = 0x40;
@@ -119,6 +119,113 @@ export function create(port, host) {
   let telnetState = 0, telnetCmd = 0;
   let pendingDrop = false;           // DCD drops once received data is delivered
   let rxActivity = 0, txActivity = 0;
+  let speakerEnabled = storage ? storage.get('speaker') === true : false;
+  let pendingSound = '';
+  let activeSound = null;
+  let connectionSound = null, connectionContext = null;
+
+  // Sound is decorative and scheduled between emulated frames. Port callbacks
+  // only select the next effect, so audio never delays a connection or byte.
+  function stopSound() {
+    const active = activeSound;
+    activeSound = null;
+    if (!active) return;
+    for (const voice of active.voices) {
+      voice.source.onended = null;
+      try { voice.source.stop(); } catch { /* already ended */ }
+      voice.source.disconnect();
+      voice.gain.disconnect();
+    }
+    active.filter.disconnect();
+    active.bus.disconnect();
+  }
+
+  function playSound(kind) {
+    stopSound();
+    if (kind === 'stop' || !speakerEnabled || !host || !host.audio) return;
+    const audio = host.audio();
+    if (!audio || audio.context.state !== 'running') return;
+    const ctx = audio.context, now = ctx.currentTime;
+    const bus = ctx.createGain();
+    bus.gain.value = 0.08;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass'; filter.frequency.value = 1500; filter.Q.value = 0.5;
+    filter.connect(bus).connect(audio.destination);
+    const active = { bus, filter, voices: [], remaining: 0 };
+    activeSound = active;
+    function attach(source, duration) {
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0, now);
+      source.connect(gain).connect(filter);
+      const v = { source, gain }; active.voices.push(v); active.remaining++;
+      source.onended = () => {
+        source.disconnect(); gain.disconnect();
+        if (--active.remaining === 0) {
+          filter.disconnect(); bus.disconnect();
+          if (activeSound === active) activeSound = null;
+        }
+      };
+      source.start(now); source.stop(now + duration);
+      return v;
+    }
+    function voice(frequency, duration) {
+      const source = ctx.createOscillator();
+      source.type = 'sine'; source.frequency.value = frequency;
+      return attach(source, duration);
+    }
+    function pulse(v, start, duration, volume = 0.6) {
+      const g = v.gain.gain;
+      g.setValueAtTime(0, now + start);
+      g.linearRampToValueAtTime(volume, now + start + 0.008);
+      g.setValueAtTime(volume, now + start + duration - 0.008);
+      g.linearRampToValueAtTime(0, now + start + duration);
+    }
+    if (kind === 'dial' || kind === 'failure') {
+      // North American ringing: 440 + 480 Hz, 2 s on / 4 s off.
+      // A network failure uses reorder: 480 + 620 Hz, 0.25 s on / 0.25 s off.
+      const ringing = kind === 'dial', length = ringing ? 18 : 1.5;
+      const first = voice(ringing ? 440 : 480, length);
+      const second = voice(ringing ? 480 : 620, length);
+      const step = ringing ? 6 : 0.5, duration = ringing ? 2 : 0.25;
+      for (let t = 0; t + duration <= length; t += step) {
+        pulse(first, t, duration); pulse(second, t, duration);
+      }
+    } else if (kind === 'connect') {
+      if (connectionContext !== ctx) {
+        // Shortened 1670-inspired monitoring, not a simulated line negotiation.
+        // The manual gives a 2225 Hz answer tone and Bell 212A's 1200/2400 Hz
+        // carriers. The serial baud rate does not select an analogue line rate.
+        const answer = 0.7, training = 0.775, duration = training + 1.2;
+        connectionSound = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate);
+        connectionContext = ctx;
+        const samples = connectionSound.getChannelData(0);
+        let symbol = -1, lowPhase = 0, highPhase = 0, seed = 0x1ffff;
+        const nextPhase = () => {
+          let pair = 0;
+          for (let bit = 0; bit < 2; bit++) {
+            const next = ((seed >> 16) ^ (seed >> 13)) & 1;
+            seed = ((seed << 1) | next) & 0x1ffff; pair = (pair << 1) | next;
+          }
+          return pair * Math.PI / 2;
+        };
+        for (let i = 0; i < samples.length; i++) {
+          const t = i / ctx.sampleRate;
+          if (t < answer) {
+            const fade = Math.min(1, t / 0.008, (answer - t) / 0.008);
+            samples[i] = Math.sin(2 * Math.PI * 2225 * t) * 0.7 * fade;
+          } else if (t >= training) {
+            const time = t - training, next = Math.floor(time * 600);
+            if (next !== symbol) { symbol = next; lowPhase += nextPhase(); highPhase += nextPhase(); }
+            const fade = Math.min(1, time / 0.008, (duration - t) / 0.008);
+            samples[i] = (Math.sin(2 * Math.PI * 1200 * time + lowPhase)
+              + Math.sin(2 * Math.PI * 2400 * time + highPhase)) * 0.3 * fade;
+          }
+        }
+      }
+      const source = ctx.createBufferSource(); source.buffer = connectionSound;
+      pulse(attach(source, connectionSound.duration), 0, connectionSound.duration, 1);
+    }
+  }
 
   // ── Pins ─────────────────────────────────────────────────────────────────
   function active(level, sreg) {
@@ -520,7 +627,7 @@ export function create(port, host) {
 
   function info(n) {
     if (n === 1 || n === 5) return settingsText();
-    return [`C64 READY. WIFI MODEM ${meta.version}`, 'ZIMODEM COMMAND SET, DIAL ATDT"HOST:PORT"'];
+    return [`C64 READY. MODEM ${meta.version}`, 'ZIMODEM COMMAND SET, DIAL ATDT"HOST:PORT"'];
   }
 
   function settingsText() {
@@ -593,6 +700,7 @@ export function create(port, host) {
     conn = { host: hp.host, port: hp.port, telnet: mods.includes('T'), petscii: mods.includes('P') };
     telnetState = 0;
     dialing = true;
+    pendingSound = 'dial';
     const s = host.openSocket(hp.host, hp.port);
     sock = s;
     s.onopen = () => {
@@ -600,6 +708,7 @@ export function create(port, host) {
       dialing = false;
       connected = true;
       online = true;
+      pendingSound = 'connect';
       plusCount = PLUS_IDLE;
       drivePins();
       result(`CONNECT ${baud}`);
@@ -616,12 +725,13 @@ export function create(port, host) {
       const wasDialing = dialing;
       sock = null;
       dialing = false;
-      if (wasDialing) { result('NO ANSWER'); return; }
+      if (wasDialing) { pendingSound = 'failure'; result('NO ANSWER'); return; }
       lostCarrier();
     };
   }
 
   function abortDial() {
+    pendingSound = 'stop';
     const s = sock;
     sock = null;
     dialing = false;
@@ -630,6 +740,7 @@ export function create(port, host) {
   }
 
   function lostCarrier() {
+    pendingSound = 'stop';
     connected = false;
     held.length = 0;
     // DCD drops once the data already received has reached the C64.
@@ -649,6 +760,7 @@ export function create(port, host) {
   }
 
   function hangup() {
+    pendingSound = 'stop';
     const s = sock;
     sock = null;
     dialing = false;
@@ -743,6 +855,18 @@ export function create(port, host) {
       .led::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #3a2020; }
       .led.on::before { background: #ff5040; box-shadow: 0 0 6px #ff5040; }
       .led.dcd.on::before { background: #40d060; box-shadow: 0 0 6px #40d060; }
+      .speaker { margin-left: auto; padding: 2px; min-width: 28px; min-height: 28px; display: inline-flex; align-items: center; justify-content: center; background: none; border: 1px solid transparent; border-radius: 5px; cursor: pointer; color: var(--accent); }
+      .speaker:hover { border-color: var(--border); }
+      .speaker:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      .speaker .spk { display: block; width: 18px; height: auto; }
+      .speaker .spk-mute, .speaker.is-silent .spk-on { display: none; }
+      .speaker.is-silent .spk-mute { display: block; }
+      .speaker.is-silent { color: var(--dim); }
+      .relay { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+      .relay input { flex: 1; min-width: 0; padding: 4px 6px; font: inherit; color: var(--text);
+        background: var(--control-bg); border: 1px solid var(--border); border-radius: 4px; }
+      .relay-note { margin-top: 4px; overflow-wrap: anywhere; color: var(--dim); }
+      .relay-note:empty { display: none; } .relay-note.error { color: var(--accent); }
     `)];
     const row = document.createElement('div');
     row.className = 'row';
@@ -754,17 +878,64 @@ export function create(port, host) {
       return e;
     };
     view = { dcd: mk('dcd', 'CD'), rx: mk('rx', 'RX'), tx: mk('tx', 'TX') };
+    const speaker = document.createElement('button');
+    speaker.type = 'button';
+    speaker.className = 'speaker';
+    speaker.setAttribute('aria-label', 'Modem speaker');
+    speaker.innerHTML = host.icons ? host.icons.speakerOn + host.icons.speakerMute : 'SOUND';
+    function syncSpeaker() {
+      speaker.classList.toggle('is-silent', !speakerEnabled);
+      speaker.setAttribute('aria-pressed', String(speakerEnabled));
+      speaker.title = speakerEnabled ? 'Turn modem speaker off' : 'Turn modem speaker on';
+    }
+    syncSpeaker();
+    speaker.addEventListener('click', () => {
+      speakerEnabled = !speakerEnabled;
+      if (storage) storage.set('speaker', speakerEnabled);
+      if (!speakerEnabled) { pendingSound = ''; stopSound(); }
+      else if (dialing || connected) pendingSound = dialing ? 'dial' : 'connect';
+      syncSpeaker();
+    });
+    row.append(speaker);
     root.append(row);
+    if (host.relay) {
+      const label = document.createElement('label'); label.className = 'relay'; label.textContent = 'Relay';
+      const input = document.createElement('input'); input.type = 'text'; input.id = 'userport-relay';
+      input.spellcheck = false; input.autocomplete = 'off'; input.value = host.relay.get();
+      input.placeholder = host.relay.defaultBase() || 'none: run c64rdy serve, or enter a relay';
+      input.title = 'Relay for modem calls. Empty uses the local app relay.';
+      const note = document.createElement('div'); note.id = 'userport-relay-note'; note.className = 'relay-note';
+      note.setAttribute('role', 'status'); note.setAttribute('aria-live', 'polite');
+      const valid = value => {
+        if (!value) return true;
+        try { return /^wss?:$/.test(new URL(value).protocol); } catch { return false; }
+      };
+      input.addEventListener('input', () => {
+        const value = input.value.trim();
+        note.classList.remove('error'); note.textContent = '';
+        if (!valid(value) || value === host.relay.get()) return;
+        const saved = host.relay.set(value);
+        const via = value || host.relay.defaultBase();
+        note.textContent = saved ? via ? `Saved. New calls go through ${via}.` : 'Saved. No relay now: run c64rdy serve, or enter one.'
+          : 'Using for this session. The browser could not save the relay address.';
+      });
+      input.addEventListener('change', () => {
+        if (valid(input.value.trim())) return;
+        note.classList.add('error'); note.textContent = 'Not saved: a relay address starts with ws:// or wss://.';
+      });
+      label.append(input); root.append(label, note);
+    }
   }
   let lastWhat = '';
   if (host && host.onFrame) {
     host.onFrame(() => {
+      if (pendingSound) { const sound = pendingSound; pendingSound = ''; playSound(sound); }
       if (rxActivity) rxActivity--;
       if (txActivity) txActivity--;
       let what;
       if (dialing) what = `Dialing ${conn.host}:${conn.port}…`;
-      else if (connected) what = `${online ? 'Connected to' : 'Command mode, holding'} ${conn.host}:${conn.port} at ${baud} baud`;
-      else what = `Ready, ${baud} baud. Dial with ATDT"host:port"`;
+      else if (connected) what = `${online ? 'Connected to' : 'Command mode, holding'} ${conn.host}:${conn.port} at serial ${baud} baud`;
+      else what = `Ready, serial ${baud} baud. Dial with ATDT"host:port"`;
       if (view) {
         view.dcd.classList.toggle('on', connected);
         view.rx.classList.toggle('on', rxActivity > 0);
@@ -786,12 +957,14 @@ export function create(port, host) {
     // RESET and POWER buttons build a new machine and plug in a new modem.)
     reset() {},
     detach() {
+      pendingSound = ''; stopSound();
       if (sock) { const s = sock; sock = null; s.close(); }
     },
     serialize() {
       return { settings, baud, connected, online };
     },
     deserialize(state) {
+      pendingSound = ''; stopSound();
       // A live connection does not survive a snapshot: the modem comes back
       // in command mode and says the line dropped.
       settings = cloneSettings(state.settings);

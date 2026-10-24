@@ -11,7 +11,8 @@ import path from 'path';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { marked } from 'marked';
-import { USER_GUIDE_ANCHORS } from '../tools/user-guide-anchors.mjs';
+import { USER_GUIDE_ANCHORS, CHAT_GUIDE_ANCHORS } from '../tools/user-guide-anchors.mjs';
+import { DOCS_PAGE_REDIRECTS } from '../tools/docs-paths.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'section';
@@ -46,7 +47,11 @@ for (const rel of files) {
     if (/^[a-z]+:/i.test(target) || target.startsWith('/')) continue;
     const [ref, hash] = target.split('#');
     if (ref && !ref.endsWith('.md')) continue;
-    const dest = ref ? path.resolve(path.dirname(file), ref) : file;
+    let dest = ref ? path.resolve(path.dirname(file), ref) : file;
+    if (!fs.existsSync(dest) && path.dirname(dest) === path.join(root, 'docs')) {
+      const target = DOCS_PAGE_REDIRECTS.get(`/docs/${path.basename(dest, '.md').toLowerCase()}.html`);
+      if (target) dest = path.join(root, 'docs', path.basename(target, '.html').toUpperCase() + '.md');
+    }
     if (ref) expect(fs.existsSync(dest), `${rel}: ${target} names a file that exists`);
     if (!hash || !fs.existsSync(dest)) continue;
     const ok = ids(dest).has(hash) || (dest === guide && redirects[hash]);
@@ -58,6 +63,11 @@ for (const [old, to] of Object.entries(redirects)) {
   const md = path.join(root, 'docs', page.replace('.html', '').toUpperCase() + '.md');
   expect(fs.existsSync(md) && ids(md).has(id), `the hub redirects #${old} to ${to}, a heading that exists`);
   expect(!ids(guide).has(old), `#${old} is redirected only because the hub no longer has it`);
+}
+for (const [old, to] of Object.entries(CHAT_GUIDE_ANCHORS)) {
+  const [page, id] = to.split('#');
+  const md = path.join(root, 'docs', page.replace('.html', '').toUpperCase() + '.md');
+  expect(fs.existsSync(md) && ids(md).has(id), `the Interface guide redirects #${old} to an existing Chat heading`);
 }
 
 if (failures) { console.log(`\n${failures} of ${checked} docs link check(s) failed`); process.exit(1); }
