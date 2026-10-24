@@ -9,37 +9,25 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
-## Next release
+## 2026.10.7 — October 24, 2026
 
-- **CLI devices.** Headless runs connect IEC plugins alongside the User Port,
-  with printer jobs saved as SVG or printable HTML. The local server detects
-  either connector and reloads plugin edits.
+Disk queues, IEC printing and a visual theme picker, with simpler controls
+and refreshed guides for desktop and mobile.
 
-- **IEC devices.** Connect plugins alongside drives 8 and 9. IEC Printer captures
-  Commodore text and bitmap graphics, saves jobs and prints to paper or PDF.
-  Multiple devices can use different addresses.
-
-- **Plugin installation.** IEC and User Port share a clearer install review and
-  plugin guide, with ready-made plugins and custom URLs. Reviewing a file does
-  not run its code before you accept it.
-
-- **Hayes Modem speaker.** Optional ringing and connection sounds follow master
-  volume and mute.
-
-- **Interface.** Consistent dialog controls and spacing, a simpler fresh layout
-  and automatic controls for loaded equipment. Custom layouts are preserved.
-  A hint points to **+** after ROM setup. Refreshed guides include mobile layouts.
-  Narrow windows stack the controls like portrait phones.
-
-- **Themes.** A visual picker follows first ROM setup and opens from Options.
-  Documentation uses your chosen theme and appearance.
-
-- **Drive 8 disk queue.** Queue disks from Assembly64 or Library, then switch
-  with **NEXT DISK** or **Cmd/Ctrl+Shift+8**. Drag or use arrows to reorder,
-  remove disks or enable looping. The queue stays between visits.
-
-- **Online chat users.** The lobby lists online nicknames below the rooms.
-  Chat admin lists users across rooms, with nicknames that open their room.
+- **Drive 8 queue.** Queue disks from Assembly64 or Library, reorder them and
+  switch with **NEXT DISK** or **Cmd/Ctrl+Shift+8**. The queue stays between visits.
+- **IEC devices and printing.** Add plugins alongside drives 8 and 9. IEC Printer
+  captures text and bitmap graphics, saves jobs and prints to paper or PDF.
+- **Plugin installation.** A shared install review shows what each device does
+  before you accept and run its code.
+- **Themes and layout.** Choose a theme after ROM setup, with matching docs.
+  Dialogs are more consistent, narrow windows stack controls and loaded
+  equipment reveals its controls. Existing custom layouts stay intact.
+- **Hayes Modem speaker.** Optional ringing and connection sounds follow volume
+  and mute.
+- **Online users.** The chat lobby and admin show who is online.
+- **CLI devices.** Connect IEC plugins alongside the User Port, export printer
+  jobs as SVG or HTML and reload device edits through the local server.
 
 ---
 

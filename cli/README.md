@@ -168,7 +168,7 @@ rest) are credited in
 
 ## Release notes
 
-### Next version
+### 0.10.0
 
 - **IEC devices.** `run --iec ADDRESS:FILE` connects multiple plugins alongside
   the User Port. `--iec-output ADDRESS:FILE.svg` or `.html` exports printer
