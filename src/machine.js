@@ -418,7 +418,7 @@ export class C64Machine {
     this.vic2.noteBankChange(this.cia2.vicBank);
     // Diagnostic only: forward CPU interrupt-acceptance events to the VIC's
     // frame trace so (assert→accept) latency is observable per-IRQ.
-    this.cpu.onInterruptAccept = (kind) => this.vic2.noteInterruptAccepted(kind);
+    this.cpu.onInterruptAccept = (kind) => { this.vic2.noteInterruptAccepted(kind); if(this.vic2._captureObserver)this.vic2._captureObserver.add(kind==='nmi'?10:9,this.cpu.pc,0); };
 
     // NMI edge tracking
     this.prevNmiLevel = false;
@@ -847,6 +847,7 @@ export class C64Machine {
   // taking an "error" code path that breaks sprite multiplexing.
   loadPRG(data) {
     if (data.length < 2) return;
+    if (this.vic2._captureObserver) this.vic2._captureObserver.data.memoryComplete = false;
     const loadAddr = data[0] | (data[1] << 8);
     for (let i = 2; i < data.length; i++) {
       this.mem.ram[loadAddr + i - 2] = data[i];
@@ -903,6 +904,7 @@ export class C64Machine {
 
   // Inject a SYS command into the keyboard buffer to auto-run
   injectSys(addr) {
+    if (this.vic2._captureObserver) this.vic2._captureObserver.data.memoryComplete = false;
     const cmd = `SYS${addr}\r`;
     for (let i = 0; i < cmd.length; i++) {
       this.mem.ram[0x0277 + i] = cmd.charCodeAt(i);
@@ -912,6 +914,7 @@ export class C64Machine {
 
   // Inject RUN command into the keyboard buffer
   injectRun() {
+    if (this.vic2._captureObserver) this.vic2._captureObserver.data.memoryComplete = false;
     const cmd = 'RUN\r';
     for (let i = 0; i < cmd.length; i++) {
       this.mem.ram[0x0277 + i] = cmd.charCodeAt(i);
@@ -924,6 +927,7 @@ export class C64Machine {
   // `_pendingAutoRun` is consumed by `_trapLoad` (TDE off path) which types
   // RUN\r once LOAD completes. TDE-on path is not wired here.
   injectLoadAndRun() {
+    if (this.vic2._captureObserver) this.vic2._captureObserver.data.memoryComplete = false;
     const cmd = 'LOAD"*",8,1\r';
     for (let i = 0; i < cmd.length; i++) {
       this.mem.ram[0x0277 + i] = cmd.charCodeAt(i);
@@ -938,6 +942,7 @@ export class C64Machine {
     const currentCount = this.mem.ram[0x00C6] & 0xFF;
     const available = Math.max(0, 10 - currentCount);
     const accepted = Math.min(available, text.length);
+    if (accepted && this.vic2._captureObserver) this.vic2._captureObserver.data.memoryComplete = false;
     for (let i = 0; i < accepted; i++) {
       this.mem.ram[0x0277 + currentCount + i] = text.charCodeAt(i) & 0xFF;
     }
@@ -1124,6 +1129,7 @@ export class C64Machine {
       case SERIAL_ACPTR: {
         const r = drive.read();
         cpu.a = r.byte;
+        if ((r.eoi || r.timeout) && this.vic2._captureObserver) this.vic2._captureObserver.data.memoryComplete = false;
         if (r.eoi) this.mem.ram[0x90] |= 0x40;       // ST: end of file
         if (r.timeout) this.mem.ram[0x90] |= 0x02;   // ST: read timeout
         break;
@@ -1159,6 +1165,7 @@ export class C64Machine {
   }
 
   _trapLoad(disk) {
+    if(this.vic2._captureObserver)this.vic2._captureObserver.data.memoryComplete=false;
     // $FFD5 takes its arguments in the registers: A picks LOAD ($00) or VERIFY
     // ($01), and X/Y carry the address to load at when the secondary address is
     // 0 — for BASIC's own LOAD"NAME",8 that is the start of program text. The
@@ -1214,6 +1221,8 @@ export class C64Machine {
       // SA=0 -> use the X/Y passed to $FFD5, otherwise the file's own address
       const loadAddr = (sa === 0) ? (this._loadTrapX | (this._loadTrapY << 8)) : fileAddr;
       const endAddr = loadAddr + data.length - 2;
+      const transferCounter = (dev === 9 ? this.vdrive9 : this.vdrive8)._storageCounter;
+      if (transferCounter) transferCounter[0] += data.length - 2;
 
       if (!isVerify) {
         for (let i = 2; i < data.length; i++) {
@@ -1252,6 +1261,7 @@ export class C64Machine {
   // the main-thread shadow voices so $D41B/$D41C reads see the same
   // state the worklet will reach at the corresponding cycle.
   _sidWrite(reg, val, chipIndex = 0) {
+    if(this.vic2._captureObserver)this.vic2._captureObserver.add(5,reg,val,chipIndex);
     const wi = Atomics.load(this.sidCtrl, 0);
     const off = (wi & (RING_CAPACITY - 1)) * 2;
     this.sidRing32[off] = this.sidCycleCounter >>> 0;
@@ -2043,6 +2053,8 @@ export class C64Machine {
     const reuHeld = this._reuBusHold;
     const busBlocked = aecLowPhi2 || reuHeld;
     const cpuBlocked = rdyBlocked || busBlocked;
+    const frameCapture = this.vic2._frameCapture;
+    if (frameCapture?.analysis) frameCapture.cpuBus(this, baLow, aecLowPhi2, reuHeld, cpuBlocked);
 
     // REU phi2 — one C64-bus access per cycle, but VIC DMA takes precedence,
     // so bad-line and sprite cycles stretch the transfer exactly as they do on

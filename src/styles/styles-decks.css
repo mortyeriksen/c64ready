@@ -69,7 +69,7 @@
 .tape-transport .btn {
   flex: 1;
   min-width: 44px;
-  padding: 6px 4px;
+  padding: 6px 8px;
   font-size: 0.68rem;
   /* Labels stay on one line: a wrapped one makes its row taller than the others. */
   white-space: nowrap;
@@ -168,7 +168,7 @@
 .tape-cell .btn {
   flex: 1 1 0;
   min-width: 0;
-  padding: 6px 4px;
+  padding: 6px 8px;
   font-size: 0.68rem;
 }
 
@@ -354,7 +354,7 @@
 
 .drive-transport > .btn {
   min-width: 0;
-  padding: 6px 4px;
+  padding: 6px 8px;
   font-size: 0.68rem;
 }
 
@@ -370,7 +370,7 @@
 .drive-cell .btn {
   flex: 1 1 0;
   min-width: 0;
-  padding: 6px 4px;
+  padding: 6px 8px;
   font-size: 0.68rem;
 }
 
@@ -572,7 +572,7 @@
    don't render taller than the others in the side panel. */
 #cartridge-card .btn-group .btn {
   min-width: 44px;
-  padding: 6px 4px;
+  padding: 6px 8px;
   font-size: 0.68rem;
 }
 
@@ -599,7 +599,7 @@
 
 .reu-transport > .btn {
   min-width: 0;
-  padding: 6px 4px;
+  padding: 6px 8px;
   font-size: 0.68rem;
 }
 

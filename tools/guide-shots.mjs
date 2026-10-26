@@ -36,6 +36,7 @@
 //   npm run guide:shots                          all screenshot passes below
 // Shared guide contexts use Phosphor dark. Theme galleries use their named themes.
 //   node tools/guide-shots.mjs                     21 shots (above)
+//   node tools/guide-monitor-shots.mjs             Monitor overview, Code, Video and Sound
 //   node tools/guide-extra-shots.mjs               13 shots needing their own setup
 //   node tools/guide-mobile-shots.mjs              portrait and landscape phone mockups
 //   node tools/guide-assembly64-shots.mjs          Assembly64 card and browser

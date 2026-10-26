@@ -250,6 +250,12 @@
    ],
    "note": "External save state, not distributed with this repository"
   },
+  "monitor-nine": {
+   "description": "Nine demo, visual reference for the Monitor Frame Lab and learning examples",
+   "env": "C64_NINE_PRG",
+   "paths": ["~/projects/c64ready-workspace/c64media/prg/nine.prg"],
+   "note": "External demo, not distributed with this repository"
+  },
   "guide-state-nine": {
    "description": "Named save state and thumbnail for the populated guide dialog",
    "paths": [

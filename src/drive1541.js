@@ -69,6 +69,7 @@ function speedZoneBitsForTrack(track) {
 
 export class Drive1541 {
   constructor(romBuffer, d64) {
+    this._storageCounter = null;
     // 1541.bin often has a 2-byte PRG header (load address) that shifts everything.
     // Standard 1541-II 16KB ROM starts with copyright header at offset 2 in many dumps.
     // ROM map: 16KB bank $C000-$FFFF
@@ -642,6 +643,7 @@ export class Drive1541 {
     this._shiftReg = ((this._shiftReg << 1) | bit) & 0xFF;
     this._shiftBits++;
     if (this._shiftBits === 8) {
+      if (this._storageCounter) this._storageCounter[0]++;
       this.lastGCRByte = this._shiftReg;
       this._shiftBits = 0;
       // BYTE-READY feeds VIA2 CA1 → latches IFR bit 1, INDEPENDENT of SOE
@@ -775,6 +777,7 @@ export class Drive1541 {
           this._writeShiftReg = (this._writeShiftReg << 1) & 0xFF;
           this.trackBitPos = (bitPos + 1) % totalBits;
           if (++this._writeBits >= 8) {
+            if (this._storageCounter) this._storageCounter[1]++;
             this._writeBits = 0;
             // Byte boundary: the surface changed; load the next byte the DOS
             // parked in Port A (it had a full byte-time to set it) and pulse

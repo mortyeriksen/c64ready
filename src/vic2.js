@@ -342,6 +342,8 @@ export class VIC2 {
     // writes per frame, which is measurable. Toggle from the JS console
     // (window.c64Trace.enable() / .disable()) only when collecting a snapshot.
     this.frameTraceEnabled = false;
+    this._captureObserver = null;
+    this._frameCapture = null;
     // Full-frame border/priority/owner debug maps. The live side buffers are
     // line-sized (#1); when tracing is on these accumulate each rendered line
     // into a CANVAS_W×CANVAS_H map so the machine snapshot can expose a whole-
@@ -980,9 +982,9 @@ export class VIC2 {
         // catch-up replay instead — see _catchUpDeferredLine.
         this._lineDeferred = this._cycleRenderActiveCanvasY >= 0
           && (this.irqMask & 0x06) === 0
-          && !this.frameTraceEnabled;
+          && !this.frameTraceEnabled && !this._frameCapture;
         this._fetchFeedLine = this._cycleRenderActiveCanvasY >= 0
-          && !this.frameTraceEnabled && (!this.memory || this.memory.cartMode === 'none');
+          && !this.frameTraceEnabled && !this._frameCapture && (!this.memory || this.memory.cartMode === 'none');
         if (this._fetchFeedLine) {
           this._fetchFeedSamples.fill(0);
         }
@@ -1020,6 +1022,8 @@ export class VIC2 {
         stolen += 1;
       }
 
+      if (this._frameCapture) this._frameCapture.cycle(this);
+
       // End of line: render and advance. With cycle-incremental render,
       // pixels and collision latches were already updated each cycle —
       // the per-cycle dispatch above did the work. Skip the batch.
@@ -1048,6 +1052,7 @@ export class VIC2 {
         // explicitly enabled it from the JS console (zero overhead in the
         // off path: one boolean check per raster).
         if (this.frameTraceEnabled) this._captureFrameTraceLine();
+        if (this._frameCapture) this._frameCapture.line(this);
 
         this.cycleInLine = 0;
         this.raster++;
@@ -1171,6 +1176,9 @@ export class VIC2 {
         }
         this._c56MxYESnapshot = cur;
       }
+    }
+    if (this._frameCapture && this.raster === 0 && this.cycleInLine === 0) {
+      this._frameCapture.boundary(this);
     }
   }
 
@@ -1341,14 +1349,16 @@ export class VIC2 {
   // CIA1 PB bit 4 changes (and any other LP-input source) into calls
   // here. This VIC layer just observes the edge and latches.
   setLightpenLevel(level) {
+    if(this._captureObserver)this._captureObserver.rules.beginLightpen(this);
     const wasHigh = this._lpInputLevel === 1;
     const goingLow = level === 0;
     this._lpInputLevel = level ? 1 : 0;
-    if (!wasHigh || !goingLow) return;
+    if (!wasHigh || !goingLow) { if(this._captureObserver)this._captureObserver.rules.endLightpen(this,level); return; }
     // VIC-Addendum.txt: light pen does NOT trigger in line 311. The negative
     // edge is silently ignored on the very last raster of the frame.
-    if (this.raster === LINES_PER_FRAME - 1) return;
+    if (this.raster === LINES_PER_FRAME - 1) { if(this._captureObserver)this._captureObserver.rules.endLightpen(this,level); return; }
     this._latchLightpen();
+    if(this._captureObserver)this._captureObserver.rules.endLightpen(this,level);
   }
 
   _latchLightpen() {
@@ -1469,8 +1479,8 @@ export class VIC2 {
       // (VICII/spritevssprite) still catches collisions from the read cycle's
       // second half. Clearing the whole pipeline instead leaves the catch
       // window half a cycle (4px) too narrow.
-      case 0x1E: { if (this._lineDeferred) this._catchUpDeferredLine(); const v = this.regs[0x1E]; this.regs[0x1E] = 0; this._collPipeE[0] = 0; this._collLateE[0] = 0; this._collPipeE[1] = this._collLateE[1]; return v; }
-      case 0x1F: { if (this._lineDeferred) this._catchUpDeferredLine(); const v = this.regs[0x1F]; this.regs[0x1F] = 0; this._collPipeF[0] = 0; this._collLateF[0] = 0; this._collPipeF[1] = this._collLateF[1]; return v; }
+      case 0x1E: { if (this._lineDeferred) this._catchUpDeferredLine(); const v = this.regs[0x1E]; this.regs[0x1E] = 0; this._collPipeE[0] = 0; this._collLateE[0] = 0; this._collPipeE[1] = this._collLateE[1]; if(this._captureObserver)this._captureObserver.rules.add(4,0x1E,v,this.regs[0x1E]); return v; }
+      case 0x1F: { if (this._lineDeferred) this._catchUpDeferredLine(); const v = this.regs[0x1F]; this.regs[0x1F] = 0; this._collPipeF[0] = 0; this._collLateF[0] = 0; this._collPipeF[1] = this._collLateF[1]; if(this._captureObserver)this._captureObserver.rules.add(4,0x1F,v,this.regs[0x1F]); return v; }
       default:
         // Color registers $D020-$D02E: only low 4 bits connected, high nibble reads as 1.
         if (reg >= 0x20) return this.regs[reg] | 0xF0;
@@ -1489,6 +1499,7 @@ export class VIC2 {
     // Latched even for ignored registers ($D01E/$D01F/$D02F-$D03F) because
     // the bus byte is independent of whether the destination latches it.
     this.vicInternalBus = val;
+    if (this._frameCapture) this._frameCapture.event(this, reg, val);
     // Arming a collision IRQ makes the IRQ line an observer of render timing.
     // The reference path also drains before a fetch-configuration change;
     // immutable fetch-fed samples need no such RAM-watch invalidation.
@@ -1717,8 +1728,10 @@ export class VIC2 {
       }
       case 0x19:
         // Writing clears status bits (W1C)
+        if(this._captureObserver)this._captureObserver.rules.add(3,this.irqStatus,val);
         this.irqStatus &= ~(val & 0x0F);
         if ((this.irqStatus & this.irqMask & 0x0F) === 0) this.irqStatus &= ~0x80;
+        if(this._captureObserver)this._captureObserver.rules.finishIrq(this.irqStatus);
         this.irqHandler(this.irqPending);
         break;
       case 0x1A:
@@ -1797,6 +1810,7 @@ export class VIC2 {
 
   _vicBusRead(addr, bank = this.currentVicBank) {
     const v = this._vicMemRead(addr, bank);
+    if(this._captureObserver)this._captureObserver.add(2,bank+(addr&16383),v);
     this.vicInternalBus = v & 0xFF;
     // Drive the shared external data bus too. VIC chip-bus fetches happen
     // in phi1; the CPU sees the resulting byte on any open-read it does in
@@ -1886,6 +1900,7 @@ export class VIC2 {
     if (this.irqMask & 0x01) {
       this.irqStatus |= 0x80;
       this.irqHandler(true);
+      if (this._frameCapture && !wasAsserted) this._frameCapture.event(this, 64);
       if (this.frameTraceEnabled && !wasAsserted) {
         this._irqAssertionsCurrent.push({
           raster: this.raster,
@@ -1915,6 +1930,7 @@ export class VIC2 {
     if (this.irqMask & 0x01) {
       this.irqStatus |= 0x80;
       this.irqHandler(true);
+      if (this._frameCapture && !wasAsserted) this._frameCapture.event(this, 64);
       if (this.frameTraceEnabled && !wasAsserted) {
         this._irqAssertionsCurrent.push({
           raster: this.raster,
@@ -1948,6 +1964,8 @@ export class VIC2 {
   }
 
   reset() {
+    this._frameCapture?.cancel();
+    this._frameCapture = null;
     this.raster = 0;
     this.cycleInLine = 0;
     // Pending FF entries embed `latchTotalCycles` as `totalCycles + N`, and
@@ -2133,6 +2151,8 @@ export class VIC2 {
   }
 
   deserialize(s) {
+    this._frameCapture?.cancel();
+    this._frameCapture = null;
     if (this._collisionOverlay) {
       this._collisionOverlay.mask.fill(0);
       this._collisionOverlay.collisionPending = false;

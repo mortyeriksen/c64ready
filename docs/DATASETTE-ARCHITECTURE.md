@@ -543,3 +543,12 @@ Seven commercial loaders are covered besides, all read off the 6502 their own
 tapes carry: Novaload, US Gold / Datasoft, Gremlin Type 2, Ocean / Imagine,
 Freeload, Wildload and PROCASS. Cyberload, Burner and Visiload each still need
 an entry of their own.
+
+## Monitor byte observation
+
+A nullable scalar observer counts encoded TAP bytes loaded by the moving
+playback transport and bytes appended by pulse encoding during recording.
+Seeking, indexing, initial pulse preload and recording-prefix conversion
+are excluded. These are stream bytes, not decoded program payload.
+The facade attaches the observer only while the Monitor is visible. No
+pulse event records are allocated and cassette timing is unchanged.

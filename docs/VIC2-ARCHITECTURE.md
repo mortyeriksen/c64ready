@@ -75,6 +75,59 @@ sprite multiplexers, stable rasters) reproduce.
 
 ---
 
+### Bounded educational frame capture
+
+`vic2-frame-capture.js` owns preallocated storage for a single PAL frame.
+A request attaches `_frameCapture` to the VIC, waits for the next raster wrap,
+then records exactly 312 × 63 cycles. Capture forces dense renderer history
+and live rendering while attached, independently of console frame tracing.
+It does not change the console tracing flag or reuse its accumulating event
+arrays. Cycle flags record border gates, bad-line condition, matrix fetches,
+bus arbitration and IRQ state. Final line maps record border and sprite
+coverage. A sprite owner can remain recorded behind foreground graphics,
+so the owner map is not proof of final visible contribution. Sprite pointers,
+banks and DMA are sampled at line end.
+
+VIC writes and raster IRQ assertions enter bounded typed event arrays.
+CPU-phase writes also retain the dispatched opcode and instruction address.
+Other writers remain unattributed, and event links inspect current code rather
+than claiming that memory is unchanged since capture.
+Overflow is explicit. At the final phi2, after the last CPU write, capture
+copies the completed framebuffer and removes its core hook. The facade
+transfers this detached result once. Cancel, reset and state restore discard
+pending capture. No capture state is serialized, and no UI callback runs in
+the cycle loop. Replay reveals the final pixels against recorded cycle slots,
+not a sub-cycle reconstruction of the video pipeline.
+
+Detailed analysis capture additionally stores the frame-boundary register and
+counter snapshot, VIC model, per-cycle phi1 `$D011` and DEN-latch values, and
+per-cycle CPU arbitration evidence. Each phase has a validity marker. Buffers
+are allocated before recording and detached with the frame. The Monitor applies
+independent Bauer predicates after capture, using stable rule IDs and explicit
+unknown or inapplicable results. A versioned sequencer block also copies
+registers, counters, sprite flags and IRQ state at the existing observation point
+after VIC work and before CPU access. These buffers exist only for an explicit
+detailed capture. Independent checks cover DEN latching, bus windows, graphics
+counters, timed fetch addresses, sprite row progression, IRQ masking and refresh.
+Detailed provenance also retains output-stage byte, mode, bit offset and colour
+inputs for each recorded graphics paint. Split-column corrections and the final
+merge preserve the source belonging to the selected paint. The Monitor decodes
+these inputs independently and checks both colour and foreground classification.
+These renderer observations are labelled separately from timed bus fetches.
+
+The six border comparator checks use before/after gate samples. Final line gate
+history supports the cycle-17 and cycle-56 CSEL cancellation checks. Stable mask
+replay remains a separate check. Raw transition records support sprite shifting,
+expansion and colour selection, collision detection and latching, collision
+read clearing, IRQ acknowledgement and lightpen edges. Observers append to
+preallocated buffers only during provenance recording, without changing emulator
+decisions or replacing hot methods.
+
+Grouped sprite reads do not certify individual half-cycle fetch timing. The
+rendering-stage display flag does not expose logical display entry before cycle
+14, so that interval remains insufficient evidence. Analog output, unstable VMLI
+behaviour and unrecorded output effects also remain outside capture validation.
+
 ## 2. Timing model & master-cycle ordering
 
 ### Constants (top of file)
@@ -671,3 +724,34 @@ Buffers allocate only when enabled; reset/restore clear diagnostic snapshots.
   when raster wraps 311→0 carries into the next frame's top border.
 - **Canvas row `r` = raster `r+15`**; VICE reference PNGs are cropped one row
   off (`row0 = raster16`), a recurring source of "1px" false diffs.
+
+## Optional captured fetch provenance
+
+Detailed Monitor capture records actual VIC bus, matrix, graphics and sprite
+fetch values through nullable observation points. Graphics events retain the
+matrix code and colour nibble used by the fetch sample. Final line buffers supply
+foreground and visible-sprite masks separately from sprite coverage. These are
+recorded renderer observations, not independent predictions. Independent checks
+use before/after border samples for the six comparator rules and final line gates
+for CSEL cancellation. Full border-mask replay remains limited to stable controls.
+
+Dense reference rendering tags source samples separately from timed bus fetches.
+The per-pixel output map retains the selected source, mode, bit offset, screen
+and colour data, and background controls through split-column corrections and
+the final merge. The Monitor independently decodes all eight graphics-mode
+combinations and compares colour and foreground class with the recorded output.
+Mode, charset, scrolling and colour changes are supported when those inputs are
+present. Missing inputs or conflicting output remain unresolved.
+
+Captures without that output map use a conservative column-based fallback.
+It requires agreeing source samples and stable graphics settings. Sprite source
+tracing is separate and rejects changing geometry or sources when line-end
+samples cannot establish exact attribution.
+
+The distinction between renderer-source samples and timed bus fetches belongs
+to Monitor evidence and explanation. It does not change the renderer's source
+selection, memory reads, pixel output or emulated timing. Observation points
+record values from existing operations only while provenance capture is active.
+State and framebuffer equivalence tests compare captured and uncaptured runs.
+Recording can temporarily consume more host CPU time, which is separate from
+emulated C64 timing and behaviour.

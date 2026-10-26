@@ -63,6 +63,7 @@ import { initAppearance } from './ui/appearance.js';
 import { initThemes } from './ui/themes.js';
 import { createThemePicker } from './ui/theme-picker.js';
 import { confirmDialog } from './ui/dialogs.js';
+import { createMonitor } from './monitor/monitor.js';
 // ── Elements (see dom.js for the full inventory) ─────────────────────────────
 import {
   canvas, statusEl, powerBtn, resetBtn, pauseBtn, recordBtn, prgBtn, pasteBtn,
@@ -2073,6 +2074,19 @@ pauseBtn.addEventListener('click', () => {
   if (!running) return;            // pause only matters while powered on
   _setPaused(!paused);
   canvas.focus();
+});
+
+createMonitor({
+  getFacade: () => c64,
+  isPowered: () => running,
+  isPaused: () => paused,
+  setPaused: _setPaused,
+  releaseInput: () => {
+    _releaseAllLatched();
+    c64?.releaseAllKeys();
+    c64?.setRestore(false);
+  },
+  screen: canvas, mobileKeyboard: mobileKbd, touchControls, logo: _logoText, anchor: pauseBtn,
 });
 
 // Freeze + mute the machine across Retro Vibes' open/close transitions

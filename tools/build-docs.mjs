@@ -45,7 +45,9 @@ const ORDER = [
   'ABOUT',
   'GETTING-STARTED',
   'USER-GUIDE',
+  'INSIDE-THE-C64',
   'GUIDE-INTERFACE',
+  'GUIDE-MONITOR',
   'GUIDE-MEDIA',
   'GUIDE-INPUT',
   'GUIDE-LOOKS',
@@ -78,12 +80,17 @@ const ORDER = [
 const GUIDES = new Set([
   'WHATS-NEW', 'GETTING-STARTED', 'USER-GUIDE', 'TAPE-RESTORATION', 'DEVICE-PLUGINS', 'C64READY-AND-VICE', 'FEATURES',
   'KNOWN-ISSUES', 'SPECIFICATIONS', 'ABOUT',
+  'INSIDE-THE-C64',
 ]);
 
-// The User Guide is a hub (USER-GUIDE.md) and these topic pages, in reading
-// order. Each gets a "User Guide" breadcrumb and previous/next links, and all
-// of them share a left menu listing the guide's pages (renderGuideNav).
-const GUIDE_PAGES = ['GUIDE-INTERFACE', 'GUIDE-MEDIA', 'GUIDE-INPUT', 'GUIDE-LOOKS', 'GUIDE-CHAT', 'GUIDE-OPTIONS', 'GUIDE-CLI'];
+// Each guide has a hub and ordered chapters, sharing navigation and paging.
+const GUIDE_PAGES = ['GUIDE-INTERFACE', 'GUIDE-MONITOR', 'GUIDE-MEDIA', 'GUIDE-INPUT', 'GUIDE-LOOKS', 'GUIDE-CHAT', 'GUIDE-OPTIONS', 'GUIDE-CLI'];
+const COMPONENT_PAGES = ['CPU', 'MEMORY', 'VIC', 'SID', 'CIA', 'DRIVE', 'TAPE', 'CRT', 'REU'].map(name => `COMPONENT-GUIDE-${name}`);
+const GUIDE_COLLECTIONS = [
+  { hub: 'USER-GUIDE', title: 'User Guide', pages: GUIDE_PAGES },
+  { hub: 'INSIDE-THE-C64', title: 'Inside the C64', pages: COMPONENT_PAGES },
+];
+const guideFor = name => GUIDE_COLLECTIONS.find(guide => guide.hub === name || guide.pages.includes(name));
 
 // Old page URLs redirect in public/_redirects. Exclude any retained source stubs
 // from the generated pages and remove stale HTML at these paths.
@@ -348,10 +355,11 @@ function writeAboutFragment(bodyHtml) {
   writeFileSync(join(DOCS_OUT, 'about-fragment.html'), fragment);
 }
 
-// The left menu of the User Guide's pages: the hub and every topic page, the
+// The left menu of a guide: the hub and every topic page, the
 // one shown marked as current with its own sections listed beneath it.
 function renderGuideNav(name, toc) {
-  const pages = [['USER-GUIDE', 'Overview'], ...GUIDE_PAGES.map((n) => [n, guideTitle(n)])];
+  const guide = guideFor(name);
+  const pages = [[guide.hub, 'Overview'], ...guide.pages.map((n) => [n, guideTitle(n)])];
   const sections = (indent) => toc.filter((t) => t.text !== 'Topics')
     .map((t) => `${indent}<li class="toc-l${t.level}"><a href="#${t.id}">${escapeHtml(t.text)}</a></li>`).join('\n');
   const items = pages.map(([n, label]) => {
@@ -364,24 +372,25 @@ ${subs}
             </ul>
           ` : ''}</li>`;
   }).join('\n');
-  return `      <nav class="doc-toc guide-nav" aria-label="User Guide">
-        <div class="toc-title"><a href="/docs/user-guide.html">User Guide</a></div>
+  return `      <nav class="doc-toc guide-nav" aria-label="${escapeHtml(guide.title)}">
+        <div class="toc-title"><a href="/docs/${guide.hub.toLowerCase()}.html">${escapeHtml(guide.title)}</a></div>
         <ul>
 ${items}
         </ul>
       </nav>`;
 }
 
-// Every User Guide page's sections, filled in by buildDocs before any page is
+// Every guide page's sections, filled in by buildDocs before any page is
 // written, so each page's jump menu can list the chapters of all of them.
 let guideTocs = new Map();
 
-// Phones and narrow windows have no room for the left menu, so the User Guide's
+// Phones and narrow windows have no room for the left menu, so each guide's
 // pages carry a menu in the sticky top bar instead: every page with its
 // chapters, the one being read selected, following along as the reader scrolls.
 export function renderGuideJump(name, tocs = guideTocs) {
   const page = `/docs/${name.toLowerCase()}.html`;
-  const pages = [['USER-GUIDE', 'Overview'], ...GUIDE_PAGES.map((n) => [n, guideTitle(n)])];
+  const guide = guideFor(name);
+  const pages = [[guide.hub, 'Overview'], ...guide.pages.map((n) => [n, guideTitle(n)])];
   const groups = pages.map(([n, label]) => {
     const href = `/docs/${n.toLowerCase()}.html`;
     const chapters = (tocs.get(n) || []).filter((t) => t.text !== 'Topics')
@@ -392,7 +401,7 @@ ${chapters}
         </optgroup>`;
   }).join('\n');
   return `    <div class="guide-jump">
-      <select id="guide-jump-select" data-page="${page}" aria-label="User Guide: go to a page or chapter">
+      <select id="guide-jump-select" data-page="${page}" aria-label="${escapeHtml(guide.title)}: go to a page or chapter">
 ${groups}
       </select>
     </div>`;
@@ -598,15 +607,16 @@ const foot = () => `  <footer class="doc-foot">
 // A topic page's title, from its H1.
 const guideTitle = (name) => extractMeta(readFileSync(join(DOCS_SRC, `${name}.md`), 'utf8'), name).title;
 
-// Previous / next links between the User Guide's topic pages, the hub at
+// Previous / next links between a guide's topic pages, the hub at
 // either end.
 function guidePager(name) {
-  const i = GUIDE_PAGES.indexOf(name);
+  const guide = guideFor(name);
+  const i = guide.pages.indexOf(name);
   const link = (n, rel) => {
-    const [href, label] = n ? [`/docs/${n.toLowerCase()}.html`, guideTitle(n)] : ['/docs/user-guide.html', 'User Guide'];
+    const [href, label] = n ? [`/docs/${n.toLowerCase()}.html`, guideTitle(n)] : [`/docs/${guide.hub.toLowerCase()}.html`, guide.title];
     return `<a class="guide-pager-${rel}" href="${href}">${rel === 'prev' ? '‹ ' : ''}${escapeHtml(label)}${rel === 'next' ? ' ›' : ''}</a>`;
   };
-  return `      <nav class="guide-pager" aria-label="User Guide pages">${link(GUIDE_PAGES[i - 1], 'prev')}${link(GUIDE_PAGES[i + 1], 'next')}</nav>`;
+  return `      <nav class="guide-pager" aria-label="${escapeHtml(guide.title)} pages">${link(guide.pages[i - 1], 'prev')}${link(guide.pages[i + 1], 'next')}</nav>`;
 }
 
 // Send bookmarked headings to their current guide page.
@@ -622,15 +632,16 @@ const guideRedirectScript = (anchors = GUIDE_REDIRECTS, force = false) => `  <sc
     })();
   </script>`;
 
-function renderDocPage(meta, bodyHtml, toc) {
-  const tocHtml = meta.name === 'USER-GUIDE' || GUIDE_PAGES.includes(meta.name) ? renderGuideNav(meta.name, toc) : renderToc(toc);
+export function renderDocPage(meta, bodyHtml, toc) {
+  const guide = guideFor(meta.name);
+  const tocHtml = guide ? renderGuideNav(meta.name, toc) : renderToc(toc);
   const title = `${meta.title} · C64 READY. docs`;
   const path = meta.path || `/docs/${meta.href || slug(meta.title)}.html`;
-  const inGuide = GUIDE_PAGES.includes(meta.name);
-  const guidePage = inGuide || meta.name === 'USER-GUIDE';
+  const inGuide = guide && meta.name !== guide.hub;
+  const guidePage = !!guide;
   const header = guidePage ? topbar.replace(/\n  <\/header>$/, `\n${renderGuideJump(meta.name)}\n  </header>`) : topbar;
   const crumbs = inGuide
-    ? `<a href="/docs/">Docs</a> <span>/</span> <a href="/docs/user-guide.html">User Guide</a> <span>/</span> ${escapeHtml(meta.title)}`
+    ? `<a href="/docs/">Docs</a> <span>/</span> <a href="/docs/${guide.hub.toLowerCase()}.html">${escapeHtml(guide.title)}</a> <span>/</span> ${escapeHtml(meta.title)}`
     : `<a href="/docs/">Docs</a> <span>/</span> ${escapeHtml(meta.title)}`;
   return `${head(title, { desc: meta.desc, path, image: meta.image })}
 ${header}
@@ -719,14 +730,15 @@ function readDocsIndexOverview() {
 
 // The landing page lists the docs in two groups, one line each: a short name
 // and a few words, in this order. A doc not named here goes at the end of its
-// group (GUIDES decides which) under its own title and teaser. The User
-// Guide's topic pages are left out: the guide's line leads to its hub, and the
+// group (GUIDES decides which) under its own title and teaser. Each guide's
+// topic pages are left out: the guide's line leads to its hub, and the
 // hub's menu to them.
 const INDEX_LIST = {
   guides: [
     ['GETTING-STARTED', 'Getting Started', 'from blank screen to a running demo'],
     ['WHATS-NEW', "What's New", 'changes in each release'],
     ['USER-GUIDE', 'User Guide', 'every panel, dialog and button'],
+    ['INSIDE-THE-C64', 'Inside the C64', 'the chips, connections and devices behind the machine'],
     ['FEATURES', 'Feature list', 'everything it supports'],
     ['KNOWN-ISSUES', 'Known Issues', 'what is missing or rough'],
     ['ABOUT', 'About', 'what it is and who made it'],
@@ -751,8 +763,11 @@ const INDEX_LIST = {
   ],
 };
 
-function renderIndex(docs) {
-  const listed = docs.filter((d) => !GUIDE_PAGES.includes(d.slugFile));
+export function renderIndex(docs) {
+  const listed = docs.filter((d) => {
+    const guide = guideFor(d.slugFile);
+    return !guide || d.slugFile === guide.hub;
+  });
   const group = (named, inGroup) => {
     const rows = named.map(([name, label, note]) => {
       const d = listed.find((x) => x.slugFile === name);
@@ -1300,7 +1315,7 @@ export async function buildDocs() {
     return { file, name, href, meta, html, toc };
   });
   // Every guide page's sections first, so each page's jump menu lists them all.
-  guideTocs = new Map(compiled.filter((c) => c.name === 'USER-GUIDE' || GUIDE_PAGES.includes(c.name)).map((c) => [c.name, c.toc]));
+  guideTocs = new Map(compiled.filter((c) => guideFor(c.name)).map((c) => [c.name, c.toc]));
 
   const docs = compiled.map(({ file, name, href, meta, html, toc }) => {
     writeFileSync(join(DOCS_OUT, `${href}.html`), renderDocPage({ ...meta, href, name }, html, toc));

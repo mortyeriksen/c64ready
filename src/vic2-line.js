@@ -74,7 +74,7 @@ export const lineOps = {
     // unconditionally.) Spec tests that probe these renderer-feed buffers run
     // on a visible raster so they still exercise this path.
     const canvasY = this.raster - 15;
-    if ((canvasY < 0 || canvasY >= CANVAS_H) && !this.frameTraceEnabled) return;
+    if ((canvasY < 0 || canvasY >= CANVAS_H) && (!this.frameTraceEnabled && !this._frameCapture)) return;
 
     // (B2) The register snapshot is deduped below (alongside the row/sprite
     // snapshots); the in-capture HInner reader uses live this.regs, identical
@@ -119,10 +119,10 @@ export const lineOps = {
     // Tracing force-copies payloads. Hardware scalar history stays cycle-indexed;
     // compact recording replaces repeated payload references with byte indices.
     if (cycle === 1) {
-      this._sparseCaptureLine = !this.frameTraceEnabled;
+      this._sparseCaptureLine = (!this.frameTraceEnabled && !this._frameCapture);
       this._rowSnapLastVer = this._sprSnapLastVer = this._regSnapLastVer = -1;
     }
-    const dedup = !this.frameTraceEnabled;
+    const dedup = (!this.frameTraceEnabled && !this._frameCapture);
 
     const sparse = this._sparseCaptureLine;
     this._graphicsCycleVersion[cycle] = this._graphicsVersion;
@@ -199,6 +199,8 @@ export const lineOps = {
       this._sprCycle[cycle] = this._sprSnapCycle = cycle;
     }
     this.lineCycleIdleByte[cycle] = idleByte;
+    if(this._captureObserver)this._captureObserver.pixels.idleSource(cycle,
+      this.currentVicBank+((this._vspGlitchGCycle===cycle?this._vspIdleGlitchAddr:(this.regs[0x11]&64?0x39ff:0x3fff))&16383),this.raster);
   },
 
   // captureDedupVerify helpers: assert an aliased snapshot still equals the live
@@ -1030,6 +1032,7 @@ export const lineOps = {
         } else if (glitchIdx >= 0) {
           this.lineCycleIdleByte[glitchIdx] =
             this._vicReadWithBank(this._vspIdleGlitchAddr, this.currentVicBank);
+          if(this._captureObserver)this._captureObserver.pixels.idleSource(glitchIdx,this.currentVicBank+(this._vspIdleGlitchAddr&16383),this.raster);
         }
       }
       return;
@@ -1078,6 +1081,7 @@ export const lineOps = {
       this.lineBadLineInvalidCReadsActive--;
     } else {
       this.rowScreenCodes[col] = this._vicReadWithBank(screenBase + screenIdx, bank);
+      if(this._captureObserver)this._captureObserver.add(11,bank+((screenBase+screenIdx)&16383),this.rowScreenCodes[col],col);
       this.rowColorNibbles[col] = this.colorRam[screenIdx] & 0x0F;
     }
     this.rowFetchedCols[col] = 1;

@@ -145,7 +145,7 @@
 
 .btn {
   flex: 1;
-  padding: 8px 4px;
+  padding: 8px 12px;
   border-radius: 7px;
   border: 1px solid var(--border);
   background: var(--control-bg);

@@ -53,6 +53,7 @@ The same interface with a demo running:
 ## Topics
 
 - **[The interface](GUIDE-INTERFACE.md)**: The header, the display and the cards that run the machine, how to arrange them, on desktop and mobile.
+- **[Live Monitor](GUIDE-MONITOR.md)**: See what the C64 is doing, understand how it works and inspect captured evidence.
 - **[Media and drives](GUIDE-MEDIA.md)**: Loading programs, disks, cartridges, tapes and tunes, and the Assembly64 catalog.
 - **[Input](GUIDE-INPUT.md)**: Joysticks, mice, paddles and the keyboard and touch sticks on the two control ports.
 - **[Looks and Retro Vibes](GUIDE-LOOKS.md)**: Themes and their file format, the Retro Vibes 3D viewer, and recording what you play.
@@ -61,6 +62,10 @@ The same interface with a demo running:
 - **[The command line](GUIDE-CLI.md)**: The `c64rdy` tool for your cassettes, cartridges and disks: convert, inspect, repair and run them in batches.
 
 ---
+
+To explore the running machine, open **MONITOR** in Controls. Its workspace
+fills the browser window and follows your selected theme. See the
+[Monitor walkthrough](GUIDE-MONITOR.md).
 
 ## Updates
 

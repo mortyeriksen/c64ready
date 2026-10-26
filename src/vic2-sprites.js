@@ -94,6 +94,7 @@ export const spriteOps = {
     // Fetch data even if MC wrapped. This pulls data from the beginning
     // of the sprite block again, producing the repeated texture.
     this.spriteRowData[s][byteIdx] = this._vicReadSprite(base + mc, bank);
+    if(this._captureObserver)this._captureObserver.add(4,bank+((base+mc)&16383),this.spriteRowData[s][byteIdx],s);
     this.spriteRowByteMask[s] |= (1 << byteIdx);
 
     // Hardware MC is also a 6-bit counter. Allow it to wrap!
@@ -751,7 +752,7 @@ export const spriteOps = {
     // sprites that are neither displaying-now nor started this line.
     for (let s = 0; s < 8; s++) {
       if (sprSeg.spriteDisplayOn[s] || this._spriteLineStarted[s]) {
-        if (!live && !this.frameTraceEnabled) {
+        if (!live && !this.frameTraceEnabled && !this._frameCapture) {
           this._renderScheduledSprite(sprSeg, s, canvasY, renderCycle);
         } else {
           this._renderSpriteSegmentForSprite(sprSeg, s, canvasY);
@@ -1521,6 +1522,8 @@ export const spriteOps = {
     let pixelPhase = state.pixelPhase | 0;
     let unitsRemaining = state.unitsRemaining | 0;
 
+    if(this._captureObserver)this._captureObserver.rules.beginSprite(state,isMulti,xExp,startX,endX);
+
     // Skip-to-startX: advance over the columns before this segment.
     for (let skipX = state.currentX; skipX < startX && unitsRemaining > 0; skipX++) {
       pixelPhase++;
@@ -1554,6 +1557,7 @@ export const spriteOps = {
           color = twoBit === 1 ? sprMcol0 : (twoBit === 2 ? sprColor : sprMcol1);
         }
       }
+      if(this._captureObserver)this._captureObserver.rules.add(7,shiftReg,(validMask<<1)|(isMulti?1:0),draw?1:0,color,sprColor,sprMcol0,sprMcol1);
       if (draw) {
         this._processSpritePixelCollision(cx, canvasY, spriteIdx);
         if (this._spriteVisibleAt(cx, canvasY)) {
@@ -1581,6 +1585,7 @@ export const spriteOps = {
     state.pixelPhase = pixelPhase;
     state.unitsRemaining = unitsRemaining;
     state.currentX = cx;
+    if(this._captureObserver)this._captureObserver.rules.endSprite(state);
   },
 
   _spriteVisibleAt(cx, cy) {
@@ -1611,6 +1616,7 @@ export const spriteOps = {
     const before = this.regs[0x1F];
     if ((before | bits) === before) return;
     this.regs[0x1F] = before | bits;
+    if(this._captureObserver)this._captureObserver.rules.add(5,0x1f,before,bits,this.regs[0x1f]);
     // Bauer §3.12: IMBC fires only on the 0→non-zero transition of $D01F.
     if (before !== 0) return;
     this.irqStatus |= 0x02;
@@ -1654,6 +1660,7 @@ export const spriteOps = {
     const before = this.regs[0x1E];
     if ((before | bits) === before) return;
     this.regs[0x1E] = before | bits;
+    if(this._captureObserver)this._captureObserver.rules.add(5,0x1e,before,bits,this.regs[0x1e]);
     // Bauer §3.12: IMMC fires only on the 0→non-zero transition of $D01E.
     if (before === 0) {
       this.irqStatus |= 0x04;
@@ -1691,14 +1698,17 @@ export const spriteOps = {
   },
 
   _processSpritePixelCollision(cx, cy, spriteIdx) {
+    if(this._captureObserver)this._captureObserver.rules.beginCollision(this,cx);
     // Side buffers are line-sized (#1): index by canvas column cx.
     if (this.graphicsCollisionBuffer[cx] === 1) {
       this._latchSpriteBackgroundCollision(cx, spriteIdx);
     }
     this._latchSpriteSpriteCollision(cx, spriteIdx);
+    if(this._captureObserver)this._captureObserver.rules.endCollision(this,cx,spriteIdx);
   },
 
   _drawSpritePixel(cx, cy, color, spriteIdx, sprPri) {
+    if(this._captureObserver)this._captureObserver.spritePriority(cx,cy,spriteIdx,sprPri);
     const pIdx = cy * CANVAS_W + cx;   // full-screen index for fb32
 
     // Bauer §3.8.2 sprite-vs-sprite + inheritance: a lower-priority sprite

@@ -20,6 +20,9 @@ export class CPU {
     // SP starts at $00 so the first reset's 3 dummy stack reads decrement
     // it to $FD — matches what a cold-boot 6502 produces after reset.
     this.pc = 0; this.sp = 0x00;
+    this._captureObserver = null;
+    this.instructionAddress = -1;
+    this.instructionOpcode = 0;
     this.N = 0; this.V = 0; this.D = 0; this.I = 1; this.Z = 0; this.C = 0;
     this.irqLine = false;   // Level-triggered IRQ pin state
     // ⚠ NOT the physical CIA2 /NMI pin level. The machine (_sampleCpuInterrupts)
@@ -180,6 +183,7 @@ export class CPU {
   }
 
   reset() {
+    this.instructionAddress = -1;
     // Per MOS 6502 reset spec: 8 cycles of dummy bus activity before the
     // first instruction fetch. The cycles are 3 PC reads at $00FF + 3
     // dummy stack-decrement reads ($0100/$01FF/$01FE) + 2 vector reads
@@ -270,6 +274,7 @@ export class CPU {
   }
 
   deserialize(s) {
+    this.instructionAddress = -1;
     this.a = s.a | 0; this.x = s.x | 0; this.y = s.y | 0;
     this.pc = s.pc | 0; this.sp = s.sp | 0;
     this.N = s.N | 0; this.V = s.V | 0; this.D = s.D | 0;
@@ -362,8 +367,8 @@ export class CPU {
   // Used by the 1541 read head to signal byte-ready to the drive CPU.
   setOverflow() { this.V = 1; }
 
-  r(a) { return this.mem.read(a); }
-  w(a, v) { this.mem.write(a, v); }
+  r(a) { const value=this.mem.read(a); if(this._captureObserver)this._captureObserver.add(0,a,value); return value; }
+  w(a, v) { if(this._captureObserver){const observer=this._captureObserver,before=this.mem.ram[a&65535];this.mem.write(a,v);observer.cpuWrite(a,v,before);}else this.mem.write(a,v); }
   peek(a) {
     a &= 0xFFFF;
     if (typeof this.mem.peekForCpu === 'function') return this.mem.peekForCpu(a);
@@ -576,6 +581,7 @@ export class CPU {
       this.r(this.pc);
     }
     this.instructionCyclesRemaining = Math.max(0, this.instructionCyclesRemaining - 1);
+    if(this._captureObserver&&this.instructionCyclesRemaining===0&&this.instructionOpcode===0x40&&this.instructionAddress>=0)this._captureObserver.add(14,this.pc,0);
     return 1;
   }
 
@@ -601,6 +607,7 @@ export class CPU {
   }
 
   _beginMicroInstruction() {
+    this.instructionAddress = -1;
     // A JAMmed (KIL/HLT) CPU is frozen: it fetches no further opcodes and
     // does NOT respond to IRQ or NMI — only RESET recovers it (NMOS 6510
     // unintended opcodes). This check MUST precede the interrupt logic
@@ -669,7 +676,10 @@ export class CPU {
       return true;
     }
 
-    return this._installOpcode(this.peek(this.pc));
+    this.instructionAddress = this.pc;
+    this.instructionOpcode = this.peek(this.pc);
+    if(this._captureObserver)this._captureObserver.add(8,this.instructionAddress,this.instructionOpcode);
+    return this._installOpcode(this.instructionOpcode);
   }
 
   // The 256-opcode dispatch, extracted from _beginMicroInstruction so it can be

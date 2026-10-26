@@ -19,38 +19,42 @@ cheap and allocation-free. Presentation switches live in
 
 ## 1. Cost model
 
-One PAL frame is 19 656 master cycles and must finish inside ~20 ms (50 Hz) to
-hold realtime. Sampling ten full demo runs (2 600 CPU-seconds of real
-workload) puts the budget here:
+A PAL frame contains 19,656 master cycles and has about 20 ms to complete.
+Across ten sampled demo runs, main-thread time was distributed as follows:
 
-| VIC-II | 6510 | orchestrator | SID shadow | 1541 | CIA |
+| VIC-II | 6510 | Orchestrator | SID shadow | 1541 | CIA |
 | --- | --- | --- | --- | --- | --- |
 | 65% | 13% | 9% | 4% | 4% | 3% |
 
-Structurally, that breaks down as:
+VIC-II capture, rendering and sprite work dominate. Most per-cycle work also
+runs on a static screen, so reducing hot-path cost matters more than optimizing
+individual effects. SID synthesis runs in the audio worklet. A second SID adds
+shadow and audio work only when enabled, while idle drive waits are skipped.
 
-- **VIC-II rendering dominates**: roughly two thirds of main-thread time. It
-  splits into three always-running clusters: per-cycle state capture
-  (register / border / fetch snapshots feeding the deferred renderer), the
-  line-batch paint replay, and sprite shifting. The first two run for every
-  cycle of every visible line regardless of content; sprite cost scales with
-  visible sprite pixels. See the [VIC-II](VIC2-ARCHITECTURE.md) §8.
-- **The fixed per-cycle tax is large.** Because the capture spine, both CPUs,
-  the CIAs and the shadow voices all clock every cycle, and every visible line
-  is repainted every frame, even a static READY screen costs most of what a
-  heavy demo costs. Optimisations aimed only at "busy" demos have limited
-  headroom; the real wins come from making the per-cycle path itself cheaper.
-- **The 6510 (and the drive's 6502) is comparatively cheap**: a micro-op queue
-  dispatched one step per cycle. See the [6510 CPU](CPU-ARCHITECTURE.md).
-- **SID synthesis runs off the main thread**, on the `AudioWorklet`; the main
-  thread keeps only lightweight shadow oscillators for cycle-exact `$D41B` /
-  `$D41C` readback. See the [machine orchestrator](MACHINE-ARCHITECTURE.md) §7.
-- **The optional second SID** allocates its voices and renderer only while
-  enabled. Its shadow shares the master cycle; its audio shares the worklet
-  event timeline. JS reuses FIR tables with a separate sample ring; WASM uses
-  an independent instance. Rendering two chips increases audio-thread work.
-- **The 1541 only adds cost while it is actively working**: a serial load, the
-  spindle turning. Idle waits are skipped (see §2).
+Monitor adds three separately scheduled costs:
+
+| Work | Frequency and bounds |
+| --- | --- |
+| Shared live snapshot | 1, 10, 25 or 50 samples/s, default 10. Reuses buffers and read-only facade calls. Late callbacks skip missed samples. |
+| Detailed recording | About once per second while visible and running, except during component About dialogs. Waits for a boundary and records one frame, at most two running frames in the dense path. Provenance is capped at 8 MiB. |
+| Inspection and replay | Reports are built on demand from the detached frame. Bauer results are cached per frame. Replay moves a UI cursor without clocking the machine. |
+
+Cycle observers use preallocated typed arrays and fixed nullable hooks, without
+per-cycle allocation or method wrapping. Storage rates use opt-in scalar counters.
+Closing or hiding Monitor stops sampling, cancels recording and detaches counters.
+Pause keeps the last complete recording. Hidden sections do not repaint.
+
+Histories retain 80 observations and rate windows retain 52. Tape decoding runs
+only on its visible page, capped at 32,768 source bytes per observation and 256
+retained pulses. Replay polling remains at least 10 Hz independently of the
+selected live sampling rate.
+
+A local Node/V8 Nine run measured median snapshot collection at **0.53 ms**, versus
+**6.95 ms** for a normal frame. At 10 samples/s, collection alone costs about
+5.3 ms per second. These figures exclude UI rendering and audio deadlines.
+Repeat with `node investigation/monitor-joined-sampling.mjs`, and measure
+recording separately with `node investigation/monitor-capture-cost.mjs`.
+See [Monitor architecture](ARCHITECTURE.md#live-monitor) for ownership and lifecycle.
 
 ## 2. Standing optimizations
 

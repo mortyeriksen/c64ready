@@ -1,0 +1,77 @@
+import assert from 'node:assert/strict';
+import { C64Machine } from '../src/machine.js';
+import { MachineFacade } from '../src/machine-facade.js';
+import { BAUER_RULES, badLineCondition, checkBauerRule, analyzeBauerFrame, explainBauerCycle, RESULT } from '../src/monitor/bauer-rules.js';
+
+assert.equal(new Set(BAUER_RULES.map(rule=>rule.id)).size,BAUER_RULES.length,'rule identifiers are unique');
+assert.ok(BAUER_RULES.every(rule=>rule.section && rule.requires && rule.source && rule.revision),'every rule records its reference and evidence requirements');
+assert.equal(badLineCondition(0x33,0x1B,true),true,'Bauer 3.5: an in-range raster matching YSCROLL with DEN latched is a bad line');
+assert.equal(badLineCondition(0x33,0x0B,true),true,'Bauer 3.5: clearing current DEN does not clear an already set DEN latch');
+assert.equal(badLineCondition(0x33,0x1B,false),false,'Bauer 3.5: current DEN alone cannot substitute for the latch');
+assert.equal(badLineCondition(0x34,0x1B,true),false,'Bauer 3.5: unequal raster low bits and YSCROLL exclude a bad line');
+assert.equal(badLineCondition(0x2F,7,true),false,'Bauer 3.5: raster below $30 is excluded');
+assert.equal(badLineCondition(0xF8,0,true),false,'Bauer 3.5: raster above $F7 is excluded');
+assert.equal(badLineCondition(0x30,0,true),true,'Bauer 3.5: lower raster boundary is inclusive');
+assert.equal(badLineCondition(0xF7,7,true),true,'Bauer 3.5: upper raster boundary is inclusive');
+
+const n=312*63;
+const frame={lines:312,cyclesPerLine:63,flags:new Uint8Array(n),analysis:{version:1,scope:'pal-bus-v1',model:'6569',d011:new Uint8Array(n),denLatch:new Uint8Array(n),vicValid:new Uint8Array(n).fill(1),bus:new Uint8Array(n).fill(1),pc:new Uint16Array(n)}};
+const a=frame.analysis;
+a.bus[10]=1|32|4;
+assert.equal(checkBauerRule(frame,10,1),RESULT.match,'RDY blocks a read when BA is low and AEC is high');
+a.bus[11]=1|32|2;
+assert.equal(checkBauerRule(frame,11,2),RESULT.match,'RDY permits a write during the BA warning window');
+a.bus[12]=1|32|64|2|4;
+assert.equal(checkBauerRule(frame,12,3),RESULT.match,'AEC blocks a write as well as a read');
+assert.equal(checkBauerRule(frame,13,4),RESULT.match,'high BA and AEC leave CPU bus permission available');
+a.bus[14]=1|8|4;
+assert.equal(checkBauerRule(frame,14,3),RESULT.unknown,'REU bus ownership is not attributed to a Bauer VIC rule');
+a.bus[15]=0;
+assert.equal(checkBauerRule(frame,15,4),RESULT.unknown,'missing CPU samples cannot be reported as a match');
+a.bus[16]=1|16;
+assert.equal(checkBauerRule(frame,16,4),RESULT.unknown,'a halted CPU is outside bus-permission analysis');
+a.bus[10]&=~4;
+assert.equal(checkBauerRule(frame,10,1),RESULT.mismatch,'a recorded read allowed under low BA is reported as a mismatch');
+const report=analyzeBauerFrame(frame);
+assert.equal(report.summary[1].mismatch,1,'summary counts the deliberately violated rule');
+assert.equal(explainBauerCycle(frame,report,14).rule,null,'REU ownership is not linked to an unrelated VIC rule');
+assert.ok(report.events.includes(10),'event index includes a bus-state change');
+assert.equal(explainBauerCycle(frame,report,10).result,RESULT.mismatch,'fixed explanation preserves the mismatch verdict');
+assert.equal(checkBauerRule(frame,0,999),RESULT.unknown,'an unindexed rule cannot produce a verdict');
+assert.equal(checkBauerRule(frame,.5,0),RESULT.unknown,'a fractional sample cannot produce a verdict');
+assert.equal(explainBauerCycle(frame,report,11,2).rule.id,'bus.write-window','explicit rule selection resolves the stable catalogue entry');
+assert.equal(explainBauerCycle(frame,report,13,2).result,RESULT.irrelevant,'a selected write-window rule stays inapplicable outside its conditions');
+frame.flags[20]=4;
+const inconsistent=analyzeBauerFrame(frame);
+assert.equal(explainBauerCycle(frame,inconsistent,20).rule.id,'badline.condition','automatic explanation surfaces a bad-line mismatch even when the CPU bus is available');
+frame.flags[20]=0;
+assert.equal(analyzeBauerFrame({...frame,analysis:null}),null,'lightweight captures do not pretend to contain analysis evidence');
+assert.equal(analyzeBauerFrame({...frame,analysis:{...a,model:'6567'}}),null,'unsupported machine timing is not evaluated with PAL rules');
+
+const reference=new C64Machine(), observed=new C64Machine();
+for (const m of [reference,observed]) {
+  m.mem.write(0,0x2F);m.mem.write(1,0x34);
+  m.mem.ram.set([0x4C,0,2],0x200);m.cpu.pc=0x200;
+}
+const facade=new MachineFacade(observed);
+facade.requestVicFrameCapture({analysis:true});
+for(let i=0;i<39312;i++){reference._runMasterCycle();observed._runMasterCycle();}
+const captured=facade.takeVicFrameCapture();
+assert.ok(captured.analysis.bus.every(value=>value&1),'detailed capture includes all 19656 CPU arbitration samples, including final phi2');
+assert.ok(captured.analysis.vicValid.every(Boolean),'detailed capture includes every VIC phi1 sample');
+assert.equal(captured.analysis.initial.registers[0x11],0x1B,'frame-boundary register snapshot retains the synthetic initial display settings');
+assert.ok(captured.analysis.border.lineEndValid.every(Boolean),'detailed capture labels every completed line-history sample');
+assert.equal(captured.analysis.border.d016[0],0xC8,'detailed capture retains the initial CSEL register sample');
+assert.equal(captured.analysis.border.initial.mainClosed,true,'detailed capture seeds the main gate from the frame boundary');
+assert.equal(captured.analysis.border.phase,'vic-line-end-before-phi2','corrected line history is explicitly distinguished from live cycle samples');
+assert.equal(captured.analysis.model,'6569','analysis records the VIC model');
+assert.deepEqual(observed.serializeState(),reference.serializeState(),'detailed observation leaves machine execution and output unchanged');
+const verified=analyzeBauerFrame(captured);
+assert.equal(verified.summary.reduce((sum,row)=>sum+row.mismatch,0),0,'stable synthetic PAL text and bus arbitration satisfy supported Bauer predicates');
+const held=captured.analysis.d011.slice();
+observed.vic2.regs[0x11]=0;
+assert.deepEqual(captured.analysis.d011,held,'detached analysis inputs do not alias the running registers');
+facade.requestVicFrameCapture();
+assert.equal(observed.vic2._frameCapture.analysis,null,'ordinary Video capture allocates no detailed analysis buffers');
+facade.cancelVicFrameCapture();
+console.log('ok  - indexed Bauer rules, deterministic verdicts, missing evidence, phase-complete detached capture and unchanged execution');

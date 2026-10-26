@@ -141,6 +141,33 @@ pieces (the attract-mode animation and the Retro Vibes viewer) have their own
 
 ---
 
+### Live Monitor
+
+Live, Code, Memory, Video, Sound, Controls and Storage follow **see what’s
+happening → understand it in plain language → inspect the technical evidence**.
+`src/monitor/` owns the UI and deterministic analysis. It accesses the machine
+through `MachineFacade`. The host owns playback, audio and input.
+
+| Layer | Responsibility |
+| --- | --- |
+| Shared snapshot | `inspection-snapshot.js` reuses read-only register, control, storage and memory buffers at 1, 10, 25 or 50 samples/s. The browser remembers the rate, defaulting to 10. Navigation reuses the snapshot. |
+| Shared recording | One complete detached frame feeds Video, Code and historical evidence. Requests run about once per second while visible and running, except during component About dialogs. Changing sections does not request another capture. |
+| Analysis | Views derive explanations from recorded evidence. Hidden views do not draw. Bauer reports are calculated on demand and cached for the frame. Renderer-source samples remain distinct from timed bus fetches. |
+| Navigation | Links carry the recording, cycle and source address or instruction origin. Current settings stay separate from historical evidence. Selections survive automatic refreshes. |
+
+The original display, keyboard, touch controls and header sign move into Monitor
+and return on close. The display keeps its renderer, input handlers and 384:272
+aspect ratio. Clicking it or starting replay pauses the host. Pause retains the
+last complete recording and cancels unfinished work. Replay never clocks the
+machine. Closing releases recordings, and hiding stops sampling and capture.
+Reset and restore allow recording to restart while running.
+
+About dialogs reuse the chapters in [Inside the C64](INSIDE-THE-C64.md).
+Help opens in content-sized dialogs, while pixel explanations and rule accordions
+stay inline. See the [machine facade and capture model](MACHINE-ARCHITECTURE.md#10-input-memory-map),
+[VIC-II evidence model](VIC2-ARCHITECTURE.md) and
+[performance limits](PERFORMANCE-ANALYSIS.md#1-cost-model).
+
 ## 3. The master cycle (timing backbone)
 
 Everything is driven by `machine._runMasterCycle()`, called 19656 times per

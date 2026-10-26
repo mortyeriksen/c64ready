@@ -21,6 +21,9 @@ const OPEN_BUS_FILL = 0xFF;
 
 export class Memory {
   constructor() {
+    this._captureObserver = null;
+    this._storageRomCounter = null;
+    this._storageDmaCounter = null;
     this.ram      = new Uint8Array(65536);
     this.colorRam = new Uint8Array(1024);
     this._kernal  = null; // Uint8Array(8192)
@@ -336,15 +339,18 @@ export class Memory {
   // I/O all behave exactly as they do for the CPU. Without this a 64K transfer
   // covering all of RAM would write $01 mid-flight and re-bank itself.
   dmaRead(addr) {
+    if (this._storageDmaCounter) this._storageDmaCounter[0]++;
     addr &= 0xFFFF;
     const page = addr >> 8;
     const arr = this._readPageArr[page];
     const v = arr !== null ? arr[addr - this._readPageOffset[page]] : this._readSlow(addr);
     this.externalDataBus8 = v & 0xFF;
+    if(this._captureObserver)this._captureObserver.reuAccess(false,addr,v);
     return v;
   }
 
   dmaWrite(addr, val) {
+    if (this._storageDmaCounter) this._storageDmaCounter[1]++;
     addr &= 0xFFFF;
     val  &= 0xFF;
     this.externalDataBus8 = val;
@@ -355,9 +361,10 @@ export class Memory {
         this.vic2._catchUpDeferredLine();
       }
       arr[addr - this._writePageOffset[page]] = val;
+      if(this._captureObserver){this._captureObserver.reuAccess(true,addr,val);if(arr===this.ram)this._captureObserver.add(12,addr,val);}
       return;
     }
-    this._writeSlow(addr, val);
+    if(this._captureObserver){const before=this.ram[addr];this._writeSlow(addr,val);this._captureObserver.reuAccess(true,addr,val);if(this.ram[addr]!==before)this._captureObserver.add(12,addr,this.ram[addr]);}else this._writeSlow(addr, val);
   }
 
   read(addr) {
@@ -385,6 +392,7 @@ export class Memory {
     const page = addr >> 8;
     const arr = this._readPageArr[page];
     let v;
+    if (this._storageRomCounter && arr !== null && (arr === this.cartRomLo || arr === this.cartRomHi)) this._storageRomCounter[0]++;
     if (arr !== null) v = arr[addr - this._readPageOffset[page]];
     else v = this._readSlow(addr);
     this.externalDataBus8 = v & 0xFF;

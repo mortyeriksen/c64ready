@@ -24,6 +24,8 @@ Guide screenshots use Phosphor dark. With the dev server running,
 States examples. The theme gallery keeps each named theme's dark and light views.
 `node tools/guide-setup-shot.mjs` regenerates the ROM setup and theme picker
 images for Getting Started.
+`node tools/guide-monitor-shots.mjs` refreshes the four Live Monitor images
+using the external Nine demo. It also runs with `npm run guide:shots`.
 
 ```bash
 # Full default suite (6-way parallel)
@@ -43,6 +45,9 @@ node test/<folder>/<name>-spec-test.js
 
 Every file the tests use that is not part of the repository (the ROMs, hardware test programs, and demo fixtures) resolves through `test/external-assets.json`: edit the paths there, or set the per-entry environment variable, to match your machine. Spec tests that depend on such a file SKIP with a note when it is absent, so the suite passes without the optional fixtures. The ROMs are the exception: the runner checks for them up front.
 
+`test/docs-guide-jump-spec-test.js` checks the User Guide and Inside the C64
+navigation, including chapter menus, breadcrumbs, paging and overview grouping.
+
 `test/docs-redirects-spec-test.js` checks that moved documentation URLs redirect
 to their canonical pages in dev and preview, using the production redirect rules.
 
@@ -54,6 +59,26 @@ A skipping test exits 0, which on its own is indistinguishable from a pass, so i
 | `ok  - <check> # SKIP <reason>` | the file ran; one check did not | `PASS`, listed under **Partially skipped** |
 
 Both lists print the reason (from `missingNote(key)`, which names the manifest entry and its environment variable), so a green run still shows exactly which fixtures went missing. A test that skips without a directive is reported as a plain `PASS`: that is the bug the directive exists to prevent.
+
+## Monitor coverage
+
+Monitor tests use synthetic states and spec-derived expectations. Capture and
+sampling checks compare observed and unobserved execution, including machine
+state and pixels. Missing evidence must remain distinct from a rule mismatch.
+
+| Area | Main checks |
+| --- | --- |
+| Snapshot and facade | Read-only inspection, reused buffers, all four sampling rates, memory mappings, dual SID and REU. |
+| Frame and provenance | Complete-frame ownership, phase ordering, historical bytes, host-write invalidation, cancellation and observer cleanup. |
+| Video and Bauer | Graphics sources, sprite coverage, borders, bus access, IRQ, collisions, lightpen and ghost-byte evidence. |
+| Code and Sound | Recorded instruction identity, action explanations, cycle budgets, stable selection and independent SID paths. |
+| Storage | Bounded tape decoding, cartridge mapping, REU accesses, rate units and collection only while Monitor is active. |
+| Browser | Shared captures, pause/replay, lazy analysis, saved sampling rate, desktop and touch layouts, dialogs, navigation and input routing. |
+
+Run individual files with `node test/monitor-<name>-test.js`, or use `npm test`
+for the registered suite. `test/monitor-browser-test.js` requires Playwright
+Chromium. Its real-emulator checks also need local ROMs and report SKIP when
+those assets are unavailable.
 
 ## Dialog close controls
 

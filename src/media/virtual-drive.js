@@ -39,6 +39,7 @@ const two = n => String(n % 100).padStart(2, '0');
 export class VirtualDrive {
   /** @param {() => (import('./d64.js').D64|null)} getDisk the mounted image, or null */
   constructor(getDisk) {
+    this._storageCounter = null;
     this._getDisk = getDisk;
     this.onWrite = null;      // host hook: the image changed
     this.onOpen = null;       // host hook: a data file opened (LED, sound)
@@ -77,7 +78,10 @@ export class VirtualDrive {
     if (!this._listen) return;
     if (this._listen.kind === 'data' && this._listen.ch !== CMD) {
       const c = this.channels[this._listen.ch];
-      if (c && c.out) c.out.push(byte & 0xFF);
+      if (c && c.out) {
+        c.out.push(byte & 0xFF);
+        if (this._storageCounter) this._storageCounter[1]++;
+      }
       return;
     }
     this._listen.bytes.push(byte & 0xFF);
@@ -116,6 +120,7 @@ export class VirtualDrive {
     const c = this.channels[this._talkCh];
     if (!c || !c.data || c.pos >= c.data.length) return { byte: CR, eoi: true, timeout: true };
     const byte = c.data[c.pos++];
+    if (this._storageCounter) this._storageCounter[0]++;
     return { byte, eoi: c.pos >= c.data.length };
   }
 

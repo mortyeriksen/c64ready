@@ -286,3 +286,18 @@ Two layers, matching the hardware:
 - **`reset()` seeds DRAM with the VICE XOR pattern; `softReset()` preserves RAM.**
 - The memory map is the source of truth for **what is visible**; see
   the [machine orchestrator](MACHINE-ARCHITECTURE.md) for **who drives the bus when** (phi1/phi2).
+
+## Monitor byte observation
+
+Nullable scalar observers count CPU reads served by the active cartridge ROM
+arrays and C64-side DMA reads and writes. Peeks, VIC reads and inspection copies
+do not increment them. Cartridge RAM and device-specific I/O are outside the
+ROM-read metric. REU verification counts reads, while swaps count both bus
+accesses. The facade detaches observers outside a visible Monitor.
+Observers are not serialized and do not change mapping or bus values.
+
+Historical RAM reconstruction requires a complete frame-boundary snapshot and
+recorded CPU or REU writes. Host writes through PRG loading, keyboard buffering,
+command injection or accelerated serial/load traps mark the active provenance
+recording incomplete. The Monitor then reports historical RAM as unavailable
+instead of filling gaps with current memory.

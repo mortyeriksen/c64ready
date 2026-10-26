@@ -21,6 +21,7 @@ import { fileURLToPath } from 'url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const THEME = 'src/styles/styles-theme.css';
 const SHEETS = [
+  'src/monitor/monitor.css',
   'src/styles/styles-base.css', 'src/styles/styles-header.css', 'src/styles/styles-display.css', 'src/styles/styles-dialogs.css',
   'src/styles/styles-controls.css', 'src/styles/styles-decks.css', 'src/styles/styles-ports.css', 'src/vibes/styles-vibes.css',
   'src/styles/styles-splash.css', 'src/styles/styles-splash-themes.css', 'src/styles/styles-assembly64.css',

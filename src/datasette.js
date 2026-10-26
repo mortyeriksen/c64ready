@@ -67,6 +67,7 @@ export function blankTapBytes() {
 
 export class Datasette {
   constructor() {
+    this._storageCounter = null;
     this.tapData = null;
     this.tapVersion = 0;
     this.pos = 0;
@@ -293,7 +294,9 @@ export class Datasette {
         this.flagCallback?.(1);
       }
       this._pulseCount++;
+      const previousPosition = this.pos;
       this._loadNextPulse();
+      if (this._storageCounter && !this.atEnd) this._storageCounter[0] += this.pos - previousPosition;
       if (this.atEnd) break;
     }
   }
@@ -590,6 +593,7 @@ export class Datasette {
   // ÷8 remainder carries into the next pulse, so a long stream keeps its
   // absolute timing instead of drifting.
   _emitPulse(cycles) {
+    const previousLength = this._recLen;
     let total = cycles + this._encCarry;
     while (total > MAX_BYTE_CYCLES) {
       // The long form is exact, so nothing is left to carry. A gap longer than
@@ -601,12 +605,17 @@ export class Datasette {
       this._recPush((exact >> 8) & 0xFF);
       this._recPush((exact >> 16) & 0xFF);
       total -= exact;
-      if (total <= 0) { this._encCarry = 0; return; }
+      if (total <= 0) {
+        this._encCarry = 0;
+        if (this._storageCounter) this._storageCounter[1] += this._recLen - previousLength;
+        return;
+      }
     }
     let units = Math.round(total / 8);
     if (units < 1) units = 1;       // a pulse under 4 cycles: emit the minimum
     this._recPush(units);
     this._encCarry = total - units * 8;
+    if (this._storageCounter) this._storageCounter[1] += this._recLen - previousLength;
   }
 
   // How much an open recording session has laid down, and a view of any stretch

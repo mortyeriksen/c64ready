@@ -166,6 +166,7 @@ export const renderOps = {
 
   _renderOpenBorderIdleSpan(seg, rowOffset, startX, endX) {
     if (endX <= startX) return;
+    if(this._captureObserver)this._captureObserver.pixels.idle(seg,rowOffset/384,startX,endX);
     const regs = seg.regs;
     // Mode bits (ECM/BMM/MCM) are output-stage timed: a mid-line $D016/$D011
     // mode change takes effect on the graphics output ~2 cycles later (the
@@ -429,6 +430,7 @@ export const renderOps = {
       matrix, (base + src) & 0x3ff, this.lineCycleRc[cycle] & 7, bank);
     const data = this._vicMemRead(address, bank);
     this._fetchFeedSamples[col] = 0x800000 | (color << 16) | (matrix << 8) | data;
+    if(this._captureObserver)this._captureObserver.add(3,bank+(address&16383),data,col|(matrix<<6)|(color<<14));
   },
 
   _renderSourceColumn(col, line, seg, outPixels, outFgMap, outOffset = 0) {
@@ -543,6 +545,10 @@ export const renderOps = {
       const gvc = ((fetchD011 | prevFetchD011) & 0x20) ? bitmapVc : vc;
       const fetchAddr = this._graphicsFetchAddr(fetchD011, prevFetchD011, d018ForCB, rawCode, gvc, line, bank);
       graphicsByte = this._vicMemRead(fetchAddr, bank);
+      if(this._captureObserver) {
+        this._captureObserver.add(15,bank+(fetchAddr&16383),graphicsByte,col|(rawCode<<6)|(colorNib<<14),this.raster*63+seg.cycle-1);
+        this._captureObserver.pixels.source(seg,bank+(fetchAddr&16383),graphicsByte,rawCode,colorNib,outOffset,this.raster);
+      }
     }
     const black = 0xFF000000 | 0;   // signed, so it shares PALETTE_RGBA's Smi representation
     const o = outOffset;
@@ -873,6 +879,7 @@ export const renderOps = {
       const segRenderStart = Math.max(seg.start, 0);
       const segRenderEnd = Math.min(seg.end, CANVAS_W);
       if (segRenderEnd <= segRenderStart) continue;
+      if(this._captureObserver)this._captureObserver.pixels.clear(canvasY,segRenderStart,segRenderEnd);
 
       const segXscrollRegs = seg.xscrollRegs || seg.regs;
       const segXscroll = segXscrollRegs[0x16] & 0x07;
@@ -1057,6 +1064,7 @@ export const renderOps = {
       // compare — V8 short-circuits the loop-invariant false. Identical output:
       // when bgChangesAtStart is false, segBg0First === segBg0 anyway.
       const bgChangesAtStart = segBg0First !== segBg0;
+      if(this._captureObserver)this._captureObserver.pixels.paint(seg,canvasY,visibleStart,visibleEnd,firstCol,spanLimit,sourceOriginX,segXscroll,spanPixels,spanFgMap,segBg0,segBg0First);
 
       // Interior spans have neither edge filler nor a delayed background seam.
       const copyStart = visibleStart - sourceOriginX - segXscroll - spanBaseX;
@@ -1201,6 +1209,7 @@ export const renderOps = {
     seg.rowColors = savedRowColors;
 
     const sourceStart = 8 - spillWidth + (spillStart - GRAPHICS_WINDOW_END);
+    if(this._captureObserver)this._captureObserver.pixels.paint(seg,rowOffset/384,spillStart,spillEnd,0,8,spillStart-sourceStart,0,pixels,fgMap,0,0);
     const fb32 = this.fb32;
     const priorityBuf = this.graphicsPriorityBuffer;
     for (let x = spillStart, source = sourceStart; x < spillEnd; x++, source++) {
@@ -1285,6 +1294,7 @@ export const renderOps = {
     const off = this._modeSplitPixel(s2, s3);   // half-character output boundary
     const mid = xs + off < xe ? xs + off : xe;
     if (mid <= xs) return;
+    if(this._captureObserver)this._captureObserver.pixels.save('split',canvasY,xs,mid);
     const rowOffset = canvasY * CANVAS_W;
     const fb32 = this.fb32, pri = this.graphicsPriorityBuffer,
           bor = this.borderBuffer;
@@ -1302,6 +1312,7 @@ export const renderOps = {
     for (let x = xs, i = 0; x < mid; x++, i++) {
       const p = rowOffset + x; fb32[p] = L[i]; pri[x] = LP[i]; bor[x] = LB[i];
     }
+    if(this._captureObserver)this._captureObserver.pixels.restore('split',canvasY,xs,mid);
   },
 
   // End-of-line column fixup. Corrects cycle-incremental render
@@ -1442,6 +1453,7 @@ export const renderOps = {
       const xs = seg0.start < 0 ? 0 : seg0.start;
       const xe = seg0.end > CANVAS_W ? CANVAS_W : seg0.end;
       if (xe <= xs) continue;
+      if(this._captureObserver)this._captureObserver.pixels.save('saved',canvasY,xs,xe);
       // Indexed copy, not .set(fb32.subarray(...)): subarray allocates a
       // view object, and this runs per triggered cycle — hot-path churn.
       for (let x = xs; x < xe; x++) saved[x] = fb32[rowOffset + x];
@@ -1467,7 +1479,9 @@ export const renderOps = {
       }
       // Pass 2 (reproduce incremental): rebuild resets modeRegs/xscrollRegs/
       // bgRegs/bgPrevRegs to their defaults, so this paints the incremental output.
+      if(this._captureObserver)this._captureObserver.pixels.suspended=true;
       this._renderCycleSegmentGraphics(this._buildCycleRasterSegment(c), canvasY);
+      if(this._captureObserver)this._captureObserver.pixels.merge(canvasY,xs,xe,saved);
       for (let x = xs; x < xe; x++) {
         const g1 = fb32[rowOffset + x];
         const pIdx = rowOffset + x;

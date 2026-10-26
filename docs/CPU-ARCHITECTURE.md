@@ -352,3 +352,22 @@ inherit the correct BCD behaviour.
 - **The micro-op engine is the only live path**: `_beginMicroInstruction` and
   the `_queue*` builders. There is no second interpreter.
 - The **6510 I/O port and banking are in `memory.js`**, not the CPU.
+
+## Instruction-origin diagnostics
+
+The CPU retains the dispatched opcode and its starting address in numeric
+fields. Interrupt dispatch, reset and restore invalidate the origin until a
+normal instruction starts. These diagnostic fields are not serialized and do
+not change bus cycles. Bounded VIC frame capture copies them only for writes
+made during the machine's CPU phase, so a REU or external write is not assigned
+to the last CPU instruction. The captured opcode remains valid even if the
+program later changes that memory.
+
+## Optional Monitor provenance
+
+A nullable capture observer records completed CPU reads, writes, instruction
+dispatch and RTI completion during an explicit bounded frame recording. It does
+not perform additional reads or alter the micro-op queue. Interrupt acceptance
+uses the existing machine callback. Recorded operand bytes come from actual bus
+reads, and incomplete operands stay unknown. The observer is cleared when the
+capture completes or is cancelled, including machine reset and state restore.

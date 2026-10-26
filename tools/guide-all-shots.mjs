@@ -19,6 +19,7 @@ async function run(tool, args = [base]) {
 }
 await Promise.all([run('guide-shots'), run('guide-theme-shots')]);
 await run('guide-extra-shots');
+await run('guide-monitor-shots');
 await run('guide-mobile-shots');
 await run('guide-assembly64-shots');
 await run('guide-setup-shot');

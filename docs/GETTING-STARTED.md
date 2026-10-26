@@ -161,6 +161,10 @@ The C64 has two control ports. Assign each on the
 
 ## 6. Pause, reset, and save your place
 
+Open **MONITOR** in Controls to explore the running machine. Click its small
+live display to pause and inspect the latest completed frame in **Video**.
+See the [Monitor walkthrough](GUIDE-MONITOR.md).
+
 - **⏸ PAUSE** freezes and mutes the machine where it is; press again to resume.
 - **↺ RESET** does a hard reset, the same as a power-cycle. Use it if a demo
   wedges.

@@ -300,6 +300,10 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 
 ## Save, resume & state
 
+- **[Live Monitor Beta](GUIDE-MONITOR.md)**: explore code, memory, video, sound,
+  controls and storage visually, with plain explanations and component stories.
+  Pause to inspect one recorded frame across sections.
+
 - **Pause / resume**: freeze and continue exactly where you were.
 - **Hard reset**: clean power-cycle-equivalent restart.
 - **Save states**: freeze the whole machine (RAM, every chip, and the inserted

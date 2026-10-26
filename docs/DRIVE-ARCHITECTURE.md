@@ -586,3 +586,12 @@ a delayed attachment from overriding a newer manual media operation. Queue
 operations serialize while asynchronous storage or compatibility checks run.
 D64 swaps retain the current drive mode, while raw GCR and virtual-only formats
 use the existing compatibility checks. Drive 9 has no queue state.
+
+## Monitor byte observation
+
+A nullable scalar counter records framed GCR read bytes and completed surface
+write bytes. Virtual drives count data-channel bytes, excluding command/status
+traffic. Accelerated LOAD adds its payload length once. These streams have
+different labels and epochs, so changing paths cannot mix their rates.
+The facade attaches observers only for a visible Monitor and detaches them
+when collection stops. No per-byte event objects are created.

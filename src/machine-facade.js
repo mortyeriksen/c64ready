@@ -15,6 +15,10 @@
 // rewrapped chip method (the browser checks wrap cia1.setKey) is the one
 // reached. The live instance is `c64` in state.js, rebuilt with each machine.
 
+import { StorageTransferCapture } from './storage-transfer-capture.js';
+import { VicFrameCapture } from './vic2-frame-capture.js';
+import { C64_PALETTE } from './vic2-tables.js';
+
 // The cassette deck as the UI sees it.
 class TapeView {
   constructor(machine) { this._m = machine; }
@@ -73,6 +77,9 @@ class ReuView {
 export class MachineFacade {
   constructor(machine) {
     this.machine = machine;
+    this._vicCapture = null;
+    this._storageCapture = null;
+    this._storageMonitoring = false;
     this.tape = new TapeView(machine);
     this._drives = { 8: new DriveView(machine, 8), 9: new DriveView(machine, 9) };
     this._reu = new ReuView(machine);
@@ -230,6 +237,196 @@ export class MachineFacade {
   ram()     { return this.machine.mem.ram; }
   // Character ROM as loaded, or null before the ROMs are in.
   charRom() { return this.machine.mem.charRom ?? null; }
+
+  setStorageMonitoring(active) {
+    if (active) {
+      this._storageCapture ??= new StorageTransferCapture(this.machine);
+      this._storageCapture.sync();
+    } else {
+      this._storageCapture?.stop();
+    }
+    this._storageMonitoring = !!active;
+  }
+
+  // Storage inspection copies scalar state and register bytes without reading
+  // acknowledgement registers or committing pending disk writes.
+  createStorageInspection() {
+    return {
+      transfers: Array.from({ length: 5 }, () => ({ available: false, read: 0, write: 0, epoch: 0, scope: '' })),
+      drives: [8, 9].map(device => ({ device, available: false, hardware: false,
+        hasMedia: false, mode: 'disconnected', format: '', label: '', dirty: false,
+        writeProtected: false, motor: false, led: false, halfTrack: 0, pc: 0 })),
+      tape: { hasMedia: false, key: 'STOP', motor: false, recording: false,
+        fraction: 0, elapsed: 0, duration: 0, dirty: false, writeProtected: false },
+      cartridge: { inserted: false, label: '', mode: 'none', bank: 0,
+        freeze: false, reset: false },
+      reu: { attached: false, model: '', bytes: 0, bankMask: 0, active: false, activity: 0,
+        registers: new Uint8Array(11) },
+    };
+  }
+
+  inspectStorageInto(out) {
+    const m = this.machine;
+    if (this._storageMonitoring) this._storageCapture.copyInto(out.transfers);
+    else for (const t of out.transfers) { t.available = false; t.read = 0; t.write = 0; t.epoch = 0; t.scope = ''; }
+    for (let index = 0; index < 2; index++) {
+      const drive = index ? m.drive1541b : m.drive1541;
+      const disk = index ? m.currentD64Drive9 : m.currentD64;
+      const accelerated = index ? m.drive9Enabled && !drive : !m.truedriveEnabled;
+      const d = out.drives[index];
+      d.hardware = !!drive; d.available = !!drive || !!accelerated;
+      d.hasMedia = !!disk;
+      d.mode = accelerated ? 'accelerated' : drive ? 'true-drive' : 'disconnected';
+      d.format = disk ? (disk.isG64 ? 'G64' : (disk.kind || 'disk').toUpperCase()) : '';
+      d.label = disk?.diskName || '';
+      d.dirty = !!disk?.dirty; d.writeProtected = !!disk?.writeProtected;
+      d.motor = !!drive?.motorOn; d.led = !!drive?.ledOn;
+      d.halfTrack = drive?.currentHalfTrack ?? 0; d.pc = drive?.cpu.pc ?? 0;
+    }
+    const deck = m.datasette, t = out.tape;
+    t.hasMedia = deck.hasMedia; t.key = deck.key; t.motor = deck.motorOn;
+    t.recording = deck.recording; t.fraction = deck.positionFraction;
+    t.elapsed = deck.elapsedSeconds; t.duration = deck.durationSeconds;
+    t.dirty = deck.dirty; t.writeProtected = deck.writeProtected;
+    const cart = m.mem.cartridge, c = out.cartridge;
+    c.inserted = !!cart; c.label = cart?.label || ''; c.mode = m.mem.cartMode;
+    c.bank = m.mem.cartBank; c.freeze = !!cart?.capabilities.freeze;
+    c.reset = !!cart?.capabilities.reset;
+    const reu = m.reu, r = out.reu;
+    r.attached = !!reu; r.model = reu?.model.label || ''; r.bytes = reu?.ram.length ?? 0;
+    r.bankMask = reu ? (1 << reu.model.bankBits) - 1 : 0;
+    r.active = !!reu?.dmaActive; r.activity = reu?.activityTick ?? 0;
+    for (let i = 0; i < 11; i++) r.registers[i] = reu ? reu.ioPeek(0xDF00 + i) : 0;
+    return out;
+  }
+
+  // Input and timer observations never acknowledge ICR or latch TOD reads.
+  createControlInspection() {
+    return {
+      keyboard: new Uint8Array(8), ports: new Uint8Array(2),
+      timerCounts: new Uint16Array(4), timerLatches: new Uint16Array(4),
+      timerControl: new Uint8Array(4), interrupts: new Uint8Array(2),
+      interruptMasks: new Uint8Array(2), potConnected: false, potX: 255, potY: 255,
+    };
+  }
+
+  inspectControlsInto(out) {
+    const m = this.machine;
+    out.keyboard.set(m.cia1.matrix);
+    out.ports[0] = m.joyPort1; out.ports[1] = m.joyPort2;
+    for (let i = 0; i < 2; i++) {
+      const cia = i ? m.cia2 : m.cia1, base = i * 2;
+      out.timerCounts[base] = cia.timerA; out.timerCounts[base + 1] = cia.timerB;
+      out.timerLatches[base] = cia.latchA; out.timerLatches[base + 1] = cia.latchB;
+      out.timerControl[base] = cia.cra; out.timerControl[base + 1] = cia.crb;
+      out.interrupts[i] = cia.icrStatus; out.interruptMasks[i] = cia.icrMask;
+    }
+    out.potConnected = m.potConnected;
+    out.potX = m.potXSampled; out.potY = m.potYSampled;
+    return out;
+  }
+
+  // Inspection buffers belong to the caller and never alias chip storage.
+  createInspectionState() {
+    return {
+      pc: 0, a: 0, x: 0, y: 0, sp: 0, p: 0, instructionBoundary: false,
+      instructionAddress: -1, instructionOpcode: -1,
+      halted: false, irq: false, cycle: 0, raster: 0, vicBank: 0,
+      cpuPort: 0, cpuDDR: 0, sidCount: 1, sid2Address: 0,
+      vic: new Uint8Array(64), sid: new Uint8Array(64),
+      sidModels: new Uint8Array(2), sidReadback: new Uint8Array(8), sidMix: 'stereo',
+      palette: new Uint32Array(16), colorRam: new Uint8Array(1024),
+      spritePointers: new Uint8Array(8), spriteBanks: new Uint16Array(8),
+      spriteOffsets: new Uint16Array(8), spriteDma: new Uint8Array(8),
+      spriteDisplay: new Uint8Array(8),
+    };
+  }
+
+  inspectInto(out) {
+    const m = this.machine, cpu = m.cpu, vic = m.vic2;
+    out.pc = cpu.pc; out.a = cpu.a; out.x = cpu.x; out.y = cpu.y;
+    out.sp = cpu.sp; out.p = cpu.getP();
+    out.instructionBoundary = cpu.atInstructionBoundary();
+    out.instructionAddress = cpu.instructionAddress;
+    out.instructionOpcode = cpu.instructionAddress >= 0 ? cpu.instructionOpcode : -1;
+    out.halted = cpu.halted; out.irq = cpu.irqLine;
+    out.cycle = vic.cycleInLine; out.raster = vic.raster; out.vicBank = vic.currentVicBank;
+    out.cpuPort = m.mem.peek(1); out.cpuDDR = m.mem.cpuDDR;
+    out.vic.set(vic.regs); out.colorRam.set(m.mem.colorRam);
+    out.spritePointers.set(vic.spritePointerValue);
+    out.spriteBanks.set(vic.spriteDataBank); out.spriteOffsets.set(vic.spriteDataBase);
+    out.spriteDma.set(vic.spriteDmaOn); out.spriteDisplay.set(vic.spriteDisplayOn);
+    out.palette.set(C64_PALETTE);
+    out.sid.fill(0); out.sid.set(m.mem.sid.regs);
+    out.sidCount = m.sid2 ? 2 : 1;
+    out.sid2Address = m.sid2 ? m.mem.sid2Address : 0;
+    out.sidModels[0] = m.sidIs8580 ? 1 : 0; out.sidModels[1] = m.sid2?.is8580 ? 1 : 0;
+    out.sidMix = m.sidMix;
+    for (let reg = 0; reg < 4; reg++) {
+      out.sidReadback[reg] = m.mem.sid.peek(0x19 + reg);
+      out.sidReadback[4 + reg] = m.sid2 ? m.sid2.proxy.peek(0x19 + reg) : 0;
+    }
+    if (m.sid2) out.sid.set(m.sid2.proxy.regs, 32);
+    return out;
+  }
+
+  // Mirrors CPU reads without acknowledging interrupts or changing bus latches.
+  copyCpuMemory(address, target) {
+    for (let i = 0; i < target.length; i++) target[i] = this.machine.mem.peekForCpu((address + i) & 0xFFFF);
+    return target;
+  }
+
+  // Address is local to a 16 KB VIC window. An explicit bank permits inspecting
+  // a sprite's latched source after the selected VIC bank has changed.
+  copyVicMemory(address, target, bank = this.machine.vic2.currentVicBank) {
+    if (!Number.isInteger(bank) || bank < 0 || bank > 0xC000 || (bank & 0x3FFF)) throw new RangeError('VIC bank must be a 16 KB base');
+    for (let i = 0; i < target.length; i++) target[i] = this.machine.vic2._vicMemRead((address + i) & 0x3FFF, bank);
+    return target;
+  }
+
+  cpuMemorySource(address) {
+    address &= 0xFFFF;
+    if (address < 2) return 'CPU port';
+    const mem = this.machine.mem, source = mem._readPageArr[address >>> 8];
+    if (source === mem.ram) return 'RAM';
+    if (source && source === mem.basic) return 'BASIC ROM';
+    if (source && source === mem.kernal) return 'KERNAL ROM';
+    if (source && source === mem.charRom) return 'Character ROM';
+    if (source === mem._openBus) return 'Open bus';
+    if (source === null && address >= 0xD000 && address <= 0xDFFF) return 'I/O';
+    return 'Cartridge';
+  }
+
+  vicMemorySource(address, bank = this.machine.vic2.currentVicBank) {
+    address &= 0x3FFF;
+    const mem = this.machine.mem;
+    if (mem.cartMode === 'ultimax') return (address >= 0x3000 && mem.cartRomHi) ? 'Cartridge ROM' : 'RAM';
+    const physical = bank + address;
+    return ((physical >= 0x1000 && physical < 0x2000) || (physical >= 0x9000 && physical < 0xA000)) ? 'Character ROM' : 'RAM';
+  }
+
+  // Detailed provenance includes detached output-phase pixel sources and raw
+  // rule transitions. Observers exist only during the requested recording.
+  requestVicFrameCapture({ analysis = false, provenance = false } = {}) {
+    this.cancelVicFrameCapture();
+    this._vicCapture = new VicFrameCapture({ analysis: analysis || provenance, provenance });
+    this.machine.vic2._frameCapture = this._vicCapture;
+  }
+
+  vicFrameCaptureStatus() { return this._vicCapture?.status ?? 'idle'; }
+
+  takeVicFrameCapture() {
+    if (this._vicCapture?.status !== 'ready') return null;
+    const frame = this._vicCapture.frame;
+    this._vicCapture = null;
+    return frame;
+  }
+
+  cancelVicFrameCapture() {
+    if (this.machine.vic2._frameCapture === this._vicCapture) this.machine.vic2._frameCapture = null;
+    this._vicCapture?.cancel();
+    this._vicCapture = null;
+  }
 
   // ── Savestates ───────────────────────────────────────────────────────────
   serializeState() { return this.machine.serializeState(); }

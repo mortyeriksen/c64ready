@@ -98,6 +98,12 @@ line below is the current activity: `Running`, load progress, or an error.
 
 ---
 
+## Live Monitor
+
+Open **MONITOR** in Controls to explore the running machine visually.
+See the [Live Monitor guide](GUIDE-MONITOR.md) for the overview, captured frames
+and technical details.
+
 ## Rearranging the interface
 
 The side panel is yours to lay out: cards can be reordered, moved between the

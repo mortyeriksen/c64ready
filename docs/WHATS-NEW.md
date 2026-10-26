@@ -9,6 +9,22 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
+## Next release
+
+Meet **Live Monitor Beta**: see the C64 at work, understand it in plain language
+and inspect the evidence while your game or demo runs.
+
+- **Explore the machine.** Connected cards lead into Code, Memory, Video, Sound,
+  Controls and Storage, including dual SID, tape, cartridges and REU. Faded
+  SID 2 cards show the extra voices available when enabled.
+- **Pause and investigate.** Share a recorded frame across sections, magnify
+  pixels, trace source bytes and explore timing rules and program actions.
+- **Make it yours.** Monitor follows your theme and remembers your choice of
+  1, 10, 25 or 50 live samples per second. Sampling stops when closed or hidden.
+  Phone layouts include larger navigation targets and readable Sound cards.
+- **Learn as you go.** Follow the illustrated [Monitor guide](GUIDE-MONITOR.md)
+  and component stories in [Inside the C64](INSIDE-THE-C64.md).
+
 ## 2026.10.7 — October 24, 2026
 
 Disk queues, IEC printing and a visual theme picker, with simpler controls

@@ -345,6 +345,40 @@ keeps console tooling under `c64.debug`. No UI code holds a chip object or runs
 inside the cycle loop; `test/machine-facade-spec-test.js` fails if a UI module
 reaches past the facade.
 
+**Monitor inspection and capture.** The facade separates current read-only
+snapshots from historical frame evidence:
+
+| API | Contract |
+| --- | --- |
+| `inspectInto()` | Copies CPU/VIC settings and both SID banks into caller-owned buffers. CPU identity is the dispatched opcode and address, not the next PC. |
+| `copyCpuMemory()`, `copyVicMemory()` | Peek CPU-visible memory or a selected VIC bank, including ROM mappings, without changing bus latches or acknowledging interrupts. |
+| `inspectControlsInto()` | Copies keyboard, port, paddle and CIA timer/interrupt state without read side effects. |
+| `inspectStorageInto()` | Copies media, loading mode, drive/tape state, cartridge mapping and REU settings. REU flags are peeked and decoded addresses use the device bank mask. |
+| `setStorageMonitoring()` | Opts into scalar transfer counters. Inspection alone does not enable them. Media/path changes advance an epoch, and Monitor detaches counters when closed, hidden or replaced. |
+| `requestVicFrameCapture()` | Waits for a boundary, records a complete frame through final phi2 and detaches it. Taking the result transfers ownership to the UI. Cancel, reset and restore invalidate pending work. |
+
+With `analysis: true`, preallocated cycle samples record bus permission after
+arbitration and before CPU/REU execution. Permission does not prove an instruction
+ran or performed useful work.
+
+`provenance: true` also enables analysis and records historical memory, instruction,
+SID and REU accesses through fixed nullable observers. The collector is capped
+at 8 MiB, with explicit overflow, eight access slots per master cycle and a
+65,536-entry raw rule log. It observes completed accesses without extra I/O reads,
+per-cycle allocations, method replacement or changes to clock ordering.
+Completion and cancellation detach every observer.
+
+Host writes that bypass recorded CPU/REU paths invalidate historical RAM
+completeness. Reconstruction is then refused. Output-stage pixel sources and raw
+rule transitions remain observations, with reference expectations calculated
+offline. Renderer-source samples are labelled separately from timed bus fetches.
+See the [VIC-II model](VIC2-ARCHITECTURE.md) for phase and attribution limits.
+
+The UI owns sampling cadence, bounded histories, tape-pulse decoding and replay.
+None clocks the machine. See [Live Monitor](ARCHITECTURE.md#live-monitor) for the
+shared snapshot and recording lifecycle, and [Performance](PERFORMANCE-ANALYSIS.md#1-cost-model)
+for collection limits.
+
 The **NEOS mouse** runs inside the machine, because its protocol reacts to
 every CIA1 port write. `setNeosPort(port, on)` plugs one in (port 2 strobes on
 PRA, port 1 on PRB); each data or DDR write to that register then advances the
