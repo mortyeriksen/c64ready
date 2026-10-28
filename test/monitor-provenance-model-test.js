@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { lineBudgets, cycleCategory } from '../src/monitor/cycle-budget.js';
-import { capturedRam, explainPixel, staticBorderCheck, instructionGroups, frameTechniques } from '../src/monitor/provenance-model.js';
+import { capturedRam, memoryEvidence, explainPixel, staticBorderCheck, instructionGroups, frameTechniques } from '../src/monitor/provenance-model.js';
 assert.deepEqual([...lineBudgets({lines:1,cyclesPerLine:5,analysis:{bus:[0,1,5,9,17]}})[0]],[1,1,1,1,1],'cycle categories partition each line without counting overlap twice');
 assert.equal(cycleCategory(1|4|8|16),3,'REU holds take precedence in exclusive budget categories');
 const p={ram:new Uint8Array(65536),memoryComplete:true,overflow:false,count:3,tick:[2,4,5],kind:[12,12,3],address:[0x400,0x400,0x1000],value:[1,2,128],aux:[0,0,0],pc:[0,0,0],lineRegs:new Uint8Array(312*64),foreground:new Uint8Array(384*272),visibleSprites:new Uint8Array(384*272)};
@@ -22,3 +22,8 @@ assert.equal(instructionGroups(g)[0].elapsed,7,'dispatch intervals include actua
 assert.equal(instructionGroups(g)[1].completeIntervals,0,'last instruction duration is unknown at capture end');
 assert.equal(frameTechniques({...f,eventCount:2,eventKind:[0x21,0x21],eventTick:[63,65],eventValue:[2,6],spriteDma:new Uint8Array(312)}).some(e=>e.status==='Observed'),true,'repeated colour writes are labelled observed actions rather than proven visible splits');
 console.log('ok  - line budgets, historical memory, pixel provenance, stable border rules and instruction intervals');
+
+const chainFrame={provenance:{count:6,kind:[8,1,12,3,12,4],address:[0x200,0x400,0x400,0x400,0x400,0x400],pc:[0x200,0x200,0x200,0x200,0x200,0x200],tick:[1,3,3,4,5,6],value:[0x8d,7,7,7,9,9],memoryComplete:true}};
+assert.deepEqual(memoryEvidence(chainFrame,0x400,3),{complete:true,writer:2,origin:0,consumers:[3,5]},'memory evidence connects the last recorded change and later graphics consumers without substituting live RAM');
+assert.equal(memoryEvidence(chainFrame,0x400,2).writer,null,'a later write cannot become the earlier byte origin');
+assert.equal(memoryEvidence({...chainFrame,provenance:{...chainFrame.provenance,overflow:true}},0x400,3).complete,false,'an overflowed memory history cannot claim complete attribution');

@@ -31,20 +31,29 @@ runs on a static screen, so reducing hot-path cost matters more than optimizing
 individual effects. SID synthesis runs in the audio worklet. A second SID adds
 shadow and audio work only when enabled, while idle drive waits are skipped.
 
-Monitor adds three separately scheduled costs:
+Monitor adds separately bounded collection and analysis costs:
 
 | Work | Frequency and bounds |
 | --- | --- |
-| Shared live snapshot | 1, 10, 25 or 50 samples/s, default 10. Reuses buffers and read-only facade calls. Late callbacks skip missed samples. |
+| Shared live snapshot | 1, 10, 25 or 50 samples/s, default 10. Reuses buffers and read-only facade calls. Late callbacks skip missed samples without shifting the cadence. Pause takes one final read, then only explicit invalidation samples again. |
 | Detailed recording | About once per second while visible and running, except during component About dialogs. Waits for a boundary and records one frame, at most two running frames in the dense path. Provenance is capped at 8 MiB. |
+| Sparse activity | SID writes and completed accelerated LOADs only while visible. Fixed 32,768-entry ring, at most eight emulated seconds. Incremental copies join the shared snapshot. |
 | Inspection and replay | Reports are built on demand from the detached frame. Bauer results are cached per frame. Replay moves a UI cursor without clocking the machine. |
 
 Cycle observers use preallocated typed arrays and fixed nullable hooks, without
 per-cycle allocation or method wrapping. Storage rates use opt-in scalar counters.
 Closing or hiding Monitor stops sampling, cancels recording and detaches counters.
-Pause keeps the last complete recording. Hidden sections do not repaint.
+Pause keeps the last complete recording and stops periodic snapshot copies and view rebuilding. Hidden sections do not repaint.
 
-Histories retain 80 observations and rate windows retain 52. Tape decoding runs
+Sampled histories retain at most eight seconds and 401 observations. Main view
+presentation is capped at 10 Hz, retaining RAM changes between presentations.
+SID numeric text refreshes at most four times per second while running, with
+stable explanations and immediate paused readings. SID activity
+plots refresh at most ten times per emulated second, with prose every two seconds.
+Static screen and character/bitmap thumbnails redraw at most five times per second.
+The screen-byte grid redraws with visible Memory presentation, including text
+and fact rows. Its eight current-pointer sprite shapes follow every shared sample using reusable pixel buffers.
+Captured sprite cutouts are prepared once per shared frame when Memory is viewed. Rate windows retain 52. Tape decoding runs
 only on its visible page, capped at 32,768 source bytes per observation and 256
 retained pulses. Replay polling remains at least 10 Hz independently of the
 selected live sampling rate.
@@ -54,6 +63,16 @@ A local Node/V8 Nine run measured median snapshot collection at **0.53 ms**, ver
 5.3 ms per second. These figures exclude UI rendering and audio deadlines.
 Repeat with `node investigation/monitor-joined-sampling.mjs`, and measure
 recording separately with `node investigation/monitor-capture-cost.mjs`.
+A detailed capture owns about **8.59 MiB across 99 buffers**, including analysis
+and scratch arrays. The 8 MiB ceiling applies to provenance, not the whole capture.
+Fresh buffers are allocated per recording. Reusing them needs explicit ownership
+because inspection links can retain older frames. A synthetic Node/V8 CPU-loop
+probe measured about **6 ms/frame** normally and **15–18 ms/frame** across the
+two-frame capture window after warm-up. The first window averaged **30 ms/frame**.
+A V8 trace showed core deoptimization at the first capture transition, without
+the same core pattern on the next three captures. These are local diagnostics,
+not browser or mobile latency guarantees.
+
 See [Monitor architecture](ARCHITECTURE.md#live-monitor) for ownership and lifecycle.
 
 ## 2. Standing optimizations

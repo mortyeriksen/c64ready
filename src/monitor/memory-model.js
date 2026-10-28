@@ -4,7 +4,7 @@
 import { graphicsLayout } from './setup-model.js';
 
 // Roles follow current register configuration, not inferred program ownership.
-export function memoryRegions(state, vicMemory) {
+export function memoryRegions(state, vicMemory, includeDisabledSprites = false) {
   const layout = graphicsLayout(state), bank = layout.bank;
   const regions = [
     { kind: 'zero', title: 'Zero page', start: 0, size: 256 },
@@ -14,9 +14,9 @@ export function memoryRegions(state, vicMemory) {
     { kind: layout.bitmapOn ? 'bitmap' : 'characters', title: layout.bitmapOn ? 'Bitmap pixels' : 'Character patterns', start: bank + (layout.bitmapOn ? layout.bitmap : layout.characters), size: layout.bitmapOn ? 8000 : 2048 },
     { kind: 'code', title: 'Current CPU location', start: state.pc, size: 1 },
   ];
-  for (let i = 0; i < 8; i++) if (state.vic[0x15] & (1 << i)) {
+  for (let i = 0; i < 8; i++) if (includeDisabledSprites || state.vic[0x15] & (1 << i)) {
     const pointer = vicMemory[layout.screen + 0x3f8 + i];
-    regions.push({ kind: 'sprite', title: `Sprite ${i} source`, index: i, pointer, start: bank + pointer * 64, size: 64 });
+    regions.push({ kind: 'sprite', title: `Sprite ${i} source`, index: i, enabled: !!(state.vic[0x15] & (1 << i)), pointer, start: bank + pointer * 64, size: 64 });
   }
   return regions;
 }
@@ -24,6 +24,16 @@ export function memoryRegions(state, vicMemory) {
 export function rolesForPage(regions, page) {
   const start = page * 256;
   return regions.filter(region => region.start < start + 256 && region.start + region.size > start);
+}
+
+// Separate lanes retain overlapping roles, including sprites inside a bitmap.
+export function graphicsMemoryGroups(state, vicMemory) {
+  const regions = memoryRegions(state, vicMemory);
+  return ['screen', state.vic[0x11] & 32 ? 'bitmap' : 'characters', 'sprite'].map(kind => ({
+    kind,
+    label: kind === 'screen' ? 'Screen cells' : kind === 'bitmap' ? 'Bitmap' : kind === 'characters' ? 'Characters' : 'Sprites',
+    regions: regions.filter(region => region.kind === kind),
+  }));
 }
 
 export function byteSummary(bytes) {

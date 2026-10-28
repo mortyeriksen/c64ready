@@ -24,7 +24,7 @@
 ## What it is
 
 The Commodore 64 is where a lot of us learned that a computer does wonderful things. Real
-hardware and emulators have kept it running for forty years; C64 READY. is an attempt to
+hardware and emulators have kept it running for forty years. C64 READY. is an attempt to
 keep it going. Open a link and it runs on your phone or your desktop computer. No app download,
 no native install. Drop in a game or demo, and go!
 
@@ -45,10 +45,12 @@ it that way.
 ## Features
 
 - **Get started quickly**: it runs in the browser, and installs as an app on desktop or phone if you want (with offline support)
-- **Cycle-exact**: the 6510, VIC-II, both SIDs and a true 1541 with its own CPU, so the hard demos and custom fastloaders run
+- **Built for PAL software**: cycle-based CPU and video timing, dual SID sound and a true 1541 with its own CPU for custom fastloaders. See [compatibility limits](docs/KNOWN-ISSUES.md).
+- **See inside the machine**: [Live Monitor (Beta)](docs/GUIDE-MONITOR.md) connects visual activity to plain-language explanations. Pause to explore a frame, its code, graphics, sound and memory.
 - **Retro Vibes**: the C64, drive and monitor as a 3D model with your live screen on the glass, in five nostalgic scenes
-- **Load anything**: drop a `.d64`, `.d81`, `.g64`, `.nbz`, `.prg`, `.tap`, `.wav`, `.dmp`, `.crt`, `.t64`, `.sid` or `.reu` on the screen and it works out the rest
+- **Load your collection**: drop a `.d64`, `.d81`, `.g64`, `.nbz`, `.prg`, `.tap`, `.wav`, `.dmp`, `.crt`, `.t64`, `.sid` or `.reu` on the screen and it works out the rest
 - **Play it the way you like**: a gamepad in either port, the keyboard, or a touch joystick on your phone
+- **Call a BBS**: use a C64 terminal with the built-in [Hayes Modem](docs/GUIDE-MEDIA.md#hayes-modem) for TCP/Telnet connections, with a relay supplied by `c64rdy serve`
 - **Make it yours**: arrange the side-panel cards or hide the ones you never touch
 - **Your old cassettes may play again**: automatic recovery functionality for your old tapes, both originals and turbo compilations
 - **RAM Expansion**: a 1700, 1764, 1750, 1750 XL or up to 16 MB, for the demos that ask for it
@@ -69,10 +71,11 @@ npm test         # the full test suite
 npm run build    # production build
 ```
 
-`npm test` runs everything in Node, no browser needed: unit tests, timing spec tests and
-the C64 hardware test programs the emulator is measured against. It reads the same ROMs
-from `roms/` and stops early if they are missing; without `roms/1541.bin` the true-drive
-tests are skipped and the rest still run.
+`npm test` runs unit, timing, hardware-program and browser tests. Install the
+headless browser with `npx playwright install chromium`. Tests that cannot run
+because a browser or optional fixture is missing report a skip.
+The suite requires the three C64 ROMs in `roms/`. Without `roms/1541.bin`,
+true-drive tests are skipped.
 
 → [Getting started](docs/GETTING-STARTED.md) · [User guide](docs/USER-GUIDE.md) · [Testing & debugging](docs/TESTING.md)
 
@@ -87,12 +90,12 @@ where the browser keeps them for next time.
 
 Retro Vibes, the 3D viewer, loads `commodore_64.glb` (18 MB) or the 4K-texture
 `commodore_64_4k.glb` (95 MB). At 113 MB together they are not in the repository, and
-nothing else needs them — a missing model just shows `COULD NOT LOAD MODEL` in the viewer.
+nothing else needs them. A missing model just shows `COULD NOT LOAD MODEL` in the viewer.
 
 Get it from the source, *"Commodore 64 || Computer (Full Pack)"* by dark_igorek, [CC BY
 4.0](https://creativecommons.org/licenses/by/4.0/): **<https://skfb.ly/oUKFx>**
 
-Save the `.glb` in `public/models/`, named to match, beside the other 3D assets — the
+Save the `.glb` in `public/models/`, named to match, beside the other 3D assets. The
 viewer asks for it at `/models/`:
 
 ```text
@@ -100,14 +103,15 @@ public/models/commodore_64.glb        # the default
 public/models/commodore_64_4k.glb     # optional 4K export
 ```
 
-The light one is enough; 4K is only used when **Options ▸ Display ▸ 3D MODEL SIZE** is
+The light one is enough. 4K is only used when **Options ▸ Display ▸ 3D MODEL SIZE** is
 LARGE, or AUTO on a desktop. Both are git-ignored, and `npm run build` copies `public/`
 into `dist/`, so whichever you add ships with the build.
 
 ## Documentation
 
-Hosted at **[c64ready.com/docs](https://www.c64ready.com/docs/)**; sources in [`docs/`](docs/).
+Hosted at **[c64ready.com/docs](https://www.c64ready.com/docs/)**, with sources in [`docs/`](docs/).
 
+- Start exploring: [User guide](docs/USER-GUIDE.md) · [Live Monitor](docs/GUIDE-MONITOR.md) · [Inside the C64](docs/INSIDE-THE-C64.md)
 - [Architecture](docs/ARCHITECTURE.md) · [Component status](docs/COMPONENT-STATUS.md) · [Known issues](docs/KNOWN-ISSUES.md)
 - Deep dives: [Machine](docs/MACHINE-ARCHITECTURE.md) · [CPU](docs/CPU-ARCHITECTURE.md) · [VIC-II](docs/VIC2-ARCHITECTURE.md) · [SID](docs/SID-ARCHITECTURE.md) · [Memory](docs/MEMORY-ARCHITECTURE.md) · [Drive](docs/DRIVE-ARCHITECTURE.md) · [Datasette](docs/DATASETTE-ARCHITECTURE.md)
 - [Retro Vibes](docs/RETROVIBES-ARCHITECTURE.md) · [Performance](docs/PERFORMANCE-ANALYSIS.md) · [Testing & debugging](docs/TESTING.md) · [Specifications & sources](docs/SPECIFICATIONS.md)
@@ -126,6 +130,7 @@ Hosted at **[c64ready.com/docs](https://www.c64ready.com/docs/)**; sources in [`
 │   ├── memory.js     # RAM / ROM / PLA banking
 │   ├── drive1541.js  # true 1541 drive (+ media/d64.js, gcr.js)
 │   ├── media/        # disk, cartridge and tape formats, loading and library
+│   ├── monitor/      # visual inspection, frame replay and hardware explanations
 │   ├── reu.js        # RAM Expansion Unit, the 8726 REC as a second bus master
 │   ├── cartridges/   # .crt types: generic, Action Replay, Final Cartridge III, Magic Desk, EasyFlash
 │   ├── ui/           # dialogs, panels, splash, appearance and themes
@@ -145,43 +150,9 @@ Hosted at **[c64ready.com/docs](https://www.c64ready.com/docs/)**; sources in [`
 
 ## Chat server
 
-The chat talks to a small Node server in `server/` (Node 22 or later, no
-dependencies). The `server/` folder deploys by itself to Railway, and the app,
-in development too, connects to the service's own Railway address,
-`CHAT_SERVER` in `src/chat/connection.js`. `npm run dev` also runs a chat
-server of its own at `/chat`, with its admin console at `/admin` (user
-`sysop`, and a fresh password printed when the dev server starts), for the
-tests and for trying changes to the server. Point the app at it with
-`localStorage.setItem('c64emu.chat.server', 'ws://localhost:5173/chat')` (the
-dev server's port) and back with `localStorage.removeItem('c64emu.chat.server')`.
-
-To deploy:
-
-1. In `server/`, run `railway init` once, naming the service `c64ready-chat`,
-   then `railway up`.
-2. Run `railway domain` for the service's public address. Railway names it
-   `<service>-production.up.railway.app`, which is what `CHAT_SERVER` expects.
-   If Railway gives another name, put that in `CHAT_SERVER`.
-3. Set the variables: `CHAT_ORIGINS=https://c64ready.com`, `CHAT_TRUST_PROXY=2`
-   (two Railway proxies append to `X-Forwarded-For`: the edge adds the client's
-   address, then an internal proxy adds its own),
-   and for the admin console `CHAT_ADMIN_USER` and `CHAT_ADMIN_PASSWORD_SHA256`
-   (`printf %s 'password' | shasum -a 256`). `CHAT_NOTIFY_URL`, an ntfy topic
-   or a Discord webhook, gets a line on every report.
-4. Attach a Railway Volume (for example at `/data`) and set
-   `CHAT_LOG_DIR=/data/logs`. The chat log goes there, one file per day,
-   deleted after `CHAT_LOG_DAYS` (default 90). Without a volume the files
-   vanish on every redeploy, and without `CHAT_LOG_DIR` nothing is logged. The
-   console's **Logs** page downloads them.
-5. Keep App Sleeping off: a sleeping server drops every room.
-
-After deploying, check that two people on different connections get different
-address codes in the console at `/admin`. If everyone shares one, the proxy
-setting is wrong. All settings are listed at the top of `server/main.mjs`.
-
-The admin console lists **Online users** below the rooms, across all rooms.
-Select a nickname to open its room and moderation controls. The list updates
-live and excludes disconnected members during their reconnect grace period.
+The optional chat uses a separate Node server. `npm run dev` starts a local
+server for development. See the [chat server guide](server/README.md) for
+connecting the app, deployment and administration.
 
 ## Reporting a problem
 
@@ -219,7 +190,7 @@ address. The site sets no
 cookies and loads no third-party scripts. The only telemetry is a few empty marker pages the
 app requests (`/pwa.html`, `/pwa-installed.html`, `/roms-loaded.html`, `/roms-vice.html`,
 `/returned.html`, and one `/roms-theme-<theme>.html` per built-in theme plus `custom` for
-imported ones; see `src/main.js`) so the host's server-side statistics (Netlify Analytics)
+imported ones, see `src/main.js`) so the host's server-side statistics (Netlify Analytics)
 can count how many sessions run installed or with ROMs, how many return with their ROMs
 already set up, and which theme people set their ROMs up in. They carry no payload and no
 identifier, and an imported theme's name never leaves the browser.
@@ -229,8 +200,8 @@ identifier, and an imported theme's name never leaves the browser.
 Copyright © 2026 Morten Øien Eriksen.
 
 Licensed under **GPL-3.0-or-later**, see [`LICENSE`](./LICENSE). Bundled third-party
-materials (the fonts, the 3D model, three.js and Workbox) remain under their own licenses;
-they and the reSID lineage of the SID engine are attributed in [`NOTICE.txt`](NOTICE.txt).
+materials (the fonts, the 3D model, three.js and Workbox) remain under their own licenses.
+They and the reSID lineage of the SID engine are attributed in [`NOTICE.txt`](NOTICE.txt).
 The Commodore / MOS ROMs are copyrighted by their rights holders and are **not** included.
 Supply your own.
 

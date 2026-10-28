@@ -76,8 +76,8 @@ history.sample(live,devices,'KERNAL ROM',2000,false);
 assert.equal(history.count,1,'resuming starts a new history window rather than joining across a pause');
 assert.equal(history.source[0],1,'Live history distinguishes ROM execution samples');
 for(let i=1;i<=100;i++) history.sample(live,devices,'RAM',2000+i*100,false);
-assert.equal(history.count,80,'Live histories remain bounded');
-assert.equal(history.seconds,7.9,'Live execution trail spans the actual recorded sample times');
+assert.equal(history.count,81,'Live histories retain the endpoints of an eight-second window');
+assert.equal(history.seconds,8,'Live execution trail spans the actual recorded sample times');
 history.sample(live,devices,'RAM',200000,false);
 assert.equal(history.count,1,'time away from Live does not create a continuous execution trail');
 
@@ -149,4 +149,87 @@ for(const rate of [1,10,25,50]){
  assert.equal(h.storage.count,5,`${rate}/s Storage history shares the Live observation rate`);
  h.sample(live,devices,'RAM',4*interval,false,interval);
  assert.equal(h.count,5,'Rendering the same shared snapshot does not duplicate a history point');
+}
+
+for(const rate of [1,10,25,50]){
+ const h=new LiveCardHistory(),interval=1000/rate;
+ for(let t=0;t<=12000;t+=interval)h.sample(live,devices,'RAM',t,false,interval);
+ assert.equal(h.seconds,8,`${rate}/s retains eight seconds of observed time`);
+ assert.equal(h.storage.seconds,8,`${rate}/s storage history retains eight seconds too`);
+ assert.ok(h.count<=401,'the highest sampling rate remains bounded');
+}
+
+const {graphicsMemoryGroups}=await import('../src/monitor/memory-model.js');
+{
+  const state={vic:new Uint8Array(64),vicBank:0x8000,pc:0};
+  const bytes=new Uint8Array(16384);
+  state.vic[0x18]=0x18;state.vic[0x11]=32;state.vic[0x15]=3;
+  bytes[0x7f8]=0x80;bytes[0x7f9]=0x81;
+  const groups=graphicsMemoryGroups(state,bytes);
+  assert.equal(groups[0].regions[0].start,0x8400,'Screen marker follows the VIC bank and screen base');
+  assert.equal(groups[1].regions[0].start,0xa000,'Bitmap marker follows the selected bitmap half-bank');
+  assert.deepEqual(groups[2].regions.map(r=>r.start),[0xa000,0xa040],'Sprite markers follow each enabled slot pointer even inside bitmap data');
+  state.vic[0x15]=0;state.vic[0x11]=0;state.vic[0x18]=0x14;
+  const textGroups=graphicsMemoryGroups(state,bytes);
+  assert.equal(textGroups[1].regions[0].start,0x9000,'Character marker retains the VIC address even where character ROM is mapped');
+  assert.equal(textGroups[2].regions.length,0,'No enabled sprites produces no claimed sprite source');
+}
+
+const {graphicsSourceLabel}=await import('../src/monitor/live-memory.js');
+const routes={vicMemorySource:address=>address>=0x1000&&address<0x2000?'Character ROM':'RAM'};
+assert.equal(graphicsSourceLabel(routes,{start:0,size:8000},0),'Mixed VIC sources','A bitmap crossing the character-ROM window is not labelled entirely RAM');
+assert.equal(graphicsSourceLabel(routes,{start:0x1000,size:2048},0),'Character ROM','A configured ROM character set names the VIC-visible source');
+
+const {bitmapPatternPixels,invalidGraphicsMode,screenPixels,screenBytePixels}=await import('../src/monitor/setup-model.js');
+{
+  const state={vic:new Uint8Array(64),palette:new Uint32Array([0,0xffffff]),colorRam:new Uint8Array(1024)};
+  const memory=new Uint8Array(16384),out=new Uint8ClampedArray(320*200*4),actual=new Uint8ClampedArray(out.length);
+  state.vic[0x18]=0x18;memory[1024]=0xc1;memory[8192+8]=128;memory[8192]=128;
+  for(const [control1,control2] of [[64,16],[96,0],[96,16]]) {
+    state.vic[0x11]=control1;state.vic[0x16]=control2;
+    assert.equal(invalidGraphicsMode(state),true,'ECM combined with bitmap or multicolour selects an invalid graphics mode');
+    screenPixels(actual,memory,state);
+    assert.equal(actual.every((value,index)=>value===(index%4===3?255:0)),true,'Invalid-mode graphics output remains black independently of the diagnostic preview');
+  }
+  for(const [control1,control2] of [[0,0],[0,16],[32,0],[32,16],[64,0]]) {
+    state.vic[0x11]=control1;state.vic[0x16]=control2;
+    assert.equal(invalidGraphicsMode(state),false,'The five valid mode combinations allow reconstructed previews');
+  }
+}
+{
+  const state={vic:new Uint8Array(64),palette:new Uint32Array([0x123456,0xabcdef])};
+  const memory=new Uint8Array(16384),out=new Uint8ClampedArray(320*200*4);
+  state.vic[0x18]=8;state.vic[0x11]=96;memory[8192]=128;memory[8192+8]=64;
+  bitmapPatternPixels(out,memory,state);
+  assert.deepEqual([...out.slice(0,4)],[0xab,0xcd,0xef,255],'Raw bitmap preview exposes bit 7 at the top-left even when invalid mode blanks the screen');
+  assert.deepEqual([...out.slice(4,8)],[0x12,0x34,0x56,255],'Raw bitmap zero uses the monochrome background colour');
+  assert.deepEqual([...out.slice(9*4,9*4+4)],[0xab,0xcd,0xef,255],'Bitmap cell data advances horizontally after each eight-byte character cell');
+}
+{
+  const state={vic:new Uint8Array(64),vicBank:0,pc:0},memory=new Uint8Array(16384);
+  const {memoryRegions}=await import('../src/monitor/memory-model.js');
+  const sources=memoryRegions(state,memory,true).filter(r=>r.kind==='sprite');
+  assert.equal(sources.length,8,'Memory inspection retains all configured sprite pointers, independently of enable bits');
+  assert.equal(sources.every(r=>!r.enabled),true,'Disabled slots do not claim active sprite output');
+  assert.equal(memoryRegions(state,memory).some(r=>r.kind==='sprite'),false,'Live overview still limits its markers to enabled sprites');
+}
+
+// Visible ownership selects the pixel even when one slot is reused elsewhere.
+const { spritePreviewPixel } = await import('../src/monitor/sprite-preview.js');
+const spriteFrame={width:4,height:2,owners:new Uint8Array([0,255,0,0,255,0,255,1]),border:new Uint8Array([0,0,1,0,0,0,0,0])};
+const spriteCrop={left:0,top:0,right:3,bottom:1,pixels:3};
+assert.deepEqual(spritePreviewPixel(spriteFrame,0,spriteCrop,1,0),{x:3,y:0},'Sprite preview click selects the visible instance nearest the clicked point');
+assert.deepEqual(spritePreviewPixel(spriteFrame,0,spriteCrop,.5,1),{x:1,y:1},'Sprite preview padding and transparency resolve to a pixel owned by the chosen slot');
+assert.equal(spritePreviewPixel(spriteFrame,0,{pixels:0}),null,'An empty sprite crop cannot invent a source pixel');
+console.log('ok  - captured sprite links select visible ownership rather than the first fetch');
+
+spriteFrame.provenance={visibleSprites:new Uint8Array([1,0,0,0,0,1,0,0])};
+assert.deepEqual(spritePreviewPixel(spriteFrame,0,spriteCrop,1,0),{x:1,y:1},'Sprite preview navigation excludes coverage hidden behind foreground graphics');
+
+{
+  const state={vic:new Uint8Array(64)},memory=new Uint8Array(16384),out=new Uint8ClampedArray(320*200*4);
+  state.vic[0x18]=0x20;memory[2048]=255;memory[2049]=0;
+  screenBytePixels(out,memory,state);
+  assert.deepEqual([...out.slice(0,4)],[255,255,255,255],'Screen-byte map reads the screen base selected by D018');
+  assert.deepEqual([...out.slice(8*4,9*4)],[32,32,32,255],'Adjacent screen bytes become adjacent brightness cells');
 }

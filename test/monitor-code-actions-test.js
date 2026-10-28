@@ -17,3 +17,10 @@ assert.deepEqual(capturedCycleBudget(frame),{total:6,available:2,vic:1,reu:1,hal
 assert.equal(capturedCycleBudget({...frame,analysis:null}).unknown,6,'ordinary capture is not mistaken for zero CPU stalls');
 assert.equal(capturedCycleBudget({...frame,analysis:{bus:Uint8Array.from([1|4|8|16])}}).reu,1,'overlapping holds count once with REU precedence');
 console.log('ok  - captured code explanations and CPU frame budget');
+
+const writes={eventCount:0,provenance:{count:7,kind:[8,5,1,1,12,7,12],address:[0x200,0,0xd400,0x400,0x400,0x401,0x401],tick:[0,3,3,7,7,8,8],value:[0x8d,34,34,5,5,9,9],aux:[0,1,0,0,0,0,0],pc:[0x200,0x200,0x200,0x200,0x200,0x200,0x200],sid2Address:0xd420}};
+const mixed=capturedCodeActions(writes);
+assert.equal(mixed[0].group,'Sound','captured SID writes enter the Sound action category');
+assert.equal(mixed[0].address,0xd420,'SID 2 retains its independent mapped base address');
+assert.equal(mixed[1].cpu,true,'a recorded CPU RAM write retains its dispatch origin');
+assert.equal(mixed[2].cpu,false,'REU RAM changes cannot inherit the previously executing CPU instruction');

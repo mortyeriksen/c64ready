@@ -1439,6 +1439,7 @@ export class VIC2 {
   read(reg) {
     reg &= 0x3F;
     const v = this._readRegRaw(reg);
+    if(this._captureObserver)this._captureObserver.rules.add(10,reg,v,this.regs[reg],this._cpuVisibleRaster(),this.irqStatus,this.irqMask);
     // CPU read drives the VIC internal data bus — feeds sprite idle fetch.
     this.vicInternalBus = v & 0xFF;
     return v;
@@ -1511,7 +1512,10 @@ export class VIC2 {
     // Bauer §3.2: $D01E/$D01F (M-M and M-D collision) and $D02F-$D03F
     // (unconnected) are not CPU-writable. Return after updating the bus
     // latch so a STA $D01E doesn't poison the collision register.
-    if (reg === 0x1E || reg === 0x1F || reg >= 0x2F) return;
+    if (reg === 0x1E || reg === 0x1F || reg >= 0x2F) {
+      if(this._captureObserver)this._captureObserver.rules.add(11,reg,this.regs[reg],this.regs[reg],val);
+      return;
+    }
     const oldVal = this.regs[reg];
     this.regs[reg] = val;
     // (B2) Any CPU register write changes the per-cycle reg snapshot, so bump
@@ -1636,12 +1640,14 @@ export class VIC2 {
         // fires every line. Using `this.raster`=N keeps it HIGH→HIGH.
         const oldTarget = this.regs[0x12] | ((oldVal & 0x80) << 1);
         const newTarget = this.regs[0x12] | ((val & 0x80) << 1);
+        if(this._captureObserver)this._captureObserver.rules.beginRaster(this,oldTarget);
         if (oldTarget !== newTarget) {
           const oldMatch = (this.raster === oldTarget);
           const newMatch = (this.raster === newTarget);
           if (oldMatch && !newMatch) this._rasterCompMidLineDip = true;
           if (!oldMatch && newMatch) this._fireRasterIrqMidLine();
         }
+        if(this._captureObserver)this._captureObserver.rules.endRaster(this,newTarget,true);
         // Late-line YSCROLL → BL recovery (raster_time_gp's permanent
         // bad-line trick): if the CPU writes $D011 at cy 59-62 with a
         // YSCROLL that produces a fresh BL condition AFTER the cy 58
@@ -1679,12 +1685,14 @@ export class VIC2 {
         // `this.raster`; the write path must match it at the c63→c0 boundary.
         const oldTarget = oldVal | ((this.regs[0x11] & 0x80) << 1);
         const newTarget = val | ((this.regs[0x11] & 0x80) << 1);
+        if(this._captureObserver)this._captureObserver.rules.beginRaster(this,oldTarget);
         if (oldTarget !== newTarget) {
           const oldMatch = (this.raster === oldTarget);
           const newMatch = (this.raster === newTarget);
           if (oldMatch && !newMatch) this._rasterCompMidLineDip = true;
           if (!oldMatch && newMatch) this._fireRasterIrqMidLine();
         }
+        if(this._captureObserver)this._captureObserver.rules.endRaster(this,newTarget,true);
         break;
       }
       case 0x17: {
@@ -1750,7 +1758,7 @@ export class VIC2 {
   // silicon already latched at g-access time). For real chip-bus fetches
   // (matrix c-access, sprite p/s-access, refresh) call _vicBusRead*.
   //
-  _vicMemRead(addr, bank) {
+  _vicMemRead(addr, bank, observer = null) {
     // PLA Ultimax VIC map (C64 PLA Dissected, table A.11): the VIC sees
     // cartridge ROMH in its local $3000-$3FFF window in every CIA-selected
     // bank. A12-A15 float high during VIC ownership, so this addresses the
@@ -1758,15 +1766,19 @@ export class VIC2 {
     // Ultimax; all other VIC windows read DRAM.
     if (this.memory?.cartMode === 'ultimax') {
       if ((addr & 0x3000) === 0x3000 && this.memory.cartRomHi) {
+        if(observer)observer.rules.memoryRoute=2;
         return this.memory.cartRomHi[0x1000 | (addr & 0x0FFF)];
       }
+      if(observer)observer.rules.memoryRoute=0;
       return this.ram[bank + (addr & 0x3FFF)];
     }
     const physAddr = bank + (addr & 0x3FFF);
     if ((physAddr >= 0x1000 && physAddr < 0x2000) ||
       (physAddr >= 0x9000 && physAddr < 0xA000)) {
+      if(observer)observer.rules.memoryRoute=1;
       return this.charRom[physAddr & 0x0FFF];
     }
+    if(observer)observer.rules.memoryRoute=0;
     return this.ram[physAddr];
   }
 
@@ -1809,7 +1821,7 @@ export class VIC2 {
   }
 
   _vicBusRead(addr, bank = this.currentVicBank) {
-    const v = this._vicMemRead(addr, bank);
+    const v = this._vicMemRead(addr, bank, this._captureObserver);
     if(this._captureObserver)this._captureObserver.add(2,bank+(addr&16383),v);
     this.vicInternalBus = v & 0xFF;
     // Drive the shared external data bus too. VIC chip-bus fetches happen
@@ -1818,6 +1830,7 @@ export class VIC2 {
     // in C64Machine.constructor; bare VIC2 instances (unit tests) leave it
     // null and only update vicInternalBus.
     if (this.memory) this.memory.externalDataBus8 = v & 0xFF;
+    if(this._captureObserver)this._captureObserver.rules.add(15,v,this.vicInternalBus,this.memory?this.memory.externalDataBus8:256,this._captureObserver.rules.memoryRoute,addr&16383,bank,this.memory?.cartMode==='ultimax'?1:0);
     return v;
   }
 
@@ -1914,6 +1927,7 @@ export class VIC2 {
 
   _checkRasterIrq() {
     const targetRaster = this.regs[0x12] | ((this.regs[0x11] & 0x80) << 1);
+    if(this._captureObserver)this._captureObserver.rules.beginRaster(this,targetRaster);
     const match = (this.raster === targetRaster);
     // VIC-Addendum.txt: edge-triggered. The latch fires on a LOW→HIGH
     // transition of the comparator. From the per-line sample's POV that
@@ -1924,7 +1938,7 @@ export class VIC2 {
     const fired = match && (!this._lastRasterMatch || this._rasterCompMidLineDip);
     this._lastRasterMatch = match;
     this._rasterCompMidLineDip = false;
-    if (!fired) return;
+    if (!fired) {if(this._captureObserver)this._captureObserver.rules.endRaster(this,targetRaster,false);return;}
     const wasAsserted = (this.irqStatus & 0x80) !== 0;
     this.irqStatus |= 0x01;
     if (this.irqMask & 0x01) {
@@ -1939,6 +1953,7 @@ export class VIC2 {
         });
       }
     }
+    if(this._captureObserver)this._captureObserver.rules.endRaster(this,targetRaster,false);
   }
 
   // Raw sprite X-coordinate of the rule-4 / cycle-58 display turn-on point.

@@ -7,6 +7,15 @@
 /* ── Fullscreen mode ─────────────────────────────────────────────────── */
 /* FULL is a view toggle → neutral (uses the base .btn / .btn:hover styling). */
 
+.fs-close-btn.dialog-close,
+.model-viewer-close.dialog-close {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+}
+
 .fs-close-btn.dialog-close {
   display: none;
   position: fixed;

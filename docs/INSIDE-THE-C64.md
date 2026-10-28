@@ -34,8 +34,20 @@ explanation leads somewhere else in the machine.
 Open a chapter from the menu, or choose **About** on a Live Monitor card.
 Clicking the rest of a card opens its inspection section.
 Each About view uses the same chapter as this collection. **Inspect in Monitor**
-opens the matching section. Pause retains the latest complete recording so you
-can compare the chips' recorded activity across sections.
+opens the matching section. Opening a component pauses on a shared moment,
+so you can compare the chips without the program moving on.
+
+| Where to look | What you are studying |
+| --- | --- |
+| Live | Recent activity and how the components connect. |
+| Memory | Stored bytes, character shapes, bitmap bits and sprite sources. |
+| Video | The captured picture, raster timing and evidence for how pixels were produced. |
+| Code and Sound | Recorded instructions, writes and voice changes. |
+| Controls and Storage | Input signals, timers, devices and transfers. |
+
+Choose the play icon to resume activity in a component. Returning to Live resumes
+a pause made by section navigation. Closing Monitor resumes the C64.
+The rounded playback button is separate from the section navigation.
 
 For the Monitor's controls and workflows, see the
 [Live Monitor guide](GUIDE-MONITOR.md).

@@ -24,7 +24,7 @@ Guide screenshots use Phosphor dark. With the dev server running,
 States examples. The theme gallery keeps each named theme's dark and light views.
 `node tools/guide-setup-shot.mjs` regenerates the ROM setup and theme picker
 images for Getting Started.
-`node tools/guide-monitor-shots.mjs` refreshes the four Live Monitor images
+`node tools/guide-monitor-shots.mjs` refreshes the eight Live Monitor images
 using the external Nine demo. It also runs with `npm run guide:shots`.
 
 ```bash
@@ -69,11 +69,12 @@ state and pixels. Missing evidence must remain distinct from a rule mismatch.
 | Area | Main checks |
 | --- | --- |
 | Snapshot and facade | Read-only inspection, reused buffers, all four sampling rates, memory mappings, dual SID and REU. |
+| Memory | Actual matrix-read regions, repeated reads, source pages and read rasters, missing or partial evidence, captured versus static screen views and recording-preserving links. |
 | Frame and provenance | Complete-frame ownership, phase ordering, historical bytes, host-write invalidation, cancellation and observer cleanup. |
-| Video and Bauer | Graphics sources, sprite coverage, borders, bus access, IRQ, collisions, lightpen and ghost-byte evidence. |
-| Code and Sound | Recorded instruction identity, action explanations, cycle budgets, stable selection and independent SID paths. |
-| Storage | Bounded tape decoding, cartridge mapping, REU accesses, rate units and collection only while Monitor is active. |
-| Browser | Shared captures, pause/replay, lazy analysis, saved sampling rate, desktop and touch layouts, dialogs, navigation and input routing. |
+| Video and Bauer | Evidence-qualified summaries, diverse findings and paging, frame stories, graphics sources, sprite intervals, borders, bus access, IRQ, collisions, lightpen, ghost-byte evidence and independent PAL phase predictions. |
+| Code and Sound | Recorded instruction identity, action explanations, cycle budgets, captured operands, paged evidence, fixed-duration histories, fast-rate label stability, bounded actual-write histories, captured SID write navigation, historical voice settings and independent SID paths. |
+| Storage | Bounded tape decoding, cartridge mapping, REU accesses, rate units, confirmed accelerated LOAD destinations and collection only while Monitor is active. |
+| Browser | Component-entry pause ownership and shared recordings, header state, shared captures, bounded paused-entry capture, final pause snapshots, held navigation, capped presentation, sprite-detail links, pause/replay, lazy analysis, saved sampling rate, desktop and touch layouts, dialogs, navigation and input routing. |
 
 Run individual files with `node test/monitor-<name>-test.js`, or use `npm test`
 for the registered suite. `test/monitor-browser-test.js` requires Playwright

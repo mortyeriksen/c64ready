@@ -74,7 +74,7 @@ See the [machine model](MACHINE-ARCHITECTURE.md) for the wiring between CIAs, CP
 ## Try it in Monitor
 
 1. Choose **Inspect Controls** to see the keyboard matrix, control-port pins and CIA timers.
-2. Give the live C64 display focus, then press a key or use a controller and watch the input states.
+2. Choose the play icon to resume, give the live C64 display focus, then press a key or use a controller and watch the input states.
 3. Compare a timer's current count, reload value and running flag before interpreting an interrupt indicator.
 4. Pause and use Code's interrupt evidence to investigate accepted interrupts in the shared frame.
 

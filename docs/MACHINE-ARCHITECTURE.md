@@ -355,6 +355,7 @@ snapshots from historical frame evidence:
 | `inspectControlsInto()` | Copies keyboard, port, paddle and CIA timer/interrupt state without read side effects. |
 | `inspectStorageInto()` | Copies media, loading mode, drive/tape state, cartridge mapping and REU settings. REU flags are peeked and decoded addresses use the device bank mask. |
 | `setStorageMonitoring()` | Opts into scalar transfer counters. Inspection alone does not enable them. Media/path changes advance an epoch, and Monitor detaches counters when closed, hidden or replaced. |
+| `setMonitorActivityMonitoring()`, `inspectMonitorActivityInto()` | Opt into a 32,768-entry ring of SID writes and completed accelerated LOADs. Retain eight emulated seconds, copy incrementally into caller-owned buffers and disclose overflow. Reset, restore and SID routing changes invalidate its epoch. |
 | `requestVicFrameCapture()` | Waits for a boundary, records a complete frame through final phi2 and detaches it. Taking the result transfers ownership to the UI. Cancel, reset and restore invalidate pending work. |
 
 With `analysis: true`, preallocated cycle samples record bus permission after
@@ -366,7 +367,9 @@ SID and REU accesses through fixed nullable observers. The collector is capped
 at 8 MiB, with explicit overflow, eight access slots per master cycle and a
 65,536-entry raw rule log. It observes completed accesses without extra I/O reads,
 per-cycle allocations, method replacement or changes to clock ordering.
-Completion and cancellation detach every observer.
+Completion and cancellation detach frame observers. The independent activity ring
+uses nullable SID/LOAD hooks only while Monitor is visible. It records CPU load
+destinations and counts confirmed direct RAM writes without extra memory reads.
 
 Host writes that bypass recorded CPU/REU paths invalidate historical RAM
 completeness. Reconstruction is then refused. Output-stage pixel sources and raw

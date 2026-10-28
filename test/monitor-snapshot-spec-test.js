@@ -84,3 +84,17 @@ assert.equal(adjustable.capture(25),true,'The faster rate takes effect on the sa
 assert.equal(adjustable.bytes,sharedBuffer,'Rate changes preserve shared snapshot buffers');
 assert.throws(()=>adjustable.setRate(0),RangeError,'Unsupported rates cannot disable or spin the scheduler');
 console.log('ok  - selectable 1/10/25/50 Hz scheduling and buffer-preserving rate changes');
+
+const forced=new InspectionSnapshot(facade,1);
+forced.capture(0);
+m.mem.ram[0x5000]=0x91;
+const forceBefore=m.serializeState();
+assert.equal(forced.capture(12,true),true,'Pause can take its final sample before the scheduled deadline');
+assert.equal(forced.bytes[0x5000],0x91,'A forced final sample includes the most recent machine state');
+assert.deepEqual(m.serializeState(),forceBefore,'A forced sample does not advance or mutate the machine');
+assert.equal(forced.capture(1000),false,'Forced sampling establishes a new deadline without a duplicate scheduled read');
+assert.equal(forced.capture(1012),true,'Scheduled sampling resumes from the forced sample deadline');
+const cadence=new InspectionSnapshot(facade,50);
+cadence.capture(0);cadence.capture(21);
+assert.equal(cadence.capture(40),true,'A late timer callback does not accumulate drift in the sampling deadline');
+console.log('ok  - forced pause snapshot remains read-only and sampling deadlines do not drift');

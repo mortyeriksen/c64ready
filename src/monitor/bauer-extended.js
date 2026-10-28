@@ -21,16 +21,19 @@ export const EXTENDED_RULES = [
   rule('sprite.advance-latch','3.8.1 rule 1','Allow the next sprite row','Y-expansion register and advance-line flags','Without Y expansion, the advance-line flag is held set. With expansion it can alternate to repeat rows.'),
   rule('sprite.dma-start','3.8.1 rule 2','Start fetching a sprite','cycles 55/56 enable, Y, DMA and MCBASE','An enabled sprite whose Y matches the raster starts DMA at cycle 55 or 56. Its data base resets to zero.'),
   rule('sprite.y-toggle','3.8.1 rule 3','Repeat an expanded sprite row','cycle 55/56 flags and stable $D017','At cycle 56, an active expanded sprite toggles its advance-line flag, alternating between repeating and advancing a row.'),
-  rule('sprite.mc-reload','3.8.1 rule 4','Reload the sprite data counter','cycle 58 MCBASE and MC, including its scheduled fetch','At cycle 58, each sprite data counter starts from its base. Sprite 0 can also fetch its first byte in this cycle.'),
   rule('sprite.display-off','3.8.1 rule 4','Stop displaying a finished sprite','cycle 58 DMA and display flags','When sprite DMA is off at cycle 58, its display flag is switched off too.'),
   rule('sprite.row-advance','3.8.1 rule 7','Advance the sprite source row','cycle 15/16 counters, advance flags and $D017','At cycle 16, an advance flag loads MC into MCBASE. Reaching byte 63 ends DMA.'),
   rule('sprite.crunch','3.8.1 rule 7a','Crunch a sprite row','cycle 15 $D017 clear, previous flag and counters','Clearing Y expansion at cycle 15 while the advance flag was clear mixes alternating bits of MC and MCBASE, changing the next source row.'),
-  rule('sprite.display-start','3.8.1 rule 4','Start displaying a sprite','cycle 58 DMA, enable and Y match','At cycle 58, a matching active sprite starts its display. The enable bit must still permit the sprite.'),
+  rule('sprite.display-start','3.8.1 rule 4','Start displaying a sprite','cycle 58 DMA and Y match','At cycle 58, a matching sprite with DMA active starts its display. Enable controls DMA start, which is a separate decision.'),
   rule('sprite.fetch-sequence','3.8.1 rule 5','Fetch three sprite bytes','grouped sprite fetches and previous data counters','Three bytes form a sprite row and advance the six-bit data counter. This log groups the three reads at the row-access cycle. It checks byte order and counter progression, not individual half-cycle timing.'),
   rule('irq.raster','3.12','Reach the raster interrupt line','stable raster target, latch and line boundary','The raster comparison runs at cycle 1, or cycle 2 on raster zero. A new match sets the raster interrupt latch even when that source is masked.'),
   rule('irq.output','3.12','Request a CPU interrupt','IRQ latch and enable mask','A pending source requests an interrupt only when its matching enable bit is set. This is separate from the CPU accepting the request.'),
   rule('refresh.address','3.13','Keep DRAM refreshed','timed refresh bus addresses','Five accesses per raster line step downward through 256 DRAM row addresses. The sequence starts at $3FFF in raster zero.'),
   rule('border.stable-mask','3.9','Border mask with stable controls','stable border controls and complete pixel mask','Replaying the border comparators predicts the covered screen area when border controls stay fixed.'),
+  rule('refresh.counter','3.13','Advance the DRAM refresh counter','refresh counter after each of the five refresh accesses','Each refresh access decrements REF with eight-bit wrap. Raster zero starts the sequence at 255.'),
+  rule('fetch.sprite-block','3.8.1','Use the fetched sprite pointer','recorded pointer bytes and subsequent sprite data addresses','The latest pointer read selects the 64-byte sprite block. A later CPU change to pointer memory does not replace that already fetched pointer.'),
+  rule('fetch.matrix-slot','3.7.2 rule 3','Store the screen cell in the row buffer','recorded matrix access and video matrix line index','A screen fetch stores its byte in the matrix-line position selected by VMLI, before the graphics access advances the index.'),
+  rule('sprite.dma-stop','3.8.1 rule 7','Stop fetching after byte 63','cycle 16 sprite row base and DMA flag','After advancing the sprite row base, a base of 63 switches DMA off. Display shutdown is checked separately at cycle 58.'),
   ...OUTPUT_RULES,
 ];
 const MATCH=1,MISMATCH=2,UNKNOWN=3,NA=0;
@@ -62,7 +65,17 @@ export function prepareExtended(frame) {
     tails[t]=i;
   }
   const valid=!!(q?.version===1&&q.phase==='after-vic-before-cpu'&&q.registers?.length===n*64&&['bank','vc','vcBase','rc','vmli','display','refresh','irq','mask','dma','spriteDisplay'].every(k=>q[k]?.length===n)&&['mc','mcBase','advance'].every(k=>q[k]?.length===n*8));
-  return {output:prepareOutputRules(frame),den,bad,matrix,writes,eventHeads,eventNext,valid,denValid:typeof latch==='boolean'&&!frame.overflow,border:frame.border?staticBorderCheck(frame):null};
+  const spriteBlocks=new Uint8Array(n),pointerValues=new Int16Array(8).fill(-1);
+  if(p&&!p.overflow&&!frame.overflow&&valid)for(let t=0;t<n;t++){
+    const slot=POINTER_CYCLES.indexOf(t%63+1);
+    for(let i=eventHeads[t];i>=0;i=eventNext[i]){
+      if(slot>=0&&p.kind[i]===2&&p.address[i]===q.bank[t]+spritePointerAddress(q.registers[t*64+0x18],slot))pointerValues[slot]=p.value[i];
+      if(p.kind[i]!==4)continue;
+      const pointer=pointerValues[p.aux[i]],result=pointer===undefined||pointer<0?UNKNOWN:verdict(q.bank[t]+pointer*64,p.address[i]&0xffc0);
+      spriteBlocks[t]=spriteBlocks[t]===MISMATCH||result===MISMATCH?MISMATCH:spriteBlocks[t]===UNKNOWN||result===UNKNOWN?UNKNOWN:result;
+    }
+  }else spriteBlocks.fill(UNKNOWN);
+  return {spriteBlocks,output:prepareOutputRules(frame),den,bad,matrix,writes,eventHeads,eventNext,valid,denValid:typeof latch==='boolean'&&!frame.overflow,border:frame.border?staticBorderCheck(frame):null};
 }
 export function checkExtended(frame,t,id,context) {
   const a=frame.analysis,q=a.sequencer,p=frame.provenance,c=t%63+1,line=Math.floor(t/63),x=context;
@@ -79,6 +92,14 @@ export function checkExtended(frame,t,id,context) {
     return verdict(true,!!(q.irq[t]&1));
   }
   if(id==='irq.output')return verdict(irqOutput(q.irq[t],q.mask[t]),!!(q.irq[t]&128));
+  if(id==='fetch.sprite-block')return x.spriteBlocks[t];
+  if(id==='refresh.counter')return c>=11&&c<=15?verdict((255-line*5-(c-10))&255,q.refresh[t]):NA;
+  if(id==='sprite.dma-stop'){
+    if(c!==16)return NA;
+    let applicable=false;
+    for(let s=0;s<8;s++)if(q.mcBase[t*8+s]===63){applicable=true;if(q.dma[t]&(1<<s))return MISMATCH;}
+    return applicable?MATCH:NA;
+  }
   if(id==='graphics.frame-base')return line===47&&c===63?verdict(0,q.vcBase[t]):NA;
   if(id==='graphics.vc-reload')return c===14?verdict(true,q.vc[t]===q.vcBase[t]&&q.vmli[t]===0):NA;
   if(id==='graphics.rc-reset')return c===14&&x.bad[t]?verdict(0,q.rc[t]):NA;
@@ -109,12 +130,13 @@ export function checkExtended(frame,t,id,context) {
       for(let i=head;i>=0;i=x.eventNext[i])if(p.kind[i]===2&&p.address[i]===address)return MATCH;
       return MISMATCH;
     }
-    const kind=id==='fetch.matrix-address'?11:3;
+    const kind=id==='fetch.matrix-address'||id==='fetch.matrix-slot'?11:3;
     let found=false;
     for(let i=head;i>=0;i=x.eventNext[i]) {
       if(p.kind[i]!==kind)continue;
       found=true;
       if(kind===3&&(c<15||c>54))return UNKNOWN;
+      if(id==='fetch.matrix-slot'){if(p.aux[i]!==((q.vmli[t]-(q.display[t]?1:0))&63))return MISMATCH;continue;}
       const vc=(q.vc[t]-(q.display[t]?1:0))&1023;
       const expected=q.bank[t]+(kind===11?matrixAddress(registers[base+0x18],vc):graphicsAddress(registers[base+0x11],registers[base+0x18],(p.aux[i]>>>6)&255,vc,q.rc[t],!!q.display[t]));
       if(expected!==p.address[i])return MISMATCH;
@@ -151,10 +173,8 @@ export function checkExtended(frame,t,id,context) {
       if(c!==56||!oldDma||!(registers[base+(0x17)]&bit))continue;
       if(registers[previousBase+(0x17)]!==registers[base+(0x17)])return UNKNOWN;
       expected=q.advance[k]^1;actual=q.advance[j];
-    }else if(id==='sprite.mc-reload'){
-      if(c!==58)continue;if(s===0&&dma&&q.spriteFetchPhase==='grouped-row')return UNKNOWN;expected=(q.mcBase[j]+(s===0&&dma?1:0))&63;actual=q.mc[j];
     }else if(id==='sprite.display-start'){
-      if(c!==58||!dma||!(registers[base+(0x15)]&bit)||registers[base+(s*2+1)]!==(line&255))continue;
+      if(c!==58||!dma||registers[base+(s*2+1)]!==(line&255))continue;
       expected=bit;actual=q.spriteDisplay[t]&bit;
     }else if(id==='sprite.display-off'){
       if(c!==58||dma)continue;expected=0;actual=q.spriteDisplay[t]&bit;

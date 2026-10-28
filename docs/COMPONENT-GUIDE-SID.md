@@ -72,8 +72,8 @@ The [SID model](SID-ARCHITECTURE.md) explains audio generation and the register 
 ## Try it in Monitor
 
 1. Compare the three pitch lanes, or six with two SIDs.
-2. Choose **Inspect Sound** to follow each voice through its envelope and filter or bypass path. Each voice box includes its explanation and register bytes.
-3. Pause and explore **Captured voice changes** to connect SID writes with the program in the shared recording.
+2. Choose **Inspect Sound** to follow each voice through its envelope and filter or bypass path. Each voice box includes its explanation and register bytes. Choose the play icon to watch settings change.
+3. Explore **Captured voice changes** while paused to connect SID writes with the program in the shared recording.
 
 ## What the readings can tell you
 

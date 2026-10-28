@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 
+import { createSidActivityView } from './sid-activity-view.js';
 import { hex } from './memory-sampler.js';
 
 import { voiceDescription, filterDescription, envelopePoints } from './sound-model.js';
@@ -34,7 +35,16 @@ export function createSidView(root) {
   function select(value) { selected = value; root.dataset.selectedSid = selected; for (const button of root.querySelectorAll('[data-sid-chip]')) button.setAttribute('aria-pressed', String(Number(button.dataset.sidChip) === selected)); }
   root.addEventListener('click', event => { const button = event.target.closest('[data-sid-chip]'); if (button) select(Number(button.dataset.sidChip)); });
   select(0);
-  function update(state) {
+  const recentPane=document.createElement('div');recentPane.className='monitor-sid-activity';recentPane.hidden=true;root.append(recentPane);
+  const recent=createSidActivityView(recentPane);
+  let lastNumbers=-Infinity,lastConfiguration='',lastPaused=null;
+  function update(state,activity,paused,now=performance.now()) {
+    if(root.classList.contains('is-recent-activity')){recent.update(activity,paused);return;}
+    if(root.classList.contains('is-captured-evidence'))return;
+    const configuration=`${state.sidCount}/${state.sid2Address}/${state.sidModels[0]}/${state.sidModels[1]}/${state.sidMix}`;
+    const numbers=paused||lastPaused!==paused||configuration!==lastConfiguration||now-lastNumbers>=250;
+    lastPaused=paused;lastConfiguration=configuration;
+    if(numbers)lastNumbers=now;
     root.dataset.sidCount = state.sidCount;
     for (let index = 0; index < 2; index++) {
       const chip = chips[index], inactive = index >= state.sidCount;
@@ -70,24 +80,28 @@ export function createSidView(root) {
       chip.el('identity').textContent = `${state.sidModels[index] ? '8580' : '6581'} · $${hex(address)}${state.sidCount > 1 ? ' · ' + state.sidMix : ''}`;
       for (let v = 0; v < 3; v++) {
         const voice = voiceDescription(r,index,v), item = chip.voices[v];
-        item.frequency.textContent = `${voice.hz.toFixed(1)} Hz${voice.note ? " ≈ " + voice.note : ""}`; item.frequency.title = `$${hex(voice.frequency)}`;
-        item.pulse.textContent = `${voice.pulsePercent.toFixed(1)}%`; item.meters[0].value = voice.frequency; item.meters[1].value = voice.pulse;
+        if(numbers) {
+          item.frequency.textContent = `${voice.hz.toFixed(1)} Hz${voice.note ? " ≈ " + voice.note : ""}`; item.frequency.title = `$${hex(voice.frequency)}`;
+          item.pulse.textContent = `${voice.pulsePercent.toFixed(1)}%`;
+        }
+        item.meters[0].value = voice.frequency; item.meters[1].value = voice.pulse;
         for (const [tag, bit] of [...item.wave, ...item.switches]) { tag.classList.toggle('is-set', !!(voice.control & bit)); tag.setAttribute('aria-label', `${tag.title || tag.textContent}: ${voice.control & bit ? 'on' : 'off'}`); }
         item.card.querySelector('polyline').setAttribute('points',envelopePoints(voice.adsr));
         item.card.querySelector('.monitor-sid-route').textContent=`Envelope → ${voice.route} → output`;
-        item.card.querySelector('.monitor-sid-voice-meaning').textContent=voice.gate?'Gate on: attack or sustain.':'Gate off: release may still sound.';
-        item.card.querySelector('.monitor-sid-voice-evidence').textContent=`ADSR ${voice.adsr.join('/')} · $${hex(address+v*7)}–$${hex(address+v*7+6)}: ${Array.from(r.slice(offset+v*7,offset+v*7+7),n=>hex(n,2)).join(' ')}`;
+        item.card.querySelector('.monitor-sid-voice-meaning').textContent=paused?(voice.gate?'Gate on: attack or sustain.':'Gate off: release may still sound.'):'Gate starts the envelope. Release can continue after gate off.';
+        if(numbers)item.card.querySelector('.monitor-sid-voice-evidence').textContent=`ADSR ${voice.adsr.join('/')} · $${hex(address+v*7)}–$${hex(address+v*7+6)}: ${Array.from(r.slice(offset+v*7,offset+v*7+7),n=>hex(n,2)).join(' ')}`;
 
       }
-      chip.el('filter-meaning').textContent=filterDescription(r,index);
+      chip.el('filter-meaning').textContent=paused?filterDescription(r,index):'Routed voices pass through the selected filter modes before reaching the output.';
       const route = r[offset + 23], modes = r[offset + 24];
-      for (const [name, value] of [['cutoff', (r[offset + 21] & 7) | (r[offset + 22] << 3)], ['resonance', route >>> 4], ['volume', modes & 15]]) { chip.el(name).value = value; chip.el(name + '-value').textContent = value; }
+      for (const [name, value] of [['cutoff', (r[offset + 21] & 7) | (r[offset + 22] << 3)], ['resonance', route >>> 4], ['volume', modes & 15]]) { chip.el(name).value = value; if(numbers)chip.el(name + '-value').textContent = value; }
       for (let bit = 0; bit < 4; bit++) { chip.routing[bit].classList.toggle('is-set', !!(route & (1 << bit))); chip.modes[bit].classList.toggle('is-set', !!(modes & (16 << bit))); }
+      if(!numbers)continue;
       for (const [part, name] of ['potx', 'poty', 'osc', 'env'].entries()) chip.el(name).textContent = state.sidReadback[index * 4 + part];
       let text = '';
       for (let reg = 0; reg < 25; reg++) text += `$${hex(address + reg)}  $${hex(r[offset + reg],2)}${reg % 4 === 3 ? '\n' : '   '}`;
       chip.registers.querySelector('pre').textContent = text;
     }
   }
-  return { update, selectChip: select };
+  return { update, selectChip: select, recentPane };
 }

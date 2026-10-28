@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 
+import { OBSERVATION_RULES, prepareObservationRules } from './bauer-observation-rules.js';
 import { BORDER_RULES, borderComparators } from './border-rules.js';
 
 const rule=(id,section,title,requires,explanation)=>({id,section,title,requires,explanation});
 export const OUTPUT_RULES=[
+  ...OBSERVATION_RULES,
   ...BORDER_RULES.map(r=>rule(r.id,r.section,r.title,'border comparator inputs and before/after gate samples',[
     'The right comparator closes the main border. Its initial pulse is checked separately from a later timed cancellation.',
     'At line end, reaching the bottom comparator sets the vertical latch for the following line.',
@@ -30,6 +32,7 @@ export const OUTPUT_RULES=[
   rule('irq.acknowledge','3.12','Acknowledge interrupt sources','IRQ latch before and after a register write','Writing one clears the corresponding pending interrupt source. Writing zero leaves that source unchanged.'),
   rule('lightpen.edge','3.11','Latch the first lightpen edge','input levels, beam position and before/after latches','The first falling lightpen edge in a frame stores X divided by two and the low eight raster bits, then requests the lightpen interrupt. Later edges leave the coordinates unchanged. The PAL last-line exception follows the VICE addendum.'),
 ];
+const OBSERVATION_IDS=new Set(OBSERVATION_RULES.map(r=>r.id));
 const NA=0,MATCH=1,MISMATCH=2,UNKNOWN=3;
 const MODE_RULE_IDS=Array.from({length:8},(_,i)=>`graphics.mode.${i}`);
 const verdict=(expected,actual)=>expected===actual?MATCH:MISMATCH;
@@ -40,7 +43,7 @@ function merge(rows,id,t,result) {
 }
 
 export function prepareOutputRules(frame) {
-  const n=frame.lines*frame.cyclesPerLine,rows=new Map(OUTPUT_RULES.map(r=>[r.id,new Uint8Array(n)]));
+  const n=frame.lines*frame.cyclesPerLine,rows=new Map(OUTPUT_RULES.filter(r=>!OBSERVATION_IDS.has(r.id)).map(r=>[r.id,new Uint8Array(n)]));
   const a=frame.analysis,q=a?.sequencer,b=a?.border,p=frame.provenance;
   const comparator={left:0,right:0,top:0,bottom:0,den:false};
   const borderReady=b?.before?.length===n&&b.after?.length===n&&b.latch?.length===n&&q?.registers?.length===n*64;
@@ -111,7 +114,7 @@ export function prepareOutputRules(frame) {
     }
   } else rows.get('fetch.idle-address').fill(UNKNOWN);
   const e=p?.rules;
-  if(!e||e.version!==1||e.overflow)for(const id of ['sprite.shift','sprite.pixel','collision.sprites','collision.graphics','collision.latch','collision.read-clear','irq.acknowledge','lightpen.edge'])rows.get(id).fill(UNKNOWN);
+  if(!e||![1,2].includes(e.version)||e.overflow)for(const id of ['sprite.shift','sprite.pixel','collision.sprites','collision.graphics','collision.latch','collision.read-clear','irq.acknowledge','lightpen.edge'])rows.get(id).fill(UNKNOWN);
   else for(let i=0;i<e.count;i++) {
     const t=e.tick[i],kind=e.kind[i];
     if(kind===1) {
@@ -140,5 +143,6 @@ export function prepareOutputRules(frame) {
     else if(kind===4)merge(rows,'collision.read-clear',t,verdict(0,e.c[i]));
     else if(kind===5)merge(rows,'collision.latch',t,verdict(e.b[i]|e.c[i],e.d[i]));
   }
+  for(const [id,result] of prepareObservationRules(frame))rows.set(id,result);
   return rows;
 }

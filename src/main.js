@@ -2081,6 +2081,11 @@ createMonitor({
   isPowered: () => running,
   isPaused: () => paused,
   setPaused: _setPaused,
+  presentFrame: () => {
+    if (presenter) presenter.present(c64.presentationBuffer());
+    else c64.blit(ctx);
+    updateMediaIndicators(false);
+  },
   releaseInput: () => {
     _releaseAllLatched();
     c64?.releaseAllKeys();

@@ -72,7 +72,9 @@ The [memory model](MEMORY-ARCHITECTURE.md) explains address decoding and banking
 
 1. Watch which squares change on Live.
 2. Choose **Inspect Memory** to open the page with the most changed bytes in the latest nonempty observation.
-3. Use the configured screen or character shortcut to see what those bytes mean.
+3. Choose **Screen cells**, then select a byte to see its address, character source or bitmap colour nibbles.
+4. Compare **Character shapes** or **Bitmap pixels** with those bytes. Bitmap previews show raw bits even when the graphics mode outputs black.
+5. Follow the Video link to investigate the finished picture. **Static picture** applies only the sampled settings and can look scrambled during raster effects.
 
 ## What the readings can tell you
 

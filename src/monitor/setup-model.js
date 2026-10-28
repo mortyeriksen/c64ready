@@ -58,6 +58,30 @@ export function characterPixels(out, memory, state) {
   }
 }
 
+// Raw bitmap bits before colour cells, mode decoding or border compositing.
+export function bitmapPatternPixels(out, memory, state) {
+  const base=(state.vic[0x18]&8)*1024;
+  for(let cell=0;cell<1000;cell++)for(let row=0;row<8;row++)for(let bit=0;bit<8;bit++) {
+    const colour=state.palette[memory[base+cell*8+row]&(128>>>bit)?1:0];
+    const pixel=(((Math.floor(cell/40)*8+row)*320)+(cell%40)*8+bit)*4;
+    putPixel(out,pixel,colour);
+  }
+}
+
+// Each 8 × 8 block represents one screen byte, with brightness encoding its value.
+export function screenBytePixels(out, memory, state) {
+  const base=(state.vic[0x18]>>>4)*1024;
+  for(let cell=0;cell<1000;cell++)for(let y=0;y<8;y++)for(let x=0;x<8;x++) {
+    const value=memory[base+cell],shade=x===7||y===7?0:32+Math.floor(value*223/255);
+    const offset=((Math.floor(cell/40)*8+y)*320+cell%40*8+x)*4;
+    out[offset]=shade;out[offset+1]=shade;out[offset+2]=shade;out[offset+3]=255;
+  }
+}
+
+export function invalidGraphicsMode(state) {
+  return !!(state.vic[0x11]&64)&&!!((state.vic[0x11]&32)||(state.vic[0x16]&16));
+}
+
 // A reconstruction from the current register setup, without scroll, sprites or
 // mid-frame changes. It is a view of display memory, not a second VIC renderer.
 export function screenPixels(out, memory, state) {

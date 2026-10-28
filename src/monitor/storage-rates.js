@@ -16,7 +16,7 @@ export class StorageRates {
     this.values = Array.from({ length: 5 }, () => ({ available: false, ready: false,
       scope: '', read: 0, write: 0, total: 0, epoch: -1, start: 0,
       times: new Float64Array(RATE_CAPACITY), reads: new Float64Array(RATE_CAPACITY), writes: new Float64Array(RATE_CAPACITY),
-      cursor: 0, count: 0, history: new Float64Array(80), historyCursor: 0, historyCount: 0 }));
+      cursor: 0, count: 0, history: new Float64Array(401), historyTimes: new Float64Array(401), historyCursor: 0, historyCount: 0 }));
   }
 
   sample(transfers, now) {
@@ -48,8 +48,10 @@ export class StorageRates {
         out.ready = true; out.total = out.read + out.write;
       }
       out.history[out.historyCursor] = out.total;
-      out.historyCursor = (out.historyCursor + 1) % 80;
-      out.historyCount = Math.min(80, out.historyCount + 1);
+      out.historyTimes[out.historyCursor] = now;
+      out.historyCursor = (out.historyCursor + 1) % 401;
+      out.historyCount = Math.min(401, out.historyCount + 1);
+      while(out.historyCount>1&&now-out.historyTimes[(out.historyCursor-out.historyCount+401)%401]>8000)out.historyCount--;
     }
   }
 }

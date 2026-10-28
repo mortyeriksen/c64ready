@@ -19,7 +19,7 @@ export function createStorageView(root, openMemory, openCode, navigation = {}) {
   const ctx = el('picture').getContext('2d'), trace = el('history').getContext('2d');
   const buttons = [...root.querySelectorAll('[data-storage-device]')];
   const history = new StorageHistory();
-  const analysis = createStorageAnalysis(root.querySelector('.monitor-storage-plot'), { openCode, ...navigation });
+  const analysis = createStorageAnalysis(root.querySelector('.monitor-storage-plot'), { openCode, openMemory, ...navigation });
   let facade = null, state = null, selected = 0, visible = false;
   let ink, accent, dim, bg;
   function theme() { const style = getComputedStyle(root); ink = style.getPropertyValue('--text').trim(); accent = style.getPropertyValue('--accent').trim(); dim = style.getPropertyValue('--dim').trim(); bg = style.getPropertyValue('--ui-bg').trim(); analysis.theme(); if (state && visible && !root.hidden) draw(); }
@@ -89,7 +89,7 @@ export function createStorageView(root, openMemory, openCode, navigation = {}) {
     el('details').textContent = `${el('meaning').textContent}\n\n${el('limit').textContent}\n\n${el('details').textContent}`;
     analysis.update(facade, selected, history);
     picture(); trace.fillStyle = bg; trace.fillRect(0,0,800,34);
-    for (let i=0;i<history.count;i++) { const value = history.rows[selected][(history.cursor-history.count+i+80)%80]; trace.fillStyle = value === 2 ? accent : dim; trace.globalAlpha = value ? 1 : .12; trace.fillRect(i*10,3,7,28); }
+    for (let i=0;i<history.count;i++) { const value = history.rows[selected][(history.cursor-history.count+i+401)%401]; trace.fillStyle = value === 2 ? accent : dim; trace.globalAlpha = value ? 1 : .12; trace.fillRect(800*(history.times[(history.cursor-history.count+i+401)%401]-history.lastTime+8000)/8000,3,Math.max(2,800/Math.max(1,history.count)),28); }
     trace.globalAlpha = 1; el('window').textContent = `${history.seconds.toFixed(1)} seconds`;
   }
   function update(current, render = true) {

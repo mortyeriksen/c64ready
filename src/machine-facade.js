@@ -15,6 +15,7 @@
 // rewrapped chip method (the browser checks wrap cia1.setKey) is the one
 // reached. The live instance is `c64` in state.js, rebuilt with each machine.
 
+import { MonitorActivityCapture, createActivityInspection } from './monitor-activity-capture.js';
 import { StorageTransferCapture } from './storage-transfer-capture.js';
 import { VicFrameCapture } from './vic2-frame-capture.js';
 import { C64_PALETTE } from './vic2-tables.js';
@@ -80,6 +81,7 @@ export class MachineFacade {
     this._vicCapture = null;
     this._storageCapture = null;
     this._storageMonitoring = false;
+    this._activityCapture = null;
     this.tape = new TapeView(machine);
     this._drives = { 8: new DriveView(machine, 8), 9: new DriveView(machine, 9) };
     this._reu = new ReuView(machine);
@@ -237,6 +239,16 @@ export class MachineFacade {
   ram()     { return this.machine.mem.ram; }
   // Character ROM as loaded, or null before the ROMs are in.
   charRom() { return this.machine.mem.charRom ?? null; }
+
+  createMonitorActivityInspection(){return createActivityInspection();}
+  setMonitorActivityMonitoring(active){
+    if(active){this._activityCapture??=new MonitorActivityCapture(this.machine);if(this.machine._monitorActivity!==this._activityCapture)this._activityCapture.start();}
+    else this._activityCapture?.stop();
+  }
+  inspectMonitorActivityInto(out){
+    if(this._activityCapture)return this._activityCapture.copyInto(out);
+    out.active=false;out.count=0;return out;
+  }
 
   setStorageMonitoring(active) {
     if (active) {

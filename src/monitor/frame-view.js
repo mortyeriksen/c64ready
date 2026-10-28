@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 
+import { frameStory } from './frame-story.js';
+import { createFrameSummaryView } from './frame-summary-view.js';
 import { createVideoInspector } from './video-inspector.js';
 import { createPixelLens } from './pixel-lens.js';
 import { picturePoint } from './learn-model.js';
@@ -10,23 +12,26 @@ import { traceSpriteOutlines, drawSpriteOutlines } from './sprite-outline.js';
 import { hex } from './memory-sampler.js';
 
 export function createFrameView(root, openCode = () => {}, openMemory = () => {}, { onReplay = () => {} } = {}) {
-  root.innerHTML = `<div class="monitor-section-head monitor-video-heading monitor-page-head"><p class="monitor-page-intro">Explore the picture. Follow it back to the machine.</p></div>
-    <p class="monitor-tag" data-frame="status" role="status"></p>
-    <div class="monitor-video-work"><div class="monitor-video-stage">
-      <div class="monitor-video-stage-head"><span>Hover to magnify · click a pixel to explain it · arrow keys and Enter also work</span><div class="monitor-frame-layers" role="group" aria-label="Picture layers"><label><input type="checkbox" data-frame="border"> Border mask</label><label><input type="checkbox" data-frame="bad"> Bad lines</label><label><input type="checkbox" data-frame="sprites"> Sprite coverage</label><label><input type="checkbox" data-frame="events"> Events</label><label><input type="checkbox" data-frame="reveal"> Reveal scan</label></div></div>
+  root.innerHTML = `<div class="monitor-video-modes monitor-section-modes"><button type="button" class="btn" data-video-mode="tldr" aria-pressed="true">TL;DR</button><button type="button" class="btn" data-video-mode="story" aria-pressed="false">Frame story</button></div><div class="monitor-frame-summary" data-frame="summary"></div>
+    <div class="monitor-video-work" hidden><div class="monitor-video-stage">
+      <div class="monitor-video-stage-head"><span>Hover to magnify · click to explain</span><div class="monitor-frame-layers" role="group" aria-label="Picture layers"><label><input type="checkbox" data-frame="border"> Border mask</label><label><input type="checkbox" data-frame="bad"> Bad lines</label><label><input type="checkbox" data-frame="sprites"> Sprite coverage</label><label><input type="checkbox" data-frame="events"> Events</label><label><input type="checkbox" data-frame="reveal"> Reveal scan</label></div></div>
       <div class="monitor-frame-visual"><canvas class="monitor-frame-picture" data-frame="picture" width="504" height="312" tabindex="0" role="img" aria-label="Captured picture. Click a pixel, or use arrow keys and Enter to explain a pixel."></canvas></div>
-      <div class="monitor-frame-controls"><button class="btn" data-frame="play" disabled>Play replay</button><button class="btn" data-frame="back" aria-label="Previous raster line" disabled>‹</button><input class="monitor-frame-seek" data-frame="seek" type="range" min="0" max="19655" value="0" disabled aria-label="Replay cycle within captured frame"><button class="btn" data-frame="line" aria-label="Next raster line" disabled>›</button><details class="monitor-video-steps"><summary>Step & speed</summary><div><button class="btn" data-frame="cycle" disabled>+ Cycle</button><button class="btn" data-frame="event" disabled>Next event</button><select data-frame="speed" aria-label="Replay speed"><option value="500">Slow</option><option value="2000" selected>Normal</option><option value="8000">Fast</option></select></div></details></div>
-      <div class="monitor-section-head monitor-video-position"><b data-frame="position">No frame captured</b><span class="monitor-tag" data-frame="gates"></span></div>
+      <div class="monitor-frame-controls"><button class="btn" data-frame="play" disabled>Play replay</button><button class="btn" data-frame="previous-change" disabled>Previous change</button><input class="monitor-frame-seek" data-frame="seek" type="range" min="0" max="19655" value="0" disabled aria-label="Replay cycle within captured frame"><button class="btn" data-frame="next-change" disabled>Next change</button><details class="monitor-video-steps"><summary>Step & speed</summary><div><button class="btn" data-frame="back" disabled>Previous raster line</button><button class="btn" data-frame="line" disabled>Next raster line</button><button class="btn" data-frame="cycle" disabled>+ Cycle</button><button class="btn" data-frame="event" disabled>Next event</button><select data-frame="speed" aria-label="Replay speed"><option value="500">Slow</option><option value="2000" selected>Normal</option><option value="8000">Fast</option></select></div></details></div>
+      <div class="monitor-frame-story"><b class="monitor-story-label" data-frame="story-label">Frame story</b><div data-frame="story-stops" class="monitor-story-stops"></div><div data-frame="budget" class="monitor-story-budget"></div></div><div class="monitor-section-head monitor-video-position"><b data-frame="position">No frame captured</b><span class="monitor-tag" data-frame="gates"></span></div>
       <div class="monitor-video-timing"><div class="monitor-frame-key">${['H border','V border','Screen fetch','VIC owns bus','IRQ'].map(name=>`<button type="button" data-timing-topic="${name==='H border'||name==='V border'?'border':'timing'}">${name}</button>`).join('')}</div><canvas class="monitor-frame-timing" data-frame="timing" width="630" height="110" tabindex="0" role="img" aria-label="Selected raster line: H border, V border, Screen fetch, VIC owns bus and IRQ. Click a cycle or use arrow keys."></canvas></div>
     </div><aside class="monitor-video-inspector" data-frame="inspector" aria-label="Explanation of the selected picture or cycle"></aside></div>
-    <div class="monitor-video-footer"><details class="monitor-help"><summary>How to use Video</summary><p><b>Pause</b> to keep the current recording. Complete frames refresh automatically while the C64 runs.</p><p><b>Click the picture</b> to explain a pixel beside it. Choose Sprites in the inspector to explore its eight slots.</p><p><b>Move along the timeline</b> or click a timing row to inspect that cycle. Replay never seeks the program or advances a paused machine.</p></details><details class="monitor-help"><summary>Evidence & limits</summary><p>Bright pink outlines mark recorded sprite coverage and can include pixels hidden behind foreground graphics. Pointers and banks are sampled at line end. Related writes are evidence, not proof of what caused a visible effect.</p><p>Reveal scan uncovers final pixels for orientation, not sub-cycle rendering. The timing canvas includes margins outside the visible picture. Renderer-source samples are distinct from timed bus fetches. Unsupported cases are reported explicitly.</p></details></div>`;
+    <div class="monitor-video-footer" hidden><details class="monitor-help"><summary>How to use Video</summary><p><b>Pause</b> to keep the current recording. Complete frames refresh automatically while the C64 runs.</p><p><b>Click the picture</b> to explain a pixel beside it. Choose Sprite appearances in the inspector to explore its eight slots.</p><p><b>Select a frame-story stop</b> to pause and follow its recorded evidence. The inspector keeps every observation available.</p><p><b>Move along the timeline</b> or click a timing row to inspect that cycle. Replay never seeks the program or advances a paused machine.</p></details><details class="monitor-help"><summary>Evidence & limits</summary><p>Bright pink outlines mark recorded sprite coverage and can include pixels hidden behind foreground graphics. Pointers and banks are sampled at line end. Related writes are evidence, not proof of what caused a visible effect.</p><p>Reveal scan uncovers final pixels for orientation, not sub-cycle rendering. The timing canvas includes margins outside the visible picture. Renderer-source samples are distinct from timed bus fetches. Unsupported cases are reported explicitly.</p></details></div>`;
   const el = name => root.querySelector(`[data-frame="${name}"]`);
-  const inspector = createVideoInspector(el('inspector'), { seek: position => seek(position), selectSprite: value => { selectedSprite=value; el('sprites').checked=value>=0; rebuild(); draw(); }, openMemory, openCode });
+  const inspector = createVideoInspector(el('inspector'), { seek: position => seek(position), selectSprite: value => { selectedSprite=value; el('sprites').checked=value>=0; rebuild(); draw(); }, openMemory, openCode, chooseStory });
+  const summaryView = createFrameSummaryView(el('summary'),{chooseStory,inspectPixel});
+  let mode = 'tldr', holdSummaryPending = true;
+  const work = root.querySelector('.monitor-video-work'), footer = root.querySelector('.monitor-video-footer');
   const picture = el('picture').getContext('2d'), timing = el('timing').getContext('2d');
   const base = document.createElement('canvas'); base.width = 504; base.height = 312;
   const baseCtx = base.getContext('2d');
   const pixels = document.createElement('canvas'); pixels.width = 384; pixels.height = 272;
   const pixelCtx = pixels.getContext('2d');
+  let selectedStory = null, story = null, storyButtons = [], highlightedStory = null;
   let selectedSprite = -1, spriteOutlines = [], paintPending = false;
   let keyboardPixel = {x:160,y:100};
   let facade = null, frame = null, playing = false, tick = 0, lastTime = 0, active = false;
@@ -43,10 +48,12 @@ export function createFrameView(root, openCode = () => {}, openMemory = () => {}
     const style = getComputedStyle(root);
     ink = style.getPropertyValue('--text').trim(); dim = style.getPropertyValue('--dim').trim();
     bg = style.getPropertyValue('--ui-bg').trim(); accent = style.getPropertyValue('--accent').trim(); green = style.getPropertyValue('--green').trim();
-    rebuild(); draw();
+    summaryView.theme(); rebuild(); draw();
   }
   function controls() {
     for (const name of ['play', 'back', 'line', 'cycle', 'event', 'seek']) el(name).disabled = !frame;
+    el('previous-change').disabled = !story?.stops.length || story.stops.findIndex(m=>m.id===selectedStory)<=0;
+    el('next-change').disabled = !story?.stops.length || story.stops.findIndex(m=>m.id===selectedStory)===story.stops.length-1;
     el('play').textContent = playing ? 'Pause replay' : 'Play replay';
   }
   function rebuild() {
@@ -96,9 +103,15 @@ export function createFrameView(root, openCode = () => {}, openMemory = () => {}
     picture.strokeStyle = ink; picture.lineWidth = 0.6;
     picture.beginPath(); picture.moveTo(0, line + 0.5); picture.lineTo(504, line + 0.5); picture.stroke();
     picture.fillStyle = ink; picture.fillRect(cycle * 8, Math.max(0, line - 2), 8, 5);
+    if(selectedStory){const index=story?.stops.findIndex(m=>m.id===selectedStory)??-1;if(index>=0){picture.font='bold 10px monospace';picture.fillText(String(index+1),5,Math.max(10,line-3));}}
     const flags = frame.flags[cursor];
     el('position').textContent = `Raster ${line} / 311 · cycle ${cycle + 1} / 63`;
     inspector.position(cursor);
+    if(highlightedStory!==selectedStory){
+      storyButtons.find(b=>b.dataset.story===highlightedStory)?.setAttribute('aria-pressed','false');
+      storyButtons.find(b=>b.dataset.story===selectedStory)?.setAttribute('aria-pressed','true');
+      highlightedStory=selectedStory;
+    }
     el('gates').textContent = `H ${flags & 1 ? 'closed' : 'open'} · V ${flags & 2 ? 'closed' : 'open'}${flags & 4 ? ' · Bad line' : ''}`;
     el('seek').value = cursor;
     el('seek').setAttribute('aria-valuetext', `Raster ${line}, cycle ${cycle + 1}`);
@@ -120,11 +133,58 @@ export function createFrameView(root, openCode = () => {}, openMemory = () => {}
       slots[s].title = `Sprite ${s}: pointer $${hex(frame.pointers[offset], 2)} → $${hex(address)}, DMA ${frame.spriteDma[line] & (1 << s) ? 'on' : 'off'} at line end`;
     }
   }
+  function setMode(value) {
+    mode=value;holdSummaryPending=value==='tldr';playing=false;lens.hide();
+    work.hidden=value!=='story';footer.hidden=value!=='story';el('summary').hidden=value!=='tldr';
+    for(const button of root.querySelectorAll('[data-video-mode]'))button.setAttribute('aria-pressed',String(button.dataset.videoMode===value));
+    if(value==='tldr')renderSummary();
+    else {paintFrame();controls();theme();inspector.refresh();}
+  }
+  function renderSummary() {
+    if(root.hidden||mode!=='tldr')return;
+    if(frame&&holdSummaryPending){holdSummaryPending=false;onReplay();}
+    summaryView.render(frame);
+  }
+  for(const button of root.querySelectorAll('[data-video-mode]'))button.addEventListener('click',()=>setMode(button.dataset.videoMode));
+  function chooseStory(id) {
+    const moment=story?.stops.find(m=>m.id===id);if(!moment)return;
+    if(mode!=='story')setMode('story');
+    onReplay(); selectedStory=id; seek(moment.tick); inspector.story(id);
+    storyButtons.find(button=>button.dataset.story===id)?.scrollIntoView({block:'nearest',inline:'nearest'});
+  }
+  function followReplayStory() {
+    if(!story)return;
+    let low=0,high=story.stops.length;
+    while(low<high){const mid=(low+high)>>>1;if(story.stops[mid].tick<=tick)low=mid+1;else high=mid;}
+    const id=low?story.stops[low-1].id:null;
+    if(id===selectedStory)return;
+    selectedStory=id;inspector.followStory(id,Math.floor(tick));controls();
+    if(low)storyButtons[low-1].scrollIntoView({block:'nearest',inline:'nearest'});
+  }
+  function renderStory() {
+    story=frameStory(frame);highlightedStory=null;storyButtons=[];el('story-stops').replaceChildren();el('budget').replaceChildren();
+    el('story-label').textContent=story?`Frame story · ${story.stops.length} stops · scroll for more`:'Frame story';
+    if(!story)return;
+    if(!story.stops.some(m=>m.id===selectedStory))selectedStory=null;
+    for(const [index,moment] of story.stops.entries()){
+      const b=document.createElement('button');b.type='button';b.dataset.story=moment.id;b.setAttribute('aria-pressed',String(moment.id===selectedStory));
+      const n=document.createElement('b'),label=document.createElement('span'),line=document.createElement('small');
+      n.textContent=index+1;label.textContent=moment.title;line.textContent=moment.endLine>moment.line?`Rasters ${moment.line}–${moment.endLine}`:`Raster ${moment.line}`;b.append(n,label,line);
+      b.addEventListener('click',()=>chooseStory(moment.id));el('story-stops').append(b);storyButtons.push(b);
+    }
+    const budget=story.budget,bar=document.createElement('div'),label=document.createElement('span');bar.className='monitor-story-budget-bar';bar.setAttribute('aria-hidden','true');
+    for(const kind of ['available','vic','reu','halted','unknown']){const segment=document.createElement('i');segment.className=kind;segment.style.width=`${budget[kind]/budget.total*100}%`;bar.append(segment);}
+    label.textContent=budget.unknown===budget.total?'CPU budget: insufficient evidence':`CPU available ${budget.available.toLocaleString()} / ${budget.total.toLocaleString()} cycles${budget.unknown?` · ${budget.unknown} unknown`:''}`;
+    label.title=`VIC stalls ${budget.vic} · REU ${budget.reu} · halted ${budget.halted} · unknown ${budget.unknown}. Available time includes wait loops.`;
+    el('budget').append(label,bar);controls();
+  }
+  for(const [name,delta] of [['previous-change',-1],['next-change',1]])el(name).addEventListener('click',()=>{const index=story?.stops.findIndex(m=>m.id===selectedStory)??-1;const moment=story?.stops[index+delta];if(moment)chooseStory(moment.id);});
   function seek(position) {
     playing=false; tick=Math.max(0,Math.min(19655,Math.floor(position))); controls(); draw();
   }
   function inspectPixel(point) {
     if(!frame)return;
+    if(mode!=='story')setMode('story');
     keyboardPixel=point;
     seek((point.y+frame.rasterOffset)*63+Math.floor((point.x+80)/8));
     inspector.pixel(point.x,point.y);
@@ -146,7 +206,7 @@ export function createFrameView(root, openCode = () => {}, openMemory = () => {}
   });
   el('timing').addEventListener('keydown',event=>{if(frame&&['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();seek(tick+(event.key==='ArrowLeft'?-1:1));inspector.topic('timing');}});
   for(const button of root.querySelectorAll('[data-timing-topic]'))button.addEventListener('click',()=>{inspector.topic(button.dataset.timingTopic);});
-  el('play').addEventListener('click', () => { if (!playing) onReplay(); if (tick >= 19655) tick = 0; playing = !playing; lastTime = performance.now(); controls(); draw(); });
+  el('play').addEventListener('click', () => { if (!playing) onReplay(); if (tick >= 19655) tick = 0; playing = !playing; lastTime = performance.now(); followReplayStory(); controls(); draw(); });
   for (const [name, delta] of [['back', -63], ['line', 63], ['cycle', 1]]) el(name).addEventListener('click', () => {
     seek(tick+delta);
   });
@@ -165,14 +225,11 @@ export function createFrameView(root, openCode = () => {}, openMemory = () => {}
       facade = current; active = true;
       if(!paintPending) { theme(); controls(); inspector.refresh(); }
     }
-    paintFrame();
-    const status = facade.vicFrameCaptureStatus();
-    el('status').textContent = frame
-      ? `${captureLabel(frame)} · ${frame.eventCount} events${frame.overflow ? ' · event buffer full' : ''} · ${paused?'paused · recording held':'refreshes every second · Pause to inspect'}`
-      : paused ? 'No complete frame was recorded before Pause. Resume to record one.'
-      : status === 'waiting' || status === 'recording' ? 'Recording a complete frame…' : 'Waiting for the shared recording…';
+    if(mode==='tldr'&&frame&&!paused&&!holdSummaryPending)setMode('story');
+    paintFrame();renderSummary();
     if (playing && frame) {
       const now = performance.now(); tick = Math.min(19655, tick + Math.min(now - lastTime, 250) * Number(el('speed').value) / 1000); lastTime = now;
+      followReplayStory();
       if (tick >= 19655) { playing = false; controls(); } draw();
     }
   }
@@ -182,6 +239,7 @@ export function createFrameView(root, openCode = () => {}, openMemory = () => {}
     if (facade !== current) facade?.cancelVicFrameCapture();
     lens.hide();
     facade = current; frame = captured; tick = Math.max(0,Math.min(19655,Math.floor(position ?? (reset ? 0 : tick)))); playing = false;
+    root.dataset.captureLabel=captureLabel(frame);
     inspector.setFrame(frame, { reset, position: tick });
     spriteOutlines = [];
     paintPending = true;
@@ -190,22 +248,26 @@ export function createFrameView(root, openCode = () => {}, openMemory = () => {}
   function paintFrame() {
     if(!paintPending||root.hidden||!frame)return;
     paintPending=false;
+    renderSummary();
+    renderStory();
     spriteOutlines = Array.from({length:8}, () => new Path2D());
     traceSpriteOutlines(frame,spriteOutlines);
     const image = pixelCtx.createImageData(frame.width, frame.height);
     image.data.set(frame.rgba); pixelCtx.putImageData(image, 0, 0);
     drawSpritePreviews(frame, slots.map(slot => slot.querySelector('canvas')));
-    controls(); theme();
+    controls(); theme(); inspector.refresh();
   }
   function deactivate(clear = false) {
     lens.hide();
     if (!clear) inspector.clearSprite();
-    active = false; playing = false;
+    active = false; playing = false;holdSummaryPending=mode==='tldr';
     if (clear) {
-      paintPending=false; facade = null; frame = null; tick=0; selectedSprite = -1; spriteOutlines = []; inspector.setFrame(null);
+      paintPending=false; story=null;selectedStory=null;storyButtons=[];el('story-stops').replaceChildren();el('budget').replaceChildren(); facade = null; frame = null; tick=0; selectedSprite = -1; spriteOutlines = []; inspector.setFrame(null);
+      delete root.dataset.captureLabel;
+      summaryView.clear();
       el('position').textContent='No frame captured';el('gates').textContent='';el('seek').value=0;
     }
     controls();
   }
-  return { update, deactivate, theme, accept, inspect(current,captured,position) { onReplay(); accept(current,captured,position); }, get frame() { return frame; } };
+  return { update, deactivate, theme, accept, openPixel(current,captured,x,y) { onReplay(); accept(current,captured); inspectPixel({x,y}); }, remember(){const saved={facade,frame,tick,mode,selectedStory,keyboardPixel},restoreInspector=inspector.remember();return()=>{setMode(saved.mode);accept(saved.facade,saved.frame,saved.tick);selectedStory=saved.selectedStory;keyboardPixel=saved.keyboardPixel;restoreInspector();controls();draw();};}, showSummary() { setMode('tldr'); summaryView.overview(); el('summary').scrollTop=0; }, inspect(current,captured,position) { setMode('story'); onReplay(); accept(current,captured,position); }, get frame() { return frame; } };
 }

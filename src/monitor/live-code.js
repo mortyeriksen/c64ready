@@ -46,3 +46,7 @@ export function liveCodeSummary(state, paused = false) {
     irqAllowed: !(state.p & 4),
   };
 }
+
+export function showLiveSampleDetails(rate, paused) {
+  return paused || rate <= 10;
+}

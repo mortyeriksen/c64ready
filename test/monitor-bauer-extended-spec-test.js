@@ -65,6 +65,28 @@ for(const expanded of [0,255]) {
     const row=checked.summary[index(id)];
     assert.ok(row.match>0&&row.mismatch===0,`${id}: staggered synthetic sprites obey the independent rule with expansion ${expanded}`);
   }
-  assert.ok(checked.summary[index('sprite.mc-reload')].unknown>0,'grouped sprite-0 reads do not certify a missing half-cycle counter observation');
+  assert.equal(checked.summary[index('sprite.mc-reload')].match,312,'Bauer 3.8.1 rule 4: directly recorded reloads copy MCBASE before later grouped accesses on every line');
 }
 console.log('ok  - synthetic sprite DMA, expanded rows, grouped bytes and continuous bus-warning windows');
+
+assert.equal(report.summary[index('refresh.counter')].match,1560,'Bauer 3.13: REF decrements after every refresh access');
+frame.analysis.sequencer.refresh[10]^=1;
+assert.equal(checkBauerRule(frame,10,index('refresh.counter')),RESULT.mismatch,'Bauer 3.13: a wrong post-fetch REF counter is detected');
+frame.analysis.sequencer.refresh[10]^=1;
+const dmaTick=15;frame.analysis.sequencer.mcBase[dmaTick*8]=63;frame.analysis.sequencer.dma[dmaTick]|=1;
+assert.equal(checkBauerRule(frame,dmaTick,index('sprite.dma-stop')),RESULT.mismatch,'Bauer 3.8.1 rule 7: DMA cannot remain enabled after the row base reaches 63');
+console.log('ok  - refresh counter and sprite DMA termination have independent failure checks');
+
+const pointerTick=57,dataTick=58;
+frame.analysis.sequencer.bank.fill(0);
+frame.analysis.sequencer.registers[pointerTick*64+0x18]=0x10;
+const pointerFrame={...frame,provenance:{...frame.provenance,count:4,kind:[2,4,4,4],tick:[pointerTick,dataTick,dataTick,dataTick],address:[0x7f8,0x2000,0x2001,0x2002],value:[128,1,2,3],aux:[0,0,0,0]}};
+assert.equal(checkBauerRule(pointerFrame,dataTick,index('fetch.sprite-block')),RESULT.match,'Bauer 3.8.1: fetched pointer 128 selects sprite bytes in block $2000');
+pointerFrame.provenance.address[2]=0x2041;
+assert.equal(checkBauerRule(pointerFrame,dataTick,index('fetch.sprite-block')),RESULT.mismatch,'Bauer 3.8.1: the same row offset in a different sprite block fails');
+const matrixTick=20*63+19;
+frame.analysis.sequencer.vmli[matrixTick]=6;frame.analysis.sequencer.display[matrixTick]=1;
+const matrixFrame={...frame,provenance:{...frame.provenance,count:1,kind:[11],tick:[matrixTick],address:[0x405],value:[1],aux:[5]}};
+assert.equal(checkBauerRule(matrixFrame,matrixTick,index('fetch.matrix-slot')),RESULT.match,'Bauer 3.7.2 rule 3: a screen fetch uses VMLI before the graphics increment');
+matrixFrame.provenance.aux[0]=6;
+assert.equal(checkBauerRule(matrixFrame,matrixTick,index('fetch.matrix-slot')),RESULT.mismatch,'Bauer 3.7.2 rule 3: storing in the next matrix slot fails');

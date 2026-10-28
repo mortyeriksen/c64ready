@@ -68,7 +68,7 @@ The [drive model](DRIVE-ARCHITECTURE.md) explains the emulator's disk mechanism,
 ## Try it in Monitor
 
 1. Open **Storage** while a disk program is loading and select **Drive 8** or **Drive 9**.
-2. In true drive mode, compare the head-position trail with the drive CPU address, motor and LED readings.
+2. Choose the play icon to continue loading. In true drive mode, compare the head-position trail with the drive CPU address, motor and LED readings.
 3. In accelerated mode, follow the file/channel rate instead of expecting a mechanical trace.
 4. Compare those observations with Memory changes, without assuming they identify a particular file or destination.
 

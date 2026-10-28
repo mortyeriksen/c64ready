@@ -465,6 +465,7 @@ export class Memory {
       if (addr === 0) {
         this.cpuDDR = val;
         this.ram[0x00] = this.externalDataBus8;
+        if(this._captureObserver)this._captureObserver.rules.add(19,addr,val,this.externalDataBus8,this.ram[0],this.cpuDDR);
         // A DDR write can hand a pin to the latch that was floating a moment
         // ago, so the cassette lines have to be re-evaluated here too — the
         // KERNAL writes $01 first and raises the DDR afterwards.
@@ -479,6 +480,7 @@ export class Memory {
       this.cpuPort = val;
       // The tri-stated CPU leaves the VIC phi1 byte in underlying RAM.
       this.ram[0x01] = this.externalDataBus8;
+      if(this._captureObserver)this._captureObserver.rules.add(19,addr,val,this.externalDataBus8,this.ram[1],this.cpuPort);
       this._syncCassetteLines();
       this._rebuildMemoryMap();
       return;
@@ -549,6 +551,7 @@ export class Memory {
       const lo = this.colorRam[addr - 0xD800] & 0x0F;
       const hi = (this.externalDataBus8 & 0xF0);
       const composed = hi | lo;
+      if(this._captureObserver)this._captureObserver.rules.add(18,this.colorRam[addr-0xD800],this.externalDataBus8,composed);
       this.externalDataBus8 = composed;
       return composed;
     }

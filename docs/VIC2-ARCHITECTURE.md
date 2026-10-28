@@ -119,11 +119,16 @@ The six border comparator checks use before/after gate samples. Final line gate
 history supports the cycle-17 and cycle-56 CSEL cancellation checks. Stable mask
 replay remains a separate check. Raw transition records support sprite shifting,
 expansion and colour selection, collision detection and latching, collision
-read clearing, IRQ acknowledgement and lightpen edges. Observers append to
+read clearing, IRQ acknowledgement and lightpen edges. The version-2 rule log
+also records register reads, ignored writes, raster comparator inputs, collision
+IRQ states, MC reloads before grouped fetches, sprite byte packing, lightpen
+rearming and actual memory routes and bus values. Observers append to
 preallocated buffers only during provenance recording, without changing emulator
-decisions or replacing hot methods.
+decisions or replacing hot methods. Identical raw observations within one cycle
+are coalesced, while differing inputs remain separate.
 
-Grouped sprite reads do not certify individual half-cycle fetch timing. The
+Grouped sprite reads do not certify individual half-cycle fetch timing or the
+exact sprite X-comparator phase. The
 rendering-stage display flag does not expose logical display entry before cycle
 14, so that interval remains insufficient evidence. Analog output, unstable VMLI
 behaviour and unrecorded output effects also remain outside capture validation.

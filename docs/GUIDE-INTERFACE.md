@@ -81,7 +81,7 @@ line below is the current activity: `Running`, load progress, or an error.
 
 ## Controls
 
-![The Controls card with POWER, RESET, PAUSE, SIZE, FULL, VIBES, KEY MAP, PASTE, OPTIONS and RECORD buttons.](/guide/controls.webp)
+![The Controls card with POWER, RESET, PAUSE, SIZE, FULL, VIBES, MONITOR, KEY MAP, PASTE, OPTIONS and RECORD buttons.](/guide/controls.webp)
 
 | Button | What it does |
 | --- | --- |
@@ -91,6 +91,7 @@ line below is the current activity: `Running`, load progress, or an error.
 | **SIZE: 2X** | Cycles the picture size **1X → 2X → 2.5X → 3X → MAX**. The numbered sizes are whole multiples of the C64's 384x272 screen, so every C64 pixel is the same number of screen pixels; **MAX** fills the width instead. Nothing is stretched. A size too big for your window is skipped; on a landscape phone the cycle is 1X → 2X → MAX. The side panel narrows to make room for the larger sizes. |
 | **⛶ FULL** | Enters fullscreen. Exit with **Esc** or the **✕** button. |
 | **VIBES** | Opens [Retro Vibes](GUIDE-LOOKS.md#retro-vibes), a full-screen 3D scene of the C64. |
+| **MONITOR** | Opens [Live Monitor](GUIDE-MONITOR.md) to explore the machine, inspect a frame and follow its activity. |
 | **KEY MAP** | Shows the full [keyboard mapping](#key-map). |
 | **📋 PASTE** | Reads your system clipboard and types it into the C64 keyboard buffer, handy for pasting BASIC listings. |
 | **⚙ OPTIONS** | Opens [Options](GUIDE-OPTIONS.md#options): VIC-II / SID / palette variants, display and sound toggles, and ROM files. |

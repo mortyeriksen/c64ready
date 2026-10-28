@@ -3,15 +3,17 @@
 
 import { StorageHistory } from './storage-model.js';
 
+const CAPACITY=401, WINDOW_MS=8000;
+
 // Bounded display-rate samples, not an instruction, audio or transfer trace.
 export class LiveCardHistory {
   constructor() {
-    this.pc = new Uint16Array(80);
-    this.times = new Float64Array(80);
-    this.source = new Uint8Array(80);
-    this.frequency = Array.from({length:6},()=>new Uint16Array(80));
-    this.gates = new Uint8Array(80);
-    this.voices = new Uint8Array(80);
+    this.pc = new Uint16Array(CAPACITY);
+    this.times = new Float64Array(CAPACITY);
+    this.source = new Uint8Array(CAPACITY);
+    this.frequency = Array.from({length:6},()=>new Uint16Array(CAPACITY));
+    this.gates = new Uint8Array(CAPACITY);
+    this.voices = new Uint8Array(CAPACITY);
     this.storage = new StorageHistory();
     this.reset();
   }
@@ -32,8 +34,9 @@ export class LiveCardHistory {
       if(active && state.sid[base+4]&1) this.gates[index]|=1<<v;
     }
     this.storage.sample(storage,time,interval);
-    this.cursor=(index+1)%80; this.count=Math.min(80,this.count+1);
+    this.cursor=(index+1)%CAPACITY; this.count=Math.min(CAPACITY,this.count+1);
+    while(this.count>1&&time-this.times[this.index(0)]>WINDOW_MS)this.count--;
   }
   get seconds() { return this.count < 2 ? 0 : (this.times[this.index(this.count-1)]-this.times[this.index(0)])/1000; }
-  index(offset) { return (this.cursor-this.count+offset+80)%80; }
+  index(offset) { return (this.cursor-this.count+offset+CAPACITY)%CAPACITY; }
 }

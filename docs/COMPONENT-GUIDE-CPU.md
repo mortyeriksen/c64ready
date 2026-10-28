@@ -69,7 +69,7 @@ See the [CPU model](CPU-ARCHITECTURE.md) for instruction execution, interrupts a
 ## Try it in Monitor
 
 1. Watch the Code card's plain-language instruction and sampled address trail. The opcode and its start address appear underneath.
-2. Choose **Inspect Code** to examine the automatically recorded frame. Pause to keep that frame while exploring.
+2. Choose **Inspect Code** to capture and pause. Explore the shared recording without the program moving on.
 3. Follow an explained register write to its assembly instruction.
 
 ## What the readings can tell you

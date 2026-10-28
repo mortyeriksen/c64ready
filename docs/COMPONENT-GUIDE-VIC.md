@@ -74,7 +74,7 @@ The [VIC-II model](VIC2-ARCHITECTURE.md) documents how rendering, borders, sprit
 ## Try it in Monitor
 
 1. Read the configured graphics mode on Live. Its diagram shows the screen window, sprite-enable slots, fine scroll and colours.
-2. Pause on Live, then choose **Inspect Video** to explore the shared recording.
+2. Choose **Inspect Video** to capture and pause, then read the TL;DR or replay the frame story.
 3. Select a pixel, then follow its explanation to recorded sources and timing rules.
 
 ## What the readings can tell you

@@ -40,6 +40,22 @@ try {
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.mouse.move(0, 0);
+    const exits = await page.evaluate(() => {
+      const overlay = document.querySelector('#model-viewer-overlay');
+      overlay.hidden = false;
+      document.body.classList.add('fullscreen-mode');
+      const result = ['#btn-fs-close', '#btn-model-viewer-close'].map(selector => {
+        const button = document.querySelector(selector), rect = button.getBoundingClientRect();
+        return { selector, width: rect.width, height: rect.height, radius: getComputedStyle(button).borderRadius };
+      });
+      overlay.hidden = true;
+      document.body.classList.remove('fullscreen-mode');
+      return result;
+    });
+    for (const exit of exits) {
+      assert.equal(exit.radius, '50%', `${exit.selector} remains circular at ${width}px`);
+      assert.ok(Math.abs(exit.width - 44) < 0.1 && Math.abs(exit.height - 44) < 0.1, `${exit.selector} keeps a 44px square target at ${width}px`);
+    }
     const buttons = await page.evaluate(() => [...document.querySelectorAll('.modal-backdrop .dialog-close')].map(button => {
       const backdrop = button.closest('.modal-backdrop');
       const hidden = backdrop.hidden;

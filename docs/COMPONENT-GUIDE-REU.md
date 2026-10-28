@@ -71,7 +71,7 @@ The [memory model](MEMORY-ARCHITECTURE.md#the-ram-expansion-s-ff00-snoop) explai
 ## Try it in Monitor
 
 1. Open **Storage → REU** and check the attached capacity and current command settings.
-2. Watch for REU accesses in the automatically recorded frame. Pause when you want to hold the evidence.
+2. Inspect REU accesses in the shared recording. Choose the play icon to gather newer activity, then pause to hold it.
 3. Select a recorded access in the diagram, then follow **Inspect cycle in Video** or **Inspect captured RAM**.
 4. Compare its address and direction with the current registers. They may describe different moments.
 

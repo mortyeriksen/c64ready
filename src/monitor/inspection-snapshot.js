@@ -16,6 +16,7 @@ export class InspectionSnapshot {
     this.storage = facade.createStorageInspection();
     this.storageRates = new StorageRates();
     this.storage.rates = this.storageRates.values;
+    this.activity = facade.createMonitorActivityInspection?.() ?? null;
     this.controls = facade.createControlInspection?.() ?? null;
     this.bytes = new Uint8Array(65536);
     this.cpuBytes = new Uint8Array(65536);
@@ -38,15 +39,16 @@ export class InspectionSnapshot {
     this.nextAt = -Infinity;
   }
 
-  capture(now) {
-    if (now < this.nextAt) return false;
+  capture(now, force = false) {
+    if (!force && now < this.nextAt) return false;
     // A late callback takes one sample, never a burst of missed samples.
-    this.nextAt = Number.isFinite(this.nextAt)
+    this.nextAt = !force && Number.isFinite(this.nextAt)
       ? this.nextAt + (Math.floor((now-this.nextAt)/this.intervalMs)+1)*this.intervalMs
       : now + this.intervalMs;
     const f = this.facade;
     f.inspectInto(this.state);
     f.inspectStorageInto(this.storage);
+    if(this.activity)f.inspectMonitorActivityInto(this.activity);
     this.storageRates.sample(this.storage.transfers, now);
     if (this.controls) f.inspectControlsInto(this.controls);
     this.bytes.set(f.ram());

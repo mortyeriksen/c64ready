@@ -661,6 +661,7 @@ export const lineOps = {
       // (= the natural start-of-frame sample), giving LPX = ($194 +
       // 1*8) % 504 = $19C.
       if (this._lpInputLevel === 0) this._latchLightpen();
+      if(this._captureObserver)this._captureObserver.rules.add(14,this._lpInputLevel,this._lpLatchedThisFrame?1:0,this.regs[0x13],this.regs[0x14],this.irqStatus,this.cycleInLine);
       // Sprite DMA / display state is NOT reset at the frame boundary. Per
       // Bauer §3.8.1 only rule 3 (DMA-start at cycle 55/56) and rule 8
       // (MCBASE=63 at cycle 16) drive the DMA lifecycle; a sprite that is

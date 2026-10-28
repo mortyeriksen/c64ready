@@ -150,16 +150,23 @@ through `MachineFacade`. The host owns playback, audio and input.
 
 | Layer | Responsibility |
 | --- | --- |
-| Shared snapshot | `inspection-snapshot.js` reuses read-only register, control, storage and memory buffers at 1, 10, 25 or 50 samples/s. The browser remembers the rate, defaulting to 10. Navigation reuses the snapshot. |
+| Recent activity | A facade-owned bounded ring records actual SID writes and completed accelerated LOAD destinations only while Monitor is visible. Eight emulated seconds are retained, with explicit overflow and fresh epochs after interruptions. |
+| Shared snapshot | `inspection-snapshot.js` reuses read-only register, control, storage and memory buffers at 1, 10, 25 or 50 samples/s. The browser remembers the rate, defaulting to 10. Pause forces one final read, then navigation reuses it. Input changes, `refresh()` or `c64-monitor-refresh` invalidate paused data without clocking. Histories consume every sample, presentation is capped at 10 Hz and Live prose uses two-second windows. |
 | Shared recording | One complete detached frame feeds Video, Code and historical evidence. Requests run about once per second while visible and running, except during component About dialogs. Changing sections does not request another capture. |
-| Analysis | Views derive explanations from recorded evidence. Hidden views do not draw. Bauer reports are calculated on demand and cached for the frame. Renderer-source samples remain distinct from timed bus fetches. |
-| Navigation | Links carry the recording, cycle and source address or instruction origin. Current settings stay separate from historical evidence. Selections survive automatic refreshes. |
+| Analysis | Views derive explanations from recorded evidence. Hidden views do not draw. Frame stories, illustrated summaries and Bauer reports are calculated on demand and cached for the frame. Summaries rank diverse findings into three-card pages, using matched pixels or known control changes. Memory decodes sampled VIC-visible bytes. Screen cells show codes or colour nibbles, while raw bitmap bits remain readable in invalid modes. An optional static reconstruction is separate from recorded Video. Renderer-source samples remain distinct from timed bus fetches. PAL phase predictions are labelled separately from verified capture evidence. |
+| Navigation | Links carry the recording, cycle and source address or instruction origin. Current settings stay separate from historical evidence. Selections survive automatic refreshes. Captured sprite previews open Memory details, with visible-pixel links into Video rather than guessing a byte from the first slot fetch. |
 
 The original display, keyboard, touch controls and header sign move into Monitor
 and return on close. The display keeps its renderer, input handlers and 384:272
-aspect ratio. Clicking it or starting replay pauses the host. Pause retains the
-last complete recording and cancels unfinished work. Replay never clocks the
-machine. Closing releases recordings, and hiding stops sampling and capture.
+aspect ratio. Clicking it, selecting a story stop or starting replay pauses the host. Pause retains the
+last complete recording and cancels unfinished work. Paused entry clocks at most
+two frames through the facade for one shared recording, without resuming the host.
+Component entry from running playback takes a bounded capture and pauses. Component
+navigation reuses it, and Live resumes navigation-owned pauses. Manual pause
+choices retain ownership. Replay never clocks the machine. Sound steps through recorded SID writes and
+reconstructs both chips from the frame-start registers, without audio synthesis.
+Missing writes suppress later reconstructed settings. Closing releases recordings, and hiding stops
+sampling and capture.
 Reset and restore allow recording to restart while running.
 
 About dialogs reuse the chapters in [Inside the C64](INSIDE-THE-C64.md).

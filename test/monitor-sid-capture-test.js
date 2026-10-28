@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict';
+import {capturedSidTimeline,capturedSidState,sidPositionAt,sidVoiceTrace} from '../src/monitor/sid-capture.js';
+
+const initial=new Uint8Array(64);initial[0]=0x34;initial[1]=0x12;initial[4]=0x21;initial[32]=0x78;initial[33]=0x56;
+const frame={lines:312,cyclesPerLine:63,provenance:{sid:initial,sidCount:2,sid2Address:0xde00,count:8,
+  kind:new Uint8Array([1,5,5,5,5,5,5,5]),tick:new Uint16Array([0,0,4,4,8,10,12,16]),
+  aux:new Uint32Array([0,0,0,1,0,0,1,0]),address:new Uint16Array([0xd400,0,1,0,4,2,24,0]),value:new Uint8Array([255,0xab,0xcd,0xef,0x20,0x80,15,0xab])}};
+const timeline=capturedSidTimeline(frame);
+assert.equal(timeline.moments.length,6,'Same-cycle SID writes share one navigation moment');
+assert.equal(timeline.moments[1].writes.length,2,'Independent chip writes are retained in recording order');
+assert.deepEqual(capturedSidState(timeline,0),initial,'Frame start precedes even a cycle-zero write');
+assert.equal(capturedSidState(timeline,1)[0],0xab,'A selected SID write is included in its resulting state');
+assert.equal(capturedSidState(timeline,1)[1],0x12,'Future writes do not affect an earlier selected state');
+assert.equal(capturedSidState(timeline,2)[1],0xcd,'Frequency high bytes combine with the retained low byte');
+assert.equal(capturedSidState(timeline,2)[32],0xef,'Second SID register writes affect its separate register bank');
+assert.equal(capturedSidState(timeline,2)[33],0x56,'Unwritten second SID registers retain their initial values');
+assert.equal(capturedSidState(timeline,3)[4],0x20,'Gate clearing preserves the selected waveform bits');
+assert.equal(capturedSidState(timeline,4)[2],0x80,'Pulse width writes are included even without a pitch change');
+assert.equal(capturedSidState(timeline,5)[56],15,'Filter and volume writes use the selected chip bank');
+assert.equal(timeline.moments[5].writes[0].value,0xab,'Repeated same-value writes remain inspectable evidence');
+assert.equal(sidPositionAt(timeline,3),1,'Seeking before a write excludes it');
+assert.equal(sidPositionAt(timeline,4),2,'Seeking a cycle includes all writes on that cycle');
+assert.equal(sidPositionAt(timeline,19655),6,'Seeking past the final write holds the final state');
+assert.equal(sidPositionAt(null,0),0,'Missing evidence has no write position');
+const trace=sidVoiceTrace(timeline,0,0);
+assert.deepEqual(trace[0],{tick:0,frequency:0x1234,gate:1},'Pitch traces start from frame-boundary registers');
+assert.deepEqual(trace[2],{tick:4,frequency:0xcdab,gate:1},'Pitch traces combine low and high bytes at the write moment');
+assert.deepEqual(trace[3],{tick:8,frequency:0xcdab,gate:0},'Gate traces retain pitch when the gate is cleared');
+assert.equal(trace.at(-1).tick,312*63,'Unchanged settings extend through the end of the recorded frame');
+assert.equal(sidVoiceTrace(timeline,1,0)[1].frequency,0x56ef,'Second SID pitch traces use only second SID writes');
+assert.equal(initial[0],0x34,'Reconstruction leaves the captured initial registers untouched');
+const partial=capturedSidTimeline({...frame,provenance:{...frame.provenance,overflow:true}});
+assert.equal(capturedSidState(partial,1),null,'Missing writes prevent claiming a complete later register state');
+assert.deepEqual(capturedSidState(partial,0),initial,'Incomplete event history does not invalidate frame-start registers');
+assert.equal(capturedSidTimeline({...frame,overflow:true}).complete,false,'Frame overflow also marks SID reconstruction incomplete');
+assert.equal(capturedSidTimeline({}),null,'Missing provenance is not silently replaced with current registers');
+assert.equal(capturedSidTimeline({...frame,provenance:{...frame.provenance,sid:null}}),null,'Missing initial registers prevent reconstruction');
+const empty=capturedSidTimeline({...frame,provenance:{...frame.provenance,count:0}});
+assert.equal(empty.moments.length,0,'A frame without SID writes has no change stops');
+assert.deepEqual(capturedSidState(empty,0),initial,'A no-write frame still has useful initial voice settings');
+console.log('ok - captured SID navigation, register reconstruction, dual chips and evidence limits');

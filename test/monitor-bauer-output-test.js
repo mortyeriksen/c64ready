@@ -91,3 +91,12 @@ assert.equal(bounded.data.count,bounded.data.capacity,'Raw rule observations sto
 assert.equal(bounded.data.overflow,true,'An overflowing rule stream advertises incomplete evidence');
 assert.equal(bounded.data.c[last],7,'An overflowing IRQ record cannot overwrite an earlier event');
 console.log('ok  - bounded transition recording preserves older evidence on overflow');
+
+const coalesced=new VicRuleCapture();let captureTick=10;coalesced.capture={tick:()=>captureTick};
+coalesced.add(8,1,2,0,3,3);coalesced.add(9,1,2,0,2);coalesced.add(8,1,2,0,3,3);
+assert.equal(coalesced.data.count,2,'Identical collision observations in one cycle share a raw rule record');
+coalesced.add(8,1,2,0,3,0);
+assert.equal(coalesced.data.count,3,'Conflicting collision outputs are never coalesced');
+captureTick++;coalesced.add(8,1,2,0,3,0);
+assert.equal(coalesced.data.count,4,'Identical observations in different cycles remain separate');
+console.log('ok  - same-cycle observation compaction preserves conflicts and cycle boundaries');

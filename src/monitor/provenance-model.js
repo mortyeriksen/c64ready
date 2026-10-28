@@ -14,7 +14,7 @@ export function capturedRam(frame,tick=frame.lines*frame.cyclesPerLine-1){
 }
 export function provenanceEvents(frame,kind){
   const p=frame?.provenance,out=[];if(!p)return out;
-  for(let i=0;i<p.count;i++)if(kind===undefined||p.kind[i]===kind)out.push({index:i,tick:p.tick[i],kind:p.kind[i],address:p.address[i],value:p.value[i],aux:p.aux[i],pc:p.pc[i]});
+  for(let i=0;i<p.count;i++)if(kind===undefined||(Array.isArray(kind)?kind.includes(p.kind[i]):p.kind[i]===kind))out.push({index:i,tick:p.tick[i],kind:p.kind[i],address:p.address[i],value:p.value[i],aux:p.aux[i],pc:p.pc[i]});
   return out;
 }
 export function instructionGroups(frame){
@@ -120,4 +120,23 @@ export function capturedInstructions(frame){
     if(current&&p.kind[i]===0){const offset=(p.address[i]-current.address)&65535;if(offset>0&&offset<current.size&&current.bytes[offset]===null)current.bytes[offset]=p.value[i];}
   }
   return rows;
+}
+
+// Underlying RAM changes are distinct from CPU writes to mapped ROM or I/O.
+export function memoryEvidence(frame,address,tick) {
+  const p=frame?.provenance;
+  if(!p)return {complete:false,writer:null,consumers:[]};
+  let writer=null;
+  const consumers=[];
+  for(let i=0;i<p.count;i++) {
+    if(p.address[i]!==address)continue;
+    if(p.kind[i]===12&&p.tick[i]<=tick)writer=i;
+    if(p.tick[i]>=tick&&[3,4,11,15].includes(p.kind[i]))consumers.push(i);
+  }
+  let origin=null;
+  if(writer!==null&&p.kind[writer-1]===1&&p.address[writer-1]===address&&p.tick[writer-1]===p.tick[writer])for(let i=writer-1;i>=0;i--){
+    if(p.kind[i]===9||p.kind[i]===10)break;
+    if(p.kind[i]===8){if(p.address[i]===p.pc[writer])origin=i;break;}
+  }
+  return {complete:!p.overflow&&p.memoryComplete,writer,origin,consumers};
 }

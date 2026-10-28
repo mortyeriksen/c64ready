@@ -176,6 +176,7 @@ export class C64Machine {
       );
     }
     this.mem = new Memory();
+    this._monitorActivity = null;
     this._loadTrapPhase = 0;   // see _trapLoad: 0 = load, 1/2 = printing the KERNAL's messages
     this._loadTrapA = 0;       // $FFD5 call arguments, banked at phase 0 — see _trapLoad
     this._loadTrapX = 0;
@@ -810,6 +811,7 @@ export class C64Machine {
   // The optional chip owns one 32-byte I/O window; all other mirrors survive.
   configureSecondSid({ enabled = false, address = 0xD420, is8580 = true, mix = 'stereo' } = {}) {
     if (enabled) this.mem.validateSecondSidAddress(address);
+    this._monitorActivity?.stop();
     this.sidMix = mix === 'mono' ? 'mono' : 'stereo';
     if (!enabled) {
       this.sid2 = null;
@@ -955,6 +957,7 @@ export class C64Machine {
   // pulse, RAM preserved) and reset() (= cold boot, full RAM init)
   // call this AFTER doing their respective Memory reset.
   _resetChips() {
+    this._monitorActivity?.stop();
     this.cia1.reset();
     this.cia2.reset();
     this.vic2.reset();
@@ -1225,8 +1228,17 @@ export class C64Machine {
       if (transferCounter) transferCounter[0] += data.length - 2;
 
       if (!isVerify) {
-        for (let i = 2; i < data.length; i++) {
-          this.mem.write(loadAddr + i - 2, data[i]);
+        const activity = this._monitorActivity;
+        if (activity) {
+          let ramBytes = 0;
+          for (let i = 2; i < data.length; i++) {
+            const address = (loadAddr + i - 2) & 0xFFFF;
+            if (address > 1 && this.mem._writePageArr[address >>> 8] === this.mem.ram) ramBytes++;
+            this.mem.write(loadAddr + i - 2, data[i]);
+          }
+          if (this._monitorActivity === activity) activity.add(1, dev, loadAddr, data.length - 2, ramBytes);
+        } else {
+          for (let i = 2; i < data.length; i++) this.mem.write(loadAddr + i - 2, data[i]);
         }
         // Update pointers KERNAL usually updates
         this.mem.ram[0x002D] = (endAddr) & 0xFF;
@@ -1261,6 +1273,7 @@ export class C64Machine {
   // the main-thread shadow voices so $D41B/$D41C reads see the same
   // state the worklet will reach at the corresponding cycle.
   _sidWrite(reg, val, chipIndex = 0) {
+    if(this._monitorActivity)this._monitorActivity.add(0,chipIndex,reg&31,val&255);
     if(this.vic2._captureObserver)this.vic2._captureObserver.add(5,reg,val,chipIndex);
     const wi = Atomics.load(this.sidCtrl, 0);
     const off = (wi & (RING_CAPACITY - 1)) * 2;
@@ -1829,6 +1842,8 @@ export class C64Machine {
   restoreState(s) {
     if (!s || s.format !== 'c64state') throw new Error('Not a C64 save-state');
     if (s.version > 1) throw new Error(`Save-state version ${s.version} is newer than supported (1)`);
+
+    this._monitorActivity?.stop();
 
     // Chips first (CIA deserialize re-wires its /IRQ line via _updateIrq).
     this.cpu.deserialize(s.cpu);

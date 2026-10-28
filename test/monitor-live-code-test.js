@@ -47,3 +47,18 @@ for(const invalid of [-1,256,undefined]) {
   assert.equal(liveCodeSummary(sample).action,'Instruction unavailable','invalid opcode evidence is never guessed');
 }
 console.log('ok  - live instruction semantics, dispatch identity, interrupt/reset gaps, IRQ flags and read-only inspection');
+
+const {LiveWindowSummary}=await import('../src/monitor/live-summary.js');
+const recent=new LiveWindowSummary(),windowSample={pc:513,instructionAddress:512,instructionOpcode:0x8d,p:0,vic:new Uint8Array(64),sidCount:1},sampler={pages:new Uint16Array(256)};
+sampler.pages[4]=1;recent.observe(windowSample,sampler,0,false);sampler.pages.fill(0);sampler.pages[8]=1;
+recent.observe(windowSample,sampler,1000,false);recent.observe(windowSample,sampler,2000,false);
+assert.equal(recent.value.ram[0],'2 / 256 pages changed','Live prose counts distinct changed pages over the window');
+assert.match(recent.value.cpu[1],/storing a value/,'Live prose derives instruction meaning from recorded dispatch identity');
+const held=recent.value;recent.observe({...windowSample,instructionOpcode:0xea},sampler,2020,false);
+assert.equal(recent.value,held,'fast samples do not replace the readable summary between window boundaries');
+
+const {showLiveSampleDetails}=await import('../src/monitor/live-code.js');
+for(const rate of [1,10,25,50]) {
+  assert.equal(showLiveSampleDetails(rate,false),rate<=10,'Fast Live samples omit rapidly changing per-instruction and voice text');
+  assert.equal(showLiveSampleDetails(rate,true),true,'Pause restores exact sample details at every sampling rate');
+}

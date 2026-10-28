@@ -70,7 +70,7 @@ The [Datasette model](DATASETTE-ARCHITECTURE.md) explains pulse playback, record
 ## Try it in Monitor
 
 1. Open **Storage → Tape** while a tape loader is running.
-2. Compare the transport key, motor state and tape position with the pulse scope.
+2. Choose the play icon to continue loading, then compare the transport key, motor state and tape position with the pulse scope.
 3. Use **Zoom ×2** to look at a shorter timing window. The scope shows pulse counts and timing ranges, without selecting individual pulses.
 4. Pause to keep the displayed window, then compare the loader's Code and Controls evidence.
 

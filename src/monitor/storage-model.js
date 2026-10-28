@@ -13,7 +13,7 @@ export function reuSettings(registers, bankMask = 255) {
 
 // History stores sampled conditions. It does not reconstruct missed transfers.
 export class StorageHistory {
-  constructor() { this.rows = Array.from({length: 5}, () => new Uint8Array(80)); this.times = new Float64Array(80); this.heads = [new Float32Array(80), new Float32Array(80)]; this.banks = new Int32Array(80); this.reset(); }
+  constructor() { this.rows = Array.from({length: 5}, () => new Uint8Array(401)); this.times = new Float64Array(401); this.heads = [new Float32Array(401), new Float32Array(401)]; this.banks = new Int32Array(401); this.reset(); }
   reset() { this.cursor = 0; this.count = 0; this.lastReu = null; this.lastReuBytes = 0; this.reuChanged = false; this.lastTime = -Infinity; for (const row of this.rows) row.fill(0); for (const row of this.heads) row.fill(NaN); this.banks.fill(-1); }
   sample(state, time, interval = 100) {
     if (time - this.lastTime < interval * .9) return;
@@ -28,9 +28,10 @@ export class StorageHistory {
     this.banks[index] = state.cartridge.inserted ? state.cartridge.bank : -1;
     this.times[index] = time;
     this.lastReu = state.reu.attached ? state.reu.activity : null; this.lastReuBytes = state.reu.bytes;
-    this.cursor = (index + 1) % 80; this.count = Math.min(80, this.count + 1);
+    this.cursor = (index + 1) % 401; this.count = Math.min(401, this.count + 1);
+    while(this.count>1&&time-this.times[(this.cursor-this.count+401)%401]>8000)this.count--;
   }
-  get seconds() { return this.count < 2 ? 0 : (this.times[(this.cursor + 79) % 80] - this.times[(this.cursor - this.count + 80) % 80]) / 1000; }
+  get seconds() { return this.count < 2 ? 0 : (this.times[(this.cursor + 400) % 401] - this.times[(this.cursor - this.count + 401) % 401]) / 1000; }
 }
 
 export function activeStorageDevice(state, selected = 0, reuChanged = false) {

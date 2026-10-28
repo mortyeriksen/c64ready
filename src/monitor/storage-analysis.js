@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 
+import { recentLoads } from './activity-model.js';
 import { TapePulseWindow, TAPE_CLOCK_HZ } from './tape-pulses.js';
 import { cartridgeWindows, reuFrameAccesses } from './storage-analysis-model.js';
 import { reuSettings } from './storage-model.js';
 import { formatStorageRate } from './storage-rates.js';
 import { hex } from './memory-sampler.js';
 
-export function createStorageAnalysis(root, { openCode, openFrame, openCapturedMemory }) {
+export function createStorageAnalysis(root, { openCode, openMemory, openFrame, openCapturedMemory }) {
   root.innerHTML = `<div class="monitor-storage-plot-head"><b data-plot="title"></b><button type="button" class="btn" data-plot="zoom" hidden>Zoom ×2</button></div>
     <canvas width="800" height="190" tabindex="0" data-plot="canvas" aria-label="Storage activity diagram"></canvas>
     <div class="monitor-storage-plot-axis"><span data-plot="left"></span><span data-plot="right"></span></div>
     <strong class="monitor-storage-reading" data-plot="reading"></strong><p data-plot="note"></p>
-    <div class="monitor-storage-plot-links"><button type="button" class="monitor-storage-link" data-plot="video" hidden>Inspect cycle in Video ↗</button><button type="button" class="monitor-storage-link" data-plot="memory" hidden>Inspect captured RAM ↗</button></div>`;
+    <div data-plot="loads" class="monitor-storage-loads"></div><div class="monitor-storage-plot-links"><button type="button" class="monitor-storage-link" data-plot="video" hidden>Inspect cycle in Video ↗</button><button type="button" class="monitor-storage-link" data-plot="memory" hidden>Inspect captured RAM ↗</button></div>`;
   const el = name => root.querySelector(`[data-plot="${name}"]`), canvas = el('canvas'), ctx = canvas.getContext('2d');
   const tape = new TapePulseWindow();
   let current = null, history = null, selected = 0, frame = null, frameData = null;
@@ -47,6 +48,20 @@ export function createStorageAnalysis(root, { openCode, openFrame, openCapturedM
   }
   function drive() {
     const d=current.storage.drives[selected],rate=current.storage.rates?.[selected];
+    const loads=recentLoads(current.activity,selected+8);
+    const loadKey=loads.map(l=>l.sequence).join(',')+':'+(current.activity?.epoch??0)+':'+!!current.activity?.truncated;
+    if(el('loads').dataset.key!==loadKey){
+      el('loads').dataset.key=loadKey;el('loads').replaceChildren();
+      for(const load of loads.slice(-3).reverse()){
+        const row=document.createElement('div'),button=document.createElement('button'),description=document.createElement('span');
+        button.type='button';button.className='monitor-storage-link';button.textContent=`$${hex(load.address)}–$${hex((load.address+load.bytes-1)&65535)} ↗`;
+        button.addEventListener('click',()=>openMemory(load.address));button.title='Inspect this address in current memory';
+        description.textContent=`Completed accelerated LOAD · ${load.bytes.toLocaleString()} bytes · ${load.ramBytes===load.bytes?'RAM destination':'CPU destination, partly I/O or special mapping'}`;
+        row.append(description,button);el('loads').append(row);
+      }
+      if(loads.length){const note=document.createElement('small');note.textContent=`Latest retained loads from eight emulated seconds${current.activity?.truncated?', earlier records omitted at the buffer limit':''}. Links show current memory, which may have changed.`;el('loads').append(note);}
+    }
+    el('loads').hidden=!loads.length;
     const mechanism=d.hardware && d.mode!=='accelerated';
     el('title').textContent=mechanism?'Head position over time':'File/channel rate over time';
     el('left').textContent=mechanism?`${history.seconds.toFixed(1)} s ago`:'Recent rate samples';el('right').textContent='now';
@@ -55,14 +70,14 @@ export function createStorageAnalysis(root, { openCode, openFrame, openCapturedM
     if(mechanism) {
       for(const track of [1,18,35,42]){const y=160-(track-1)/41*140;line(55,y,780,y);text(String(track),8,y+5);}
       for(let i=0;i<history.count;i++){
-        const track=history.heads[selected][(history.cursor-history.count+i+80)%80]; if(!Number.isFinite(track))continue;
+        const track=history.heads[selected][(history.cursor-history.count+i+401)%401]; if(!Number.isFinite(track))continue;
         ctx.fillStyle=accent;ctx.beginPath();ctx.arc(55+(history.count===1?1:i/(history.count-1))*725,160-(track-1)/41*140,3,0,Math.PI*2);ctx.fill();
       }
       el('reading').textContent=`Track ${d.halfTrack/2} · drive CPU $${hex(d.pc)} · motor ${d.motor?'on':'off'} · LED ${d.led?'on':'off'}`;
     } else {
       const count=rate?.historyCount??0;let max=1;
       for(let i=0;i<count;i++)max=Math.max(max,rate.history[i]);
-      for(let i=0;i<count;i++){const value=rate.history[(rate.historyCursor-count+i+80)%80];ctx.fillStyle=accent;ctx.fillRect(20+(count===1?1:i/(count-1))*750,160-value/max*125,6,Math.max(1,value/max*125));}
+      for(let i=0;i<count;i++){const value=rate.history[(rate.historyCursor-count+i+401)%401];ctx.fillStyle=accent;ctx.fillRect(20+(count===1?1:i/(count-1))*750,160-value/max*125,6,Math.max(1,value/max*125));}
       text(formatStorageRate(max,true),20,20);el('reading').textContent=rate?.ready?`Read ${formatStorageRate(rate.read,true)} · write ${formatStorageRate(rate.write,true)}`:'Waiting for transfer observations';
     }
   }
@@ -74,7 +89,7 @@ export function createStorageAnalysis(root, { openCode, openFrame, openCapturedM
     text('$8000',400,87);text('$A000',495,87);text('$E000',685,87);
     text('Sampled bank selections',20,119);
     const banks=[];
-    for(let i=0;i<history.count;i++) {const bank=history.banks[(history.cursor-history.count+i+80)%80];if(bank>=0&&banks.at(-1)!==bank)banks.push(bank);else if(bank<0&&banks.at(-1)!==null)banks.push(null);}
+    for(let i=0;i<history.count;i++) {const bank=history.banks[(history.cursor-history.count+i+401)%401];if(bank>=0&&banks.at(-1)!==bank)banks.push(bank);else if(bank<0&&banks.at(-1)!==null)banks.push(null);}
     const tail=banks.slice(-9);tail.forEach((bank,i)=>{text(bank===null?'—':String(bank),20+i*82,159,i===tail.length-1?accent:dim,23);if(i<tail.length-1)text('→',65+i*82,159);});
     el('reading').textContent=!c.inserted?'No cartridge inserted':windows.length?windows.map(w=>`$${hex(w.start)}–$${hex(w.end-1)}`).join(' · ')+' · CPU-visible cartridge memory':'No CPU-visible cartridge window';
     el('note').textContent='Click a mapped window to inspect its code. Bank history contains samples, so brief switches can be missed.';
@@ -99,6 +114,7 @@ export function createStorageAnalysis(root, { openCode, openFrame, openCapturedM
   }
   function draw() {
     if(!current)return;if(!ink)theme();ctx.fillStyle=bg;ctx.fillRect(0,0,800,190);
+    el('loads').hidden=selected>1;
     el('zoom').hidden=selected!==2;el('video').hidden=true;el('memory').hidden=true;
     canvas.tabIndex=[3,4].includes(selected)?0:-1;
     canvas.setAttribute('aria-label',selected===2?'Tape waveform reconstructed from TAP pulse timing.':selected===3?'CPU memory map. Click a cartridge window, or press Enter to inspect the first mapped window.':selected===4?'REU recorded accesses. Click an access or use Left and Right arrows to select.':'Sampled drive activity');
@@ -129,5 +145,5 @@ export function createStorageAnalysis(root, { openCode, openFrame, openCapturedM
   el('zoom').addEventListener('click',()=>{zoom=!zoom;el('zoom').textContent=zoom?'Zoom out':'Zoom ×2';pulses=tape.window(zoom?10000:20000);draw();});
   el('video').addEventListener('click',()=>{const e=frameData?.accesses[accessIndex];if(e)openFrame(frame,e.tick);});
   el('memory').addEventListener('click',()=>{const e=frameData?.accesses[accessIndex];if(e)openCapturedMemory(frame,e.tick,e.address);});
-  return {update,theme,setFrame(value){frame=value;frameData=null;accessIndex=0;},reset(){current=null;frame=null;frameData=null;tape.reset();pulses=[];}};
+  return {update,theme,setFrame(value){frame=value;frameData=null;accessIndex=0;},reset(){el('loads').replaceChildren();delete el('loads').dataset.key;current=null;frame=null;frameData=null;tape.reset();pulses=[];}};
 }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 
+import { logicalDisplayTrace } from './bauer-phases.js';
 import { EXTENDED_RULES, prepareExtended, checkExtended } from './bauer-extended.js';
 
 // Independent predicates, without imports from the emulator's VIC implementation.
@@ -15,7 +16,7 @@ export const BAUER_RULES = Object.freeze([
   { id:'bus.available', section:'2.2 / 2.3', title:'CPU bus available', requires:'BA, AEC, recorded bus permission', explanation:'With BA and AEC high, these VIC signals do not block the next CPU bus access.' },
   ...EXTENDED_RULES,
 ].map(rule => Object.freeze({...rule, source:BAUER_SOURCE, revision:BAUER_REVISION})));
-export const BAUER_UNCHECKED = 'Checks cover recorded digital evidence, not the whole physical chip. Renderer-source bytes are not timed bus fetches. Grouped sprite reads do not expose individual half-cycle timing. Display entry before the captured rendering-stage window, analog output and unstable VMLI effects remain insufficient evidence. REU holds and halted CPUs are outside VIC bus checks.';
+export const BAUER_UNCHECKED = 'Checks cover recorded digital evidence, not the whole physical chip. Renderer-source bytes are not timed bus fetches. Grouped sprite reads do not expose individual half-cycle timing. Exact sprite X-comparator phases, display entry before the captured rendering-stage window, analog output and unstable VMLI effects remain insufficient evidence. REU holds and halted CPUs are outside VIC bus checks.';
 
 export function badLineCondition(raster, d011, denLatch) {
   return raster >= 0x30 && raster <= 0xF7 && (raster & 7) === (d011 & 7) && !!denLatch;
@@ -69,7 +70,7 @@ export function analyzeBauerFrame(frame) {
     if (tick && key!==previous) events.push(tick);
     previous=key;
   }
-  return {results,summary,events};
+  return {results,summary,events,logicalDisplay:logicalDisplayTrace(frame)};
 }
 export function explainBauerCycle(frame,report,tick,selectedRule = -1) {
   if (selectedRule >= 0 && selectedRule < BAUER_RULES.length) {

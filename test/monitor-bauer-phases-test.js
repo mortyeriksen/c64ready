@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import {palBeamX,palAccess,spriteXMatch,logicalDisplayTrace,describeBauerPhases} from '../src/monitor/bauer-phases.js';
+import {VicFrameCapture} from '../src/vic2-frame-capture.js';
+assert.equal(palBeamX(1),404,'Bauer 3.6.1: PAL starts at sprite X=404');
+assert.equal(palBeamX(13,3),503,'Bauer 3.6.1: PAL reaches X=503 before wrapping');
+assert.equal(palBeamX(13,4),0,'Bauer 3.6.1: PAL wraps halfway through cycle 13');
+assert.equal(spriteXMatch(13,0),4,'Bauer 3.8.1 rule 6: sprite X=0 compares in the fifth pixel of cycle 13');
+assert.equal(spriteXMatch(13,504),-1,'Bauer 3.6.1: PAL cannot match X=504 through 511');
+for(const [slot,cycle] of [58,60,62,1,3,5,7,9].entries()) {
+  assert.deepEqual(palAccess(cycle,1,0,false),{type:'pointer',slot},'Bauer 3.8.1 rule 5: pointer reads happen even with DMA disabled');
+  assert.deepEqual(palAccess(cycle,2,1<<slot,false),{type:'sprite',slot,byte:1},'Bauer 3.8.1 rule 5: first sprite byte follows pointer in phi2');
+  assert.deepEqual(palAccess(cycle+1,1,1<<slot,false),{type:'sprite',slot,byte:2},'Bauer 3.8.1 rule 5: second sprite byte occupies following phi1');
+  assert.deepEqual(palAccess(cycle+1,2,1<<slot,false),{type:'sprite',slot,byte:3},'Bauer 3.8.1 rule 5: third sprite byte occupies following phi2');
+}
+assert.equal(palAccess(15,1,0,true).type,'refresh','Bauer 3.6.3: last refresh occurs in cycle 15 phi1');
+assert.equal(palAccess(15,2,0,true).type,'matrix','Bauer 3.7.2 rule 3: screen reads begin in cycle 15 phi2');
+assert.equal(palAccess(16,1,0,true).type,'graphics','Bauer 3.6.3: first graphics access follows first screen access');
+assert.equal(palAccess(54,2,0,true).type,'matrix','Bauer 3.7.2 rule 3: final screen access is cycle 54 phi2');
+assert.equal(palAccess(55,1,0,true).type,'graphics','Bauer 3.6.3: final graphics access is cycle 55 phi1');
+assert.equal(palAccess(56,1,0,true).type,'idle','Bauer 3.6.2: unused VIC half-cycle performs a discarded idle read');
+const f=new VicFrameCapture({analysis:true}).frame,a=f.analysis,q=a.sequencer;
+a.vicValid.fill(1);a.d011.fill(3);a.denLatch.fill(1);q.rc.fill(7);
+const start=51*63;
+const trace=logicalDisplayTrace(f);
+assert.equal(trace[0],2,'A rendering-stage initial flag is not assumed to be a logical display latch');
+assert.equal(trace[start],1,'Bauer 3.7.1: bad-line display entry is modelled before cycle 14');
+assert.equal(trace[52*63+57],0,'Bauer 3.7.2 rule 5: RC=7 without a bad line ends logical display at cycle 58');
+assert.equal(describeBauerPhases(f,start+14,trace).phases[1],'ϕ2: screen cell + colour','Armed bad-line window predicts screen access from captured controls');
+a.vicValid[start]=0;
+assert.equal(logicalDisplayTrace(f)[start],2,'Missing input leaves the logical state unresolved');
+f.overflow=true;
+assert.equal(describeBauerPhases(f,start+14,trace),null,'Truncated evidence cannot provide a half-cycle prediction');
+console.log('ok  - independent PAL half-cycle schedule, sprite X comparison and logical display prediction');

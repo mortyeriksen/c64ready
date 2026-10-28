@@ -48,7 +48,24 @@ export function capturedCodeActions(frame) {
     if (register >= 64) continue;
     actions.push({ ...explainVicWrite(register, frame.eventValue[i]), event: i, tick: frame.eventTick[i], address: 0xD000 + register, value: frame.eventValue[i], cpu: !!frame.eventCPU[i], pc: frame.eventPC[i], opcode: frame.eventOpcode[i] });
   }
-  return actions;
+  const p=frame.provenance;
+  if(p){
+    let instruction=-1;
+    for(let i=0;i<p.count;i++){
+      if(p.kind[i]===9||p.kind[i]===10)instruction=-1;
+      if(p.kind[i]===8)instruction=i;
+      if(p.kind[i]!==5&&p.kind[i]!==12)continue;
+      const sid=p.kind[i]===5,chip=p.aux[i],reg=p.address[i];
+      const address=sid?(chip?p.sid2Address:0xd400)+reg:reg;
+      let cpuWrite=!sid&&p.kind[i-1]===1&&p.address[i-1]===reg&&p.tick[i-1]===p.tick[i];
+      if(sid)for(let j=i+1;j<p.count&&p.tick[j]===p.tick[i];j++)if(p.kind[j]===1&&p.value[j]===p.value[i]){cpuWrite=true;break;}
+      const cpu=cpuWrite&&instruction>=0&&p.address[instruction]===p.pc[i];
+      actions.push({group:sid?'Sound':'Memory',title:sid?`Write SID ${chip+1} ${registerMeaning(0xd400+reg).replace(/^SID /,'')}`:`Change RAM at $${hex(address)}`,
+        detail:sid?'This is a recorded SID register write. Its sound depends on the voice, envelope, routing and other settings.': 'This byte of underlying RAM changed. A later graphics or CPU read is separate evidence of how it is used.',
+        colour:null,event:null,tick:p.tick[i],address,value:p.value[i],cpu,pc:cpu?p.address[instruction]:null,opcode:cpu?p.value[instruction]:null});
+    }
+  }
+  return actions.sort((a,b)=>a.tick-b.tick);
 }
 
 export function capturedCycleBudget(frame) {

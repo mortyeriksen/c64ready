@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { C64Machine } from '../src/machine.js';
 import { MachineFacade } from '../src/machine-facade.js';
 import { explainPixel } from '../src/monitor/provenance-model.js';
+import { buildFrameStory } from '../src/monitor/frame-story.js';
 import { phasePixel } from '../src/monitor/pixel-phase.js';
 import { analyzeBauerFrame, BAUER_RULES } from '../src/monitor/bauer-rules.js';
 
@@ -42,6 +43,8 @@ assert.equal(explainPixel(scroll,179,y).graphics.shift,7,'Bauer shifter: XSCROLL
 const colours=capture([[60,25,0x21,2],[61,10,0x21,6]]);
 assert.equal(explainPixel(colours,33,y).graphics.colourIndex,6,'Earlier background retains the colour before the output-stage write');
 assert.equal(explainPixel(colours,177,y).graphics.colourIndex,2,'Later background uses the recorded output-stage colour');
+const colourStop=buildFrameStory(colours).moments.find(m=>m.id==='colour');
+assert.equal(explainPixel(colours,colourStop.point.x,colourStop.point.y).graphics.colourIndex,2,'Frame story anchors a colour change to a matching recorded graphics pixel');
 const unchanged=capture([[60,25,0x11,0x1b],[60,30,0x16,8],[60,35,0x18,0x18]]);
 assert.ok(explainPixel(unchanged,32,y).graphics,'Same-value graphics writes do not invalidate source attribution');
 const report=analyzeBauerFrame(modes);

@@ -11,19 +11,22 @@ The version you are running is shown at the bottom of the About dialog.
 
 ## Next release
 
-Meet **Live Monitor Beta**: see the C64 at work, understand it in plain language
-and inspect the evidence while your game or demo runs.
+Meet **Live Monitor Beta**: a visual way to explore how your game or demo uses
+the C64, from plain-language explanations to technical evidence.
 
-- **Explore the machine.** Connected cards lead into Code, Memory, Video, Sound,
-  Controls and Storage, including dual SID, tape, cartridges and REU. Faded
-  SID 2 cards show the extra voices available when enabled.
-- **Pause and investigate.** Share a recorded frame across sections, magnify
-  pixels, trace source bytes and explore timing rules and program actions.
-- **Make it yours.** Monitor follows your theme and remembers your choice of
-  1, 10, 25 or 50 live samples per second. Sampling stops when closed or hidden.
-  Phone layouts include larger navigation targets and readable Sound cards.
-- **Learn as you go.** Follow the illustrated [Monitor guide](GUIDE-MONITOR.md)
-  and component stories in [Inside the C64](INSIDE-THE-C64.md).
+- **See the machine at work.** Open a full-window overview of Code, Memory,
+  Video, Sound, Controls and Storage, including dual SID, tape, cartridges
+  and REU.
+- **Pause and explore.** Open a component to inspect a shared moment. Explore
+  memory bytes and graphics, step through sound changes, or replay a video
+  frame with explanations of sprites, borders, raster timing and pixels.
+  Follow the evidence into register writes and assembly instructions.
+- **Keep it familiar.** Monitor follows your theme, keeps the C64 display
+  visible and supports keyboard and controllers. Choose the sampling rate,
+  resume to watch activity, or close Monitor to continue playing.
+- **Learn the hardware.** The [Monitor guide](GUIDE-MONITOR.md) explains the
+  tools. [Inside the C64](INSIDE-THE-C64.md) tells the components' stories,
+  with specifications, fun facts and things to try.
 
 ## 2026.10.7 — October 24, 2026
 

@@ -71,7 +71,7 @@ The [memory model](MEMORY-ARCHITECTURE.md) describes cartridge decoding and the 
 ## Try it in Monitor
 
 1. Open **Storage → CRT** and compare the cartridge's selected mode with its CPU-visible memory window.
-2. Watch the sampled bank trail while the program runs.
+2. Choose the play icon to resume the program and watch the sampled bank trail.
 3. Click a mapped window to inspect CPU-visible Code there.
 4. Compare that with underlying RAM in Memory. Different bytes can be correct because the two views have different sources.
 

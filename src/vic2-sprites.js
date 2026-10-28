@@ -74,6 +74,7 @@ export const spriteOps = {
       ((this.spriteRowData[s][0] << 16) |
         (this.spriteRowData[s][1] << 8) |
         this.spriteRowData[s][2]) >>> 0;
+    if(this._captureObserver)this._captureObserver.rules.add(16,s,this.spriteRowData[s][0],this.spriteRowData[s][1],this.spriteRowData[s][2],this.spriteShiftReg[s]);
     this._sprSnapVersion++;   // capture-dedup: sprite source changed
   },
 
@@ -410,6 +411,7 @@ export const spriteOps = {
     const enabled = this.regs[0x15];
     for (let s = 0; s < 8; s++) {
       this.spriteMC[s] = this.spriteMCBase[s];
+      if(this._captureObserver)this._captureObserver.rules.add(13,s,this.spriteMCBase[s],this.spriteMC[s]);
 
       if (!this.spriteDmaOn[s]) {
         // Rule 4 second clause: DMA off → display off. Per VIC-Addendum.txt,
@@ -1613,17 +1615,17 @@ export const spriteOps = {
   },
 
   _applySpriteBgBits(bits) {
-    const before = this.regs[0x1F];
-    if ((before | bits) === before) return;
+    const before = this.regs[0x1F], irqBefore=this.irqStatus;
+    if ((before | bits) === before) {if(this._captureObserver)this._captureObserver.rules.add(5,0x1F,before,bits,this.regs[0x1F],irqBefore,this.irqMask,this.irqStatus);return;}
     this.regs[0x1F] = before | bits;
-    if(this._captureObserver)this._captureObserver.rules.add(5,0x1f,before,bits,this.regs[0x1f]);
     // Bauer §3.12: IMBC fires only on the 0→non-zero transition of $D01F.
-    if (before !== 0) return;
+    if (before !== 0) {if(this._captureObserver)this._captureObserver.rules.add(5,0x1F,before,bits,this.regs[0x1F],irqBefore,this.irqMask,this.irqStatus);return;}
     this.irqStatus |= 0x02;
     if (this.irqMask & 0x02) {
       this.irqStatus |= 0x80;
       this.irqHandler(true);
     }
+    if(this._captureObserver)this._captureObserver.rules.add(5,0x1F,before,bits,this.regs[0x1F],irqBefore,this.irqMask,this.irqStatus);
   },
 
   // cx = canvas column (0..CANVAS_W-1); collision buffer is line-sized (#1).
@@ -1657,10 +1659,9 @@ export const spriteOps = {
   },
 
   _applySpriteSpriteBits(bits) {
-    const before = this.regs[0x1E];
-    if ((before | bits) === before) return;
+    const before = this.regs[0x1E], irqBefore=this.irqStatus;
+    if ((before | bits) === before) {if(this._captureObserver)this._captureObserver.rules.add(5,0x1E,before,bits,this.regs[0x1E],irqBefore,this.irqMask,this.irqStatus);return;}
     this.regs[0x1E] = before | bits;
-    if(this._captureObserver)this._captureObserver.rules.add(5,0x1e,before,bits,this.regs[0x1e]);
     // Bauer §3.12: IMMC fires only on the 0→non-zero transition of $D01E.
     if (before === 0) {
       this.irqStatus |= 0x04;
@@ -1669,6 +1670,7 @@ export const spriteOps = {
         this.irqHandler(true);
       }
     }
+    if(this._captureObserver)this._captureObserver.rules.add(5,0x1E,before,bits,this.regs[0x1E],irqBefore,this.irqMask,this.irqStatus);
   },
 
   // Advance the sprite-collision visibility pipeline by one cycle. Sprite

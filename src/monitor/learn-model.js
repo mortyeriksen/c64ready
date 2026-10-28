@@ -41,11 +41,11 @@ export function picturePoint(x, y, width, height, pictureWidth, pictureHeight) {
   return px < 0 || py < 0 || px >= pictureWidth || py >= pictureHeight ? null : { x: Math.floor(px), y: Math.floor(py) };
 }
 
-export function spriteBounds(frame) {
+export function spriteBounds(frame, visibleOnly = false) {
   const bounds = Array.from({length: 8}, () => ({left: frame.width, top: frame.height, right: -1, bottom: -1, pixels: 0}));
   for (let i = 0; i < frame.owners.length; i++) {
     const slot = frame.owners[i];
-    if (slot >= 8 || frame.border[i]) continue;
+    if (slot >= 8 || frame.border[i] || (visibleOnly && frame.provenance?.visibleSprites && !frame.provenance.visibleSprites[i])) continue;
     const b = bounds[slot], x = i % frame.width, y = Math.floor(i / frame.width);
     b.left = Math.min(b.left,x); b.right = Math.max(b.right,x);
     b.top = Math.min(b.top,y); b.bottom = Math.max(b.bottom,y); b.pixels++;
