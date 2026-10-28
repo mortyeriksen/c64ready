@@ -9,7 +9,7 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
-## Next release
+## 2026.10.8 — October 28, 2026
 
 Meet **Live Monitor Beta**: a visual way to explore how your game or demo uses
 the C64, from plain-language explanations to technical evidence.
