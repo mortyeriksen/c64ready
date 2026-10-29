@@ -1337,7 +1337,7 @@ button.monitor-chip { cursor: pointer; }
 .monitor-controls-table { overflow-x: auto; }
 .monitor-controls-table table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .monitor-controls-table th, .monitor-controls-table td { padding: 7px; text-align: left; border-bottom: 1px solid var(--border); }
-.monitor-component-guide { width: min(880px,calc(100vw - 40px)); max-height: min(850px,calc(100dvh - 40px)); padding: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-bg); color: var(--text); box-sizing: border-box; }
+.monitor-component-guide { width: min(880px,calc(100vw - 40px)); height: 850px; max-height: min(850px,calc(100dvh - 40px)); padding: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--panel-bg); color: var(--text); box-sizing: border-box; }
 .monitor-component-guide[open] { display: grid; grid-template-columns: 180px minmax(0,1fr); grid-template-rows: auto minmax(0,1fr) auto; }
 .monitor-component-guide::backdrop { background: color-mix(in srgb, var(--backdrop) 78%, transparent); }
 .monitor-component-guide > header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 18px 22px; border-bottom: 1px solid var(--border); }
@@ -1345,7 +1345,7 @@ button.monitor-chip { cursor: pointer; }
 .monitor-component-guide > nav { display: flex; flex-direction: column; align-items: stretch; gap: 5px; padding: 14px 10px; border-right: 1px solid var(--border); overflow: auto; }
 .monitor-component-guide nav button { background: transparent; color: var(--dim); border: 1px solid transparent; border-radius: 5px; text-align: left; padding: 9px 10px; font: inherit; font-size: 12px; cursor: pointer; }
 .monitor-component-guide nav button:hover, .monitor-component-guide nav button[aria-pressed="true"] { color: var(--accent); background: var(--control-bg); border-color: var(--border); }
-.monitor-component-guide > article { min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: contain; padding: 28px 32px; font-size: 15px; line-height: 1.65; overflow-wrap: anywhere; }
+.monitor-component-guide > article { min-height: 0; min-width: 0; overflow: auto; scrollbar-gutter: stable; overscroll-behavior: contain; padding: 28px 32px; font-size: 15px; line-height: 1.65; overflow-wrap: anywhere; }
 .monitor-component-guide article p { margin: 0 0 16px; }
 .monitor-component-guide article strong { color: var(--text-bright); }
 .monitor-component-guide article > :last-child { margin-bottom: 0; }
@@ -1389,9 +1389,9 @@ button.monitor-chip { cursor: pointer; }
 @media(max-width:600px) {
   .monitor-live-board { grid-template-columns: minmax(0,1fr); grid-template-rows: repeat(6,minmax(190px,auto)); }
   .monitor-machine:has(.monitor-live-board) { min-height: 0; }
-  .monitor-component-guide[open] { grid-template-columns: minmax(0,1fr); }
+  .monitor-component-guide[open] { grid-template-columns: minmax(0,1fr); grid-template-rows: auto auto minmax(0,1fr) auto; }
   .monitor-component-guide > nav { flex-direction: row; flex-wrap: wrap; max-height: 100px; border-right: 0; border-bottom: 1px solid var(--border); }
-  .monitor-component-guide > article { max-height: 50dvh; padding: 20px; }
+  .monitor-component-guide > article { padding: 20px; }
   .monitor-component-guide > footer { flex-wrap: wrap; }
   .monitor-control-ports { grid-template-columns: minmax(0,1fr); }
 }

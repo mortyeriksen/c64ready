@@ -20,6 +20,8 @@ The version you are running is shown at the bottom of the About dialog.
   frame, including brief activity between samples.
 - **Silent pause.** Pausing from Monitor or the main controls silences audio,
   including while recording.
+- **Steady guide navigation.** Monitor's component guide keeps its size and
+  position while switching chapters.
 
 ## 2026.10.8 — October 28, 2026
 

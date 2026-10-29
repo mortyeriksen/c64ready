@@ -82,6 +82,10 @@ Run individual files with `node test/monitor-<name>-test.js`, or use `npm test`
 for the registered suite. `test/monitor-browser-test.js` requires Playwright
 Chromium. Its real-emulator checks also need local ROMs and report SKIP when
 those assets are unavailable.
+The browser test builds the documentation and checks that component dialogs
+load the HTML guides, resolve document links, handle missing pages and keep
+the selected chapter when responses arrive out of order. Dialog size and position
+stay stable during chapter loading on desktop and phone layouts.
 
 ## Dialog close controls
 

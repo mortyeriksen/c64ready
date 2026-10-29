@@ -14,7 +14,7 @@ function sidRowsAligned(panels) {
 let browser;
 try { const { chromium } = await import('playwright'); browser = await chromium.launch(); } catch {}
 if (!browser) { console.log('# SKIP Playwright Chromium unavailable'); process.exit(0); }
-process.env.VITE_BUILD_DOCS = '0';
+process.env.VITE_BUILD_DOCS = '1';
 const { createServer } = await import('vite');
 const vite = await createServer({ logLevel: 'silent', server: { host: '127.0.0.1', port: 0 } });
 await vite.listen();
@@ -494,7 +494,9 @@ try {
   await page.waitForFunction(() => document.querySelector('.monitor-component-guide article h2'));
   const beforeGuide = await page.evaluate(() => ({captures:fixture.captures||0, frames:fixture.frames, pauses:fixture.pauses}));
   for (const key of ['cpu','memory','vic','sid','cia','drive','tape','crt','reu']) {
+    const guideResponse=page.waitForResponse(response=>response.url()===`${base}/docs/component-guide-${key}.html`);
     await page.click(`[data-guide="${key}"]`);
+    assert.equal((await guideResponse).status(),200,'component guides load the generated HTML page');
     await page.waitForFunction(() => document.querySelector('.monitor-component-guide article h2')?.textContent === 'The story');
     assert.match(await page.locator('.monitor-component-guide article').innerText(),/Try it in Monitor/,'each guide includes a practical next step');
     const bounded=await page.locator('.monitor-component-guide').evaluate(el=>{const b=el.getBoundingClientRect();return b.top>=0&&b.bottom<=innerHeight&&b.width<innerWidth;});
@@ -507,7 +509,42 @@ try {
     if(spacing.gap!==null)assert.ok(spacing.gap>=14,'About paragraphs retain visible vertical separation');
     const links=await page.locator('.monitor-component-guide article a').evaluateAll(links=>links.map(a=>a.getAttribute('href')));
     assert.ok(links.some(link=>link.includes('-architecture.html')),'each component links to emulator documentation');
+    assert.ok(links.every(link=>link.startsWith('#')||/^[a-z]+:/i.test(link)),'document links resolve from the docs page, not the emulator URL');
+    assert.equal(await page.locator('.monitor-component-guide article :is(h1,.crumbs,.guide-pager,.anchor)').count(),0,'the dialog supplies its own title and navigation');
   }
+  const cpuGuideUrl=`${base}/docs/component-guide-cpu.html`;
+  for(const failure of [{status:404,body:'Not found'},{status:200,body:'<!doctype html><main>App shell</main>'}]) {
+    await page.route(cpuGuideUrl,route=>route.fulfill({contentType:'text/html',...failure}));
+    await page.click('[data-guide="cpu"]');
+    await page.waitForFunction(()=>document.querySelector('.monitor-component-guide article').textContent.includes('could not be loaded'));
+    assert.equal(await page.locator('[data-guide-document]').getAttribute('href'),'/docs/component-guide-cpu.html','failed loads retain a full-document fallback');
+    await page.unroute(cpuGuideUrl);
+  }
+  await page.click('[data-guide="cpu"]');
+  await page.waitForFunction(()=>document.querySelector('.monitor-component-guide article h2'));
+  const guideViewport=page.viewportSize();
+  for(const viewport of [guideViewport,{width:390,height:844}]) {
+    await page.setViewportSize(viewport);
+    const guideBounds=await page.locator('.monitor-component-guide').boundingBox();
+    let releaseGuide, guideRequested;
+    const guideHeld=new Promise(resolve=>{releaseGuide=resolve;});
+    const guideStarted=new Promise(resolve=>{guideRequested=resolve;});
+    await page.route(cpuGuideUrl,async route=>{guideRequested();await guideHeld;await route.continue();});
+    await page.click('[data-guide="cpu"]');
+    await guideStarted;
+    assert.deepEqual(await page.locator('.monitor-component-guide').boundingBox(),guideBounds,'loading preserves dialog size and position');
+    await page.click('[data-guide="memory"]');
+    await page.waitForFunction(()=>document.querySelector('.monitor-component-guide article h2'));
+    const memoryText=await page.locator('.monitor-component-guide article').innerText();
+    const lateGuide=page.waitForResponse(cpuGuideUrl);
+    releaseGuide();
+    await (await lateGuide).finished();
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    assert.equal(await page.locator('.monitor-component-guide article').innerText(),memoryText,'a late response cannot replace the selected guide');
+    await page.unroute(cpuGuideUrl);
+    assert.deepEqual(await page.locator('.monitor-component-guide').boundingBox(),guideBounds,'loaded chapters preserve dialog size and position');
+  }
+  await page.setViewportSize(guideViewport);
   assert.equal(await page.evaluate(()=>fixture.captures||0),beforeGuide.captures,'reading component guides does not request frame captures');
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('.monitor-component-guide').evaluate(el=>el.open),false,'Escape closes the component guide');
