@@ -147,6 +147,7 @@ export default defineConfig({
           '**/pwa-installed.html',
           '**/roms-loaded.html',
           '**/roms-vice.html',
+          '**/roms-fetched.html',
           '**/returned.html',
           '**/rom-sources.json',
           '**/roms-theme-classic.html',

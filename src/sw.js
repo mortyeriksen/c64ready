@@ -36,7 +36,7 @@ const RUNTIME_CACHES = [MODEL_CACHE, GUIDE_CACHE];
 // Keep in sync with the matching globIgnores in vite.config.js; a marker that
 // lands in the precache is answered from cache and never reaches the host.
 const ANALYTICS_MARKERS = new Set(
-  ['/pwa.html', '/pwa-installed.html', '/roms-loaded.html', '/roms-vice.html', '/returned.html',
+  ['/pwa.html', '/pwa-installed.html', '/roms-loaded.html', '/roms-vice.html', '/roms-fetched.html', '/returned.html',
    '/roms-theme-classic.html', '/roms-theme-geos.html', '/roms-theme-breadbin.html', '/roms-theme-phosphor.html',
    '/roms-theme-outrun.html', '/roms-theme-commando.html', '/roms-theme-artdeco.html', '/roms-theme-lookout.html',
    '/roms-theme-custom.html']);
@@ -107,7 +107,8 @@ self.addEventListener('fetch', (event) => {
 
   // Analytics markers — installed launch (/pwa.html, every launch), new install
   // (/pwa-installed.html, once per browser), sessions with ROMs
-  // (/roms-loaded.html, /roms-vice.html, once per page load), and the theme in
+  // (/roms-loaded.html, once per page load), successful VICE folder imports
+  // (/roms-vice.html), completed Fetch ROMs actions (/roms-fetched.html), and the theme in
   // use when the user supplies ROMs (/roms-theme-*.html), and a visit that
   // restores them from the cache (/returned.html). Never intercept: let them go straight to the network
   // so Netlify's server-side log records the page view rather than the SW

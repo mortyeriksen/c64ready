@@ -13,6 +13,7 @@ export function romSourceUrl(value) {
 }
 
 export async function fetchRomSources(loader, urls, onStatus, request = fetch) {
+  let fetched = 0;
   await Promise.all(SLOTS.map(async key => {
     if (loader[key]) { onStatus(key, 'Loaded'); return; }
     try {
@@ -30,6 +31,7 @@ export async function fetchRomSources(loader, urls, onStatus, request = fetch) {
       const data = new Uint8Array(await response.arrayBuffer());
       const name = new URL(url).pathname.split('/').pop() || `${key}.bin`;
       loader.setRomData(key, data, name, 'fetch');
+      fetched++;
       onStatus(key, 'Loaded');
     } catch (error) {
       const message = error.name === 'TimeoutError' ? 'Download timed out. Try again.'
@@ -38,9 +40,10 @@ export async function fetchRomSources(loader, urls, onStatus, request = fetch) {
       onStatus(key, message);
     }
   }));
+  return fetched;
 }
 
-export function initRomSetup(modal, loader, onChanged) {
+export function initRomSetup(modal, loader, onChanged, onFetched = () => {}) {
   modal.addEventListener('keydown', event => event.stopPropagation());
   modal.addEventListener('keyup', event => event.stopPropagation());
   const tabs = [...modal.querySelectorAll('[role="tab"]')];
@@ -55,6 +58,7 @@ export function initRomSetup(modal, loader, onChanged) {
       item.tabIndex = selected ? 0 : -1;
       modal.querySelector(`#${item.getAttribute('aria-controls')}`).hidden = !selected;
     }
+    syncLoaded();
   }
   availableTabs.forEach((tab, index) => {
     tab.addEventListener('click', () => selectTab(tab));
@@ -76,6 +80,10 @@ export function initRomSetup(modal, loader, onChanged) {
   let defaultsPromise;
   let busy = false;
   function syncLoaded() {
+    const hideFetch = (loader.allLoaded && !busy)
+      || modal.querySelector('#setup-tab-fetch').getAttribute('aria-selected') !== 'true';
+    if (hideFetch && document.activeElement === button) modal.querySelector('#btn-setup-later').focus();
+    button.hidden = hideFetch;
     for (const key of SLOTS) {
       if (loader[key]) statuses[key].textContent = 'Loaded';
       else if (statuses[key].textContent === 'Loaded') statuses[key].textContent = '';
@@ -106,13 +114,16 @@ export function initRomSetup(modal, loader, onChanged) {
     try {
       await defaultsPromise;
       const urls = Object.fromEntries(SLOTS.map(key => [key, inputs[key].value]));
-      await fetchRomSources(loader, urls, (key, status) => {
+      const fetched = await fetchRomSources(loader, urls, (key, status) => {
         statuses[key].textContent = status;
         if (status === 'Loaded') onChanged();
       });
+      if (fetched > 0 && loader.allLoaded) onFetched();
       summary.textContent = loader.allLoaded
         ? (loader.drive1541 ? 'All four ROMs are loaded. Your C64 is ready.' : 'Your C64 is ready. You can also add the optional 1541 DOS ROM.')
         : 'Some ROMs are still missing. Check the messages above and retry, or use VICE or local files.';
+      if (loader.allLoaded) modal.querySelector('.setup-actions').prepend(summary);
+      else modal.querySelector('#setup-fetch-section').append(summary);
     } finally {
       busy = false;
       button.disabled = false;
@@ -121,5 +132,5 @@ export function initRomSetup(modal, loader, onChanged) {
       onChanged();
     }
   });
-  return { open() { syncLoaded(); defaultsPromise ??= loadDefaults(); } };
+  return { syncLoaded, open() { syncLoaded(); defaultsPromise ??= loadDefaults(); } };
 }

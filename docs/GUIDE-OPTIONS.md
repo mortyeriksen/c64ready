@@ -111,6 +111,8 @@ run the [Setup dialog](#setup-c64-ready) walks you through loading them.
 Appears automatically on first run, when no ROMs are found; the C64 can't boot
 without them. The closing button reads **Find them later** until the three
 required ROMs are in, then **Done**.
+**Done** closes setup and powers on the C64. **Find them later**, the close
+button and Escape dismiss setup without powering on.
 
 [Getting Started](GETTING-STARTED.md#1-set-up-roms) has the walkthrough: the
 three tabs (**Fetch ROMs**, **VICE folder**, **Upload files**), the filenames

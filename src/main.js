@@ -1216,10 +1216,9 @@ async function _runAutoLoad(scanningMsg) {
 // Launch-scaled on purpose. Top Pages is a RANKED list, so a once-per-browser
 // marker never surfaces — /pwa-installed.html never has, while /pwa.html, which
 // pings every launch, does. So these fire once per page load: /roms-loaded.html
-// whenever the machine has its ROMs (supplied now, or restored from the cache),
-// and /roms-vice.html when they came out of a picked VICE folder. Read them as
-// sessions with ROMs, not as people. No ROMs ship with the site, so every count
-// is someone's own files.
+// whenever the machine has its ROMs (supplied now, or restored from the cache).
+// Read it as sessions with ROMs, not as people. Source markers count successful
+// Fetch ROMs actions and VICE folder imports, not cached return visits.
 //
 // /roms-theme-<id>.html records the theme in use at the moment the user
 // supplies their ROMs (downloaded, uploaded or from a VICE folder; not when a later visit
@@ -1245,9 +1244,6 @@ function _pingRomsLoaded() {
   if (_romsPinged || !loader.allLoaded) return;
   _romsPinged = true;
   fetch('/roms-loaded.html', { cache: 'no-store' }).catch(() => {});
-  let source = null;
-  try { source = localStorage.getItem(_ROM_SOURCE_KEY); } catch {}
-  if (source === 'vice') fetch('/roms-vice.html', { cache: 'no-store' }).catch(() => {});
 }
 
 // /returned.html: a visit whose ROMs came back out of the browser's cache, so
@@ -2586,6 +2582,8 @@ document.addEventListener('keydown', e => {
 const romSetup = initRomSetup(setupModal, loader, () => {
   updateRomStatus();
   _syncSetupDoneLabel();
+}, () => {
+  fetch('/roms-fetched.html', { cache: 'no-store' }).catch(() => {});
 });
 
 function _openSetup() {
@@ -2595,12 +2593,18 @@ function _openSetup() {
   romSetup.open();
   pushEscapeLayer(_setupEscape);
 }
-function _closeSetup() { if (setupModal) setupModal.hidden = true; popEscapeLayer(_setupEscape); maybeEquipmentHint(); }
+function _hideSetup() { if (setupModal) setupModal.hidden = true; popEscapeLayer(_setupEscape); }
+function _closeSetup() { _hideSetup(); maybeEquipmentHint(); }
 const _setupIsOpen = () => setupModal && !setupModal.hidden;
 const _setupEscape = { close: _closeSetup, isOpen: _setupIsOpen };
 
 document.getElementById('btn-setup-close')?.addEventListener('click', _closeSetup);
-document.getElementById('btn-setup-later')?.addEventListener('click', _closeSetup);
+document.getElementById('btn-setup-later')?.addEventListener('click', async () => {
+  if (!_setupIsOpen()) return;
+  _hideSetup();
+  if (loader.allLoaded) await _powerOn();
+  maybeEquipmentHint();
+});
 if (setupModal) {
   setupModal.addEventListener('click', e => {
     if (e.target === setupModal) _closeSetup();
@@ -2622,9 +2626,13 @@ loader.bindInputs(_setupInputs[0], _setupInputs[1], _setupInputs[2], _setupInput
 // dismiss button relabels from "Find them later" to "Done".
 const _setupLaterBtn = document.getElementById('btn-setup-later');
 function _syncSetupDoneLabel() {
+  romSetup.syncLoaded();
   if (_setupLaterBtn) {
     _setupLaterBtn.textContent =
       (loader.kernal && loader.basic && loader.charRom) ? 'Done' : 'Find them later';
+    _setupLaterBtn.title = loader.allLoaded
+      ? 'Close setup and power on the C64.'
+      : 'Look around without ROMs. The machine needs all three to boot.';
   }
 }
 for (const el of _setupInputs) {
@@ -2661,6 +2669,7 @@ _viceDirInput?.addEventListener('change', async e => {
     } catch {}                             // wrong size for the slot: treat as not found
   }
   const missing = Object.values(_ROM_SLOT_LABELS).filter(label => !loaded.includes(label));
+  if (loaded.length && loader.allLoaded) fetch('/roms-vice.html', { cache: 'no-store' }).catch(() => {});
   _setViceStatus(loaded.length
     ? `Loaded ${loaded.join(', ')} from ${root}.` + (missing.length ? ` Not found: ${missing.join(', ')}.` : '')
     : `No C64 ROMs found in ${root}. Try the folder VICE is installed in.`);

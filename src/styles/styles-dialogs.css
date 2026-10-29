@@ -280,15 +280,33 @@
 }
 
 .setup-actions {
+  --setup-fetch-bg: var(--accent);
+  --setup-fetch-text: var(--on-accent);
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 24px;
 }
 
 .setup-actions .btn {
-  flex: none;
-  min-width: 160px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.setup-actions .btn[hidden] { display: none; }
+
+.setup-actions #setup-fetch-summary {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  text-align: left;
+}
+
+#setup-fetch {
+  background: var(--setup-fetch-bg);
+  color: var(--setup-fetch-text);
+  border-color: var(--setup-fetch-bg);
 }
 
 /* Narrow screens keep the 1.3x zoom but stack the ROM slots one per line.

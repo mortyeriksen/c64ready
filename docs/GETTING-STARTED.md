@@ -55,8 +55,10 @@ True Drive Emulation. Any compatible revision works. The search looks for:
 - **CHARGEN**: `characters.901225-01.bin` (4 KB)
 - **1541 DOS**: `1541-II.251968-03.bin` (16 KB, optional)
 
-The button reads **Done** once the three required ROMs are in. This is a
-one-time step: they are cached in your browser, and **⚙ OPTIONS ▸ ROM Files**
+Once the three required ROMs are in and downloads have finished, the footer
+shows only **Done**. Press it to close setup and power on the C64. You can
+still add an optional 1541 ROM through the VICE
+or upload tab. This is a one-time step: ROMs are cached in your browser, and **⚙ OPTIONS ▸ ROM Files**
 shows and clears them. See [Specifications](SPECIFICATIONS.md) on revisions.
 
 Once the ROMs are ready, **Choose your look** appears once. Pick a card and
@@ -69,7 +71,7 @@ press **APPLY THEME**, or **KEEP CURRENT**. You can reopen it from
 
 ## 2. Power on
 
-Press **POWER**. After the RAM-test pause you land on the light-blue BASIC
+If **Done** has not already powered on the C64, press **POWER**. After the RAM-test pause you land on the light-blue BASIC
 screen with the blinking `READY.` cursor. This is a real cold boot, not a
 picture of one.
 

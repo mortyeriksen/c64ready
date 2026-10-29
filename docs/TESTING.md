@@ -109,6 +109,14 @@ setup opens and are kept out of the service worker cache. Missing or invalid
 configuration leaves the inputs available for manual URLs. Tests supply their
 own configuration and never depend on the deployment's links.
 
+`test/analytics-markers-spec-test.js` checks that marker pages exist and bypass
+both browser and service worker caching. `/roms-fetched.html` fires after a
+Fetch ROMs click installs at least one ROM and leaves the required trio ready.
+`/roms-vice.html` similarly fires once after a VICE folder import installs ROMs
+and leaves the required trio ready. Neither fires on cached return visits or
+attempts that leave required ROMs missing. The setup browser test checks
+successful fetches, VICE imports and cached returns.
+
 `test/theme-picker-browser-test.js` checks the theme gallery on desktop and
 phone, keyboard selection, cancellation, persistence, themed docs and the
 side-by-side mobile guide images. The panel media test checks that first ROM

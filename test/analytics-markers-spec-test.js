@@ -9,6 +9,7 @@
 // and the number silently reads zero.
 
 import fs from 'fs';
+import { runInNewContext } from 'node:vm';
 
 const read = (p) => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 const sw = read('src/sw.js');
@@ -38,8 +39,7 @@ for (const path of markers) {
     `${path}: nothing in main.js fetches it`);
 }
 
-// Each beacon dedupes through its own localStorage key, and asks for the
-// network rather than whatever the browser cached last time.
+// Markers request the network rather than the browser's cached response.
 for (const [, path] of main.matchAll(/fetch\('(\/[a-z0-9-]+\.html)'([^)]*)\)/g)) {
   const call = main.slice(main.indexOf(`fetch('${path}'`));
   expect(/cache: 'no-store'/.test(call.slice(0, 120)),
@@ -60,4 +60,24 @@ if (failures) {
   console.log(`\n${failures} analytics-marker spec failure(s)`);
   process.exit(1);
 }
+const pingSource = main.slice(main.indexOf('let _romsPinged = false;'), main.indexOf('// /returned.html:'));
+for (const source of ['fetch', 'vice', 'upload', null]) {
+  const requests = [];
+  const loader = { allLoaded: false };
+  const context = {
+    loader, _ROM_SOURCE_KEY: 'c64emu.romsSource',
+    localStorage: { getItem: () => source },
+    fetch: (url, options) => { requests.push([url, options.cache]); return Promise.resolve(); },
+  };
+  runInNewContext(`${pingSource}\n_pingRomsLoaded();`, context);
+  expect(requests.length === 0, 'ROM markers wait until all required ROMs are ready');
+  loader.allLoaded = true;
+  runInNewContext('_pingRomsLoaded(); _pingRomsLoaded();', context);
+  expect(requests.filter(([url]) => url === '/roms-fetched.html').length === 0,
+    `restoring ROMs never fires the fetched marker, regardless of saved source (${source})`);
+  expect(requests.filter(([url]) => url === '/roms-vice.html').length === 0,
+    `restoring ROMs never fires the VICE marker, regardless of saved source (${source})`);
+  expect(requests.every(([, cache]) => cache === 'no-store'), 'ROM markers bypass browser caching');
+}
+if (failures) process.exit(1);
 console.log(`ok  - ${markers.length} analytics markers: page, SW passthrough and precache exclusion agree`);

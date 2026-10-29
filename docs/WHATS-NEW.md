@@ -11,8 +11,11 @@ The version you are running is shown at the bottom of the About dialog.
 
 ## Next release
 
-- **Quieter startup.** Attract mode is off by default. Your saved choice is still remembered.
-- **ROM setup tabs.** Fetch ROMs from editable links, choose a VICE folder, or upload individual files. The dialog stays in place when switching tabs. Downloads stay in your browser, with a status for each ROM and retries for missing files.
+- **Simpler ROM setup.** Download ROMs directly into your browser from editable
+  links, or use the VICE folder and file upload tabs. ROMs are remembered for
+  later visits. Press **Done** to start the C64.
+- **Quieter startup.** Attract mode is off by default, with your saved choice
+  still respected.
 
 ## 2026.10.8 — October 28, 2026
 
