@@ -93,6 +93,8 @@ stay stable during chapter loading on desktop and phone layouts.
 validation, browser storage and retries that preserve loaded ROMs.
 `test/rom-setup-browser-test.js` checks the setup tabs, keyboard navigation,
 download results, missing configuration and phone layout with synthetic ROMs.
+It also checks fresh-browser startup with a delayed 1541 ROM and audio
+initialization, keeping the powered-off banner out of the running display.
 
 The setup dialog reads optional default links from `public/rom-sources.json`.
 This file is git-ignored and must be supplied separately on a deployment

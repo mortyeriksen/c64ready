@@ -269,10 +269,11 @@ function _drawBootHint(alpha = 1) {
 
 // Gentle pulse loop for the boot banner (~25 fps; only runs while it's shown).
 function _startBootHint() {
-  if (_bootHintRaf !== null) return;
+  if (running || _bootHintRaf !== null) return;
   const t0 = performance.now();
   let last = 0;
   const tick = (now) => {
+    if (running) { _bootHintRaf = null; return; }
     _bootHintRaf = requestAnimationFrame(tick);
     if (now - last < 40) return;
     last = now;
@@ -1835,6 +1836,10 @@ async function _powerOn() {
   _blankScreen();
   canvas.style.cursor = '';
   await resumeAudio();
+  // ROM callbacks can refresh the powered-off display while audio initializes.
+  pauseDemo?.stop();
+  _stopBootHint();
+  canvas.style.cursor = '';
   _createAndWireMachine();
   setRunning(true);
   _syncPowerStateClass();

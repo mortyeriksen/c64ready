@@ -22,6 +22,8 @@ The version you are running is shown at the bottom of the About dialog.
   including while recording.
 - **Steady guide navigation.** Monitor's component guide keeps its size and
   position while switching chapters.
+- **Reliable first boot.** Fetching ROMs no longer leaves the power-on prompt
+  flashing over the running C64.
 
 ## 2026.10.8 — October 28, 2026
 

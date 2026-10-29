@@ -12,6 +12,62 @@ const origin = `http://127.0.0.1:${vite.httpServer.address().port}`;
 const keys = ['kernal', 'basic', 'charRom', 'drive1541'];
 const urls = Object.fromEntries(keys.map(key => [key, `${origin}/fixture/${key}.bin`]));
 try {
+  {
+    const context = await browser.newContext();
+    await context.addInitScript(() => {
+      window.bootPaints = { off: 0, on: 0 };
+      const fillText = CanvasRenderingContext2D.prototype.fillText;
+      CanvasRenderingContext2D.prototype.fillText = function(text, ...args) {
+        if (text === 'PRESS' || text === 'PRESS TO START SETUP') {
+          window.bootPaints[document.body.classList.contains('powered-on') ? 'on' : 'off']++;
+        }
+        return fillText.call(this, text, ...args);
+      };
+      const addModule = AudioWorklet.prototype.addModule;
+      AudioWorklet.prototype.addModule = async function(...args) {
+        await new Promise(resolve => { window.finishBootAudio = resolve; });
+        return addModule.apply(this, args);
+      };
+    });
+    await context.route('**/roms/**', route => route.fulfill({ status: 404, body: '' }));
+    await context.route('**/rom-sources.json', route => route.fulfill({ json: urls }));
+    let finishDrive;
+    const drivePending = new Promise(resolve => { finishDrive = resolve; });
+    await context.route('**/fixture/*.bin', async route => {
+      const key = new URL(route.request().url()).pathname.split('/').pop().slice(0, -4);
+      if (key === 'drive1541') await drivePending;
+      const size = key === 'charRom' ? 4096 : key === 'drive1541' ? 16384 : 8192;
+      await route.fulfill({ contentType: 'application/octet-stream', body: Buffer.alloc(size) });
+    });
+    const page = await context.newPage();
+    await page.goto(origin);
+    await page.click('#splash-power');
+    await page.locator('#setup-modal').waitFor({ state: 'visible' });
+    await page.waitForFunction(() => document.querySelector('#setup-url-kernal').value.includes('/fixture/'));
+    await page.click('#setup-fetch');
+    await page.waitForFunction(() => window.finishBootAudio);
+    finishDrive();
+    await page.waitForFunction(() => document.querySelector('#setup-fetch-summary').textContent.includes('All four'));
+    await page.evaluate(() => window.finishBootAudio());
+    await page.waitForFunction(() => document.body.classList.contains('powered-on'));
+    await page.click('#btn-setup-later');
+    const observePaints = () => page.evaluate(() => new Promise(resolve => {
+      const end = performance.now() + 250;
+      const tick = now => now >= end ? resolve({ ...window.bootPaints }) : requestAnimationFrame(tick);
+      requestAnimationFrame(tick);
+    }));
+    assert.equal((await observePaints()).on, 0, 'a ROM arriving during audio initialization cannot paint the powered-off banner over the running C64');
+    await page.getByRole('button', { name: 'KEEP CURRENT', exact: true }).click();
+    await page.keyboard.press('Escape');
+    const beforeOff = (await observePaints()).off;
+    await page.click('#btn-power');
+    await page.waitForFunction(before => window.bootPaints.off > before, beforeOff);
+    await page.click('#btn-power');
+    await page.waitForFunction(() => document.body.classList.contains('powered-on'));
+    assert.equal((await observePaints()).on, 0, 'power cycling stops the powered-off banner before live emulation resumes');
+    await context.close();
+    console.log('ok  - fresh setup keeps powered-off rendering separate from asynchronous power-on');
+  }
   for (const mobile of [false, true]) {
     const context = await browser.newContext({ viewport: { width: mobile ? 390 : 1440, height: mobile ? 844 : 1000 }, hasTouch: mobile, isMobile: mobile });
     await context.addInitScript(() => {
