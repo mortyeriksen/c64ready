@@ -35,3 +35,15 @@ assert.equal(view.background,2,'background colour uses the low nibble');
 const before=state.vic.slice();liveVideoSetup(state);
 assert.deepEqual(state.vic,before,'visual interpretation leaves the detached snapshot unchanged');
 console.log('ok  - live VIC setup geometry, mode validity, fine scroll and sprite enables');
+
+const { capturedSpriteEnables } = await import('../src/monitor/live-video.js');
+const registers = new Uint8Array(64);
+const frame = { analysis: { initial: { registers } }, eventCount: 3,
+  eventKind: Uint8Array.of(0x15,0x20,0x15), eventValue: Uint8Array.of(255,7,0) };
+assert.equal(capturedSpriteEnables(frame),255,'D015 enable then disable retains every enabled slot in the frame');
+registers[0x15]=0x81;frame.eventCount=0;
+assert.equal(capturedSpriteEnables(frame),0x81,'initial sprite enables count without register writes');
+registers[0x15]=0;frame.eventCount=1;frame.eventKind[0]=0x20;
+assert.equal(capturedSpriteEnables(frame),0,'colour writes do not enable sprite slots');
+assert.equal(capturedSpriteEnables(null),null,'missing recording falls back to sampled enables');
+console.log('ok  - captured sprite enables include transient activity');

@@ -50,3 +50,32 @@ console.log('ok  - audio lifecycle foreground/background mute policy');
     'a hidden tab is left alone');
   console.log('ok  - gesture restore only acts when something is suspended or pinned');
 }
+
+// Exercise the host pause handler with an audio clock that stays running.
+{
+  const { readFileSync } = await import('node:fs');
+  const { runInNewContext } = await import('node:vm');
+  const source = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  const handler = source.slice(source.indexOf('function _setPaused(p) {'), source.indexOf("pauseBtn.addEventListener('click'"));
+  const calls = [];
+  const host = {
+    paused: false, pauseBtn: {}, audioMuted: false, lastTime: 10, timeAccumulator: 10,
+    _syncPausedClass() {}, setStatus() {}, updateMediaIndicators() {}, _syncWakeLock() {},
+    setMasterMuted(value) { calls.push(['mute', value]); },
+    suspendAudio() { calls.push(['suspend']); },
+    audioCtx: { state: 'running' }, driveSounds: null, sidNode: null,
+    setRecorderAudioPaused() {},
+  };
+  runInNewContext(`${handler}\n_setPaused(true);`, host);
+  expect(calls[0]?.[0] === 'mute' && calls[0][1] === true,
+    'shared pause silences live output before suspending or keeping the recorder clock alive');
+  expect(calls[1]?.[0] === 'suspend', 'shared pause retains the audio suspension path');
+  calls.length = 0;
+  runInNewContext('_setPaused(false);', host);
+  expect(calls.at(-1)?.[1] === false, 'resume restores the selected audible output');
+  host.audioMuted = true;
+  calls.length = 0;
+  runInNewContext('_setPaused(false);', host);
+  expect(calls.at(-1)?.[1] === true, 'resume preserves the user mute preference');
+  console.log('ok  - shared pause silences output while the recording clock stays active');
+}

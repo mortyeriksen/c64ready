@@ -11,7 +11,7 @@ import { graphicsLayout } from './setup-model.js';
 import { activeStorageDevice, STORAGE_DEVICES } from './storage-model.js';
 import { LIVE_COMPONENTS, videoMode, enabledSpriteCount, soundSummary, controlSummary } from './live-model.js';
 import { liveCodeSummary, showLiveSampleDetails } from './live-code.js';
-import { createLiveVideoView } from './live-video.js';
+import { createLiveVideoView, capturedSpriteEnables } from './live-video.js';
 
 // Connections describe hardware relationships, not unrecorded bus transfers.
 export function createMachineView(root, navigate, openGuide) {
@@ -49,6 +49,7 @@ export function createMachineView(root, navigate, openGuide) {
   let primary=0, memoryPage=4, owner=null, lastDraw=-Infinity, lastPaused=false, reuObserved=false;
   const summaries=new LiveWindowSummary();
   let recentSummary=null;
+  let capturedSprites=null;
   const history=new LiveCardHistory(), pages=new Uint16Array(256), ages=new Float64Array(256);
   const contexts=Object.fromEntries(LIVE_COMPONENTS.filter(c=>c.key!=='vic'&&c.key!=='sid').map(c=>[c.key,el(c.key+'-visual').getContext('2d')]));
   const guideKeys=['drive','drive','tape','crt','reu'];
@@ -115,7 +116,12 @@ export function createMachineView(root, navigate, openGuide) {
     ram.globalAlpha=1;
     const r=state.vic;
     text('vic',videoMode(state),`${enabledSpriteCount(r[0x15])} / 8 sprite slots enabled`,`${layout.bitmapOn?'Bitmap':'Patterns'} from ${facade.vicMemorySource(layout.bitmapOn?layout.bitmap:layout.characters,layout.bank)}`,'Configured window · sprite slots');
-    liveVideo.update(state);
+    if(capturedSprites!==null) {
+      const detail=`${enabledSpriteCount(capturedSprites)} / 8 sprite slots enabled during the captured frame`;
+      el('vic-detail').textContent=detail;
+      el('vic-visual').setAttribute('aria-label',detail);
+    }
+    liveVideo.update(state,capturedSprites);
     const sound=soundSummary(state);text('sid',sound.title,sound.waves,sampleDetails?sound.filter:'','Pitch settings');
     liveSound.update(state,history,now,sampleDetails);
     const control=controlSummary(controls);text('controls',control.title,control.detail,controls?`${control.keys} keyboard keys held`:'',controls?'Port signals · sampled state':'Observation unavailable');
@@ -143,5 +149,5 @@ export function createMachineView(root, navigate, openGuide) {
     reuObserved=false;
 
   }
-  return { update,observe,theme, reset(){owner=null;history.reset();summaries.reset();lastDraw=-Infinity;}, activate(){lastDraw=-Infinity;} };
+  return { update,observe,theme, setFrame(frame){capturedSprites=capturedSpriteEnables(frame);}, reset(){capturedSprites=null;owner=null;history.reset();summaries.reset();lastDraw=-Infinity;}, activate(){lastDraw=-Infinity;} };
 }

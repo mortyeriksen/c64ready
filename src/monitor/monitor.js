@@ -253,9 +253,9 @@ export function createMonitor({ getFacade, isPowered, isPaused, setPaused, relea
     el('close').addEventListener('click', close);
     pause.addEventListener('click', () => {
       if (!isPowered()) { close(); return; }
-      collectFrame();
       inspectionPause = false;
       setPaused(!isPaused());
+      collectFrame();
       if (!isPaused()) nextFrameCaptureAt = 0;
       if (isPaused()) facade?.cancelVicFrameCapture();
       viewDirty = true; sample();
@@ -386,6 +386,7 @@ export function createMonitor({ getFacade, isPowered, isPaused, setPaused, relea
     frameView.accept(facade, frame);
     codeView.accept(facade, frame);
     storageView.setFrame(frame);
+    machineView.setFrame(frame);
     memoryContext?.setFrame(frame);
     viewDirty=true;
     for (const view of evidenceViews) view.setFrame(frame);

@@ -289,8 +289,20 @@ try {
   });
   await page.waitForFunction(()=>document.querySelector('[data-video-live="scroll"]').textContent==='X 5 · Y 3');
   assert.equal(await page.locator('.monitor-live-video-slots .is-enabled').count(),2,'live sprite slots follow the enable mask');
-  assert.equal(await page.locator('[data-video-slot="7"]').getAttribute('aria-label'),'Sprite 7: enabled','slot state is available without relying on colour');
+  assert.equal(await page.locator('[data-video-slot="7"]').getAttribute('aria-label'),'Sprite 7: enabled at this sample','slot state is available without relying on colour');
   assert.equal(await page.locator('[data-video-live="scroll"]').textContent(),'X 5 · Y 3','fine scroll reads the shared VIC snapshot');
+  const frameSlots = await page.evaluate(async () => {
+    const { createLiveVideoView, capturedSpriteEnables } = await import('/src/monitor/live-video.js');
+    const root = document.createElement('div');
+    const registers = new Uint8Array(64);
+    const frame = { analysis: { initial: { registers } }, eventCount: 2,
+      eventKind: Uint8Array.of(0x15,0x15), eventValue: Uint8Array.of(255,0) };
+    createLiveVideoView(root).update({vic:registers,palette:new Uint32Array(16)},capturedSpriteEnables(frame));
+    return { count:root.querySelectorAll('.is-enabled').length, label:root.querySelector('[data-video-slot="7"]').getAttribute('aria-label') };
+  });
+  assert.equal(frameSlots.count,8,'Captured enables light all eight slots even when sampled D015 is zero');
+  assert.match(frameSlots.label,/during the captured frame/,'Sprite indicators explain their captured time scope');
+
   assert.equal(await page.locator('[data-video-live="raster-line"], [data-video-live="marker"], [data-video-live="rail"]').count(),0,'Live shows configuration without a raster indicator');
   await page.evaluate(()=>{fixture.cpu.vic[0x11]=0x30;});
   await page.waitForFunction(()=>document.querySelector('[data-video-live="texture"]').getAttribute('fill').endsWith('-bitmap)'));
@@ -612,17 +624,19 @@ try {
     const frame=new VicFrameCapture({analysis:true}).frame;
     frame.analysis.model='6569';
     frame.owners.fill(255);frame.eventCount=1;frame.eventKind[0]=0x21;frame.eventTick[0]=63;
-    const analysis=frame.analysis,registers=analysis.sequencer.registers;
-    fixture.analysisReads=0;fixture.ruleReads=0;
+    const analysis=frame.analysis,registers=analysis.sequencer.registers,bus=analysis.bus;
+    fixture.analysisReads=0;fixture.ruleReads=0;fixture.budgetReads=0;
     Object.defineProperty(frame,'analysis',{get(){fixture.analysisReads++;return analysis;}});
+    Object.defineProperty(analysis,'bus',{get(){fixture.budgetReads++;return bus;}});
     Object.defineProperty(analysis.sequencer,'registers',{get(){fixture.ruleReads++;return registers;}});
     fixture.frame=frame;fixture.captureStatus='ready';
   });
   await page.waitForFunction(()=>fixture.captureStatus==='idle');
-  assert.equal(await page.evaluate(()=>fixture.analysisReads),0,'Live frame delivery does not compute hidden analysis or budget charts');
+  assert.equal(await page.evaluate(()=>fixture.budgetReads),0,'Live frame delivery does not compute hidden budget charts');
+  assert.equal(await page.evaluate(()=>fixture.ruleReads),0,'Live sprite summary does not scan per-cycle rule registers');
   await page.click('[data-view=code]');
   await page.click('[data-mode=story]');
-  assert.ok(await page.evaluate(()=>fixture.analysisReads)>0,'Code computes its budget when opened');
+  assert.ok(await page.evaluate(()=>fixture.budgetReads)>0,'Code computes its budget when opened');
   await page.click('[data-group=Colours]');
   await page.locator('[data-story=seek]').evaluate(el=>{el.value=126;el.dispatchEvent(new Event('input'));});
   await page.evaluate(async()=>{

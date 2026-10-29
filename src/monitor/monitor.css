@@ -2139,10 +2139,10 @@ button.monitor-chip { cursor: pointer; }
 
 .monitor-header .monitor-machine-controls { gap:6px; }
 .monitor-header .monitor-machine-controls [data-monitor="status"] { display:block; width:7ch; flex:none; font-size:11px; color:inherit; }
-.monitor-header .monitor-nav .monitor-machine-controls [data-monitor="pause"] { display:inline-flex; width:auto; max-width:none; gap:6px; padding-inline:10px; }
+.monitor-header .monitor-nav .monitor-machine-controls [data-monitor="pause"] { display:inline-flex; width:auto; max-width:none; gap:6px; padding-inline:12.5px; }
 @media (max-width:700px) {
   .monitor-header .monitor-nav { grid-template-columns:auto repeat(3,minmax(0,1fr)); }
-  .monitor-header .monitor-nav .monitor-machine-controls [data-monitor="pause"] { padding-inline:6px; }
+  .monitor-header .monitor-nav .monitor-machine-controls [data-monitor="pause"] { padding-inline:8.5px; }
 }
 .monitor-machine { grid-template-rows:auto minmax(0,1fr); }
 

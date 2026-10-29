@@ -2040,6 +2040,7 @@ function _setPaused(p) {
   _syncPausedClass();
   if (pauseBtn) pauseBtn.textContent = p ? '▶ RESUME' : '⏸ PAUSE';
   if (p) {
+    setMasterMuted(true);
     suspendAudio();
     if (driveSounds) driveSounds.motorOff();
     setStatus('Paused', 'idle');

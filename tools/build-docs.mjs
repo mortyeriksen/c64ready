@@ -946,13 +946,13 @@ code, pre, .brand, kbd { font-family: 'Share Tech Mono', ui-monospace, SFMono-Re
 
 /* ── C64 READY. logo (mirrors the app header) ────────────── */
 .logo-text {
-  display: inline-flex; align-items: flex-end; gap: 2px;
+  display: inline-flex; align-items: center; gap: 2px;
   font-family: 'PetMe64', 'Share Tech Mono', monospace;
   font-size: clamp(0.62rem, 3vw, 1.26rem);   /* same size as the emulator's header logo */
   line-height: 1; white-space: nowrap; letter-spacing: 1px;
-  position: relative; padding: 0 0 3px;
+  position: relative;
 }
-.lt-main { position: relative; top: 0.2em; }
+.lt-main { position: relative; }
 .lt-c64 {
   color: var(--logo-c64);
   text-shadow: 0 0 2px var(--logo-edge), 0 0 10px var(--logo-glow), 2px 2px 0 var(--logo-shadow);
@@ -981,6 +981,10 @@ code, pre, .brand, kbd { font-family: 'Share Tech Mono', ui-monospace, SFMono-Re
 
 /* ABOUT + the GitHub / YouTube / Facebook icons, matching the emulator's own header
    buttons (.credits-link in src/styles/styles-header.css) so the two bars read alike. */
+.nav-btn, .doc-top .cta {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 34px; line-height: 1;
+}
 .nav-btn {
   font-family: 'Share Tech Mono', monospace;
   font-size: 0.9rem;

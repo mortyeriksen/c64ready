@@ -5,6 +5,17 @@ import { borderComparators } from './border-rules.js';
 
 export const LIVE_VIDEO_FRAME = Object.freeze({ width: 384, height: 272, firstRaster: 15, lines: 312 });
 
+// Enable writes can turn sprites off again before the next UI sample.
+export function capturedSpriteEnables(frame) {
+  const registers = frame?.analysis?.initial?.registers;
+  if (!registers) return null;
+  let mask = registers[0x15];
+  for (let i = 0; i < frame.eventCount; i++) {
+    if (frame.eventKind[i] === 0x15) mask |= frame.eventValue[i];
+  }
+  return mask & 255;
+}
+
 // Static register configuration, not the current border flip-flops or pixels.
 export function liveVideoSetup(state) {
   const r = state.vic, compare = borderComparators(r[0x11], r[0x16]);
@@ -44,7 +55,7 @@ export function createLiveVideoView(root) {
   const rect = (name, x, y, width, height) => { attr(name,'x',x); attr(name,'y',y); attr(name,'width',width); attr(name,'height',height); };
   elements['scroll-guide'].setAttribute('aria-hidden','true');
   return {
-    update(state) {
+    update(state, capturedSprites = null) {
       const view = liveVideoSetup(state);
       const colour = index => `#${state.palette[index].toString(16).padStart(6,'0')}`;
       attr('border','fill',colour(view.border)); attr('window','fill',colour(view.background));
@@ -56,10 +67,11 @@ export function createLiveVideoView(root) {
       attr('screen','aria-label',`Schematic video setup: ${view.enabled?'display enabled':'display enable off'}, ${view.width} by ${view.height} configured pixels. Texture is illustrative, not program artwork.`);
       elements['scroll-guide'].style.display = view.invalid ? 'none' : '';
       for (let i=0;i<8;i++) {
-        const enabled = !!(view.sprites & (1<<i));
+        const enabled = !!((capturedSprites ?? view.sprites) & (1<<i));
+        const scope = capturedSprites === null ? 'at this sample' : 'during the captured frame';
         slots[i].classList.toggle('is-enabled',enabled);
-        slots[i].setAttribute('aria-label',`Sprite ${i}: ${enabled?'enabled':'disabled'}`);
-        slots[i].title = `Sprite ${i} ${enabled?'enabled':'disabled'}. Enable bits do not prove visible pixels.`;
+        slots[i].setAttribute('aria-label',`Sprite ${i}: ${enabled?'enabled':'not enabled'} ${scope}`);
+        slots[i].title = `Sprite ${i} ${enabled?'enabled':'not enabled'} ${scope}. Enable bits do not prove visible pixels.`;
       }
       elements.scroll.textContent = `X ${view.scrollX} · Y ${view.scrollY}`;
       elements.scroll.title = 'Fine-scroll settings. The inset guide illustrates offsets, not measured screen movement.';

@@ -16,6 +16,10 @@ The version you are running is shown at the bottom of the About dialog.
   later visits. Press **Done** to start the C64.
 - **Quieter startup.** Attract mode is off by default, with your saved choice
   still respected.
+- **Live sprite activity.** Monitor shows sprites enabled during the captured
+  frame, including brief activity between samples.
+- **Silent pause.** Pausing from Monitor or the main controls silences audio,
+  including while recording.
 
 ## 2026.10.8 — October 28, 2026
 

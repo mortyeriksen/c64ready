@@ -118,7 +118,9 @@ The top-right C64 display remains live. Detailed Video and Code recordings keep
 their own frame identity and replay controls. They are separate from the shared
 state snapshot, which does not record everything that happened between samples.
 
-A lit sprite-slot marker means enabled, not moving or visible throughout the frame.
+A lit sprite-slot marker means enabled at some point in the latest captured frame,
+not necessarily moving or visible throughout it. Before a frame is available,
+the markers show the current sample's enable bits.
 
 ## Controls: inputs and timing
 
