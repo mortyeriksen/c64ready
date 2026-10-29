@@ -9,6 +9,7 @@ import { initDialogLayout } from './ui/dialog-layout.js';
 import { validSecondSidAddress } from './sid/sid-config.js';
 import { C64Machine } from './machine.js';
 import { ROMLoader, pickViceRoms } from './roms.js';
+import { initRomSetup } from './ui/rom-setup.js';
 import * as ControlPort from './control-port.js';
 import { CANVAS_W, CANVAS_H, CYCLES_PER_FRAME, VIC_VARIANT, VIC_VARIANTS, PALETTE_NAMES, setVicPalette } from './vic2.js';
 import { D64 }        from './media/d64.js';
@@ -163,11 +164,11 @@ async function _ensurePauseDemo() {
   return _pauseDemoPromise;
 }
 // Whether the attract-mode vector demo plays while the machine is powered off
-// (Settings ▸ Display). Default ON. When off, the powered-off screen shows a
+// (Settings ▸ Display). Default OFF. When off, the powered-off screen shows a
 // static "PRESS POWER TO BOOT" hint instead of the animated demo.
 let attractModeEnabled = (() => {
-  try { const v = localStorage.getItem('c64emu.attractMode'); return v === null ? true : v === 'on'; }
-  catch { return true; }
+  try { return localStorage.getItem('c64emu.attractMode') === 'on'; }
+  catch { return false; }
 })();
 // A looping vector demo is the kind of motion prefers-reduced-motion asks us not
 // to play, so the static banner stands in — same as attract mode off.
@@ -1221,7 +1222,7 @@ async function _runAutoLoad(scanningMsg) {
 // is someone's own files.
 //
 // /roms-theme-<id>.html records the theme in use at the moment the user
-// supplies their ROMs (uploaded or from a VICE folder; not when a later visit
+// supplies their ROMs (downloaded, uploaded or from a VICE folder; not when a later visit
 // restores them from the cache), so it counts ROM set-ups per theme. For a
 // first visitor that is the theme the splash gave them. Imported themes all
 // count as "custom": their names stay in the browser. Separate pages rather
@@ -2580,17 +2581,18 @@ document.addEventListener('keydown', e => {
 }, { capture: true });
 
 // ── Setup C64 READY. dialog ──────────────────────────────────────────────────
-// First-run ROM setup. The emulator needs Commodore's copyrighted ROM images, so
-// the user supplies them: this dialog offers the same file selectors as
-// Options ▸ ROM Files, plus a "help me find it" web search per ROM. It NEVER
-// downloads a ROM — it only points a search engine at the exact filename, so the
-// user makes the conscious choice to fetch it. Auto-opens on page load when no
-// ROMs are present (see _runAutoLoad).
+// First-run ROM setup offers URL downloads, a VICE folder and individual files.
+// All three paths validate and cache ROMs through the same loader.
+const romSetup = initRomSetup(setupModal, loader, () => {
+  updateRomStatus();
+  _syncSetupDoneLabel();
+});
 
 function _openSetup() {
   if (!setupModal || !setupModal.hidden) return;
   _syncSetupDoneLabel();
   setupModal.hidden = false;
+  romSetup.open();
   pushEscapeLayer(_setupEscape);
 }
 function _closeSetup() { if (setupModal) setupModal.hidden = true; popEscapeLayer(_setupEscape); maybeEquipmentHint(); }
@@ -2607,8 +2609,7 @@ if (setupModal) {
 
 // Wire the Setup dialog's ROM file inputs through the SAME load path as the
 // Options selectors (bindInputs → loader._loadFile → validate + cache + onReady),
-// so a ROM loaded here is treated identically. On change, refresh the status and
-// close the dialog once all required ROMs are in.
+// so a ROM loaded here is treated identically. On change, refresh the status.
 const _setupInputs = [
   document.getElementById('setup-rom-kernal'),
   document.getElementById('setup-rom-basic'),
@@ -2644,14 +2645,6 @@ const _viceDirInput = document.getElementById('setup-vice-dir');
 const _viceStatusEl = document.getElementById('setup-vice-status');
 const _ROM_SLOT_LABELS = { kernal: 'KERNAL', basic: 'BASIC', charRom: 'CHARGEN', drive1541: '1541 DOS' };
 
-// Hide the section where a folder can't be chosen: no webkitdirectory at all,
-// or a touch-primary device, where iOS Safari exposes the property but its file
-// picker has no folder mode (and no VICE install to point it at either).
-if (!('webkitdirectory' in document.createElement('input'))
-    || window.matchMedia?.('(pointer: coarse)').matches) {
-  document.getElementById('setup-vice-section')?.setAttribute('hidden', '');
-}
-
 function _setViceStatus(msg) { if (_viceStatusEl) _viceStatusEl.textContent = msg; }
 
 _viceDirInput?.addEventListener('change', async e => {
@@ -2676,9 +2669,7 @@ _viceDirInput?.addEventListener('change', async e => {
 });
 
 // "help me find it" links: open a web search for the exact ROM filename so the
-// user can locate and download it themselves. We deliberately do NOT link to or
-// fetch the file — only point a search engine at a publicly-indexed filename, so
-// the user makes the conscious choice to download it.
+// user can locate and download it themselves.
 for (const btn of document.querySelectorAll('.rom-find')) {
   btn.addEventListener('click', () => {
     const file = btn.getAttribute('data-rom-search');
@@ -2688,11 +2679,11 @@ for (const btn of document.querySelectorAll('.rom-find')) {
   });
 }
 
-// Keep keys off the emulator while the dialog is open (capture phase beats the
-// emulator's bubble-phase matrix handler). Escape closes; the file inputs aren't
-// text fields, so nothing needs to type through.
+// Controls inside setup own their keys. The modal stops bubbling to the
+// emulator, while keys focused outside it are swallowed here.
 document.addEventListener('keydown', e => {
   if (!_setupIsOpen()) return;
+  if (setupModal.contains(e.target)) return;
   // Escape belongs to escape-stack.js; everything else is swallowed below.
   if (isEditableTarget(e.target)) return;
   e.stopImmediatePropagation();

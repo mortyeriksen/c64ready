@@ -216,6 +216,8 @@ const TESTS = [
   'test/roving-list-spec-test.js',
   'test/control-port-touchjoy-spec-test.js',
   'test/rom-cache-spec-test.js',
+  'test/rom-fetch-spec-test.js',
+  'test/rom-setup-browser-test.js',
   'test/rom-file-selector-spec-test.js',
   'test/vice-rom-pick-spec-test.js',
   'test/analytics-markers-spec-test.js',

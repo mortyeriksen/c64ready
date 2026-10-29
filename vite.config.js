@@ -148,6 +148,7 @@ export default defineConfig({
           '**/roms-loaded.html',
           '**/roms-vice.html',
           '**/returned.html',
+          '**/rom-sources.json',
           '**/roms-theme-classic.html',
           '**/roms-theme-geos.html',
           '**/roms-theme-breadbin.html',

@@ -315,7 +315,9 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 ## ROMs
 
 - **Bring-your-own ROMs**: supply KERNAL, BASIC, CHARGEN (and an optional 1541
-  ROM for TDE) by **fetching** them into the browser or **uploading** them.
+  ROM for TDE) through the **Fetch ROMs**, **VICE folder** or **Upload files**
+  setup tabs. Download links are editable, with a status for each ROM and
+  retries that keep successful downloads.
 - **Cached in the browser**: provide them once; they auto-restore on later
   visits. A **CLEAR** button wipes the cache.
 
@@ -366,7 +368,7 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **VIBES button demo**: a small pixel demo runs inside the VIBES button itself;
   **Cmd+Shift+Z** / **Ctrl+Shift+Z** zooms it to ten times the size. Switch it off in
   Options ▸ Other.
-- **Powered-off attract animation**: an animated idle screen (toggleable). It
+- **Powered-off attract animation**: an optional animated idle screen, off by default. It
   bows out by itself where it would cost more than it is worth: under
   `prefers-reduced-motion`, on software WebGL, and on any GPU that cannot hold
   the frame rate; the static boot hint takes over.

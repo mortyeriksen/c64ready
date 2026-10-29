@@ -19,20 +19,36 @@ Curious how it works inside? Start at the [Architecture](ARCHITECTURE.md) map.
 The C64 cannot boot without its ROM chips. Dismiss it and the screen reads
 **PRESS TO START SETUP**; click the screen or **POWER** to bring it back.
 
-![The Setup C64 READY. dialog: "Get ROM files from VICE" with a CHOOSE… button, above "Upload each ROM file" with a LOAD… and a "help me find it" search per ROM.](/guide/setup-dialog.webp)
-
 > ⚠️ **The KERNAL, BASIC, CHARGEN and 1541 ROMs are Commodore's copyrighted
 > property.** They are **not** bundled, and you must obtain them legally. The app
-> never ships, hosts or downloads them.
+> does not bundle or host ROM files. Downloads happen only when you press
+> **FETCH ROMS**.
 
-**Have VICE installed?** Press **CHOOSE…** and pick VICE's top folder; all four
-images are found inside it (your browser may call that an upload; nothing is
-sent anywhere). **Otherwise**, press **LOAD…** for each ROM; **🔍 help me find
-it** searches the web for that exact filename (the emulator itself never
-fetches it), and a licensed set is sold at c64forever.com.
+The dialog offers three tabs:
 
-**KERNAL**, **BASIC** and **CHARGEN** are required; **1541 DOS** is optional, for
-True Drive Emulation. Any compatible revision works; the search looks for:
+**Fetch ROMs** opens first. Use the supplied links, where available, or paste
+your own, then press **FETCH ROMS**. Each download is checked and saved in
+this browser. Retry keeps ROMs that have already loaded. Leave the optional
+1541 link empty if you do not need it. If a host blocks browser downloads,
+use a local file instead. The screenshot shows example URLs.
+
+![The Fetch ROMs tab with four editable example URLs and a FETCH ROMS button.](/guide/setup-dialog.webp)
+
+**VICE folder** lets you press **CHOOSE…** and pick VICE's top folder. All
+four images are found inside it. Your browser may call that an upload, but
+nothing is sent anywhere. This tab is available on desktop browsers with
+folder selection.
+
+![The VICE folder tab with instructions and a CHOOSE… button.](/guide/setup-vice.webp)
+
+**Upload files** lets you press **LOAD…** for each ROM. **🔍 help me find it**
+searches the web for that exact filename. A licensed set is sold at
+c64forever.com.
+
+![The Upload files tab with a LOAD… button and a help me find it search for each ROM.](/guide/setup-upload.webp)
+
+**KERNAL**, **BASIC** and **CHARGEN** are required. **1541 DOS** is optional, for
+True Drive Emulation. Any compatible revision works. The search looks for:
 
 - **KERNAL**: `kernal.901227-03.bin` (8 KB)
 - **BASIC**: `basic.901226-01.bin` (8 KB)
@@ -232,18 +248,19 @@ audio blip and no catch-up stutter.
 
 ## Where to next
 
-- **[IEC Devices](GUIDE-MEDIA.md#iec-devices)**: install IEC Printer or another
-  serial-bus plugin, select an address and CONNECT. Drives 8 and 9 keep their
-  own controls, and a user port modem can stay connected at the same time.
-  IEC Printer's Preview / Print button opens the browser print dialog for
-  printing or saving as PDF.
-- **[Command line](GUIDE-CLI.md)**: work with media, run programs and export
-  IEC printer output as SVG or printable HTML.
+
 - **[User Guide](USER-GUIDE.md)**: the full reference for every control, card
   and dialog.
+- **[Command line](GUIDE-CLI.md)**: work with media, run programs and export
+  IEC printer output as SVG or printable HTML.
 - **[Features](FEATURES.md)**: everything the emulator supports, from the
   user's side.
 - **[Known Issues](KNOWN-ISSUES.md)**: something looks wrong? Check here
   first: it may be the real machine being itself.
 - **[Architecture](ARCHITECTURE.md)**: how the machine is wired together, and
   the way into every chip's deep-dive.
+- **[IEC Devices](GUIDE-MEDIA.md#iec-devices)**: install IEC Printer or another
+  serial-bus plugin, select an address and CONNECT. Drives 8 and 9 keep their
+  own controls, and a user port modem can stay connected at the same time.
+  IEC Printer's Preview / Print button opens the browser print dialog for
+  printing or saving as PDF.

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 // src/roms.js – ROM loading UI helpers
-// Handles four ROM file inputs: KERNAL (8KB), BASIC (8KB), CHAR (4KB),
+// Handles four ROM slots: KERNAL (8KB), BASIC (8KB), CHAR (4KB),
 // 1541 (16KB, optionally with 2-byte header → 16386B).
 //
 // Loading priority for each ROM, in order:
@@ -9,9 +9,9 @@
 //      survive page reloads and aren't blindly overridden by whatever
 //      happens to sit in /roms/ on the server.
 //   2. Server fetch from /roms/<name>.bin — fallback when cache misses.
-//   3. User upload via <input type="file"> — when both are missing.
+//   3. User-supplied URLs, a VICE folder or individual file uploads.
 //
-// User uploads are written through to the cache so subsequent page loads
+// User-supplied ROMs are written through to the cache so subsequent page loads
 // can skip the upload step. Each ROM type has exactly one localStorage
 // slot, overwritten on each new upload, so the cache never grows.
 
@@ -101,7 +101,7 @@ export class ROMLoader {
     // Count of ROMs restored from localStorage cache on the last autoLoad().
     this.cachedCount = 0;
     // Optional callback (key, source) after a ROM the USER supplied is
-    // installed: an upload or a picked VICE folder, never autoLoad's cache or
+    // installed: an upload, URL download or picked VICE folder, never autoLoad's cache or
     // server fetch. main.js hangs the stats markers off it.
     this.onUserRom = null;
   }

@@ -9,6 +9,11 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
+## Next release
+
+- **Quieter startup.** Attract mode is off by default. Your saved choice is still remembered.
+- **ROM setup tabs.** Fetch ROMs from editable links, choose a VICE folder, or upload individual files. The dialog stays in place when switching tabs. Downloads stay in your browser, with a status for each ROM and retries for missing files.
+
 ## 2026.10.8 — October 28, 2026
 
 Meet **Live Monitor Beta**: a visual way to explore how your game or demo uses

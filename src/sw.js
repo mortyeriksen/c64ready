@@ -103,6 +103,7 @@ self.addEventListener('fetch', (event) => {
   // ROMs: never intercept. Offline this fails and roms.js falls back to its
   // localStorage cache or the upload prompt — exactly the existing behaviour.
   if (url.pathname.startsWith('/roms/')) return;
+  if (url.pathname === '/rom-sources.json') return;
 
   // Analytics markers — installed launch (/pwa.html, every launch), new install
   // (/pwa-installed.html, once per browser), sessions with ROMs

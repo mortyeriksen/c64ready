@@ -797,7 +797,7 @@
           <button class="btn" id="btn-crt-settings"
             title="Tune the CRT looks: sliders for every setting, remembered per look (Cmd/Ctrl+Shift+F).">CRT SETTINGS</button>
           <button class="btn" id="btn-attract-toggle"
-            title="Animated demo while powered off; off shows a PRESS POWER hint. Stands down under reduced motion or on a slow GPU.">ATTRACT MODE: ON</button>
+            title="Animated demo while powered off; off shows a PRESS POWER hint. Stands down under reduced motion or on a slow GPU.">ATTRACT MODE: OFF</button>
           <button class="btn" id="btn-vibes-model"
             title="3D model size: SMALL (default), AUTO by device, LARGE (4K). Applies on next open.">3D MODEL SIZE: SMALL</button>
           <button class="btn" id="btn-wakelock-toggle"
@@ -930,7 +930,39 @@
       </div>
       <p class="setup-hint">C64 READY. needs Commodore's ROMs. They are copyrighted, so bring your own.
         Add them once and this browser remembers them.</p>
-      <div id="setup-vice-section">
+      <div class="setup-tabs" role="tablist" aria-label="Add ROMs">
+        <button type="button" id="setup-tab-fetch" role="tab" aria-controls="setup-fetch-section" aria-selected="true">Fetch ROMs</button>
+        <button type="button" id="setup-tab-vice" role="tab" aria-controls="setup-vice-section" aria-selected="false" tabindex="-1">VICE folder</button>
+        <button type="button" id="setup-tab-upload" role="tab" aria-controls="setup-upload-section" aria-selected="false" tabindex="-1">Upload files</button>
+      </div>
+      <div class="setup-panels dialog-scroll">
+      <section id="setup-fetch-section" role="tabpanel" aria-labelledby="setup-tab-fetch">
+        <p class="setup-hint setup-hint-tight">Use the links below or paste your own. Press FETCH ROMS to download them into this browser.</p>
+        <p id="setup-config-status" class="setup-hint" role="status" aria-live="polite"></p>
+        <div class="setup-url-row">
+          <label for="setup-url-kernal">KERNAL <small>8 192 bytes</small></label>
+          <input id="setup-url-kernal" type="url" autocomplete="off" spellcheck="false" placeholder="https://…" aria-describedby="setup-fetch-kernal">
+          <small id="setup-fetch-kernal" class="setup-fetch-status" role="status"></small>
+        </div>
+        <div class="setup-url-row">
+          <label for="setup-url-basic">BASIC <small>8 192 bytes</small></label>
+          <input id="setup-url-basic" type="url" autocomplete="off" spellcheck="false" placeholder="https://…" aria-describedby="setup-fetch-basic">
+          <small id="setup-fetch-basic" class="setup-fetch-status" role="status"></small>
+        </div>
+        <div class="setup-url-row">
+          <label for="setup-url-charRom">CHARGEN <small>4 096 bytes</small></label>
+          <input id="setup-url-charRom" type="url" autocomplete="off" spellcheck="false" placeholder="https://…" aria-describedby="setup-fetch-charRom">
+          <small id="setup-fetch-charRom" class="setup-fetch-status" role="status"></small>
+        </div>
+        <div class="setup-url-row">
+          <label for="setup-url-drive1541">1541 DOS <small>16 384 bytes (optional, true drive)</small></label>
+          <input id="setup-url-drive1541" type="url" autocomplete="off" spellcheck="false" placeholder="https://…" aria-describedby="setup-fetch-drive1541">
+          <small id="setup-fetch-drive1541" class="setup-fetch-status" role="status"></small>
+        </div>
+        <button type="button" class="btn" id="setup-fetch">FETCH ROMS</button>
+        <p id="setup-fetch-summary" class="setup-hint" role="status" aria-live="polite"></p>
+      </section>
+      <section id="setup-vice-section" role="tabpanel" aria-labelledby="setup-tab-vice" hidden>
         <h3 class="setup-section">Get ROM files from VICE</h3>
         <p class="setup-hint setup-hint-tight">Have VICE installed? Pick its folder and the C64 ROMs are found
           inside. Your browser may call that an upload, but nothing is sent anywhere.</p>
@@ -940,11 +972,12 @@
           <label class="rom-file-btn" for="setup-vice-dir" title="Pick your VICE folder. The ROMs are read from it and kept in this browser.">CHOOSE…</label>
           <input type="file" id="setup-vice-dir" webkitdirectory directory multiple>
         </div>
-      </div>
+      </section>
+      <section id="setup-upload-section" role="tabpanel" aria-labelledby="setup-tab-upload" hidden>
       <h3 class="setup-section">Upload each ROM file</h3>
       <p class="setup-hint setup-hint-tight">Load each file yourself. No idea where to find them? Press
         <strong>🔍 help me find it</strong> to search the web, or buy a licensed set from c64forever.com.</p>
-      <div class="rom-details setup-roms dialog-scroll">
+      <div class="rom-details setup-roms">
         <div class="rom-row">
           <div><span>KERNAL</span> <button type="button" class="rom-find" data-rom-search="kernal.901227-03.bin">🔍 help me find it</button><br><small>8 192 bytes</small><br><small class="rom-fn" id="setup-fn-kernal"></small></div>
           <label class="rom-file-btn" for="setup-rom-kernal" title="Load a KERNAL image (.bin or .rom). Kept in this browser.">LOAD…</label>
@@ -965,6 +998,8 @@
           <label class="rom-file-btn" for="setup-rom-1541" title="Load a 1541 DOS image (.bin or .rom). Kept in this browser.">LOAD…</label>
           <input type="file" id="setup-rom-1541" accept=".bin,.rom">
         </div>
+      </div>
+      </section>
       </div>
       <div class="setup-actions">
         <button class="btn" id="btn-setup-later"

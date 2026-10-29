@@ -96,6 +96,7 @@ try {
       if (trigger) await page.locator(trigger).dispatchEvent('click');
       else await page.locator(modal).evaluate(element => { element.hidden = false; });
       await page.locator(modal).waitFor({ state: 'visible' });
+      if (modal === '#setup-modal') await page.click('#setup-tab-upload');
       if (modal === '#library-modal') await page.locator('#library-list .lib-row').first().waitFor();
       for (const gutter of ['auto', 'stable']) {
         await page.locator(`${modal} .dialog-scroll`).evaluate((element, value) => {

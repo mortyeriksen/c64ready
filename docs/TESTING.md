@@ -22,8 +22,10 @@ labelled tests, plus some unlabelled internal assertions.
 Guide screenshots use Phosphor dark. With the dev server running,
 `npm run guide:shots` refreshes the full set, including curated Library and Save
 States examples. The theme gallery keeps each named theme's dark and light views.
-`node tools/guide-setup-shot.mjs` regenerates the ROM setup and theme picker
-images for Getting Started.
+`node tools/guide-setup-shot.mjs` regenerates all three ROM setup tabs and the
+theme picker images for Getting Started. Add `--setup-only` to capture just
+the setup tabs. The Fetch screenshot uses example URLs instead of the local
+deployment defaults.
 `node tools/guide-monitor-shots.mjs` refreshes the eight Live Monitor images
 using the external Nine demo. It also runs with `npm run guide:shots`.
 
@@ -82,6 +84,30 @@ Chromium. Its real-emulator checks also need local ROMs and report SKIP when
 those assets are unavailable.
 
 ## Dialog close controls
+
+`test/rom-fetch-spec-test.js` checks URL validation, download failures, ROM size
+validation, browser storage and retries that preserve loaded ROMs.
+`test/rom-setup-browser-test.js` checks the setup tabs, keyboard navigation,
+download results, missing configuration and phone layout with synthetic ROMs.
+
+The setup dialog reads optional default links from `public/rom-sources.json`.
+This file is git-ignored and must be supplied separately on a deployment
+builder before running `npm run build`, or served as `/rom-sources.json` by
+the host. Vite copies it into the build when present. Its format is:
+
+```json
+{
+  "kernal": "",
+  "basic": "",
+  "charRom": "",
+  "drive1541": ""
+}
+```
+
+Fill the values with HTTP or HTTPS ROM URLs. Defaults are fetched only when
+setup opens and are kept out of the service worker cache. Missing or invalid
+configuration leaves the inputs available for manual URLs. Tests supply their
+own configuration and never depend on the deployment's links.
 
 `test/theme-picker-browser-test.js` checks the theme gallery on desktop and
 phone, keyboard selection, cancellation, persistence, themed docs and the

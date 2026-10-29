@@ -20,7 +20,7 @@ ROM management. All choices persist in this browser.
 | --- | --- |
 | **🖥 CRT** | Cycles the CRT look: **ON** (basic scanlines) → **TUBE** (phosphor mask + vignette + glow) → **B&W** (monochrome tube) → **ARCADE** (bright, sharp scanlines) → **HUM** (tube look with a slow rolling mains-hum bar) → **OFF** (flat, crisp pixels). |
 | **CRT SETTINGS** | Opens the CRT settings panel (also **Cmd/Ctrl+Shift+F**): the six looks and a slider for every setting behind them, remembered per look, with **Reset preset**. Drag it by its title bar; **Esc** closes it. The logo in the header follows the scanline, brightness, contrast, saturation and hum sliders too. |
-| **ATTRACT MODE** | On by default: plays an animated attract-mode demo on the screen while the machine is powered off. Turn it off to show a simple "press power to boot" hint instead. It also steps aside on its own if your system asks for reduced motion, or the machine has no GPU to spare, you get the hint instead. |
+| **ATTRACT MODE** | Off by default: shows a simple "press power to boot" hint while the machine is powered off. Turn it on for the animated attract-mode demo. Saved choices are remembered. The demo also steps aside if your system asks for reduced motion or the GPU cannot keep up. |
 | **3D MODEL** | Which model the VIBES viewer loads: **SMALL** (default, a light model that's easy on memory everywhere), **AUTO** (picks by device: lighter on phones/tablets, detailed 4K on desktop), or **LARGE** (force the 4K model). Takes effect next time you open VIBES. |
 | **STAY AWAKE** | Keeps the screen awake while a demo runs, so the device doesn't dim or lock (which would pause the emulator). |
 | **VIBES BUTTON FX** | On by default: runs a tiny demo inside the VIBES button itself: a field of dark pixels drifting through ten sine patterns in 3D. Turn it off for a plain button. |
@@ -106,11 +106,13 @@ run the [Setup dialog](#setup-c64-ready) walks you through loading them.
 
 ## Setup C64 READY.
 
-![The Setup C64 READY. dialog: "Get ROM files from VICE" with a CHOOSE… button, above "Upload each ROM file" with a LOAD… and a "help me find it" search per ROM.](/guide/setup-dialog.webp)
+![The Setup C64 READY. dialog with the Fetch ROMs tab selected and editable example URLs.](/guide/setup-dialog.webp)
 
 Appears automatically on first run, when no ROMs are found; the C64 can't boot
 without them. The closing button reads **Find them later** until the three
 required ROMs are in, then **Done**.
 
 [Getting Started](GETTING-STARTED.md#1-set-up-roms) has the walkthrough: the
-two loading routes, the filenames and the licensing note.
+three tabs (**Fetch ROMs**, **VICE folder**, **Upload files**), the filenames
+and the licensing note. Fetch opens first with editable links when defaults
+are available. Downloads begin only after pressing **FETCH ROMS**.

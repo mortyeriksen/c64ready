@@ -7,6 +7,8 @@ dist/
 specs/
 roms/
 public/roms/
+# Deployment-local defaults for the ROM setup dialog.
+public/rom-sources.json
 public/docs/
 rust/sid/target/
 investigation/
