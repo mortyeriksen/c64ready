@@ -218,7 +218,7 @@ async function _renderLibrary() {
     const whenRel = _libRelativeTime(e.savedAt);
     const whenAbs = (() => { try { return new Date(e.savedAt).toLocaleString(); } catch { return ''; } })();
     const name = _libEscapeHtml(e.name);
-    return `<div class="lib-row" data-id="${_libEscapeHtml(e.id)}" title="Load ${name}">
+    return `<div class="lib-row" data-id="${_libEscapeHtml(e.id)}">
         <span class="lib-type lib-type-${e.type}">${e.type.toUpperCase()}</span>
         <span class="lib-name" role="button" tabindex="-1" aria-label="Load ${name}">${name}</span>
         <span class="lib-meta">${_libFormatSize(e.size)}<span class="lib-date" title="${_libEscapeHtml(whenAbs)}"> · ${_libEscapeHtml(whenRel)}</span></span>
