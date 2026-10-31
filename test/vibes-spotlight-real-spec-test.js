@@ -80,12 +80,29 @@ const sw = fs.readFileSync(path.join(root, 'src/sw.js'), 'utf8');
 assert.match(sw, /url\.pathname\.startsWith\('\/models\/'\)/, 'the service worker caches everything under /models/, the light probes included, with the models');
 
 const viewer = fs.readFileSync(path.join(root, 'src/vibes/retrovibes.js'), 'utf8');
-assert.match(viewer, /const SCENES = \[[^\]]*sceneSpotlight, sceneSpotlightReal, sceneIkplus/, 'Foggy Spotlight follows Spotlight in the scene list');
+assert.match(viewer, /const SCENES = \[[^\]]*sceneStarry, sceneSpotlightReal, sceneIkplus/, 'Foggy Spotlight follows Starry Plain in the scene list');
+assert.doesNotMatch(viewer, /vibes-scene-spotlight\.js/, 'the plain Spotlight scene is gone (Foggy Spotlight with its fog off covers it)');
 
 // Smoke: the scene asks for it, and the pass sizes and scales itself to the model.
 const sceneSrc = fs.readFileSync(path.join(root, 'src/vibes/vibes-scene-spotlight-real.js'), 'utf8');
 assert.match(sceneSrc, /volume: \{[^}]*density/, 'Foggy Spotlight asks the viewer for smoke in its beam');
 assert.match(sceneSrc, /userData\.volumeLight = key/, 'Foggy Spotlight hands the smoke pass its key light');
+assert.doesNotMatch(sceneSrc, /\bdof:/, 'Foggy Spotlight runs no depth of field (its blur barely showed, and it redrew the scene every frame)');
+
+// The fog switch: a button under the framer, shown only for a scene with smoke
+// on a device that runs the smoke pass, remembered, and on until turned off.
+// Off, the scene shows the soft cone that low-power devices get.
+const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+assert.match(html, /<button class="model-viewer-fog"[^>]*\bhidden\b[^>]*aria-pressed="true"/, 'the fog button starts hidden and pressed (fog on)');
+assert.ok(html.indexOf('model-viewer-fog') > html.indexOf('model-viewer-fullscreen'), 'the fog button follows the framer');
+assert.match(viewer, /const FOG_KEY = 'c64emu\.modelViewerFog'/, 'the fog switch is remembered');
+assert.match(viewer, /localStorage\.getItem\(FOG_KEY\) !== '0'/, 'the fog is on unless turned off');
+assert.match(viewer, /b\.hidden = !smoke/, 'the fog button shows only where the smoke pass can run');
+assert.match(viewer, /const smoke = !!\(this\._volPass && def\.volume\);\s*this\._sceneVolume = smoke && this\._fogWanted;/, 'the smoke runs only while the fog switch is on');
+assert.match(sceneSrc, /shaft\.visible = !smoke/, 'the soft cone shows when the smoke does not');
+assert.match(sceneSrc, /fogStandIn: \[shaft\]/, 'the scene hands the viewer its cone to show while the fog is off');
+const css = fs.readFileSync(path.join(root, 'src/vibes/styles-vibes.css'), 'utf8');
+assert.match(css, /\.model-viewer-overlay\.studio \.model-viewer-fog/, 'Studio mode hides the fog button with the other controls');
 assert.match(viewer, /target\.depthTexture = new THREE\.DepthTexture/, 'the composer keeps the scene depth the smoke stops at');
 const { VolumePass } = await import('../src/vibes/vibes-volume-pass.js');
 const vol = new VolumePass();
@@ -104,4 +121,4 @@ assert.equal(vol.screenGlow, 4, 'a scene can strengthen the screen\'s glow in th
 assert.match(viewer, /_volPass\.screen = this\._sceneGroup\?\.userData\.crtGlow/, 'the viewer hands the smoke pass the scene\'s screen light');
 vol.dispose();
 
-console.log('ok  - spotlight real: markers, black baked floor, no lights/cameras/decoders, lamp, phone build, light probes, smoke, after Spotlight in the scene list');
+console.log('ok  - spotlight real: markers, black baked floor, no lights/cameras/decoders, lamp, phone build, light probes, smoke, fog switch, no depth of field, after Starry Plain in the scene list');

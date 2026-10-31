@@ -2135,7 +2135,7 @@ button.monitor-chip { cursor: pointer; }
 .monitor-memory-screen-view .monitor-memory-visual canvas[role="grid"] { cursor: pointer; image-rendering:auto; }
 .monitor-memory-screen-view .monitor-memory-visual canvas:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 
-.monitor-memory-grid button.is-captured-source { background-image: repeating-linear-gradient(135deg,transparent,transparent 3px,color-mix(in srgb,var(--accent) 30%,transparent) 3px,color-mix(in srgb,var(--accent) 30%,transparent) 5px); }
+.monitor-memory-grid button.is-captured-source { background-image: repeating-linear-gradient(135deg,transparent,transparent 3px,var(--accent-stripe) 3px,var(--accent-stripe) 5px); }
 
 .monitor-header .monitor-machine-controls { gap:6px; }
 .monitor-header .monitor-machine-controls [data-monitor="status"] { display:block; width:7ch; flex:none; font-size:11px; color:inherit; }

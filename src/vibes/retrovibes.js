@@ -38,10 +38,10 @@ import { sampleScreenLight } from './vibes-screen-light.js';
 import { ShadowCache, ShadowThrottle } from './vibes-shadow-cache.js';
 import { scene as sceneSynthwave } from './vibes-scene-synthwave.js';
 import { scene as sceneStarry } from './vibes-scene-starry.js';
-import { scene as sceneSpotlight } from './vibes-scene-spotlight.js';
 import { scene as sceneIkplus } from './vibes-scene-ikplus.js';
 import { scene as sceneBedroom } from './vibes-scene-bedroom.js';
 import { scene as sceneSpotlightReal } from './vibes-scene-spotlight-real.js';
+import { sceneIndexFromStored } from './vibes-scene-pref.js';
 
 // Cinematic grade: subtle vignette + edge chromatic aberration + film grain.
 // Runs on the final sRGB image (after OutputPass). Kept gentle so it flavours
@@ -114,8 +114,11 @@ function resolveModelUrl() {
 // Persisted camera view (position + orbit target) so the scene reopens where
 // the user left it.
 const CAM_KEY = 'c64emu.modelViewerCamera';
-// Persisted scene (lighting/backdrop mood) index — see SCENES below.
+// Persisted scene (lighting/backdrop mood), by name; see SCENES below and
+// vibes-scene-pref.js, which also reads the positions earlier versions stored.
 const SCENE_KEY = 'c64emu.modelViewerScene';
+// Persisted fog switch (smoke in the beam, on unless turned off).
+const FOG_KEY = 'c64emu.modelViewerFog';
 // Persisted idle-spin (auto-rotate) on/off, so the viewer reopens rotating or
 // standstill exactly as the user last left it.
 const ROTATE_KEY = 'c64emu.modelViewerAutoRotate';
@@ -130,7 +133,7 @@ const STUDIO_KEY = 'c64emu.modelViewerStudio';
 // (removed wholesale on switch); optional animate(group, t) runs each frame;
 // `css` is the overlay backdrop class; `envInt` scales the RoomEnvironment IBL;
 // optional `fog` = {color, near, far} (near/far ×sphere.radius). ctx = {sphere,box}.
-const SCENES = [sceneSynthwave, sceneStarry, sceneSpotlight, sceneSpotlightReal, sceneIkplus, sceneBedroom];
+const SCENES = [sceneSynthwave, sceneStarry, sceneSpotlightReal, sceneIkplus, sceneBedroom];
 
 export class ModelViewer {
   constructor(overlayEl) {
@@ -200,13 +203,12 @@ export class ModelViewer {
     this._volPass = null;      // smoke in a scene's spotlight beam (`volume`)
     this._sceneVolume = false;
     this._depthHidden = new Array(8).fill(null);   // scratch for _hideFromDepth: filled by index, never resized
-    // A remembered index can point past the end after a scene is removed —
-    // clamp so it lands on the nearest scene instead of wrapping to the first.
     this._sceneIndex = (() => {
-      try {
-        const v = parseInt(localStorage.getItem(SCENE_KEY), 10);
-        return Number.isInteger(v) ? Math.min(Math.max(v, 0), SCENES.length - 1) : 0;
-      } catch { return 0; }
+      try { return sceneIndexFromStored(localStorage.getItem(SCENE_KEY), SCENES.map((d) => d.name)); }
+      catch { return 0; }
+    })();
+    this._fogWanted = (() => {
+      try { return localStorage.getItem(FOG_KEY) !== '0'; } catch { return true; }
     })();
     // Studio mode (Cmd/Ctrl+Shift+X): remembered like the scene above.
     this._studioWanted = (() => {
@@ -221,6 +223,11 @@ export class ModelViewer {
     this._camTween = null;
     this._fullscreenBtn = overlayEl.querySelector('.model-viewer-fullscreen');
     if (this._fullscreenBtn) this._fullscreenBtn.addEventListener('click', () => this.zoomToScreen());
+
+    // Fog switch (under the framer): smoke in the beam on or off, shown only
+    // for a scene with smoke on a device that runs the smoke pass.
+    this._fogBtn = overlayEl.querySelector('.model-viewer-fog');
+    if (this._fogBtn) this._fogBtn.addEventListener('click', () => this.setFog(!this._fogWanted));
 
     // Optional VR (WebXR): the button reveals itself only if the browser reports
     // an immersive-VR device (a real headset or the WebXR emulator extension).
@@ -469,6 +476,10 @@ export class ModelViewer {
       renderer.toneMappingExposure = 1.05;
       renderer.shadowMap.enabled = true;              // scenes cast soft shadows for realism
       renderer.shadowMap.type = THREE.PCFShadowMap;   // PCFSoftShadowMap is deprecated in r184
+      // Reading each new program's info log makes the page wait for the GPU
+      // process to finish linking it, on a scene switch's first frames. The
+      // shaders are fixed, so there are no compile errors to report.
+      renderer.debug.checkShaderErrors = false;
       renderer.domElement.className = 'model-viewer-canvas';
       this.stage.appendChild(renderer.domElement);
 
@@ -754,8 +765,11 @@ export class ModelViewer {
         this._modelLoaded = true;
         this._loading = false;
         if (this._vrBtn) this._vrBtn.disabled = false;   // model framed → VR is now 1:1 with the 3D view
+        // A scene label like a switch's, so a switch made before this scene is
+        // ready clears it once its own scene is.
+        this._sceneLabelShown = true;
         this._setLoading('LOADING SCENE…');
-        this._readyScene().then((current) => { if (current) this._setLoading(null); });
+        this._readyScene().then((current) => { if (current) this._disarmSceneLabel(); });
       }),
       (ev) => {
         if (ev && ev.lengthComputable && ev.total) {
@@ -1085,6 +1099,24 @@ export class ModelViewer {
     this._sceneLabelShown = false;
   }
 
+  // Fog switch: smoke on or off in the current scene, remembered for the next.
+  setFog(on) {
+    this._fogWanted = !!on;
+    try { localStorage.setItem(FOG_KEY, on ? '1' : '0'); } catch { /* storage off */ }
+    const smoke = !!(this._volPass && SCENES[this._sceneIndex]?.volume);
+    this._sceneVolume = smoke && this._fogWanted;
+    if (this._volPass && !this._sceneVolume) { this._volPass.enabled = false; this._volPass.light = null; }
+    for (const o of this._sceneGroup?.userData.fogStandIn || []) o.visible = !this._sceneVolume;
+    this._updateFogButton(smoke);
+  }
+  _updateFogButton(smoke) {
+    const b = this._fogBtn;
+    if (!b) return;
+    b.hidden = !smoke;
+    b.setAttribute('aria-pressed', String(this._fogWanted));
+    b.title = this._fogWanted ? 'Fog on: click to turn it off' : 'Fog off: click to turn it on';
+  }
+
   // Compile the just-built scene's shaders before it is drawn. compileAsync
   // hands them to the browser's compiler threads (KHR_parallel_shader_compile),
   // so the page keeps running while they build; meanwhile _loop draws nothing
@@ -1224,7 +1256,7 @@ export class ModelViewer {
     if (!this.scene) return;
     const n = ((i % SCENES.length) + SCENES.length) % SCENES.length;
     this._sceneIndex = n;
-    try { localStorage.setItem(SCENE_KEY, String(n)); } catch { /* storage off */ }
+    try { localStorage.setItem(SCENE_KEY, SCENES[n].name); } catch { /* storage off */ }
 
     // Dispose the previous scene's group — geometry, materials/textures, and the
     // render-target / instanced owners _disposeObject handles (reflector, shadow
@@ -1325,16 +1357,19 @@ export class ModelViewer {
       }
     }
     // Smoke in the beam: the scene puts its SpotLight in g.userData.volumeLight
-    // once it has one, and _loop runs the pass from then on.
-    this._sceneVolume = !!(this._volPass && def.volume);
+    // once it has one, and _loop runs the pass from then on, unless the fog
+    // switch is off. The scene's stand-in (g.userData.fogStandIn) shows instead.
+    const smoke = !!(this._volPass && def.volume);
+    this._sceneVolume = smoke && this._fogWanted;
     if (this._volPass) { this._volPass.enabled = false; this._volPass.light = null; }
-    if (this._sceneVolume) this._volPass.configure(def.volume, sphere.radius, box.min.y);
+    if (smoke) this._volPass.configure(def.volume, sphere.radius, box.min.y);
+    this._updateFogButton(smoke);
     const g = new THREE.Group();
     // A scene that loads its contents (the 80s Bedroom's room) returns a
     // promise that settles once they are in; _readyScene waits for it.
-    // `volume` tells it whether the smoke pass will run, so it can skip its
-    // cheaper stand-in, and `lowPower` whether to keep costly extras off.
-    this._sceneBuilt = def.build(g, { sphere, box, screen, volume: this._sceneVolume, lowPower: _lowPowerDevice() });
+    // `volume` tells it whether the smoke pass can run, `smoke` whether it runs
+    // now (the fog switch), and `lowPower` whether to keep costly extras off.
+    this._sceneBuilt = def.build(g, { sphere, box, screen, volume: smoke, smoke: this._sceneVolume, lowPower: _lowPowerDevice() });
     this.scene.add(g);
     this._sceneGroup = g;
     this._sceneAnimate = def.animate || null;

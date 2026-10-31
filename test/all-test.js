@@ -98,6 +98,7 @@ const TESTS = [
   'test/vibes-screen-light-spec-test.js',
   'test/vibes-render-cache-test.js',
   'test/vibes-bedroom-spec-test.js',
+  'test/vibes-scene-pref-test.js',
   'test/vibes-spotlight-real-spec-test.js',
   'test/vibes-camera-path-test.js',
   'test/vibes-synthwave-spec-test.js',

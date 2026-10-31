@@ -22,7 +22,7 @@
 //
 // BRAND_ONLY=og,vibes (env, comma-separated) captures a subset.
 // HERO=az,el,dist (env, degrees + distance multiplier) overrides the camera pose
-// while dialling a new one in; SCENE=n does the same for the Retro Vibes scene.
+// while dialling a new one in; SCENE=<name> does the same for the Retro Vibes scene.
 import { launchShotBrowser, reportRenderer, slowWarning } from './shot-browser.mjs';
 import assert from 'node:assert/strict';
 import { createGuideContext } from './guide-context.mjs';
@@ -55,12 +55,12 @@ const HERO = (() => {
 // no branding. Same asset the site header uses, so it can never drift from it.
 const LOGO = { src: '/logos/c64ready-logo-tagline.png', width: '53%', top: '2.4%', right: '0.9%' };
 
-// Retro Vibes scene index (src/vibes/retrovibes.js SCENES): 0 Synthwave, 1 Starry
-// Plain, 2 Spotlight, 3 Foggy Spotlight, 4 IK+ Sunset, 5 80s Bedroom. Per-shot
-// `scene` overrides it.
-const SCENE = Number(process.env.SCENE ?? 5);
+// Retro Vibes scene, by name (src/vibes/retrovibes.js SCENES): Synthwave, Starry
+// Plain, Foggy Spotlight, IK+ Sunset or 80s Bedroom. Per-shot `scene` overrides
+// it, and `fog: false` turns Foggy Spotlight's smoke off.
+const SCENE = process.env.SCENE ?? '80s Bedroom';
 
-// name → { out, width, height, scale, vibes, hero?, logo?, scene?, suffix?, webp?, bare? }
+// name → { out, width, height, scale, vibes, hero?, logo?, scene?, fog?, suffix?, webp?, bare? }
 // Widths/heights are the CSS pixels that, at the given scale, reproduce each
 // asset's existing pixel dimensions. hero / logo override HERO / LOGO per shot,
 // suffix overrides SUFFIX — only the social card has to change filename to be
@@ -73,14 +73,14 @@ const SHOTS = {
   // few hundred pixels, so it stands the camera off a little further and carries a
   // wider lockup, which keeps the wordmark readable at feed size.
   og:       { out: 'c64rdy-3d-vibes-sm',        width: 1200, height: 630,  scale: 1, vibes: true,
-              suffix: '-v4', scene: 2,
+              suffix: '-v4', scene: 'Foggy Spotlight', fog: false,
               hero: { distMul: 1.0 },
               logo: { width: '57%', top: '1.4%', right: '2.4%' } },
   // WebP, unlike the social card: this one is read by GitHub's markdown renderer
   // and by our own docs page, both of which decode it, so a 2000px shot need not
   // be a multi-megabyte PNG.
   vibes:    { out: 'screens/c64rdy-3d-vibes',   width: 1000, height: 628,  scale: 2, vibes: true,
-              suffix: '-v4', scene: 2, webp: 2000 },
+              suffix: '-v4', scene: 'Foggy Spotlight', fog: false, webp: 2000 },
   emulator: { out: 'screens/c64rdy-emulator',   width: 1512, height: 813,  scale: 2, vibes: false,
               suffix: '-v7' },
   // Splash card art: it sits in the landing page's own card, captioned there, so
@@ -104,17 +104,18 @@ for (const [name, s] of Object.entries(SHOTS)) {
     viewport: { width: s.width, height: s.height },
     deviceScaleFactor: s.scale,
   });
-  await ctx.addInitScript(({ scene, vibes }) => {
+  await ctx.addInitScript(({ scene, fog, vibes }) => {
     try {
       localStorage.setItem('c64emu.installDismissed', '1');
       localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
       localStorage.setItem('c64emu.vibesModel', 'small');
       if (vibes) localStorage.setItem('c64emu.sizeMode', '15x');
       localStorage.setItem('c64emu.modelViewerScene', scene);
+      localStorage.setItem('c64emu.modelViewerFog', fog ? '1' : '0');
       localStorage.setItem('c64emu.modelViewerAutoRotate', '0');   // a drifting spin would pick a random azimuth
       localStorage.removeItem('c64emu.modelViewerCamera');         // ignore any saved hand-posed view
     } catch {}
-  }, { scene: String(process.env.SCENE != null ? SCENE : (s.scene ?? SCENE)), vibes: s.vibes });
+  }, { scene: String(process.env.SCENE != null ? SCENE : (s.scene ?? SCENE)), fog: s.fog !== false, vibes: s.vibes });
   const page = await ctx.newPage();
   page.on('pageerror', e => console.error('  page error:', e.message));
   await page.goto(BASE, { waitUntil: 'networkidle' });
@@ -160,7 +161,7 @@ for (const [name, s] of Object.entries(SHOTS)) {
 
     if (s.bare) await page.evaluate(() => {
       for (const sel of ['.model-viewer-hint', '.model-viewer-credit', '.model-viewer-scene',
-                         '.model-viewer-fullscreen', '.model-viewer-vr', '.model-viewer-close']) {
+                         '.model-viewer-fullscreen', '.model-viewer-fog', '.model-viewer-vr', '.model-viewer-close']) {
         const el = document.querySelector(sel);
         if (el) el.style.display = 'none';
       }

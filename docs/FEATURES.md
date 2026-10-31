@@ -342,10 +342,10 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 
 - **Retro Vibes 3D viewer**: a full-screen 3D scene of the C64 whose on-screen
   TV mirrors the live emulator picture, with several switchable lighting/backdrop
-  moods. In Spotlight, Foggy Spotlight and 80s Bedroom, the monitor casts light
-  that follows the picture's colour and brightness. Foggy Spotlight fills its
-  beam with drifting stage smoke that the machine casts a shadow through and
-  the screen tints blue. Synthwave drives a glowing neon highway toward a
+  moods. In Foggy Spotlight and 80s Bedroom, the monitor casts light that
+  follows the picture's colour and brightness. Foggy Spotlight fills its beam
+  with drifting stage smoke that the machine casts a shadow through and the
+  screen tints blue. On a computer, a fog switch turns the smoke off and on. Synthwave drives a glowing neon highway toward a
   banded sun and a lit city skyline, past palms and contoured mountains, on a
   wet road that mirrors the sun. The cinematic scenes have individual grain and lens effects.
   Opened with the **VIBES** button in Controls, and **Esc** / ✕ returns.

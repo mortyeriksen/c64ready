@@ -24,6 +24,13 @@ The version you are running is shown at the bottom of the About dialog.
   position while switching chapters.
 - **Reliable first boot.** Fetching ROMs no longer leaves the power-on prompt
   flashing over the running C64.
+- **Quicker Retro Vibes scenes.** Switching scenes in the 3D view is faster,
+  most of all the first time, and the 80s Bedroom downloads about a quarter
+  smaller.
+- **Fog switch.** On a computer, a new button in the 3D view turns Foggy
+  Spotlight's stage smoke off and on. With the fog off it takes the place of the
+  plain Spotlight scene, which is gone; if that was your scene, the 3D view now
+  opens in Foggy Spotlight.
 
 ## 2026.10.8 — October 28, 2026
 

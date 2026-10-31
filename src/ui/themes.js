@@ -60,7 +60,7 @@ export const THEME_TOKENS = [
   'menu-bg', 'status-bg', 'dropzone-border', 'row-hover', 'dir-row-hover', 'scrollbar-thumb',
   'backdrop', 'scrim', 'shadow', 'highlight', 'text', 'dim', 'text-dim', 'text-bright',
   'on-accent', 'button-ink', 'warn-text', 'accent', 'accent2', 'accent-bright', 'accent-soft',
-  'accent-pale', 'accent-deep', 'green', 'amber', 'red', 'info', 'on-green-ink',
+  'accent-pale', 'accent-deep', 'accent-stripe', 'green', 'amber', 'red', 'info', 'on-green-ink',
   'logo-ramp-4', 'logo-ramp-2', 'logo-ramp-1',
   'key-down-bg', 'led-off', 'tape-motor-on', 'tape-bar-bg', 'tape-bar-hover', 'zoom-btn-bg',
   'zoom-btn-hover', 'dirzoom-bg', 'kbd-bg', 'kbd-border', 'kbd-hover', 'kbd-ink', 'vibes-text',
@@ -192,6 +192,19 @@ export function colourAlpha(v) {
   return m[2] ? parseFloat(m[1]) / 100 : parseFloat(m[1]);
 }
 
+// A theme colour's red, green and blue (0–255), or null for anything else.
+export function colourRgb(v) {
+  const s = v.trim().toLowerCase();
+  if (s.startsWith('#')) {
+    const h = s.slice(1);
+    const pair = h.length <= 4 ? (i) => h[i] + h[i] : (i) => h.slice(i * 2, i * 2 + 2);
+    return [0, 1, 2].map((i) => parseInt(pair(i), 16));
+  }
+  const m = s.match(/^rgba?\(([^,]+),([^,]+),([^,)]+)/);
+  if (!m) return null;
+  return m.slice(1, 4).map((c) => Math.round(c.trim().endsWith('%') ? parseFloat(c) * 2.55 : parseFloat(c)));
+}
+
 // A theme's "look": per mode, a page pattern, its size and whether it twinkles. Returns { look }
 // with only what is valid kept, or { error }. Lenient drops what it cannot use.
 function validateLook(obj, modes, lenient) {
@@ -305,11 +318,18 @@ export function themeModes(theme) {
 // otherwise keeps Classic's. The first-visit splash wears a built-in theme of
 // its own (tools/splash-themes.mjs, from themeModeSet below).
 const DEFAULT_INK_ALPHA = 0.07;
+// Stripes laid over a fill (accent-stripe) are the accent at this alpha unless
+// the theme sets its own.
+const STRIPE_ALPHA = 0.3;
 // One mode's custom properties as the page gets them: the theme's colours,
 // the button colours that follow them, and its page pattern. Twinkle turns on
 // the pattern's two overlays in styles-base.css.
 export function themeModeSet(theme, m) {
   const set = withButtonColours(theme.modes[m]);
+  if (set['accent-stripe'] === undefined && set.accent !== undefined) {
+    const rgb = colourRgb(set.accent);
+    if (rgb) set['accent-stripe'] = `rgba(${rgb.join(', ')}, ${+(STRIPE_ALPHA * colourAlpha(set.accent)).toFixed(3)})`;
+  }
   const layers = patternLayers(theme.look?.[m]?.pattern, theme.look?.[m]?.size);
   if (layers) {
     // A pattern with no ink of its own is drawn in the theme's text colour, faintly.
@@ -379,9 +399,10 @@ export function parseStoredThemes(raw) {
 }
 
 // The file Export saves: the theme with every token in both modes it has, the
-// gaps filled from Classic, so it is ready to edit. A button or primary colour
-// the theme leaves out stays out: it follows the colour it derives from, and
-// writing it down would cut it off from later edits to that colour.
+// gaps filled from Classic, so it is ready to edit. A button or primary colour,
+// pattern ink or accent stripe the theme leaves out stays out: it follows the
+// colour it derives from, and writing it down would cut it off from later edits
+// to that colour.
 export function exportTheme(entry, classic) {
   const modes = {};
   const has = entry.theme ? entry.theme.modes : { dark: {}, light: {} };
@@ -389,7 +410,7 @@ export function exportTheme(entry, classic) {
     if (!has[m]) continue;
     modes[m] = {};
     for (const t of THEME_TOKENS) {
-      if ((t in BUTTON_SOURCES || t === 'pattern-ink') && has[m][t] === undefined) continue;
+      if ((t in BUTTON_SOURCES || t === 'pattern-ink' || t === 'accent-stripe') && has[m][t] === undefined) continue;
       modes[m][t] = has[m][t] ?? classic[m][t];
     }
   }

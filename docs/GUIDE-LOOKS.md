@@ -136,6 +136,9 @@ Export Classic to get the whole file to edit.
   `primary-dim`, `primary-accent`, `primary-accent2`, `primary-green`,
   `primary-amber`, `primary-red` and `primary-border`; left out, they are the
   button colours and the border.
+- **Stripes**: `accent-stripe` colours stripes laid over a fill, such as the
+  Monitor's memory pages a captured screen was read from. Left out, it is the
+  theme's `accent` at 30% opacity.
 - **Keys**: key labels, and the keys you can press in Control Ports and
   **KEY MAP**, are neutral tints of the theme's `text` colour. `kbd-bg`,
   `kbd-border`, `kbd-hover` and `kbd-ink` no longer change anything; a theme
@@ -177,6 +180,7 @@ available over the 3D scene.
 | **Double-click / double-tap** | Powers the C64 on when it's off, so you can boot the machine without leaving the 3D scene. |
 | **🎬** | Change the scene. |
 | **⛶** | Glides the camera to a head-on view that fills the frame with the monitor, a virtual fullscreen. From the side or behind, it swings around the monitor to its screen. Drag or scroll to break out of it. |
+| **Fog** | In Foggy Spotlight on a computer, turns the stage smoke off and on. With it off, the beam shows as a soft cone, as on phones and tablets. It is remembered. |
 | **🥽 ENTER VR** | View in VR (shown when a headset or the WebXR emulator is available). |
 | **ⓘ model credit** | Shows attribution for the 3D model. |
 | **Cmd+Shift+X** / **Ctrl+Shift+X** | **Studio mode**: hides everything else in this table (the mouse pointer included) and leaves the scene alone with the C64 READY. logo, for screenshots and video. The same keys bring the controls back. It is remembered, so the scene reopens the way you left it. |
@@ -184,7 +188,7 @@ available over the 3D scene.
 
 ### Scenes
 
-The **🎬** button cycles through six scenes. Each strip in the gallery shows
+The **🎬** button cycles through five scenes. Each strip in the gallery shows
 the scene from the default view, up close, and from a low angle; step through
 them with **Previous** and **Next**.
 
@@ -198,11 +202,7 @@ them with **Previous** and **Next**.
 
 ![Three views of the Starry Plain scene: the machine on a dark pulsing grid beneath a blue-violet Milky Way, deep star field and occasional meteor.](/guide/retro-vibes-starry-plain.webp)
 
-**Spotlight**: One warm spotlight in the dark, the live CRT colouring the floor.
-
-![Three views of the Spotlight scene: the setup picked out of pitch darkness by a single warm overhead spotlight, grounded on a matte studio floor while the live CRT softly colours its surroundings.](/guide/retro-vibes-spotlight.webp)
-
-**Foggy Spotlight**: A theatre spotlight cutting through stage smoke onto a worn studio floor.
+**Foggy Spotlight**: A theatre spotlight cutting through stage smoke onto a worn studio floor. On a computer, the **Fog** button turns the smoke off.
 
 ![Three views of the Foggy Spotlight scene: the setup in a pool of warm light on a worn, scuffed studio floor, stage smoke drifting through the beam and settling low around the machine, the rest of the studio dark.](/guide/retro-vibes-foggy-spotlight.webp)
 

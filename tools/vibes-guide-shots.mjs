@@ -6,7 +6,7 @@
 // repo-root roms/ dir via route interception — nothing needs to be in dist.
 // Usage: node tools/vibes-guide-shots.mjs <baseURL> <outDir> [slug...]
 // Naming one or more scene slugs shoots only those, so re-shooting a single scene
-// does not depend on the five before it. The browser renders on the GPU when
+// does not depend on the others. The browser renders on the GPU when
 // there is one (see shot-browser.mjs); under software GL a full run can stall on
 // an animated scene, and a step that runs long prints a warning.
 import { launchShotBrowser, reportRenderer, slowWarning } from './shot-browser.mjs';
@@ -16,7 +16,7 @@ import { collectionDir } from '../test/external-assets.js';
 
 const base = process.argv[2] || 'http://localhost:5173';
 const out = (process.argv[3] || collectionDir('vibes-guide-work')).replace(/\/$/, '');
-const SLUGS = ['synthwave', 'starry-plain', 'spotlight', 'foggy-spotlight', 'ikplus', '80s-bedroom'];
+const SLUGS = ['synthwave', 'starry-plain', 'foggy-spotlight', 'ikplus', '80s-bedroom'];
 const ROM_DIR = new URL('../roms/', import.meta.url).pathname;
 
 const browser = await launchShotBrowser();

@@ -159,7 +159,7 @@ in the browser or `NAME=0` in Node harnesses.
 - **Lazy three.js chunk.** The 3D "Retro Vibes" scene and the model viewer
   import three.js only on first open, so the library stays out of the initial
   bundle. See [Retro Vibes](RETROVIBES-ARCHITECTURE.md).
-- **Retro Vibes render reuse.** Bedroom and Spotlight retain static shadow maps
+- **Retro Vibes render reuse.** Bedroom and Foggy Spotlight retain static shadow maps
   until casting geometry or the shadow rig changes. IK+ and Synthwave update their
   reflections at 30 Hz, rendered before the main pass so lit materials skip
   three's per-frame program re-check. IK+ wave shading keeps display cadence.
@@ -169,12 +169,13 @@ in the browser or `NAME=0` in Node harnesses.
   since only that slow sway moves a caster. The screen provider
   reuses its descriptor, and Starry pools its meteor geometry
   and material. See [Retro Vibes](RETROVIBES-ARCHITECTURE.md) §§4–5.
-- **Foggy Spotlight's extra passes.** Smoke, contact shadows and depth of field
-  cost about 5.5 ms a frame over Spotlight's 8.5 ms at 2560×1600 on an M1 Pro,
-  so they are built only off low-power devices. The smoke marches at most 800 px
-  wide and the occlusion runs at half resolution with 8 samples. The floor's
-  detail is a repeated 1024 px tile, so the scene adds about 39 MiB of textures
-  and 471 KiB of downloads. Once warm, its per-frame code allocates nothing of
+- **Foggy Spotlight's extra passes.** Smoke and contact shadows are built only
+  off low-power devices, and the fog switch turns the smoke off. The smoke
+  marches at most 800 px wide and the occlusion runs at half resolution with 8
+  samples. Depth of field is not used: it redrew the scene for its depth every
+  frame, most of the scene's frame time, for a blur that barely showed. The
+  floor's baked light is 1024 px and its detail a repeated 1024 px tile, so the
+  scene adds about 23 MiB of textures and 448 KiB of downloads. Once warm, its per-frame code allocates nothing of
   its own: values that change every frame go into vector uniforms set in place,
   and the depth-pass hide list is filled by index rather than pushed and cleared.
 

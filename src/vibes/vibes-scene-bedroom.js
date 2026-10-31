@@ -112,15 +112,17 @@ export function makeTvScanner(doc, w, h) {
 // earlier procedural room was (carpet 0.72 m below the model, R * 1.04 world units
 // per metre).
 //
-// The file carries named marker nodes, so the lights follow the room instead of
-// repeating its layout here: "Room Origin" (the carpet centre), "Light Lamp"
-// and "Light Moon" (each with a "... Target"), "Light TV", "Light Clock",
-// "Light Lava", and "Beam Start" / "Beam End" for the moonbeam.
-// GLTFLoader turns their spaces into underscores.
+// The scene reads tags (glTF node extras, which GLTFLoader puts in userData),
+// never node names. Marker nodes place the lights, so they follow the room
+// instead of repeating its layout here: extras.marker is "room-origin" (the
+// carpet centre), "lamp" and "moon" (each with a "-target"), "tv", "clock",
+// "lava", and "beam-start" / "beam-end" for the moonbeam. extras.tvScreen marks
+// the TV picture, and extras.castShadow / receiveShadow = false opt a node out
+// of shadows.
 //
 // Bounce light is baked: the room's surfaces carry a second UV set (uv1) into
 // one lightmap, a separate image holding Cycles' indirect diffuse light scaled
-// to fit 8 bits. "Room Origin" stores that scale (extras.lightmapScale). Direct
+// to fit 8 bits. The room origin stores that scale (extras.lightmapScale). Direct
 // light stays real-time, so the lamp, the TV and the moon still move and flicker.
 const BASE = ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/') + 'models/';
 // Options ▸ Display ▸ 3D MODEL picks the files, as it does the C64 model's:
@@ -298,23 +300,29 @@ export const scene = {
       const room = gltf.scene;
       if (!g.parent) { disposeTree(room); if (lightmap) lightmap.dispose(); tvMat.dispose(); crtTex.dispose(); return; }   // switched away while loading
       const k = S / FILE_UNITS_PER_M;
-      const origin = room.getObjectByName('Room_Origin');
+      const markers = new Map();
+      let screenNode = null;
+      room.traverse((o) => {
+        if (o.userData.marker) markers.set(o.userData.marker, o);
+        if (o.userData.tvScreen) screenNode = o;
+      });
+      const origin = markers.get('room-origin');
       room.scale.setScalar(k);
       room.position.copy(anchor).addScaledVector(origin ? origin.position : new THREE.Vector3(), -k);
       holder.add(room);
       room.updateMatrixWorld(true);
-      const at = (name, out) => { const o = room.getObjectByName(name); if (o) o.getWorldPosition(out); return !!o; };
-      at('Light_Lamp', lamp.position); at('Light_Lamp_Target', lamp.target.position);
+      const at = (marker, out) => { const o = markers.get(marker); if (o) o.getWorldPosition(out); return !!o; };
+      at('lamp', lamp.position); at('lamp-target', lamp.target.position);
       lampBounce.position.lerpVectors(lamp.position, lamp.target.position, 0.5);
-      at('Light_TV', tv.position); at('Light_Clock', clock.position); at('Light_Lava', lava.position);
-      if (at('Light_Moon', moon.position) && at('Light_Moon_Target', moon.target.position)) {
+      at('tv', tv.position); at('clock', clock.position); at('lava', lava.position);
+      if (at('moon', moon.position) && at('moon-target', moon.target.position)) {
         // Per square metre at the distance it shines from, as the earlier procedural
         // bedroom's moon is from its 3.6 m.
         const d = moon.position.distanceTo(moon.target.position) / S;
         moon.intensity = 14 * IL * (d / 3.6) * (d / 3.6);
       }
       const b0 = new THREE.Vector3(), b1 = new THREE.Vector3();
-      if (at('Beam_Start', b0) && at('Beam_End', b1)) g.add(moonBeam(b0, b1, 0.32 * S, 0.5 * S));
+      if (at('beam-start', b0) && at('beam-end', b1)) g.add(moonBeam(b0, b1, 0.32 * S, 0.5 * S));
 
       // Lightmapped meshes get the baked bounce. A material shared with a mesh
       // that has no lightmap UVs is cloned first, so the other mesh never
@@ -322,13 +330,16 @@ export const scene = {
       const scale = origin?.userData?.lightmapScale || 1;
       const unlit = new Set();
       room.traverse((o) => { if (o.isMesh && !o.geometry.attributes.uv1) unlit.add(o.material); });
+      // A shadow tag holds for the node and the meshes under it (a node with
+      // several materials loads as a group of meshes).
+      const optedOut = (o, key) => { for (let p = o; p && p !== room; p = p.parent) if (p.userData[key] === false) return true; return false; };
       room.traverse((o) => {
         if (!o.isMesh) return;
         const m = o.material;
-        o.receiveShadow = !o.name.startsWith('Outside_');
+        o.receiveShadow = !optedOut(o, 'receiveShadow');
         // The garden, the sky beyond the blinds and see-through materials let
         // the moon in; the lamp's own shade and bulb would shadow it at the source.
-        o.castShadow = !(m && (m.transparent || m.alphaMap)) && !/^(Outside_|Lamp_|Mesh_33$)/.test(o.name);
+        o.castShadow = !(m && (m.transparent || m.alphaMap)) && !optedOut(o, 'castShadow');
         // three.js draws a double-sided transparent material in two passes by
         // flipping its side, which re-checks its program and re-uploads its uniforms
         // on every pass of every frame; one pass is enough for thin cases and panes.
@@ -339,11 +350,6 @@ export const scene = {
           o.material = lm;
         }
       });
-      // The earlier procedural room's faint additive scanner glow comes through the
-      // export as a solid emitter; the live picture carries the scanner instead.
-      const overlay = room.getObjectByName('TV_Overlay');
-      if (overlay) overlay.visible = false;
-      const screenNode = room.getObjectByName('TV_Screen');
       if (screenNode) screenNode.traverse((o) => { if (o.isMesh) { o.material.dispose(); o.material = tvMat; } });
       for (const l of lights) l.visible = true;
       holder.visible = true;

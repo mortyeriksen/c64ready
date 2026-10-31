@@ -10,7 +10,7 @@ monitor) lit like an 80s synthwave demo, with the **live emulator picture playin
 on the modelled monitor's CRT**. Drag to rotate, scroll / two-finger pinch to zoom,
 double-click to power the machine on, Esc or the ✕ to close.
 
-![Retro Vibes: the Spotlight scene, with the live C64 `READY.` screen playing on the modelled 1702 monitor.](/screens/c64rdy-3d-vibes-v4.webp)
+![Retro Vibes: a spotlit scene, with the live C64 `READY.` screen playing on the modelled 1702 monitor.](/screens/c64rdy-3d-vibes-v4.webp)
 
 > Just want to *use* it? See [Getting started](GETTING-STARTED.md) §7 and the
 > [Features](FEATURES.md) tour. This document is the implementation deep-dive.
@@ -103,8 +103,8 @@ exposes no handle to free.) A lost context is recovered by a
   edges stay still. Each scene's `grade`
   sets `aberration`, `vignette`, `grain` and optional split-tone colours. `_applyScene`
   resets all grade uniforms on each switch, including explicit zero values.
-  Spotlight has no chromatic aberration and minimal grain; IK+ Sunset and Bedroom
-  use restrained, separate settings. Bloom parameters are also overridden per
+  Foggy Spotlight has almost no chromatic aberration and minimal grain. IK+
+  Sunset and Bedroom use restrained, separate settings. Bloom parameters are also overridden per
   scene. When post-processing is actually applied, see §5.
 
 ## 3. Framing, zoom-to-monitor & the persisted camera
@@ -118,12 +118,13 @@ The default view orbits and dollies around the **live screen**: the orbit target
 the centre of the `monitor_screen` mesh, and because `zoomToCursor` is off, zooming
 moves the camera straight toward the monitor; the CRT is the star. If a saved view
 exists it is restored instead (dolly limits are widened so the saved distance is not
-clamped away). Four small `localStorage` keys persist viewer state:
+clamped away). Five small `localStorage` keys persist viewer state:
 
 | Key | Holds |
 |-----|-------|
 | `c64emu.modelViewerCamera` | camera position + orbit target (`_saveCamera`, on the controls `end` event and on close) |
-| `c64emu.modelViewerScene` | active scene index (§5) |
+| `c64emu.modelViewerScene` | active scene, by name (§5) |
+| `c64emu.modelViewerFog` | Foggy Spotlight's fog switch, `'0'` when off (§5) |
 | `c64emu.modelViewerAutoRotate` | idle-spin on/off (§6) |
 | `c64emu.modelViewerStudio` | Studio mode on/off (§6) |
 
@@ -155,8 +156,8 @@ modelled 1702's glass. It is set up by `_wireScreen()` and refreshed every frame
   reference changes (the machine is re-created on power / reset), re-points
   `tex.image` at the new buffer; each display frame it flags `tex.needsUpdate = true`
   so the bytes re-upload. At 10 Hz it also samples a fixed 16 × 12 pixel grid,
-  converts the sRGB bytes to linear light and records average colour + luminance. Spotlight and
-  Bedroom use that allocation-free result through `vibes-crt-light.js` to tint and
+  converts the sRGB bytes to linear light and records average colour + luminance. Foggy Spotlight
+  and Bedroom use that allocation-free result through `vibes-crt-light.js` to tint and
   brighten a smoothed, outward-facing CRT area light. Smoothing uses elapsed time;
   black, missing or powered-off pictures fade to zero light. Area dimensions track
   the glass; intensity is luminance and does not need model-scale compensation.
@@ -179,20 +180,22 @@ own via `envMap(renderer)`; IK+ bakes one from its sunset sky. `bg` / `fog` /
 (`#btn-model-viewer-scene`)
 calls `nextScene()` → `_applyScene()`, which disposes the old group, builds the new
 one, applies its env-intensity / tone-mapping / background / fog / bloom, and persists
-the index.
+the scene's name. `vibes-scene-pref.js` reads it back, and also reads the scene
+position earlier versions stored, against the scene list they had, so a
+remembered scene survives scenes being added or removed. A removed scene opens
+as the one that replaced it (Spotlight as Foggy Spotlight).
 
 | # | `name` | Backdrop / mood | Post pipeline |
 |---|--------|-----------------|---------------|
 | 0 | **Synthwave** | neon highway driving toward a banded sun behind cloud streaks: wet mirror road, modelled palms and contoured mountains (a GLB, below), twinkling stars, a shooting star | **full composer** (bloom on neon pushed past 1.0, Khronos PBR Neutral tone mapping), a sunset IBL via `envMap`, inverse-square neon lights scaled by model radius squared |
 | 1 | **Starry Plain** | dark Tron-grid plain: scanner ripple, star layers, a procedural Milky-Way band, shooting stars | basic; raw tone map |
-| 2 | **Spotlight** | near-black studio: overhead spotlight, beam dust, screen-coloured CRT spill | **full composer** (bloom dialled near-off + grade + SMAA) |
-| 3 | **Foggy Spotlight** | Cycles-baked studio floor (a GLB, below): theatre spotlight, stage smoke in the beam, live monitor spill | **full composer** with smoke, contact shadows and depth of field, Khronos PBR Neutral tone mapping, a Cycles light probe via `envMap` |
-| 4 | **IK+ Sunset** | stone courtyard at dusk: torii and low sun over reflective water, autumn maple, layered headlands | **full composer** (bloom + warm halation + dusk split-tone grade); cool-shadow sunset IBL via `envMap`; ACES exposure 0.66, purple haze fog |
-| 5 | **80s Bedroom** | modelled teenager's bedroom at night (a GLB, below): amber desk lamp, lava lamp, live monitor spill, a flickering wood-grain TV, a half moon through the blinds, a moonbeam, a lit landing | **full composer** (bloom + amber halation + teal/amber grade) |
+| 2 | **Foggy Spotlight** | Cycles-baked studio floor (a GLB, below): theatre spotlight, stage smoke in the beam (switchable), beam dust, live monitor spill | **full composer** with smoke and contact shadows, Khronos PBR Neutral tone mapping, a Cycles light probe via `envMap` |
+| 3 | **IK+ Sunset** | stone courtyard at dusk: torii and low sun over reflective water, autumn maple, layered headlands | **full composer** (bloom + warm halation + dusk split-tone grade); cool-shadow sunset IBL via `envMap`; ACES exposure 0.66, purple haze fog |
+| 4 | **80s Bedroom** | modelled teenager's bedroom at night (a GLB, below): amber desk lamp, lava lamp, live monitor spill, a flickering wood-grain TV, a half moon through the blinds, a moonbeam, a lit landing | **full composer** (bloom + amber halation + teal/amber grade) |
 
 Scenes flagged `basic` render with a plain `renderer.render` and bypass the composer;
 the **bloom + grade + SMAA** pipeline runs for the non-basic scenes
-(**Synthwave**, **Spotlight**, **Foggy Spotlight**, **IK+ Sunset**, **80s Bedroom**), while Starry Plain further uses raw tone mapping and
+(**Synthwave**, **Foggy Spotlight**, **IK+ Sunset**, **80s Bedroom**), while Starry Plain further uses raw tone mapping and
 bakes its glow into its own shaders. Backdrop gradients are cached equirect
 `CanvasTexture`s; the procedural props (star sprites, sunset sky/sun, water
 normal map, checker floor) are built once and cached at module level.
@@ -229,15 +232,16 @@ normal map, checker floor) are built once and cached at module level.
 
 ### Foggy Spotlight
 
-The Spotlight mood made photographic. Its surroundings come from files in
-`public/models/`, made in Blender around the C64 model, which is never moved:
+A theatre spotlight with stage smoke in its beam, photographic. Its surroundings
+come from files in `public/models/`, made in Blender around the C64 model, which
+is never moved:
 
 - **Baked floor.** `spotlight_real.glb` holds a worn studio floor whose light, the
   lamp's pool, the machine's soft contact shadows and its bounce, is baked in
-  Cycles into a 2048 px emissive map. Its base colour is black, so the live lamp
+  Cycles into a 1024 px emissive map (a smooth bake, which 2048 px did not improve). Its base colour is black, so the live lamp
   adds only glints off the roughness and normal maps, never a second pool. Those
   two are one seamless 1024 px tile repeated three times across the floor
-  (`KHR_texture_transform`). `spotlight_real_small.glb` halves every map. The file also holds the hanging lamp, and
+  (`KHR_texture_transform`). `spotlight_real_small.glb` halves the tiles. The file also holds the hanging lamp, and
   `Light Key` / `Light Key Target` markers carry the live light's intensity
   (candela), angle, penumbra and colour as extras.
 - **Light probe.** `spotlight_real_env.hdr`, 512 px for both builds, is a Cycles
@@ -253,9 +257,16 @@ The Spotlight mood made photographic. Its surroundings come from files in
   physical share). Density is domain-warped 3D noise that drifts and settles
   toward the floor. Without the pass (low-power devices) the
   scene draws an additive cone instead.
-- **Contact shadows and focus.** `ao` turns on a half-resolution `GTAOPass`, `dof`
-  a `BokehPass` focused on the orbit target. A scene lists its see-through effects
-  in `userData.noDepth` so neither pass treats them as surfaces.
+- **Fog switch.** On devices that run the smoke, a button under the framer
+  (`#btn-model-viewer-fog`, shown only for a scene with `volume`) turns the smoke
+  off and on. `setFog()` drops the pass and shows the scene's stand-ins
+  (`userData.fogStandIn`, the additive cone), so with the fog off the scene looks
+  as it does on a phone. The choice is remembered, on unless turned off.
+- **Contact shadows.** `ao` turns on a half-resolution `GTAOPass`. A scene lists
+  its see-through effects in `userData.noDepth` so the pass does not treat them
+  as surfaces. The viewer still supports `dof` (a `BokehPass` focused on the
+  orbit target), but no scene uses it: it redraws the scene for its depth every
+  frame, and here its blur barely showed.
 
 ### The 80s Bedroom
 
@@ -265,24 +276,37 @@ in every scene and the room fitted around it (carpet 0.72 m below the model,
 `R * 1.04` world units per metre, the room 6 cm behind the model's centre so the
 monitor's cables lie on the desk). `vibes-scene-bedroom.js` loads it.
 
-- **Two builds.** `bedroom.glb` (~3.5 MB) and `bedroom_small.glb` (~1.3 MB,
+- **Two builds.** `bedroom.glb` (~2.8 MB) and `bedroom_small.glb` (~1.2 MB,
   512 px textures, lighter cloth) follow **3D MODEL** like the C64 model does
   (§8), through `wantsLargeModels()`. Both are meshopt-compressed and decoded by
-  three's `MeshoptDecoder`; Draco is never used.
+  three's `MeshoptDecoder`. Draco is never used.
+- **Packed for few draw calls.** The export flattens the room and joins every
+  untagged mesh that shares a material into one, about 100 draws in place of
+  some 300. Untextured opaque materials carry their colour in the vertices, so
+  those that differ only in colour become one material and one draw, and every
+  such material needs the same shader variant. Each object's mesh is
+  simplified within 0.4% of its size (0.1% for the cloth, whose folds show
+  coarse steps first), and colour maps and data maps (normal, roughness) are
+  encoded as WebP at separate qualities. GPU instancing is not used: its
+  shader variants cost compile time on the scene switch and save no bytes
+  once repeated props join their material's mesh.
 - **Loaded with the model.** The scene's `preload()` fetches and parses the room
   once per file and hands the result to `build()`, so opening the viewer on the
   bedroom shows room and computer together. Switching to it with the 🎬 button
   keeps the current scene on screen until the room is ready and then swaps
   whole; `LOADING SCENE…` appears only if that takes longer than 300 ms. Clicks
   while it loads step on to the next scene.
-- **Markers, not coordinates.** The file carries named empty nodes
-  (`Room_Origin`, `Light_Lamp`, `Light_TV`, `Light_Clock`, `Light_Lava`,
-  `Light_Moon_Target`, `Light_Landing`, `Beam_Start`/`Beam_End` and the like) and
-  the scene places its real-time lights on them, so the layout lives only in
-  the model.
+- **Tags, not names or coordinates.** The scene reads glTF node extras (three's
+  `userData`) and never looks a node up by name, since joined meshes keep no
+  names. Empty nodes tagged `extras.marker` (`room-origin`, `lamp`,
+  `lamp-target`, `moon`, `moon-target`, `tv`, `clock`, `lava`, `beam-start`,
+  `beam-end`) place its real-time lights, so the layout lives only in the
+  model. `extras.tvScreen` marks the TV picture, and `extras.castShadow` or
+  `extras.receiveShadow` set to `false` opt a node and the meshes under it out
+  of shadows.
 - **Baked bounce, live direct light.** Room surfaces carry a second UV set
   (`uv1`) into one lightmap, `bedroom_light.webp` (or `bedroom_light_small.webp`),
-  holding Cycles' indirect diffuse light; `Room_Origin`'s
+  holding Cycles' indirect diffuse light. The room origin's
   `extras.lightmapScale` restores its range. Direct light stays real-time, so the
   lamp, lava lamp, alarm clock, TV and moon still flicker, move and cast
   shadows. The TV's light sits below the desktop so the desk's top never catches
@@ -292,10 +316,10 @@ monitor's cables lie on the desk). `vibes-scene-bedroom.js` loads it.
   in two passes by flipping `material.side`, which re-checks the shader program
   and re-uploads every light uniform on each pass of every frame.
 - **Offline.** The service worker serves the GLBs and lightmaps cache-first from
-  the model cache (`c64emu-models-v3`) under fixed names, so replacing one of
+  the model cache (`c64emu-models-v4`) under fixed names, so replacing one of
   these files needs that cache's name bumped in `src/sw.js`.
 
-Bedroom and Spotlight set `staticShadows`. `vibes-shadow-cache.js` watches the
+Bedroom and Foggy Spotlight set `staticShadows`. `vibes-shadow-cache.js` watches the
 casters, their ancestors, shadow lights and light targets. Transforms, visibility,
 vertex/index buffer versions (including animated keycaps), instanced matrices and
 shadow camera parameters invalidate the maps. Camera orbit, light intensity and
@@ -436,6 +460,12 @@ loop is already stopped.
 
 - **Lazy chunk.** three.js and its addons (~700 kB) are imported only on the first
   open, so they split into their own bundle chunk instead of weighing down startup.
+- **No shader error checks.** `renderer.debug.checkShaderErrors` is off. Reading
+  each new program's info log makes the page wait for the GPU process to finish
+  linking it, which on a scene switch's first frames costs about 100 ms warm and
+  0.8 s with a cold shader cache. A switch's time is otherwise mostly the GPU
+  process compiling its shader programs, so a scene's count of distinct
+  material variants sets how long its first visit takes.
 - **Runs only while open.** The render loop is a `setAnimationLoop` started in `open()`
   and cleared in `close()`, so the viewer costs nothing when closed; `_updateScreen`
   also bails unless `running`.

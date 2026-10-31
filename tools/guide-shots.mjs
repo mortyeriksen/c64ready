@@ -45,7 +45,7 @@
 //   node tools/guide-dialog-shots.mjs
 //                                                  the populated Library + Save-States
 //   node tools/vibes-guide-shots.mjs <baseURL> <paneDir>    3 panes per 3D scene
-//   node tools/vibes-strip.mjs <paneDir> public/guide       stitched into 6 strips
+//   node tools/vibes-strip.mjs <paneDir> public/guide       stitched into 5 strips
 // Both vibes tools take trailing scene slugs to shoot/stitch just those scenes.
 //   node tools/datasette-anim.mjs                  the Datasette loading animation
 // Bring your own inputs: a raster-demo .d64 and a game .tap (both registry), plus
@@ -112,7 +112,7 @@ await ctx.addInitScript(() => {
     localStorage.setItem('c64emu.installDismissed', '1');
     localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
     localStorage.setItem('c64emu.vibesModel', 'small');
-    localStorage.setItem('c64emu.modelViewerScene', '5');
+    localStorage.setItem('c64emu.modelViewerScene', '80s Bedroom');
   } catch {}
 });
 // Keep externally supplied ROMs in the browser cache, as the setup UI does.

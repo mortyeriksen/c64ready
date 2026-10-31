@@ -26,7 +26,7 @@ import { fileURLToPath } from 'url';
 import {
   THEME_FORMAT, THEME_TOKENS, THEME_CSS_KEY, THEME_MODES_KEY, MAX_THEME_BYTES,
   parseTheme, validateTheme, themeModes, themeCss, parseStoredThemes, exportTheme, isThemeColour, withButtonColours,
-  PATTERN_NAMES, CLASSIC_LOOK, patternLayers, colourAlpha, MAX_INK_ALPHA,
+  PATTERN_NAMES, CLASSIC_LOOK, patternLayers, colourAlpha, colourRgb, MAX_INK_ALPHA, themeModeSet,
 } from '../src/ui/themes.js';
 import { GEOS_THEME } from '../src/ui/themes/geos.js';
 import { BREADBIN_THEME } from '../src/ui/themes/breadbin.js';
@@ -117,13 +117,35 @@ const classic = { dark: {}, light: {} };
 for (const t of THEME_TOKENS) { classic.dark[t] = '#111111'; classic.light[t] = '#eeeeee'; }
 const exported = exportTheme({ name: 'Test', theme: darkOnly }, classic);
 expect(exported.format === THEME_FORMAT && Object.keys(exported.modes).join() === 'dark', 'export keeps the modes the theme has');
-const derived = THEME_TOKENS.filter((t) => (t.startsWith('button-') && t !== 'button-ink') || t.startsWith('primary-') || t === 'pattern-ink');
+const derived = THEME_TOKENS.filter((t) => (t.startsWith('button-') && t !== 'button-ink') || t.startsWith('primary-') || t === 'pattern-ink' || t === 'accent-stripe');
 expect(Object.keys(exported.modes.dark).length === THEME_TOKENS.length - derived.length && exported.modes.dark.text === '#fff' && exported.modes.dark.border === '#111111',
-  "export fills every token but the derived button ones and the pattern ink, the theme's own over Classic's");
+  "export fills every token but the derived button ones, the pattern ink and the accent stripe, the theme's own over Classic's");
 expect(derived.every((t) => !(t in exported.modes.dark)),
   'export leaves out the button and primary colours the theme leaves out, so they keep following their source');
 const ownButtons = exportTheme({ name: 'Own', theme: parseTheme(T({ dark: { 'button-bg': '#c00' } })).theme }, classic);
 expect(ownButtons.modes.dark['button-bg'] === '#c00' && !('button-text' in ownButtons.modes.dark), 'export keeps a button colour the theme sets itself');
+
+// The accent stripe (stripes laid over a fill, as on the Monitor's captured
+// screen pages) follows the theme's accent at 30% unless the theme sets its own,
+// so a theme made before the token existed still stripes in its own colour.
+const accentOnly = parseTheme(T({ dark: { accent: '#ff8800' } })).theme;
+expect(themeModeSet(accentOnly, 'dark')['accent-stripe'] === 'rgba(255, 136, 0, 0.3)', 'a theme without an accent stripe gets its accent at 30%');
+expect(themeCss(accentOnly).includes('--accent-stripe: rgba(255, 136, 0, 0.3)'), 'the derived accent stripe reaches the page');
+expect(themeModeSet(parseTheme(T({ dark: { accent: 'rgba(0, 0, 255, 0.5)' } })).theme, 'dark')['accent-stripe'] === 'rgba(0, 0, 255, 0.15)',
+  'a translucent accent gives a stripe 30% as strong');
+expect(themeModeSet(parseTheme(T({ dark: { accent: '#f80', 'accent-stripe': '#00ff0040' } })).theme, 'dark')['accent-stripe'] === '#00ff0040',
+  'a theme that sets its own accent stripe keeps it');
+expect(themeModeSet(parseTheme(T({ dark: { text: '#fff' } })).theme, 'dark')['accent-stripe'] === undefined,
+  "a theme with no accent leaves the stripe to Classic's, which follows Classic's accent");
+expect(!('accent-stripe' in exportTheme({ name: 'Accent', theme: accentOnly }, classic).modes.dark), 'export leaves out a derived accent stripe, so it keeps following the accent');
+expect(JSON.stringify(colourRgb('#abc')) === '[170,187,204]' && JSON.stringify(colourRgb('rgb(10, 20, 30)')) === '[10,20,30]' && colourRgb('red') === null,
+  'theme colours are read as hex or rgb() channels');
+for (const theme of [GEOS_THEME, BREADBIN_THEME, PHOSPHOR_THEME, OUTRUN_THEME, COMMANDO_THEME, ARTDECO_THEME, LOOKOUT_THEME]) {
+  for (const m of ['dark', 'light']) {
+    const set = themeModeSet(theme, m), rgb = colourRgb(set.accent);
+    expect(set['accent-stripe'] === `rgba(${rgb.join(', ')}, 0.3)`, `${theme.name} (${m}) stripes in its own accent`);
+  }
+}
 expect(parseTheme(JSON.stringify(exported)).theme, 'an exported theme imports again');
 const reimported = parseTheme(JSON.stringify(exported)).theme;
 expect(themeCss(reimported) === themeCss(parseTheme(JSON.stringify(exportTheme({ name: 'Test', theme: reimported }, classic))).theme),

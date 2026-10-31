@@ -109,29 +109,3 @@ export function mergeStatic(root, moving = []) {
   return merged;
 }
 
-// Soft, physically attenuated studio spotlight from above. `intensity` is the
-// desired illuminance scale at the model centre; converting it to candela with
-// distance² keeps the look stable when model bounds change.
-export function overheadSpot(color, intensity, sphere, penumbra = 0.8) {
-  const R = sphere.radius, height = R * 4.5;
-  const spot = new THREE.SpotLight(color, intensity * height * height, R * 11, Math.PI / 5, penumbra, 2);
-  spot.position.copy(sphere.center).add(new THREE.Vector3(-R * 0.62, height, R * 0.82));
-  spot.target.position.copy(sphere.center);
-  spot.castShadow = true;
-  spot.shadow.mapSize.set(2048, 2048);
-  spot.shadow.camera.near = sphere.radius * 0.5;
-  spot.shadow.camera.far = sphere.radius * 12;
-  spot.shadow.radius = 8; spot.shadow.bias = -0.0005;
-  return spot;
-}
-
-export function floorPlane(sphere, box, color, roughness, metalness) {
-  const f = new THREE.Mesh(
-    new THREE.PlaneGeometry(sphere.radius * 20, sphere.radius * 20),
-    new THREE.MeshStandardMaterial({ color, roughness, metalness }),
-  );
-  f.rotation.x = -Math.PI / 2;
-  f.position.set(sphere.center.x, box.min.y, sphere.center.z);
-  f.receiveShadow = true;
-  return f;
-}

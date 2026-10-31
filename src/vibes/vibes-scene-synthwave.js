@@ -127,7 +127,7 @@ const MirrorShader = {
   name: 'NeonRoadMirror',
   uniforms: {
     color: { value: null }, tDiffuse: { value: null }, textureMatrix: { value: null },
-    uTime: { value: 0 }, uFlow: { value: 0 }, uGain: { value: 2.2 }, uReflect: { value: 0.6 },
+    uTime: { value: 0 }, uFlow: { value: 0 }, uGain: { value: 2.2 }, uReflect: { value: 0.3 },
   },
   vertexShader: ROAD_VERTEX,
   fragmentShader: `
@@ -138,8 +138,8 @@ const MirrorShader = {
       vec2 r = vUvR.xy / vUvR.w;
       r.x += sin(vW.z * 1.7 + vW.x * 0.6) * 0.0025;
       vec3 refl = vec3(0.0);
-      for (int i = 0; i < 4; i++) refl += texture2D(tDiffuse, r + vec2(0.0, (float(i) - 1.5) * 0.0035)).rgb;
-      refl *= 0.25;
+      for (int i = 0; i < 4; i++) refl += texture2D(tDiffuse, r + vec2(0.0, (float(i) - 1.5) * 0.0065)).rgb;
+      refl = min(refl * 0.25, vec3(1.0));   // the sun is brighter than white: capped, its reflection dims with the rest
       refl *= smoothstep(0.12, 0.6, dot(refl, vec3(0.2126, 0.7152, 0.0722)));
       vec3 v = normalize(cameraPosition - vW);
       float fresnel = 0.08 + 0.92 * pow(1.0 - max(v.y, 0.0), 3.0);
@@ -162,7 +162,7 @@ const PaintedRoadShader = {
       float streak = exp(-x * x) * smoothstep(0.2, 0.97, vUv.y);
       float broken = 0.55 + 0.45 * sin((vUv.y + uTime * uFlow) * 140.0);
       vec3 sun = lin(mix(vec3(1.0, 0.12, 0.5), vec3(1.0, 0.7, 0.3), smoothstep(0.6, 1.0, vUv.y)));
-      gl_FragColor = vec4(roadMarks(vUv, uTime, uFlow, uGain) + sun * streak * broken * 0.35, 1.0);
+      gl_FragColor = vec4(roadMarks(vUv, uTime, uFlow, uGain) + sun * streak * broken * 0.18, 1.0);
     }`,
 };
 

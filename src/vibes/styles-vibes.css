@@ -146,6 +146,38 @@
 }
 .model-viewer-fullscreen:active { transform: scale(0.92); }
 
+/* Fog switch: below the framer, shown only for a scene with smoke on a device
+   that runs it. Dimmed while the fog is off. */
+.model-viewer-fog {
+  position: absolute;
+  top: 130px;
+  left: 18px;
+  z-index: 3;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(5, 217, 232, 0.5);
+  background: rgba(10, 6, 24, 0.55);
+  color: #7df9ff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.15s, opacity 0.15s;
+}
+.model-viewer-fog[hidden] { display: none; }
+.model-viewer-fog svg { display: block; }
+.model-viewer-fog[aria-pressed="false"] { opacity: 0.45; }
+.model-viewer-fog:hover {
+  color: #fff;
+  opacity: 1;
+  border-color: #05d9e8;
+  background: rgba(5, 217, 232, 0.20);
+  box-shadow: 0 0 16px rgba(5, 217, 232, 0.5);
+}
+.model-viewer-fog:active { transform: scale(0.92); }
+
 /* Enter/Exit VR pill — sits right of the scene button, top-left. Hidden unless
    WebXR reports an immersive-VR device (real headset or the emulator extension). */
 .model-viewer-vr {
@@ -282,6 +314,7 @@
 .model-viewer-overlay.studio .model-viewer-credit,
 .model-viewer-overlay.studio .model-viewer-scene,
 .model-viewer-overlay.studio .model-viewer-fullscreen,
+.model-viewer-overlay.studio .model-viewer-fog,
 .model-viewer-overlay.studio .model-viewer-vr,
 .model-viewer-overlay.studio .model-viewer-close,
 .model-viewer-overlay.studio .touch-controls {
