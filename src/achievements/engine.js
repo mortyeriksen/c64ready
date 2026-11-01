@@ -36,7 +36,9 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
   let active = false;       // rcheevos holds this game's conditions
   const hashes = new WeakMap();   // file bytes → hash, so a medium is hashed once
   const lookups = new Map();      // hash → Promise<game JSON | null>
-  let known = null;               // Promise<Set of hashes with a set>, fetched once
+  let known = null;               // Promise<Set of hashes with a set>
+  let knownAt = 0;                // when it was fetched: after KNOWN_MS a load fetches it again
+  const KNOWN_MS = 10 * 60_000;
   let generation = 0;
   let enabled = true;       // off: nothing loaded is hashed or looked up, and no game is kept
 
@@ -46,8 +48,13 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
 
   const api = createGamesApi({ base, account, fetchImpl });
   const call = api.request;
-  /** The hashes that have achievement sets, or null when they cannot be fetched (tried again next time). */
+  /**
+   * The hashes that have achievement sets, or null when they cannot be fetched (tried again next time).
+   * Kept for KNOWN_MS, so a game given a set meanwhile is found without a reload.
+   */
   function knownHashes() {
+    if (known && Date.now() - knownAt > KNOWN_MS) known = null;
+    if (!known) knownAt = Date.now();
     known ??= api.games().then((r) => new Set(r.games.flatMap((g) => g.hashes ?? [g.hash])))
       .catch((e) => { log(`achievements: the list of games failed: ${e.message}`); known = null; return null; });
     return known;
@@ -169,6 +176,9 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
     for (const f of files) {
       const hash = hashes.get(f.bytes);
       if (!hash || !sets.has(hash)) continue;   // no set: the hash stays here
+      // A game loaded anew gets its set as the server has it now (a corrected set
+      // reaches the next load, not only the next page); while it stays in, the copy is kept.
+      lookups.delete(hash);
       const data = await lookup(hash);
       if (gen !== generation) return;      // the media changed again meanwhile
       if (data === undefined) { retryLater(); return; }

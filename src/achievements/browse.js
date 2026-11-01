@@ -291,8 +291,11 @@ const fold = (t) => String(t).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').
 export async function renderGames(el, ctx) {
   const gen = (el._gen = (el._gen || 0) + 1);
   try {
-    const { games } = await ctx.api.games();
+    const { games: all } = await ctx.api.games();
     if (gen !== el._gen) return;
+    // The games you have unlocked something in come first, then the rest; each part alphabetically.
+    const started = (g) => (g.mine?.unlocked > 0 ? 1 : 0);
+    const games = [...all].sort((a, b) => started(b) - started(a) || a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
     if (!games.length) { el.replaceChildren(note('No games have achievements yet.')); return; }
     const list = h('ul', { class: 'ach-games achievements-games' });
     const count = h('p', { class: 'achievements-note ach-games-count', role: 'status', 'aria-live': 'polite' });

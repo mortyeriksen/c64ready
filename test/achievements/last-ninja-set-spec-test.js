@@ -126,5 +126,32 @@ function load(letter, junk = [0x9e, 0xdf, 0xff]) {
   ok('Stepping Stones: the river crossed without a life lost');
 }
 
+// 7. Weapons: the inventory is a counter per item at $03EC + item ($03F7 sword, $03F9 nunchaku, $03FA
+// shuriken, $03FB smoke bombs); a pick-up sets it from 0 to 1, to $85 for the shuriken and to 3 for the
+// smoke bombs. The cartridge's start-up fills the area with junk, and the level start zeroes it.
+{
+  const weapons = [['The Sword', 0x3f7, 1], ['Nunchaku', 0x3f9, 1], ['Throwing Stars', 0x3fa, 0x85], ['Smoke Screen', 0x3fb, 3]];
+  activate();
+  ram[HERE] = 0x85; for (let a = 0x3ec; a < 0x400; a++) ram[a] = (a * 37) & 0xff; frames(5);   // start-up junk
+  for (const [, at, v] of weapons) { ram[at] = v; frames(2); }
+  expect(unlocked.size === 0, `junk while the cartridge starts unlocks nothing (got ${[...unlocked]})`);
+  load('A'); for (let a = 0x3ec; a < 0x400; a++) ram[a] = 0; frames(5);
+  for (const [title, at, v] of weapons) {
+    expect(!has(title), `${title} not before its pick-up`);
+    ram[at] = v; frames(3);
+    expect(has(title), `${title} when it is picked up`);
+    expect(unlocked.size === weapons.findIndex(([t]) => t === title) + 1, `${title} alone`);
+  }
+  ok('each weapon on its pick-up, not on junk');
+
+  activate(); load('A'); for (let a = 0x3ec; a < 0x400; a++) ram[a] = 0; frames(5);
+  ram[0x3fa] = 0x85; frames(3); ram[0x3fa] = 0x84; frames(3);   // a shuriken thrown
+  ram[0x3fb] = 3; frames(3); ram[0x3fb] = 2; frames(3);         // a smoke bomb used
+  const before = unlocked.size;
+  ram[HERE] = 0x9e; ram[0x3f7] = 1; frames(3);                   // mid-load: junk letter
+  expect(unlocked.size === before && !has('The Sword'), 'a counter changing while a level loads is no pick-up');
+  ok('using a weapon, or a level loading, unlocks nothing more');
+}
+
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }
 console.log(`\nok - last-ninja set: ${testNo} checks`);

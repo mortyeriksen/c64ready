@@ -193,6 +193,10 @@ try {
   await page.keyboard.press('Escape');
   expect(await filter.inputValue() === '' && await gamesTab.locator('.ach-games li').count() === all, 'Esc clears the filter and shows every game again');
   expect(await page.locator('#online-window').isVisible(), 'without closing the window');
+  const order = await gamesTab.locator('.ach-card .ach-games-title').allTextContents();
+  const rest = order.slice(1);
+  expect(/Uridium/.test(order[0] ?? ''), `the game the account has progress in comes first (got ${order[0]})`);
+  expect(rest.every((t, i) => i === 0 || rest[i - 1].localeCompare(t, undefined, { sensitivity: 'base' }) <= 0), 'and the rest follow alphabetically');
   await filter.fill('uridium');
   const card = gamesTab.locator('.ach-card', { hasText: 'Uridium' });
   expect(await card.evaluate((el) => el.classList.contains('is-loaded')) && /LOADED/.test(await card.textContent()), 'the loaded game\'s card is marked LOADED');

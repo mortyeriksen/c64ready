@@ -346,6 +346,23 @@ const settle = () => new Promise((r) => setTimeout(r, 50));
   ok('saving queued results stops when the account changes, and keeps them on a 401');
 }
 
+// 11. A set corrected on the server reaches the next load of its game, without a reload of the page.
+{
+  const e5 = createAchievementEngine({ account: { token: null, user: null }, base, log: () => {} });
+  _resetLoaded();
+  setLoaded('cart', { ref: file, kind: 'crt', bytes: file });
+  await e5.mediaChanged();
+  const before = e5.game?.achievements.find((a) => a.id === 1)?.title;
+  db.prepare("UPDATE achievements SET title = 'Level Two, corrected' WHERE game_id = 'demo' AND id = 1").run();
+  await e5.mediaChanged();
+  expect(e5.game?.achievements.find((a) => a.id === 1)?.title === before, 'while the game stays in, its set is kept');
+  _resetLoaded(); await e5.mediaChanged();
+  setLoaded('cart', { ref: file, kind: 'crt', bytes: file }); await e5.mediaChanged();
+  expect(e5.game?.achievements.find((a) => a.id === 1)?.title === 'Level Two, corrected', 'loading the game again fetches the set as the server has it now');
+  db.prepare("UPDATE achievements SET title = 'Level Two' WHERE game_id = 'demo' AND id = 1").run();
+  ok('a corrected set reaches the next load of its game');
+}
+
 accounts.close();
 server.close();
 fs.rmSync(sets, { recursive: true, force: true });

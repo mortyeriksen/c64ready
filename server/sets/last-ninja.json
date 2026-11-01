@@ -49,6 +49,34 @@
       "description": "Cross the river in the Wastelands without losing a life.",
       "points": 10,
       "memaddr": "0xH0805=65_N:d0xH00a2=10_0xH00a2=11.1._N:d0xH00a2=11_R:0xH00a2=10_R:0xH009b<d0xH009b_d0xH00a2=11_0xH00a2=12"
+    },
+    {
+      "id": 7,
+      "title": "The Sword",
+      "description": "Pick up the sword.",
+      "points": 5,
+      "memaddr": "0xH0805>=65_0xH0805<=70_0xH0805=d0xH0805_d0xH03f7=0_0xH03f7=1"
+    },
+    {
+      "id": 8,
+      "title": "Nunchaku",
+      "description": "Pick up the nunchaku.",
+      "points": 5,
+      "memaddr": "0xH0805>=65_0xH0805<=70_0xH0805=d0xH0805_d0xH03f9=0_0xH03f9=1"
+    },
+    {
+      "id": 9,
+      "title": "Throwing Stars",
+      "description": "Pick up the shuriken.",
+      "points": 5,
+      "memaddr": "0xH0805>=65_0xH0805<=70_0xH0805=d0xH0805_d0xH03fa=0_0xH03fa=133"
+    },
+    {
+      "id": 10,
+      "title": "Smoke Screen",
+      "description": "Pick up the smoke bombs.",
+      "points": 5,
+      "memaddr": "0xH0805>=65_0xH0805<=70_0xH0805=d0xH0805_d0xH03fb=0_0xH03fb=3"
     }
   ]
 }
