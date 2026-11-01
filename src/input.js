@@ -41,9 +41,9 @@ function c64HasKeyboard() {
     || !!(keymapModal && !keymapModal.hidden && keymapModal.contains(el));
 }
 
-// The hint over the picture. With a pointer: shown while the C64 does not have
-// the keyboard. On a touch device, where the keyboard opens on a tap: shown on
-// the running machine until the screen is first tapped.
+// The hint over the picture, only while the machine is on. With a pointer:
+// shown while the C64 does not have the keyboard. On a touch device, where the
+// keyboard opens on a tap: shown until the screen is first tapped.
 const keyboardFocusHint = document.getElementById('keyboard-focus-hint');
 const touchOnly = window.matchMedia?.('(hover: none) and (pointer: coarse)');
 let screenTapped = false;
@@ -51,9 +51,8 @@ let screenTapped = false;
 // hands the keyboard straight back to the screen) never flashes it; it hides at once.
 const HINT_DELAY_MS = 1000;
 let hintTimer = 0;
-const hintWanted = () => (touchOnly?.matches
-  ? !screenTapped && document.body.classList.contains('powered-on')
-  : !(document.hasFocus() && c64HasKeyboard()));
+const hintWanted = () => document.body.classList.contains('powered-on')
+  && (touchOnly?.matches ? !screenTapped : !(document.hasFocus() && c64HasKeyboard()));
 function updateKeyboardFocusHint() {
   if (!keyboardFocusHint) return;
   if (!hintWanted()) { clearTimeout(hintTimer); hintTimer = 0; keyboardFocusHint.hidden = true; return; }
