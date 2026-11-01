@@ -72,6 +72,7 @@ To play without achievements, turn them off in Options ▸ Other ▸
 
 | Game | Achievements | High scores | The file it needs |
 | --- | --- | --- | --- |
+| 1943 | 14 | yes | OneLoad64 v5: `1943 - The Battle of Midway (J1).crt` |
 | Action Biker | 41 | yes | OneLoad64 v5: `Action Biker.crt` |
 | Bomb Jack | 19 | yes | OneLoad64 v5: `Bomb Jack.crt` |
 | Bubble Bobble | 14 | yes | OneLoad64 v5: `Bubble Bobble.crt` |
@@ -104,7 +105,7 @@ To play without achievements, turn them off in Options ▸ Other ▸
 | Vegetables Deluxe | | Shopping, Classic and Countdown | c64cade's `vegdlxnointro.prg` |
 | Wizball | 9 | yes | OneLoad64 v5: `Wizball.crt` |
 
-All but Bomb Jack, Bubble Bobble, Buggy Boy, Commando, Commando Arcade, Defender of the Crown, Ghosts 'n Goblins, Ghosts 'n Goblins Arcade, IK+, Impossible Mission, Nemesis, Out Run, Super Mario Bros 64, The Last Ninja, The Way of the Exploding Fist and Wizball are ported from
+All but 1943, Bomb Jack, Bubble Bobble, Buggy Boy, Commando, Commando Arcade, Defender of the Crown, Ghosts 'n Goblins, Ghosts 'n Goblins Arcade, IK+, Impossible Mission, Nemesis, Out Run, Super Mario Bros 64, The Last Ninja, The Way of the Exploding Fist and Wizball are ported from
 [c64-cheevos](https://github.com/hayesmaker/c64-cheevos) by hayesmaker (MIT),
 the achievements of [C64Cade](https://c64cade.com).
 

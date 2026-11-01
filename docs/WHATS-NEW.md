@@ -12,6 +12,8 @@ The version you are running is shown at the bottom of the About dialog.
 ## Next release
 
 - **New games with achievements and high scores:**
+  - **1943** on the OneLoad64 cartridge. Arm the plane, reach the later
+    missions, and your score goes on the board when the plane goes down.
   - **Bubble Bobble** on the OneLoad64 cartridge. Clear rounds, collect EXTEND,
     and your best game goes on the board.
   - **Buggy Boy** on the OneLoad64 cartridge. Reach the later legs, finish a

@@ -163,7 +163,7 @@ plugins alongside the drives. IEC and User Port have independent switches.
 | Library | Your own folders | Everything you open, kept in the browser and searchable |
 | SID music | VSID, a dedicated player | A `.sid` plays on the emulated C64 in its own player screen |
 | 3D and VR | No | Retro Vibes: the machine in five 3D scenes, from an 80s bedroom to a synthwave neon grid, with experimental VR |
-| Achievements and high scores | No | For 31 games, run on RetroAchievements' rcheevos, with leaderboards, everyone's activity and player profiles. See [Achievements](GUIDE-ACHIEVEMENTS.md) |
+| Achievements and high scores | No | For 32 games, run on RetroAchievements' rcheevos, with leaderboards, everyone's activity and player profiles. See [Achievements](GUIDE-ACHIEVEMENTS.md) |
 | Chat | No | One chat for everyone signed in, where a message can carry the loaded game |
 
 ### The projects

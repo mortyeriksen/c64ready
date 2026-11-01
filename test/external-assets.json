@@ -197,6 +197,14 @@
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
+  "1943-crt": {
+   "description": "1943 (Capcom 1988), the OneLoad64 v5 cartridge, MD5 1d5551b18ccd5add43bc8415193d4fdb: the release its own-design achievement set targets",
+   "env": "C64_1943_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/1943 - The Battle of Midway (J1).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
   "nemesis-crt": {
    "description": "Nemesis (Konami 1987), the OneLoad64 v5 cartridge, MD5 a14218cf0a4457320f4bad2c00db05b8: the release its own-design achievement set targets",
    "env": "C64_NEMESIS_CRT",

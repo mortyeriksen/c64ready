@@ -84,6 +84,7 @@ const TESTS = [
   'test/achievements/buggy-boy-set-spec-test.js',
   'test/achievements/impossible-mission-set-spec-test.js',
   'test/achievements/wizball-set-spec-test.js',
+  'test/achievements/1943-set-spec-test.js',
   'test/achievements/nemesis-set-spec-test.js',
   'test/achievements/action-biker-set-spec-test.js',
   'test/achievements/chuckie-egg-set-spec-test.js',
