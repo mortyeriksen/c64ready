@@ -42,6 +42,13 @@
       "description": "Reach the Inner Sanctum, the last level.",
       "points": 25,
       "memaddr": "0xH0805=70_0xH0804=65_d0xH0805!=70"
+    },
+    {
+      "id": 6,
+      "title": "Stepping Stones",
+      "description": "Cross the river in the Wastelands without losing a life.",
+      "points": 10,
+      "memaddr": "0xH0805=65_N:d0xH00a2=10_0xH00a2=11.1._N:d0xH00a2=11_R:0xH00a2=10_R:0xH009b<d0xH009b_d0xH00a2=11_0xH00a2=12"
     }
   ]
 }

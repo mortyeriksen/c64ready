@@ -76,14 +76,22 @@ function newGame() {
   frames(90);
   ram[IRQ] = PLAY; frames(5);
 }
-/** Clear the current round with `lit` lit bombs, pay the bonus between screens, start the next round. */
+/**
+ * Clear the current round with `lit` lit bombs, pay the bonus between screens, start the next round.
+ * As the game does it: $1E94 rises and the round number moves on, on the same frame when there is no
+ * firebomb bonus (under 20 lit), 12 frames later when there is; $1E94 drops 9 frames after that.
+ */
 function clearRound(lit = 0, bonus = 0) {
   ram[LIT] = lit; frames(1);
-  ram[CLEARED] = 1; frames(3);
+  const next = bcd(Number(ram[ROUND].toString(16)) + 1);
+  ram[CLEARED] = 1;
+  if (lit >= 20) frames(12);
+  ram[ROUND] = next; frames(9);
+  ram[CLEARED] = 0;
   ram[IRQ] = BETWEEN; frames(2);
   if (bonus) { const s = scoreNow() + bonus; setScore(s); }
   frames(50);
-  ram[ROUND] = bcd(Number(ram[ROUND].toString(16)) + 1); ram[CLEARED] = 0; ram[LIT] = 0; ram[MULT] = 1; frames(10);
+  ram[LIT] = 0; ram[MULT] = 1; frames(10);
   ram[IRQ] = PLAY; frames(5);
 }
 function scoreNow() { return Number([0, 1, 2].map((i) => ram[SCORE + i].toString(16).padStart(2, '0')).join('')); }
@@ -148,18 +156,21 @@ function gameOver() { ram[LIVES] = 0xff; ram[DYING] = 1; frames(140); ram[DYING]
   ok('scores off the play screens unlock nothing');
 }
 
-// 6. Round clears: rounds 1 to 5 and 10, each on its own round.
-{
+// 6. Round clears: rounds 1 to 5 and 10, each on its own round, whether or not the firebomb bonus is paid
+// (without it, the round number moves on on the same frame as the clear).
+for (const [lit, how] of [[0, 'a plain clear'], [23, 'a firebomb clear']]) {
   activate(); title(); newGame();
   const rounds = { 1: 'Riddle of the Sphinx', 2: 'Acropolis Now', 3: 'King of the Castle', 4: 'City Slicker', 5: 'Grand Tour', 10: 'Second Tour' };
   for (let r = 1; r <= 10; r++) {
     const t = rounds[r];
-    if (t) expect(!has(t), `${t} not before round ${r} is cleared`);
-    clearRound();
-    if (t) expect(has(t), `${t} when round ${r} is cleared`);
+    if (t) expect(!has(t), `${t} not before round ${r} is cleared (${how})`);
+    clearRound(lit);
+    if (t) expect(has(t), `${t} when round ${r} is cleared (${how})`);
+    const next = rounds[r + 1];
+    if (next) expect(!has(next), `${next} not when round ${r} is cleared (${how})`);
   }
-  expect(Object.values(rounds).every((t) => has(t)), 'all six round achievements');
-  ok('rounds 1 to 5 and 10');
+  expect(Object.values(rounds).every((t) => has(t)), `all six round achievements (${how})`);
+  ok(`rounds 1 to 5 and 10, ${how}`);
 }
 
 // 7. The firebomb bonus: 20 lit bombs and 23 lit bombs, counted when the round is cleared.

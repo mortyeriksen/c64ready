@@ -102,5 +102,29 @@ function load(letter, junk = [0x9e, 0xdf, 0xff]) {
   ok('loading junk');
 }
 
+// 6. Stepping Stones: in the Wastelands the river is screen 11 ($A2), between screen 10 and screen 12 on
+// the far bank; the lives are at $9B. Crossing from 10 over 11 to 12 without a life lost unlocks it.
+{
+  const SCREEN = 0xa2, LIVES = 0x9b;
+  const to = (n, f = 10) => { ram[SCREEN] = n; frames(f); };
+  const fresh = () => { activate(); load('A'); ram[LIVES] = 3; to(9); };
+
+  fresh(); to(10); to(11); to(12);
+  expect(has('Stepping Stones'), 'crossing from screen 10 over the river to screen 12 unlocks it');
+
+  fresh(); to(10); to(11); ram[LIVES] = 2; frames(10); to(12);
+  expect(!has('Stepping Stones'), 'not when a life is lost on the river, even after reaching the far bank');
+
+  fresh(); to(10); to(11); to(10); to(9); to(12, 2); to(11); to(12);
+  expect(!has('Stepping Stones'), 'not when coming back to the river from the far bank');
+
+  fresh(); to(10); to(11); to(10); to(11); to(12);
+  expect(has('Stepping Stones'), 'turning back and trying again still counts');
+
+  activate(); load('A'); load('B'); ram[LIVES] = 3; to(10); to(11); to(12);
+  expect(!has('Stepping Stones'), 'not on another level\'s screens 10 to 12');
+  ok('Stepping Stones: the river crossed without a life lost');
+}
+
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }
 console.log(`\nok - last-ninja set: ${testNo} checks`);

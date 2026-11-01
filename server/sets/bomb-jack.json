@@ -13,42 +13,42 @@
       "title": "Riddle of the Sphinx",
       "description": "Clear round 1.",
       "points": 5,
-      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH1E94=1_d0xH1E94=0_0xH150E=1"
+      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._d0xH150E=1_0xH150E=2"
     },
     {
       "id": 2,
       "title": "Acropolis Now",
       "description": "Clear round 2.",
       "points": 5,
-      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH1E94=1_d0xH1E94=0_0xH150E=2"
+      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._d0xH150E=2_0xH150E=3"
     },
     {
       "id": 3,
       "title": "King of the Castle",
       "description": "Clear round 3.",
       "points": 10,
-      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH1E94=1_d0xH1E94=0_0xH150E=3"
+      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._d0xH150E=3_0xH150E=4"
     },
     {
       "id": 4,
       "title": "City Slicker",
       "description": "Clear round 4.",
       "points": 10,
-      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH1E94=1_d0xH1E94=0_0xH150E=4"
+      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._d0xH150E=4_0xH150E=5"
     },
     {
       "id": 5,
       "title": "Grand Tour",
       "description": "Clear round 5, the last of the five scenes.",
       "points": 10,
-      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH1E94=1_d0xH1E94=0_0xH150E=5"
+      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._d0xH150E=5_0xH150E=6"
     },
     {
       "id": 6,
       "title": "Second Tour",
       "description": "Clear round 10.",
       "points": 25,
-      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH1E94=1_d0xH1E94=0_0xH150E=16"
+      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._d0xH150E=16_0xH150E=17"
     },
     {
       "id": 7,
@@ -104,7 +104,7 @@
       "title": "Flawless Five",
       "description": "Clear rounds 1 to 5 of a game without losing a life.",
       "points": 25,
-      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._N:d0xH1BE6=0_R:0xH1BE6=1_0xH1E94=1_d0xH1E94=0_0xH150E=5"
+      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._N:d0xH1BE6=0_R:0xH1BE6=1_d0xH150E=5_0xH150E=6"
     },
     {
       "id": 15,
