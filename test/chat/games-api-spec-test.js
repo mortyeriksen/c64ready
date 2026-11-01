@@ -172,6 +172,8 @@ const ann = account('Ann'), ben = account('Ben'), cat = account('Cat');
   const signed = (await api('GET', '/api/games', { token: ann.token })).body.games;
   const annDemo = signed.find((g) => g.id === 'demo');
   expect(annDemo.mine?.unlocked === 1 && annDemo.mine.points === 5 && signed.find((g) => g.id === 'second').mine?.unlocked === 0, 'signed in, each game carries the account\'s own unlocks and points');
+  const annLast = db.prepare("SELECT MAX(at) AS at FROM activity WHERE user_id = ? AND game_id = 'demo'").get(ann.id).at;
+  expect(annDemo.mine.last === annLast && !signed.find((g) => g.id === 'second').mine.last, `and when the account last played it (got ${annDemo.mine.last}, its last activity ${annLast})`);
   ok('the list of games');
 }
 

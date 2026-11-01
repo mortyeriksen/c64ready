@@ -77,6 +77,11 @@
   --accent-stripe: rgba(116, 113, 236, 0.3);  /* --accent at 30%, for stripes laid over a fill */
   --green: #8fe985;           /* C64 green family (VIC #5 / #13) */
   --amber: #e6dd6b;           /* C64 yellow (VIC #7) */
+  /* Gold, silver and bronze for the top three on the high-score screens: the
+     same in every theme, only lighter or deeper for the mode. */
+  --medal-gold: #ffd23f;
+  --medal-silver: #d4d8de;
+  --medal-bronze: #e0915a;
   --red: #d76b70;             /* C64 light red (VIC #10) */
   --info: #4fc3f7;            /* drop-down highlight and help panels */
   --on-green-ink: #06110b;    /* label on a lit green key */
@@ -248,6 +253,9 @@
   --accent-stripe: rgba(76, 73, 192, 0.3);
   --green: #2a7337;
   --amber: #7a5d00;
+  --medal-gold: #9a6b00;
+  --medal-silver: #5f6670;
+  --medal-bronze: #8a4a1c;
   --red: #b8323b;
   --info: #0b6aa2;
   --on-green-ink: #ffffff;

@@ -37,8 +37,9 @@ opens their profile or the game's page, and **‹** goes back.
 ## Playing for achievements
 
 Load a game from **GAMES** and play. Achievements count only with the exact
-file the game's page names under *Achievements need this version*. Another
-release, or a copy that differs by a byte, has none.
+file the set is for: the **i** button at the right of the game's title shows
+which version that is. Another release, or a copy that differs by a byte, has
+none.
 
 When a game with achievements loads, the window opens on its **GAME** tab. On
 a phone or in fullscreen, the **ACHIEVEMENTS** button flashes three times
@@ -73,6 +74,7 @@ To play without achievements, turn them off in Options ▸ Other ▸
 | --- | --- | --- | --- |
 | Action Biker | 41 | yes | OneLoad64 v5: `Action Biker.crt` |
 | Bomb Jack | 19 | yes | OneLoad64 v5: `Bomb Jack.crt` |
+| Bubble Bobble | 14 | yes | OneLoad64 v5: `Bubble Bobble.crt` |
 | Chuckie Egg | | yes | OneLoad64 v5: `Chuckie Egg.crt` |
 | Commando | 14 | yes | OneLoad64 v5: `Commando.crt` |
 | Commando Arcade | 14 | yes | Nostalgia's EasyFlash `CommandoArcade_N0S_EF.crt`, or OneLoad64 v5 extras: `Commando Arcade - Special Edition [EasyFlash].crt` |
@@ -80,6 +82,7 @@ To play without achievements, turn them off in Options ▸ Other ▸
 | Forbidden Forest | 16 | yes | OneLoad64 v5: `Forbidden Forest.crt`, or c64cade's cartridge |
 | Galaga (Arlasoft) | | yes | OneLoad64 v5: `Galaga (Arlasoft - 2021).crt`, or c64cade's `galagaV106_FH.d64` |
 | Ghosts 'n Goblins | 15 | yes | OneLoad64 v5: `Ghosts'n Goblins.crt` |
+| Ghosts 'n Goblins Arcade | 10 | yes | OneLoad64 v5 extras: `Ghosts'n Goblins Arcade [EasyFlash].crt` |
 | Gribbly's Day Out | | yes | OneLoad64 v5: `Gribbly's Day Out.crt` |
 | IK+ | 13 | yes | OneLoad64 v5: `IK+.crt` |
 | Mario's Cement Factory | 15 | Game A and Game B | c64cade's PRG, or `mario-cf131.prg` |
@@ -93,13 +96,13 @@ To play without achievements, turn them off in Options ▸ Other ▸
 | Roc'n Rope | | yes | c64cade's `rocknrope.crt` (the Broken Bytes conversion) |
 | Stix | | yes | OneLoad64 v5: `Stix (J1).crt`, the official cartridge `Stix.crt` in the extras, or c64cade's PRG |
 | Super Mario Bros 64 | 17 | yes | OneLoad64 v5: `Super Mario Bros 64 (Zeropaige - 2019).crt` |
-| The Last Ninja | 5 |  | OneLoad64 v5 MultiLoad64: `Last Ninja, The (by $olo1870) [EasyFlash].crt` |
+| The Last Ninja | 10 |  | OneLoad64 v5 MultiLoad64: `Last Ninja, The (by $olo1870) [EasyFlash].crt` |
 | The Way of the Exploding Fist | 10 | yes | OneLoad64 v5: `Way of the Exploding Fist, The.crt` |
 | Thrust | | yes | OneLoad64 v5: `Thrust (J1).crt` |
 | Uridium | 22 | yes | OneLoad64 v5: `Uridium.crt` |
 | Vegetables Deluxe | | Shopping, Classic and Countdown | c64cade's `vegdlxnointro.prg` |
 
-All but Bomb Jack, Commando, Commando Arcade, Defender of the Crown, Ghosts 'n Goblins, IK+, Nemesis, Out Run, Super Mario Bros 64, The Last Ninja and The Way of the Exploding Fist are ported from
+All but Bomb Jack, Bubble Bobble, Commando, Commando Arcade, Defender of the Crown, Ghosts 'n Goblins, Ghosts 'n Goblins Arcade, IK+, Nemesis, Out Run, Super Mario Bros 64, The Last Ninja and The Way of the Exploding Fist are ported from
 [c64-cheevos](https://github.com/hayesmaker/c64-cheevos) by hayesmaker (MIT),
 the achievements of [C64Cade](https://c64cade.com).
 
@@ -112,11 +115,12 @@ page, pages the same way. A player keeps the same colour here and in the chat.
 
 ![The ACTIVITY tab, docked beside the app with Uridium running: players' unlocks and high scores, newest first, each with its points.](/guide/achievements-activity.webp)
 
-**GAMES** has a card for each game, with your progress and how many have
-played it. **Filter games** narrows the list by title. A game's page shows its
-high-score screen, its achievements, its activity and the versions it accepts.
+**GAMES** lists every game with your progress, the games you have started
+first, with when you last played them where the window has room. **Filter
+games** narrows the list by title. A game's page shows its high-score screen,
+its Hall of Fame, your achievements, its activity and the versions it accepts.
 
-![The GAMES tab docked on the right of the app: a card for each game, with its pixel icon, your progress, and chips for its achievements, points and players.](/guide/achievements-games.webp)
+![The GAMES tab docked on the right of the app: a row for each game, with its pixel icon, its title, your count and a meter of your progress.](/guide/achievements-games.webp)
 
 A player's profile shows their points, and their progress and best scores in
 each game they have played.

@@ -17,6 +17,7 @@ export async function createGuideContext(browser, options, { roms = true } = {})
     localStorage.setItem('c64emu.themePickerShown', '1');
     localStorage.setItem('c64emu.theme', 'phosphor');
     localStorage.setItem('c64emu.appearance', 'dark');
+    localStorage.setItem('c64emu.hideDevServer', '1');   // the shots are taken against a dev server
   }, cache);
   return context;
 }

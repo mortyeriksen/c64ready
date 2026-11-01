@@ -11,6 +11,7 @@
 // game page over the tab, with a way back (src/achievements/browse.js).
 
 import { createAccount, passkeysSupported } from '../account/account.js';
+import { CHAT_SERVER, chatServerUrl } from '../chat/connection.js';
 import { pushEscapeLayer, popEscapeLayer } from '../ui/escape-stack.js';
 import { confirmDialog } from '../ui/dialogs.js';
 import { floatingWindow, resizeHandles, fillsScreen } from '../ui/floating-window.js';
@@ -37,6 +38,11 @@ function passkeyMessage(e) {
 export function initOnline({ buttons, win, closeBtn, account = createAccount(), engine = null }) {
   buttons = buttons.filter(Boolean);
   if (!buttons.length || !win) return null;
+  // Talking to anything but the production server (the dev server's own, or an override) says so in the
+  // title, unless c64emu.hideDevServer is set (the guide's screenshots, taken against a dev server).
+  let hideDev = false;
+  try { hideDev = localStorage.getItem('c64emu.hideDevServer') === '1'; } catch { /* storage blocked */ }
+  if (chatServerUrl() !== CHAT_SERVER && !hideDev) win.querySelector('.online-title')?.append(h('span', { class: 'online-dev' }, ' (dev server)'));
   const gameEl = win.querySelector('#achievements-game');
   const accountEl = win.querySelector('#achievements-account');
   const chatEl = win.querySelector('#online-chat');
@@ -304,7 +310,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
         h('button', { type: 'button', class: 'achievements-link', on: { click: () => selectTab('account') } }, 'Sign in')),
       ...game.leaderboards.map((l) => highScoreScreen(ctx, game.title, l, standingsOf === game.hash ? standings.get(l.id) : null, live.get(l.id) ?? null)),
       game.achievements.length ? hallOfFame(ctx, game.title, standingsOf === game.hash ? top : null) : null,
-      ...(game.achievements.length ? [h('h4', { class: 'ach-h' }, 'Achievements'), achievementList(game.achievements, unlocked, (a) => a.unlockedAt)] : []),
+      ...(game.achievements.length ? [h('h4', { class: 'ach-h' }, 'Your achievements'), achievementList(game.achievements, unlocked, (a) => a.unlockedAt)] : []),
     ].filter(Boolean));
   }
 

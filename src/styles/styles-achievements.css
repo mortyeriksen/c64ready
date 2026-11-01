@@ -10,6 +10,11 @@
   font-size: 0.86rem;
 }
 
+.online-dev {
+  letter-spacing: 1px;
+  color: var(--dim);
+  text-transform: none;
+}
 .online-title {
   flex: 1;
   min-width: 0;
@@ -205,6 +210,71 @@
   color: var(--text-bright);
 }
 
+/* The title with the version button at its right. */
+.ach-game-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.ach-game-top .ach-game-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+/* As big as the title's letters, on the title's line. */
+.ach-info-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  font-size: 1.1rem;
+  padding: 2px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--dim);
+  cursor: pointer;
+}
+
+.ach-info-btn:hover,
+.ach-info-btn:focus-visible,
+.ach-info-btn[aria-expanded='true'] {
+  color: var(--accent-bright, var(--accent));
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+.ach-info-btn svg {
+  width: 1em;
+  height: 1em;
+}
+
+/* The versions the set is for, under the title when the button opens them. */
+.ach-versions {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--panel-bg));
+  font-size: 0.72rem;
+  color: var(--text);
+}
+
+.ach-versions p {
+  margin: 0 0 4px;
+  color: var(--dim);
+}
+
+.ach-versions ul {
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.ach-versions li + li {
+  margin-top: 3px;
+}
+
 .ach-game-title .achievements-link {
   color: inherit;
 }
@@ -245,14 +315,9 @@
   color: var(--amber);
 }
 
-.ach-source,
 .ach-signin-note {
   margin: 10px 0 0;
   font-size: 0.72rem;
-}
-
-.ach-source {
-  color: var(--dim);
 }
 
 /* ── The leaderboard as the game's own high-score screen ───────────────── */
@@ -285,8 +350,41 @@
 
 .ach-screen li {
   display: grid;
-  grid-template-columns: 3.5em 1fr auto;
+  grid-template-columns: 3.4rem minmax(0, 1fr) auto;
+  align-items: baseline;
   padding: 0 4px;
+}
+
+/* The top three in the C64 face, their ranks in gold, silver and bronze. The
+   rest in the regular face, a step quieter, at the same line height. The
+   rank column is in rem so names line up across both faces. */
+.ach-screen li.is-rank-1 .ach-rank { color: var(--medal-gold); }
+.ach-screen li.is-rank-2 .ach-rank { color: var(--medal-silver); }
+.ach-screen li.is-rank-3 .ach-rank { color: var(--medal-bronze); }
+
+.ach-screen li.is-rest {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--text) 75%, var(--dim));
+}
+
+.ach-screen li.is-me .ach-rank {
+  color: inherit;
+}
+
+/* A long name gives way to the numbers, cut short with an ellipsis; the star
+   for every achievement stays. */
+.ach-screen-name {
+  min-width: 0;
+  display: flex;
+  white-space: pre;
+}
+
+.ach-screen-name > .ach-screen-link {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* The reader's own row, in reverse video as the C64 highlights a character. */
@@ -315,7 +413,7 @@
 
 .ach-screen-live {
   display: grid;
-  grid-template-columns: 3.5em 1fr auto;
+  grid-template-columns: 3.4rem minmax(0, 1fr) auto;
   margin: 6px 0 0;
   padding: 0 4px;
   border-top: 1px dashed var(--monitor-border);
@@ -465,7 +563,7 @@
   font-size: 1rem;
 }
 
-/* ── Games: a card each, as many columns as the window has room for ────── */
+/* ── Games: one slim row each ───────────────────────────────────────────── */
 .ach-games-bar {
   display: flex;
   align-items: center;
@@ -492,114 +590,104 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 8px;
-}
-
-/* A card is in its game's colour (a .chat-cN class sets `color`): the stripe
-   down its left, its initial, a faint wash from the corner, and the hard
-   offset shadow it casts when it lifts under the pointer. Its text sets its
-   own colours. */
-.ach-card {
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px 12px 10px 11px;
-  border: 1px solid var(--border);
-  border-left: 4px solid currentColor;
+  gap: 2px;
+}
+
+/* A row: the game's icon on a tint of its colour (a .chat-cN class sets
+   `color`), its title and the reader's count, and a thin meter under them. */
+.ach-card {
+  width: 100%;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  align-items: center;
+  gap: 5px 10px;
+  padding: 6px 6px;
+  border: 1px solid transparent;
   border-radius: 4px;
-  position: relative;
-  isolation: isolate;
-  background: var(--panel-bg);
+  background: none;
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: transform 0.12s steps(2, end), box-shadow 0.12s steps(2, end), border-color 0.12s;
-}
-
-.ach-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(135deg, currentColor, transparent 55%);
-  opacity: 0.1;
-  pointer-events: none;
 }
 
 .ach-card:hover,
 .ach-card:focus-visible {
-  border-color: currentColor;
-  transform: translate(-2px, -2px);
-  box-shadow: 4px 4px 0 color-mix(in srgb, currentColor 45%, transparent);
-}
-
-.ach-card:active {
-  transform: none;
-  box-shadow: none;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  border-color: color-mix(in srgb, currentColor 40%, transparent);
 }
 
 .ach-card.is-loaded {
   border-color: var(--accent);
-  border-left-color: currentColor;
-  box-shadow: 0 0 0 1px var(--accent);
 }
 
-/* Scrolling in: each card is drawn top to bottom in six raster steps as it
-   arrives, its initial flashing once in solid colour, like a C64 screen
-   filling in. Only the first time GAMES shows; never with reduced motion. */
+/* Scrolling in: each row is drawn top to bottom in a few raster steps as it
+   arrives, its icon flashing once in solid colour, like a C64 screen filling
+   in. Only the first time GAMES shows; never with reduced motion. */
 .ach-reveal > li:not(.is-in) .ach-card {
   clip-path: inset(0 0 100% 0);
 }
 .ach-reveal > li.is-in .ach-card {
-  animation: ach-card-in 0.36s steps(6, end) var(--reveal-delay, 0ms) backwards;
+  animation: ach-card-in 0.24s steps(4, end) var(--reveal-delay, 0ms) backwards;
 }
 .ach-reveal > li.is-in .ach-tile {
   animation: ach-tile-flash 0.5s steps(1, end) var(--reveal-delay, 0ms) backwards;
 }
 @keyframes ach-card-in {
-  from { clip-path: inset(0 0 100% 0); translate: 0 6px; }
-  to { clip-path: inset(0 0 0 0); translate: 0 0; }
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0 0 0 0); }
 }
 @keyframes ach-tile-flash {
   0% { background: currentColor; color: var(--panel-bg); }
   50% { background: color-mix(in srgb, currentColor 22%, transparent); color: inherit; }
 }
 
-.ach-card-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
 .ach-card .ach-tile {
-  width: 30px;
-  height: 30px;
+  grid-row: span 2;
+  width: 32px;
+  height: 32px;
   border-radius: 3px;
   font-size: 0.7rem;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 45%, transparent);
-}
-
-.ach-card .ach-tile.has-icon {
-  width: 34px;
-  height: 34px;
 }
 
 .ach-game-icon {
   display: block;
 }
 
-.ach-games-title {
-  flex: 1;
+/* The title on one line, then LOADED and the last-played note: whatever does not
+   fit beside the title wraps to a second line, which the cell's height hides. */
+.ach-card-name {
   min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 8px;
   font-size: 0.86rem;
+  line-height: 1.3;
+  height: 1.3em;
+  overflow: hidden;
+}
+
+.ach-games-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   color: var(--text-bright);
-  overflow-wrap: anywhere;
+  overflow: hidden;
+}
+
+/* When the reader last played a started game. Its right margin keeps it from
+   showing unless the row has room to spare. */
+.ach-card-when {
+  font-size: 0.72rem;
+  color: var(--dim);
+  white-space: nowrap;
+  margin-right: 24px;
 }
 
 .ach-card-loaded {
@@ -610,63 +698,33 @@
   color: var(--on-accent);
   font-size: 0.56rem;
   letter-spacing: 0.08em;
+  line-height: 1.4;
+  align-self: center;
 }
 
-.ach-card-progress {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.68rem;
+.ach-card-count {
+  font-size: 0.72rem;
   color: var(--dim);
+  text-align: right;
 }
 
+.ach-card-count.is-started {
+  color: var(--amber);
+}
+
+/* The meter spans under the title and count; a scores-only game has none. */
 .ach-card-bar {
-  flex: 1;
-  height: 5px;
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--border) 45%, transparent);
+  grid-column: 2 / 4;
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--border) 55%, transparent);
   overflow: hidden;
 }
 
 .ach-card-bar > span {
   display: block;
   height: 100%;
-  background: var(--accent);
-}
-
-.ach-card-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.ach-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 8px 4px 6px;
-  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  border-radius: 3px;
-  font-size: 0.66rem;
-  color: var(--dim);
-}
-
-.ach-chip.ach-pts {
-  color: var(--amber);
-}
-
-/* The chips' hand-drawn pixel icons, in the chip's own colour. */
-.ach-pixel {
-  flex: none;
-  display: block;
-}
-
-.ach-card-when {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.64rem;
-  color: var(--dim);
+  background: var(--amber);
 }
 
 /* ── Profile ───────────────────────────────────────────────────────────── */
@@ -831,8 +889,6 @@
 @keyframes ach-toast-drop { from { opacity: 0; translate: 0 -100%; } }
 @media (prefers-reduced-motion: reduce) {
   .pwa-toast.ach-toast { animation: none; }
-  .ach-card { transition: none; }
-  .ach-card:hover, .ach-card:focus-visible { transform: none; }
 }
 
 /* LOAD MORE under an activity feed: across the list, so the next page is easy to reach. */
@@ -926,31 +982,30 @@
   width: auto;
 }
 
-/* The Hall of Fame: the high-score screen, with the achievements unlocked and
-   their points, each out of the game's all, ending where the scores above do.
-   A star after the name marks a finished set. */
+/* The Hall of Fame: the high-score screen, with a meter of the achievements
+   unlocked and the points they are worth. A star after the name marks a
+   finished set. */
 .ach-fame {
   margin-top: 10px;
 }
-.ach-fame li,
-.ach-fame-cols {
-  /* Wide enough for "41/41" and "475/475", so every row's numbers line up. */
-  grid-template-columns: 3.5em 1fr minmax(calc(5ch + 1.4em), auto) minmax(calc(7ch + 1.4em), auto);
+.ach-fame li {
+  grid-template-columns: 3.4rem minmax(0, 1fr) 4.4rem 2.8rem;
+  column-gap: 0;
 }
-/* The gap is before each number only, so rank and name sit as in the scores above. */
+.ach-fame-bar {
+  align-self: center;
+  height: 5px;
+  margin-left: 10px;
+  border-radius: 2px;
+  background: color-mix(in srgb, currentColor 18%, transparent);
+  overflow: hidden;
+}
+.ach-fame-bar > span {
+  display: block;
+  height: 100%;
+  background: currentColor;
+}
 .ach-fame-num {
-  padding-left: 1.4em;
-  text-align: right;
-}
-/* ACHIEVEMENTS over the two numbers, to the right edge. */
-.ach-fame-cols {
-  display: grid;
-  padding: 0 4px;
-  color: var(--dim);
-  font-size: 0.85em;
-}
-.ach-fame-cols span {
-  grid-column: 2 / 5;
   text-align: right;
 }
 .ach-fame .ach-fame-star {

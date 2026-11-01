@@ -9,6 +9,18 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
+## Next release
+
+- **Bubble Bobble.** Achievements and a high score for the OneLoad64 cartridge.
+  Clear rounds, collect EXTEND, and your best game goes on the board.
+- **Ghosts 'n Goblins Arcade.** Achievements and a high score for the arcade
+  conversion on its EasyFlash cartridge: clear the levels, rack up points and
+  get through the first level without losing a life.
+- **The Last Ninja.** Crossing the river, and picking up each weapon, now count.
+- **Bomb Jack.** Clearing a round counts for the round you finished.
+
+---
+
 ## 2026.11.1 — November 1, 2026
 
 Meet **Achievements**: goals to unlock and high scores to chase in classic C64

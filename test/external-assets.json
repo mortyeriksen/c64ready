@@ -165,6 +165,14 @@
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
+  "bubble-bobble-crt": {
+   "description": "Bubble Bobble (Firebird 1987), the OneLoad64 v5 cartridge, MD5 0f5841ab63b80e7e8bb20e2c25f6d5cf: the release its own-design achievement set targets",
+   "env": "C64_BUBBLE_BOBBLE_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Bubble Bobble.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
   "nemesis-crt": {
    "description": "Nemesis (Konami 1987), the OneLoad64 v5 cartridge, MD5 a14218cf0a4457320f4bad2c00db05b8: the release its own-design achievement set targets",
    "env": "C64_NEMESIS_CRT",

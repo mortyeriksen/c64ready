@@ -31,15 +31,6 @@ function icon(paths, size = 15) {
 export const trophyIcon = (size) => icon(['M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z', 'M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4'], size);
 export const starIcon = (size) => icon(['M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z'], size);
 
-// Pixel icons for the games' chips, drawn on an 8x8 grid like a C64 character:
-// '#' is a lit pixel. Each row's runs become one path, crisp at any size.
-const PIXELS = {
-  trophy: ['########', '#.####.#', '#.####.#', '.######.', '..####..', '...##...', '..####..', '.######.'],
-  star: ['...##...', '...##...', '########', '.######.', '..####..', '.######.', '.##..##.', '##....##'],
-  scores: ['......##', '......##', '...##.##', '...##.##', '##.##.##', '##.##.##', '##.##.##', '########'],
-  players: ['.##..##.', '.##..##.', '........', '###..###', '###..###', '###..###', '###..###', '........'],
-  hourglass: ['########', '.#....#.', '..#..#..', '...##...', '...##...', '..#..#..', '.#.##.#.', '########'],
-};
 // A bitmap ('#' lit, '+' half-tone) about `px` CSS pixels across, at a whole
 // number of device pixels per bitmap pixel, so its pixels stay square and
 // sharp on any screen.
@@ -59,7 +50,6 @@ function pixelArt(rows, px, cls) {
   }
   return s;
 }
-const pixelIcon = (name) => pixelArt(PIXELS[name], 10, 'ach-pixel');
 /** A game's own pixel icon, about `px` across, or null for a game without one. */
 export const gameIcon = (id, px = 14) => (GAME_ICONS[id] ? pixelArt(GAME_ICONS[id], px, 'ach-game-icon') : null);
 
@@ -72,6 +62,16 @@ export function ago(at, now = Date.now()) {
   if (s < 7 * 86400) return `${Math.floor(s / 86400)} d ago`;
   return new Date(at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
+/** How long ago `at` was in one short unit: "just now", "3h ago", "2d ago", "5w ago", "1y ago". */
+export function agoShort(at, now = Date.now()) {
+  const hrs = Math.floor(Math.max(0, now - at) / 3_600_000);
+  if (hrs < 1) return 'just now';
+  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24 * 7) return `${Math.floor(hrs / 24)}d ago`;
+  if (hrs < 24 * 365) return `${Math.floor(hrs / (24 * 7))}w ago`;
+  return `${Math.floor(hrs / (24 * 365))}y ago`;
+}
+
 /** 1st, 2nd, 3rd, 4th … 11th, 12th, 13th … 21st. */
 export function ordinal(n) {
   const t = n % 100;
@@ -152,15 +152,37 @@ export function progress(got, total, points, totalPoints) {
  * A game's head: its title (a link, or plain for the loaded game), meter and
  * progress. A game with high scores and no achievements says so instead.
  */
-export function gameHead(ctx, game, achievements, isUnlocked, { link = false } = {}) {
+export function gameHead(ctx, game, achievements, isUnlocked, { link = false, versions = [] } = {}) {
   const title = h('h3', { class: 'ach-game-title' }, link ? gameLink(ctx, game) : game.title);
-  if (!achievements.length) return h('div', { class: 'ach-game' }, title, h('p', { class: 'achievements-note' }, 'This game has high scores, and no achievements yet.'));
+  const top = versions.length ? [h('div', { class: 'ach-game-top' }, title, versionButton()), versionCard(versions)] : [title];
+  if (!achievements.length) return h('div', { class: 'ach-game' }, ...top, h('p', { class: 'achievements-note' }, 'This game has high scores, and no achievements yet.'));
   const got = achievements.filter(isUnlocked);
   const pts = (list) => list.reduce((n, a) => n + (a.points || 0), 0);
-  return h('div', { class: 'ach-game' }, title,
+  return h('div', { class: 'ach-game' }, ...top,
     meter(achievements.map(isUnlocked)),
     progress(got.length, achievements.length, pts(got), pts(achievements)));
 }
+
+// The versions of a game a set is for, behind an info button on the title line: the button opens
+// a card right under it.
+let versionCards = 0;
+function versionButton() {
+  const id = `ach-versions-${++versionCards}`;
+  return h('button', {
+    type: 'button', class: 'ach-info-btn', 'aria-expanded': 'false', 'aria-controls': id, 'aria-label': 'Which version of the game', title: 'Which version of the game',
+    on: { click: (e) => { const b = e.currentTarget, card = document.getElementById(id); const open = card.hidden; card.hidden = !open; b.setAttribute('aria-expanded', String(open)); } },
+  }, icon(['M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18z', 'M12 11v6', 'M12 7.5v.01'], 18));
+}
+function versionCard(versions) {
+  return h('div', { class: 'ach-versions', id: `ach-versions-${versionCards}`, hidden: true },
+    h('p', {}, 'Achievements need this version of the game:'),
+    h('ul', {}, versions.map((v) => h('li', {}, v))));
+}
+
+// A row on either screen: the top three in the C64 face, ranks in gold, silver and bronze; the rest
+// in the regular face, a step quieter; the reader's own in reverse video.
+const rankRow = (rank, isMe) => `${rank <= 3 ? `is-podium is-rank-${rank}` : 'is-rest'}${isMe ? ' is-me' : ''}`;
+const rankCell = (rank) => h('span', { class: 'ach-rank' }, ordinal(rank).toUpperCase());
 
 /**
  * A leaderboard as the game's own high-score screen: the top rows, then the
@@ -170,8 +192,8 @@ export function gameHead(ctx, game, achievements, isUnlocked, { link = false } =
 export function highScoreScreen(ctx, gameTitle, board, standings, live = null) {
   const me = ctx.me();
   const entries = standings?.entries ?? [];
-  const row = (rank, user, value, isMe) => h('li', { class: isMe ? 'is-me' : null },
-    h('span', {}, ordinal(rank).toUpperCase()),
+  const row = (rank, user, value, isMe) => h('li', { class: rankRow(rank, isMe) },
+    rankCell(rank),
     h('span', { class: 'ach-screen-name' }, user?.id != null ? h('button', { type: 'button', class: 'ach-screen-link', on: { click: () => ctx.go({ type: 'profile', id: user.id }) } }, user.name) : user?.name ?? ''),
     h('span', {}, ctx.format(value, board.format)),
     isMe ? h('span', { class: 'sr-only' }, ' (you)') : null);
@@ -198,12 +220,13 @@ export function highScoreScreen(ctx, gameTitle, board, standings, live = null) {
  */
 export function hallOfFame(ctx, gameTitle, top) {
   const me = ctx.me();
-  const row = (rank, user, unlocked, points, complete, isMe) => h('li', { class: isMe ? 'is-me' : null },
-    h('span', {}, ordinal(rank).toUpperCase()),
+  const row = (rank, user, unlocked, points, complete, isMe) => h('li', { class: rankRow(rank, isMe) },
+    rankCell(rank),
     h('span', { class: 'ach-screen-name' }, user?.id != null ? h('button', { type: 'button', class: 'ach-screen-link', on: { click: () => ctx.go({ type: 'profile', id: user.id }) } }, user.name) : user?.name ?? '',
       complete ? h('span', { class: 'ach-fame-star', title: 'Every achievement', 'aria-label': ', every achievement' }, ' ★') : null),
-    h('span', { class: 'ach-fame-num' }, `${unlocked}/${top.total}`),
-    h('span', { class: 'ach-fame-num' }, `${points}/${top.totalPoints ?? ''}`),
+    h('span', { class: 'ach-fame-bar', role: 'img', 'aria-label': `${unlocked} of ${top.total} achievements`, title: `${unlocked} of ${top.total} achievements` },
+      h('span', { style: `width: ${top.total ? Math.round((100 * unlocked) / top.total) : 0}%` })),
+    h('span', { class: 'ach-fame-num', 'aria-label': `${points} points` }, String(points)),
     isMe ? h('span', { class: 'sr-only' }, ' (you)') : null);
   const entries = top?.entries ?? [];
   const rows = entries.map((e) => row(e.rank, e.user, e.unlocked, e.points, e.complete, !!me && e.user.id === me.id));
@@ -212,11 +235,7 @@ export function hallOfFame(ctx, gameTitle, top) {
   return h('section', { class: 'ach-screen ach-fame', 'aria-label': `${gameTitle}: hall of fame` },
     h('div', { class: 'ach-screen-head' }, h('span', {}, 'Hall of fame')),
     top == null ? h('p', { class: 'ach-screen-foot' }, 'LOADING...')
-      : entries.length ? [
-        // What the two numbers are: unlocked of all, and points of all.
-        h('div', { class: 'ach-fame-cols', 'aria-hidden': 'true' }, h('span', {}, 'Achievements')),
-        h('ol', {}, rows),
-      ] : h('p', { class: 'ach-screen-foot' }, 'NO ONE YET'),
+      : entries.length ? h('ol', {}, rows) : h('p', { class: 'ach-screen-foot' }, 'NO ONE YET'),
     top && entries.length ? h('p', { class: 'ach-screen-foot' }, foot) : null);
 }
 
@@ -333,8 +352,8 @@ export async function renderGames(el, ctx) {
 }
 
 /**
- * Cards draw in as they scroll into view, a few raster lines at a time, the
- * ones arriving together one after another. Filtering shows its cards at once.
+ * Rows draw in as they scroll into view, a few raster lines at a time, the
+ * ones arriving together one after another. Filtering shows its rows at once.
  */
 function revealOnScroll(list, reveal) {
   list._reveal?.disconnect();
@@ -356,27 +375,22 @@ function revealOnScroll(list, reveal) {
 }
 
 /**
- * A game as a card in GAMES: its pixel icon (or initial) and title, what it has, how many have
- * played, and, signed in, how far the reader got. The whole card opens the
- * game's page.
+ * A game as a row in GAMES: its pixel icon (or initial), title and the reader's count, with a thin
+ * meter under them, and for a game the reader has started, when they last played it (where it fits
+ * beside the title). The whole row opens the game's page, which has the rest.
  */
 function gameCard(ctx, g, isLoaded) {
-  const chip = (pic, text, cls = '') => h('span', { class: `ach-chip ${cls}`.trim() }, pixelIcon(pic), text);
-  const mine = g.mine && g.achievements ? g.mine : null;
-  // The card takes the game's colour: its stripe, initial and shadow.
+  const got = g.mine?.unlocked ?? 0;
+  const icon = GAME_ICONS[g.id] ? pixelArt(GAME_ICONS[g.id], 24, 'ach-game-icon') : g.title.replace(/^the\s+/i, '').slice(0, 1).toUpperCase();
   return h('button', { type: 'button', class: `ach-card ${playerHue(g.id)}${isLoaded ? ' is-loaded' : ''}`, on: { click: () => ctx.go({ type: 'game', hash: g.hash }) } },
-    h('span', { class: 'ach-card-head' },
-      h('span', { class: `ach-tile${GAME_ICONS[g.id] ? ' has-icon' : ''}`, 'aria-hidden': 'true' },
-        GAME_ICONS[g.id] ? pixelArt(GAME_ICONS[g.id], 22, 'ach-game-icon') : g.title.replace(/^the\s+/i, '').slice(0, 1).toUpperCase()),
-      h('span', { class: 'ach-games-title' }, g.title),
-      isLoaded ? h('span', { class: 'ach-card-loaded' }, 'LOADED') : null),
-    mine ? h('span', { class: 'ach-card-progress' },
-      h('span', { class: 'ach-card-bar', 'aria-hidden': 'true' }, h('span', { style: `width: ${Math.round((100 * mine.unlocked) / g.achievements)}%` })),
-      h('span', {}, `${mine.unlocked} of ${g.achievements}`)) : null,
-    h('span', { class: 'ach-card-chips' },
-      g.achievements ? [chip('trophy', `${g.achievements} achievements`), chip('star', `${g.points} points`, 'ach-pts')] : chip('scores', 'High scores'),
-      chip('players', g.players === 1 ? '1 player' : `${g.players} players`)),
-    g.last ? h('span', { class: 'ach-card-when' }, pixelIcon('hourglass'), `Last played ${ago(g.last)}`) : null);
+    h('span', { class: `ach-tile${GAME_ICONS[g.id] ? ' has-icon' : ''}`, 'aria-hidden': 'true' }, icon),
+    h('span', { class: 'ach-card-name' }, h('span', { class: 'ach-games-title' }, g.title),
+      isLoaded ? h('span', { class: 'ach-card-loaded' }, 'LOADED') : null,
+      got && g.mine.last ? h('em', { class: 'ach-card-when' }, `(last played ${agoShort(g.mine.last)})`) : null),
+    g.achievements
+      ? h('span', { class: `ach-card-count${got ? ' is-started' : ''}`, 'aria-label': `${got} of ${g.achievements} unlocked` }, `${got}/${g.achievements}`)
+      : h('span', { class: 'ach-card-count' }, 'scores'),
+    g.achievements ? h('span', { class: 'ach-card-bar', 'aria-hidden': 'true' }, h('span', { style: `width: ${Math.round((100 * got) / g.achievements)}%` })) : null);
 }
 
 /** A game's page: its head, the versions the set is for, leaderboards, achievements and activity. */
@@ -394,11 +408,10 @@ export async function renderGamePage(el, ctx, hash) {
     const labels = (g.files ?? []).map((f) => f.label).filter(Boolean);
     const feed = h('div', { class: 'achievements-feed' }, note('Loading…'));
     el.replaceChildren(...[
-      gameHead(ctx, g.game, g.achievements, isUnlocked),
-      labels.length ? h('p', { class: 'ach-source' }, `Achievements need this version: ${labels.join(', or ')}.`) : null,
+      gameHead(ctx, g.game, g.achievements, isUnlocked, { versions: labels }),
       ...g.leaderboards.map((l, i) => highScoreScreen(ctx, g.game.title, l, boards[i] ?? { entries: [], players: 0 })),
       g.achievements.length ? hallOfFame(ctx, g.game.title, top) : null,
-      ...(g.achievements.length ? [heading('Achievements'), achievementList(g.achievements, isUnlocked, (a) => at.get(a.id))] : []),
+      ...(g.achievements.length ? [heading('Your achievements'), achievementList(g.achievements, isUnlocked, (a) => at.get(a.id))] : []),
       heading('Activity'), feed,
     ].filter(Boolean));
     renderActivity(feed, ctx, { hash, withGame: false });
