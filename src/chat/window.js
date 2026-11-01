@@ -17,7 +17,6 @@ import { confirmDialog } from '../ui/dialogs.js';
 const RESUME_KEY = 'c64emu.chat.resume';
 
 const ERRORS = {
-  ELSEWHERE: 'Your account is already in the chat on another device.',
   FULL: 'The chat is full right now. Try again later.',
   BANNED: 'You were removed from the chat for an hour.',
   RATE_LIMITED: 'Slow down a little and try again.',
@@ -139,7 +138,7 @@ export function createChatPane({ container, onUnread, account, onSignIn = () => 
   }
 
   function renderHead() {
-    const s = { connecting: 'connecting…', offline: 'offline', replaced: 'open in another tab', banned: 'banned', old: 'reload to update' }[st.status];
+    const s = { connecting: 'connecting…', offline: 'offline', replaced: 'open on another device', banned: 'banned', old: 'reload to update' }[st.status];
     const here = st.channel ? st.channel.members.filter((m) => m.here).length : 0;
     statusEl.textContent = st.view === 'signin' ? '' : st.status === 'online' ? (st.channel ? `${here} online` : '') : s || '';
   }
@@ -220,7 +219,11 @@ export function createChatPane({ container, onUnread, account, onSignIn = () => 
 
   function renderChannel() {
     outNote.hidden = !st.out;
-    outNote.replaceChildren(st.out, ...(st.out && !st.channel ? [' ', h('button', { type: 'button', class: 'chat-link', onclick: rejoin }, 'try again')] : []));
+    // Taken over by another device or tab: this one takes it back. Else join again.
+    const again = st.status === 'replaced'
+      ? h('button', { type: 'button', class: 'chat-link', onclick: () => conn.connect() }, 'use it here')
+      : h('button', { type: 'button', class: 'chat-link', onclick: rejoin }, 'try again');
+    outNote.replaceChildren(st.out, ...(st.out && !st.channel ? [' ', again] : []));
     renderPeople();
     renderCompose();
     renderHead();
@@ -342,7 +345,7 @@ export function createChatPane({ container, onUnread, account, onSignIn = () => 
         if (e.room) {
           if (st.channel) { st.channel = e.room; mergeHistory(e.room.history); if (st.view === 'channel') renderChannel(); }
           else entered(e.room);
-        } else keptOut(e.banned ? `You were removed from the chat until ${until(e.banned)}.` : e.elsewhere ? ERRORS.ELSEWHERE : e.full ? ERRORS.FULL : '');
+        } else keptOut(e.banned ? `You were removed from the chat until ${until(e.banned)}.` : e.full ? ERRORS.FULL : '');
         break;
       case 'room':
         if (st.channel) { st.channel = { ...e.room, history: [] }; if (st.view === 'channel') renderChannel(); }
@@ -378,7 +381,7 @@ export function createChatPane({ container, onUnread, account, onSignIn = () => 
 
   function onStatus(s) {
     st.status = s;
-    if (s === 'replaced') keptOut('The chat was opened in another tab.');
+    if (s === 'replaced') keptOut('The chat is open on another device or tab.');
     if (s === 'signin') { st.channel = null; show('signin'); return; }
     if (st.view === 'channel') renderChannel();
     else renderHead();

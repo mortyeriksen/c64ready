@@ -194,12 +194,25 @@ export function createChatServer({
     const until = Math.max(room.banned.get(s.id) ?? 0, room.bannedAddr.get(s.addrId) ?? 0, room.bannedUid.get(s.user.id) ?? 0);
     return until > t ? until : 0;
   }
-  /** Puts `s` in the channel, unless kept out; returns { room } or { banned, until } or { elsewhere }. */
+  /**
+   * Puts `s` in the channel, unless kept out; returns { room } or { banned, until }
+   * or { full }. An account is in the chat once, on the device it was last
+   * opened on: the newest session takes the place over, and an older one still
+   * connected is told and closed (one that dropped, waiting out its grace
+   * period, simply goes).
+   */
   function joinChannel(s) {
     if (s.room) return { room: s.room };
     const until = bannedUntil(channel, s);
     if (until) return { banned: true, until };
-    for (const m of channel.members.values()) if (m.uid === s.user.id) return { elsewhere: true };
+    for (const m of [...channel.members.values()]) {
+      if (m.uid !== s.user.id || m.id === s.id) continue;
+      const old = m.session;
+      record({ ev: 'replaced', room: channel.code, ...who(old, m.nick) });
+      send(old.conn, { t: 'replaced' });
+      old.conn?.close(4001, 'replaced');
+      deleteSession(old);
+    }
     if (channel.members.size >= LIMITS.channelSize) return { full: true };
     addMember(channel, s, s.user.name);
     record({ ev: 'join', room: channel.code, ...who(s) });
@@ -246,7 +259,6 @@ export function createChatServer({
     join(s) {
       const r = joinChannel(s);
       if (r.banned) fail('BANNED');
-      if (r.elsewhere) fail('ELSEWHERE');
       if (r.full) fail('FULL');
       return { room: joinView(r.room) };
     },
@@ -355,7 +367,7 @@ export function createChatServer({
     const joined = m ? { room: s.room } : joinChannel(s);
     send(conn, {
       t: 'welcome', v: PROTOCOL, token: s.token, id: s.id, room: joined.room ? joinView(joined.room) : null,
-      ...(joined.banned ? { banned: joined.until } : {}), ...(joined.elsewhere ? { elsewhere: true } : {}), ...(joined.full ? { full: true } : {}),
+      ...(joined.banned ? { banned: joined.until } : {}), ...(joined.full ? { full: true } : {}),
     });
     if (m) pushRoom(s.room);
   }

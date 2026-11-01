@@ -272,10 +272,16 @@ function rawSocket(ip = freshIp()) {
   expect(!!await a.next((m) => m.t === 'room' && !m.room.members.some((x) => x.id === b.id)), 'leaving takes the member out at once');
   expect((await back.req('join')).t === 'ok', 'and joining puts them back');
   const twin = await guest({ as: 'Ann' });
-  expect(twin.welcome.room === null && twin.welcome.elsewhere === true, 'the same account on a second session is kept out, and told why');
-  expect((await twin.req('join')).code === 'ELSEWHERE', 'and cannot join');
-  for (const c of [a, back, twin]) c.ws.close();
-  ok('hello puts every account in the one channel, named by the account');
+  expect(twin.welcome.room?.code === 'CHAT', 'the same account on another device takes its place in the chat');
+  expect((await a.next((m) => m.t === 'replaced')).t === 'replaced' && await a.closed === 4001, 'and the older session is told it moved, and closed');
+  const annNow = (await back.next((m) => m.t === 'room' && m.room.members.some((x) => x.id === twin.id))).room.members.filter((x) => x.uid === accountId('Ann'));
+  expect(annNow.length === 1, 'so the account is in the chat once');
+  back.ws.close();
+  await back.closed;
+  const again = await guest({ as: 'Ben' });
+  expect(again.welcome.room?.code === 'CHAT', 'a new session takes over from one that dropped, without waiting out its grace period');
+  for (const c of [twin, again]) c.ws.close();
+  ok('hello puts every account in the one channel, named by the account, on its newest device');
 }
 {
   const { first, all } = await channelWith(2);
