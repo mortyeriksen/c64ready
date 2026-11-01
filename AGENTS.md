@@ -69,6 +69,8 @@ is git-ignored and excluded from the PWA precache for that reason).
   `COMPONENT-STATUS`, `KNOWN-ISSUES`, `TESTING`, `SPECIFICATIONS`,
   `PERFORMANCE-ANALYSIS`). Docs state current behavior, not history — remove
   fixed known-issues, don't annotate them.
+- A new top-level folder or `src/` subfolder, or one whose role changes, gets
+  its line in `README.md`'s **Project structure** in the same change.
 - Update `docs/*-ARCHITECTURE.md` when a change alters a subsystem model,
   pipeline, timing rule, device mode, or perf design; skip it for small fixes.
 - No comments referencing fix history, callers, tickets, or the current task. Fix
@@ -186,6 +188,16 @@ update them together or `$D41B`/`$D41C` model detection breaks:
   `_applySidVariantPref()` after `new C64Machine()` and on toggle.
 
 See `docs/SID-ARCHITECTURE.md` for why they're separate.
+
+## Server Deploys (Railway)
+
+- Deploy only on an explicit yes to that deploy; a commit go-ahead is not one.
+- Deploy a clean copy of what is committed, never the working folder:
+  `git archive HEAD server | tar -x -C <dir> --strip-components=1`, then in
+  `server/`: `railway up <dir> --path-as-root --service c64ready-chat
+  --environment production`.
+- Then check that `railway logs` shows `achievement sets:` listing every set in
+  `server/sets/`. A deploy without them retires every game.
 
 ## PWA / Service Worker
 

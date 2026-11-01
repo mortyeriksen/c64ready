@@ -40,7 +40,7 @@ it that way.
 
 **▶ Play it live at [c64ready.com](https://www.c64ready.com)**
 
-![C64 READY. emulator overview in Phosphor dark with the default panels.](public/screens/c64rdy-emulator-v7.png)
+![C64 READY. emulator overview in Phosphor dark with the default panels.](public/screens/c64rdy-emulator-v8.png)
 
 ## Features
 
@@ -120,39 +120,49 @@ Hosted at **[c64ready.com/docs](https://www.c64ready.com/docs/)**, with sources 
 
 ```
 .
-├── src/              # the emulator, one module per chip / subsystem
-│   ├── machine.js    # wires the machine together on a PAL master clock
+├── src/               # the emulator, one module per chip / subsystem
+│   ├── machine.js     # wires the machine together on a PAL master clock
 │   ├── machine-facade.js  # the UI's only way into the machine (the `c64` object)
-│   ├── cpu.js        # 6510 CPU (official + illegal opcodes)
-│   ├── vic2.js       # VIC-II video, raster-level (+ vic2-tables/line/sprites/render.js)
-│   ├── sid/          # SID audio: voices, filter, the audio worklet, the WASM engine
-│   ├── cia.js        # CIA timers & I/O
-│   ├── memory.js     # RAM / ROM / PLA banking
-│   ├── drive1541.js  # true 1541 drive (+ media/d64.js, gcr.js)
-│   ├── media/        # disk, cartridge and tape formats, loading and library
-│   ├── monitor/      # visual inspection, frame replay and hardware explanations
-│   ├── reu.js        # RAM Expansion Unit, the 8726 REC as a second bus master
-│   ├── cartridges/   # .crt types: generic, Action Replay, Final Cartridge III, Magic Desk, EasyFlash
-│   ├── ui/           # dialogs, panels, splash, appearance and themes
-│   ├── chat/         # the chat window and its connection, loaded on first use
-│   ├── styles/       # the stylesheets, styles.css first
-│   └── …             # datasette, control ports, CRT, input, Retro Vibes
-├── server/           # the chat server (Node, no dependencies) and its admin console
-├── rust/             # reSID engine in Rust, compiled to the WebAssembly SID
-├── docs/             # Markdown docs, compiled to HTML by tools/build-docs.mjs
-├── test/             # unit + spec + hardware-testprog suites (npm test)
-├── public/           # fonts, icons, logos, screenshots, guide media, compiled docs
-├── tools/            # build + dev tooling: docs compile, WASM embed, screenshot & perf harnesses
-├── dist/             # npm run build output, ready to serve (git-ignored)
-├── roms/             # your own C64 ROMs, read by npm test (git-ignored)
-└── index.html        # app entry point
+│   ├── cpu.js         # 6510 CPU (official + illegal opcodes)
+│   ├── vic2.js        # VIC-II video, raster-level (+ vic2-tables/line/sprites/render.js)
+│   ├── sid/           # SID audio: voices, filter, the audio worklet, the WASM engine
+│   ├── cia.js         # CIA timers & I/O
+│   ├── memory.js      # RAM / ROM / PLA banking
+│   ├── drive1541.js   # true 1541 drive (+ 6522.js VIA, gcr.js, media/d64.js)
+│   ├── media/         # disk, cartridge, tape and SID formats, loading and the library
+│   ├── cartridges/    # .crt types: generic, Action Replay, Final Cartridge III, Magic Desk, EasyFlash
+│   ├── reu.js         # RAM Expansion Unit, the 8726 REC as a second bus master
+│   ├── iec/           # IEC bus devices as plugins, such as the printer
+│   ├── userport/      # User Port devices as plugins, such as the modem
+│   ├── monitor/       # visual inspection, frame replay and hardware explanations
+│   ├── assembly64/    # the Assembly64 catalog browser
+│   ├── online/        # the Achievements window: game, activity, chat, games, account
+│   ├── achievements/  # rcheevos in the browser, the game pages and leaderboards
+│   ├── account/       # passkey accounts and profile pictures
+│   ├── chat/          # the chat tab and its connection, loaded on first use
+│   ├── vibes/         # Retro Vibes, the machine in 3D scenes
+│   ├── ui/            # dialogs, panels, splash, appearance and themes
+│   ├── styles/        # the stylesheets, styles.css first
+│   └── …              # datasette, control ports, CRT, input, recording, save states
+├── server/            # the Node server (no dependencies): chat, accounts, achievements and the admin console
+│   └── sets/          # the achievement sets, one JSON file per game
+├── native/rcheevos/   # RetroAchievements' rcheevos, built to the WebAssembly the app embeds
+├── rust/              # reSID engine in Rust, compiled to the WebAssembly SID
+├── cli/               # c64rdy, the command-line tool for tapes and disks
+├── docs/              # Markdown docs, compiled to HTML by tools/build-docs.mjs
+├── test/              # unit + spec + hardware-testprog suites (npm test)
+├── public/            # fonts, icons, logos, screenshots, guide media, compiled docs
+├── tools/             # build + dev tooling: docs compile, WASM embed, screenshot & perf harnesses
+├── dist/              # npm run build output, ready to serve (git-ignored)
+├── roms/              # your own C64 ROMs, read by npm test (git-ignored)
+└── index.html         # app entry point
 ```
 
 ## Chat server
 
-The optional chat uses a separate Node server. `npm run dev` starts a local
-server for development. See the [chat server guide](server/README.md) for
-connecting the app, deployment and administration.
+The chat, accounts and achievements use a separate Node server. `npm run dev`
+starts a local one for development. See the [chat server guide](server/README.md)
+for connecting the app, deployment and administration.
 
 ## Reporting a problem
 

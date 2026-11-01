@@ -1,0 +1,6 @@
+# The root .gitignore leaves out *.json. The achievement sets and package.json ship with the server, so they
+# are let back in here too: a deploy run from this folder (railway up) reads these rules, not the root's exception.
+!sets/*.json
+!package.json
+# The local database and logs never ship.
+.data/

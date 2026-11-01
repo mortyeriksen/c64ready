@@ -22,8 +22,11 @@ and undo it with `localStorage.removeItem('c64emu.chat.server')`.
 
 ## Deployment
 
-1. In `server/`, run `railway init` once, naming the service `c64ready-chat`,
-   then `railway up`.
+1. In `server/`, run `railway init` once, naming the service `c64ready-chat`.
+   Deploy a clean copy of what is committed, so nothing uncommitted ships:
+   `git archive HEAD server | tar -x -C <dir> --strip-components=1`, then, in
+   `server/`, `railway up <dir> --path-as-root --service c64ready-chat`. The
+   log's `achievement sets:` line should list every set.
 2. Run `railway domain` for the service's public address. Railway names it
    `<service>-production.up.railway.app`, which is what `CHAT_SERVER` expects.
    If Railway gives another name, put that in `CHAT_SERVER`.
