@@ -57,7 +57,10 @@ export const USER_GUIDE_ANCHORS = {
   'directory-zoom': 'guide-interface.html#directory-zoom',
 };
 
-export const CHAT_GUIDE_ANCHORS = Object.fromEntries([
-  'chat', 'joining', 'starting-a-room', 'joining-a-room', 'in-a-room',
-  'on-a-desktop-and-on-a-phone', 'what-is-shared',
-].map(id => [id, `guide-chat.html#${id}`]));
+// The chat's headings, past and present, and where their content is now: the
+// chat is a section of the Achievements guide, and its rooms gave way to one
+// channel, so starting and being in a room is Talking.
+export const CHAT_GUIDE_ANCHORS = Object.fromEntries(Object.entries({
+  'chat': 'chat', 'joining': 'joining', 'starting-a-room': 'talking', 'joining-a-room': 'joining', 'in-a-room': 'talking',
+  'talking': 'talking', 'moderation': 'moderation', 'on-a-desktop-and-on-a-phone': 'the-achievements-window', 'what-is-shared': 'what-is-shared',
+}).map(([old, id]) => [old, `guide-achievements.html#${id}`]));

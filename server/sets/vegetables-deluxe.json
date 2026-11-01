@@ -1,0 +1,38 @@
+{
+  "id": "vegetables-deluxe",
+  "title": "Vegetables Deluxe",
+  "source": "Achievements ported from c64-cheevos by hayesmaker (MIT), https://github.com/hayesmaker/c64-cheevos",
+  "hashes": [
+    {
+      "hash": "5c1e2ae1e5f6cb8c0e96e62d894dd05a",
+      "label": "c64cade release (vegdlxnointro.prg)"
+    }
+  ],
+  "achievements": [],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score (Shopping)",
+      "description": "Highest score in one Shopping game.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:d0xH0314=140_0xH08c9=1S0xH0314=149S0xH0314=171::CAN:0xH0314=140_d0xH0314!=140_0xH51cb!=255::SUB:0xH51cb=255_d0xH51cb!=255::VAL:b0xH51c6*1000000_b0xH51c5*10000_b0xH51c4*100"
+    },
+    {
+      "id": 2,
+      "title": "High Score (Classic)",
+      "description": "Highest score in one Classic game.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:d0xH0314=140_0xH08c9=2S0xH0314=149S0xH0314=171::CAN:0xH0314=140_d0xH0314!=140_0xH51cb!=255::SUB:0xH51cb=255_d0xH51cb!=255::VAL:b0xH51c6*1000000_b0xH51c5*10000_b0xH51c4*100"
+    },
+    {
+      "id": 3,
+      "title": "High Score (Countdown)",
+      "description": "Highest score in one Countdown game.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:d0xH0314=140_0xH08c9=3S0xH0314=149S0xH0314=171::CAN:0xH0314=140_d0xH0314!=140_0xH51cb!=255::SUB:0xH51cb=255_d0xH51cb!=255::VAL:b0xH51c6*1000000_b0xH51c5*10000_b0xH51c4*100"
+    }
+  ]
+}

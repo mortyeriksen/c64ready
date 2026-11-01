@@ -24,6 +24,21 @@
   right: max(12px, env(safe-area-inset-right));
   z-index: 2000;
 }
+/* The fullscreen toolbar's round buttons (this and the trophy beside it): an
+   accent ring over a see-through dark disc, so the picture shows behind them. */
+.fs-close-btn.dialog-close,
+.fs-online-btn {
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--crt-bg) 60%, transparent);
+  color: var(--accent);
+}
+.fs-close-btn.dialog-close:hover:not(:disabled),
+.fs-close-btn.dialog-close:active:not(:disabled),
+.fs-online-btn:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 20%, color-mix(in srgb, var(--crt-bg) 60%, transparent));
+  color: var(--accent);
+}
 
 /* ── Retro Vibes 3D model viewer ─────────────────────────────────────────── */
 
@@ -88,6 +103,24 @@
   top: 18px;
   right: 18px;
   z-index: 3;
+}
+/* An outlined ring like the scene buttons, over the scene rather than filled. */
+.model-viewer-close.dialog-close {
+  border: 1px solid rgba(5, 217, 232, 0.5);
+  background: rgba(10, 6, 24, 0.55);
+  color: #7df9ff;
+  backdrop-filter: blur(4px);
+  transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.model-viewer-close.dialog-close:hover:not(:disabled) {
+  color: #fff;
+  border-color: #05d9e8;
+  background: rgba(5, 217, 232, 0.20);
+  box-shadow: 0 0 16px rgba(5, 217, 232, 0.5);
+}
+.model-viewer-close.dialog-close:active:not(:disabled) {
+  background: rgba(5, 217, 232, 0.20);
+  transform: scale(0.92);
 }
 
 /* Scene toggler — top-left; cycles the lighting/backdrop moods. */

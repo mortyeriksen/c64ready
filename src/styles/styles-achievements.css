@@ -1,0 +1,954 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2026 Morten Øien Eriksen */
+/* src/styles/styles-achievements.css – the Achievements window (a floating window,
+   styles-float-window.css) and its achievement views: a game's meter, its
+   leaderboards as the game's own high-score screen, the achievements, the
+   activity feed, the games, profiles and the account. The CHAT tab's own look
+   is in styles-chat.css. */
+
+.online-window {
+  font-size: 0.86rem;
+}
+
+.online-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.86rem;
+  font-weight: normal;
+  letter-spacing: 3px;
+  color: var(--accent);
+}
+
+/* Dock to the right, or float again: the close button's size and frame. */
+.online-dock {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--control-bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.online-dock:hover,
+.online-dock[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent-bright);
+}
+
+.online-dock[hidden] {
+  display: none;
+}
+
+.online-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 12px 14px 14px;
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.online-body[hidden],
+.online-chat[hidden] {
+  display: none;
+}
+
+.online-chat {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Tabs ──────────────────────────────────────────────────────────────── */
+.online-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px 10px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-bg);
+}
+
+.online-tabs [role=tab] {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: 6px 4px 7px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--dim);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.online-tabs [role=tab]:hover {
+  color: var(--text);
+}
+
+.online-tabs [role=tab].is-active {
+  color: var(--accent-bright);
+  border-bottom-color: var(--accent);
+}
+
+.online-tab-badge {
+  position: absolute;
+  top: 0;
+  right: 2px;
+  min-width: 14px;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: var(--red);
+  color: var(--ui-bg);
+  font-size: 0.56rem;
+  line-height: 14px;
+  letter-spacing: 0;
+}
+
+.online-tab-badge[hidden] {
+  display: none;
+}
+
+/* ── Shared pieces ─────────────────────────────────────────────────────── */
+.ach-h {                       /* the app's panel heading (.panel-card h2) */
+  margin: 18px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.6rem;
+  font-weight: normal;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.achievements-note,
+.achievements-signed-in {
+  font-size: 0.8rem;
+  color: var(--dim);
+  margin: 0 0 12px;
+}
+
+.achievements-signed-in {
+  color: var(--text);
+}
+
+.achievements-error {
+  font-size: 0.8rem;
+  color: var(--red);
+  margin: 10px 0 0;
+}
+
+.achievements-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-bright);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.achievements-link:hover {
+  text-decoration: underline;
+}
+
+.achievements-back {
+  margin-bottom: 12px;
+  font-size: 0.8rem;
+}
+
+.achievements-scopes {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.achievements-scopes .btn {
+  flex: 1;
+}
+
+.achievements-scope.is-active {
+  border-color: var(--accent);
+  color: var(--accent-bright);
+}
+
+.ach-pts {
+  color: var(--amber);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── A game's head: title, one meter cell per achievement, progress ────── */
+.ach-game-title {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  font-weight: normal;
+  letter-spacing: 1px;
+  color: var(--text-bright);
+}
+
+.ach-game-title .achievements-link {
+  color: inherit;
+}
+
+.ach-meter {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  height: 9px;
+  margin-bottom: 6px;
+}
+
+.ach-meter span {
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--border) 45%, transparent);
+}
+
+.ach-meter span.is-lit {
+  background: var(--accent);
+}
+
+.ach-progress {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.74rem;
+  color: var(--dim);
+}
+
+/* A set's notice: why this game is not counting, said where its progress is. */
+.ach-notice {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border: 1px solid var(--amber);
+  border-radius: 6px;
+  font-size: 0.74rem;
+  color: var(--amber);
+}
+
+.ach-source,
+.ach-signin-note {
+  margin: 10px 0 0;
+  font-size: 0.72rem;
+}
+
+.ach-source {
+  color: var(--dim);
+}
+
+/* ── The leaderboard as the game's own high-score screen ───────────────── */
+.ach-screen {
+  margin-top: 14px;
+  padding: 12px 14px 10px;
+  background: var(--crt-bg);
+  border: 1px solid var(--monitor-border);
+  border-radius: 6px;
+  font-family: 'PetMe64', 'Share Tech Mono', monospace;
+  font-size: 0.62rem;
+  line-height: 2;
+  color: var(--text);
+  text-transform: uppercase;
+}
+
+.ach-screen-head {
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px;
+  margin-bottom: 4px;
+  color: var(--accent-bright);
+}
+
+.ach-screen ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ach-screen li {
+  display: grid;
+  grid-template-columns: 3.5em 1fr auto;
+  padding: 0 4px;
+}
+
+/* The reader's own row, in reverse video as the C64 highlights a character. */
+.ach-screen li.is-me {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.ach-screen-gap {
+  color: var(--dim);
+}
+
+.ach-screen-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.ach-screen-link:hover {
+  text-decoration: underline;
+}
+
+.ach-screen-live {
+  display: grid;
+  grid-template-columns: 3.5em 1fr auto;
+  margin: 6px 0 0;
+  padding: 0 4px;
+  border-top: 1px dashed var(--monitor-border);
+  color: var(--accent-bright);
+}
+
+.ach-screen-foot {
+  margin: 6px 0 0;
+  font-size: 0.5rem;
+  color: var(--dim);
+}
+
+/* ── Achievements: a badge, what it is, its points ─────────────────────── */
+.ach-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.ach-item {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 10px;
+  align-items: start;
+  font-size: 0.78rem;
+}
+
+.ach-badge {
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  font-size: 0.68rem;
+}
+
+.ach-item.is-unlocked .ach-badge {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.ach-item.is-locked .ach-badge {
+  border: 1px dashed var(--border);
+  color: var(--dim);
+}
+
+.ach-what strong {
+  display: block;
+  font-weight: normal;
+  color: var(--text-bright);
+}
+
+.ach-item.is-locked .ach-what strong {
+  color: var(--text);
+}
+
+.ach-desc {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--dim);
+}
+
+.ach-when {
+  display: block;
+  margin-top: 1px;
+  font-size: 0.68rem;
+  font-style: italic;
+  color: var(--accent-bright);
+}
+
+.ach-item.is-locked .ach-pts {
+  color: var(--dim);
+}
+
+/* ── Activity: the player's tile, what happened, its points, when ──────── */
+.ach-feed {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ach-event {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  gap: 2px 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  font-size: 0.78rem;
+  color: var(--text);
+}
+
+.ach-event-text b {
+  font-weight: normal;
+  color: var(--text-bright);
+}
+
+.ach-event-game {
+  font-weight: bold;
+}
+
+.ach-when-ago {
+  grid-column: 2;
+  font-size: 0.68rem;
+  color: var(--dim);
+}
+
+.ach-event .ach-pts {
+  grid-row: 1;
+  grid-column: 3;
+}
+
+/* A player's name, in their colour (a chat-cN class). */
+.ach-player {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ach-player:hover {
+  text-decoration: underline;
+}
+
+/* The player's initial in the C64 face, on a tint of their colour. */
+.ach-tile {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  font-family: 'PetMe64', monospace;
+  font-size: 0.55rem;
+  background: color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.ach-tile-big {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+/* ── Games: a card each, as many columns as the window has room for ────── */
+.ach-games-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.ach-games-filter {
+  flex: 0 0 50%;
+  min-width: 0;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.ach-games-missing {
+  font-size: 0.78rem;
+}
+
+.ach-games-count {
+  margin-bottom: 10px;
+}
+
+.ach-games {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 8px;
+}
+
+/* A card is in its game's colour (a .chat-cN class sets `color`): the stripe
+   down its left, its initial, a faint wash from the corner, and the hard
+   offset shadow it casts when it lifts under the pointer. Its text sets its
+   own colours. */
+.ach-card {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 10px 11px;
+  border: 1px solid var(--border);
+  border-left: 4px solid currentColor;
+  border-radius: 4px;
+  position: relative;
+  isolation: isolate;
+  background: var(--panel-bg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.12s steps(2, end), box-shadow 0.12s steps(2, end), border-color 0.12s;
+}
+
+.ach-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(135deg, currentColor, transparent 55%);
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+.ach-card:hover,
+.ach-card:focus-visible {
+  border-color: currentColor;
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 color-mix(in srgb, currentColor 45%, transparent);
+}
+
+.ach-card:active {
+  transform: none;
+  box-shadow: none;
+}
+
+.ach-card.is-loaded {
+  border-color: var(--accent);
+  border-left-color: currentColor;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* Scrolling in: each card is drawn top to bottom in six raster steps as it
+   arrives, its initial flashing once in solid colour, like a C64 screen
+   filling in. Only the first time GAMES shows; never with reduced motion. */
+.ach-reveal > li:not(.is-in) .ach-card {
+  clip-path: inset(0 0 100% 0);
+}
+.ach-reveal > li.is-in .ach-card {
+  animation: ach-card-in 0.36s steps(6, end) var(--reveal-delay, 0ms) backwards;
+}
+.ach-reveal > li.is-in .ach-tile {
+  animation: ach-tile-flash 0.5s steps(1, end) var(--reveal-delay, 0ms) backwards;
+}
+@keyframes ach-card-in {
+  from { clip-path: inset(0 0 100% 0); translate: 0 6px; }
+  to { clip-path: inset(0 0 0 0); translate: 0 0; }
+}
+@keyframes ach-tile-flash {
+  0% { background: currentColor; color: var(--panel-bg); }
+  50% { background: color-mix(in srgb, currentColor 22%, transparent); color: inherit; }
+}
+
+.ach-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ach-card .ach-tile {
+  width: 30px;
+  height: 30px;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 45%, transparent);
+}
+
+.ach-card .ach-tile.has-icon {
+  width: 34px;
+  height: 34px;
+}
+
+.ach-game-icon {
+  display: block;
+}
+
+.ach-games-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.86rem;
+  color: var(--text-bright);
+  overflow-wrap: anywhere;
+}
+
+.ach-card-loaded {
+  flex: none;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+}
+
+.ach-card-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.68rem;
+  color: var(--dim);
+}
+
+.ach-card-bar {
+  flex: 1;
+  height: 5px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--border) 45%, transparent);
+  overflow: hidden;
+}
+
+.ach-card-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.ach-card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.ach-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px 4px 6px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 3px;
+  font-size: 0.66rem;
+  color: var(--dim);
+}
+
+.ach-chip.ach-pts {
+  color: var(--amber);
+}
+
+/* The chips' hand-drawn pixel icons, in the chip's own colour. */
+.ach-pixel {
+  flex: none;
+  display: block;
+}
+
+.ach-card-when {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.64rem;
+  color: var(--dim);
+}
+
+/* ── Profile ───────────────────────────────────────────────────────────── */
+.ach-profile {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.ach-profile-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: normal;
+  letter-spacing: 1px;
+  color: var(--text-bright);
+}
+
+.ach-profile-since {
+  margin: 2px 0 0;
+  font-size: 0.74rem;
+  color: var(--dim);
+}
+
+.ach-played {
+  margin-bottom: 18px;
+}
+
+.ach-played-title {
+  margin: 0 0 6px;
+  font-size: 0.86rem;
+  font-weight: normal;
+}
+
+.ach-best {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 0.74rem;
+  color: var(--text);
+}
+
+/* ── Account ───────────────────────────────────────────────────────────── */
+.achievements-account h3 {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  color: var(--accent-bright);
+}
+
+.achievements-signin {
+  justify-content: flex-start;
+  margin-bottom: 14px;
+}
+
+.achievements-label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--dim);
+}
+
+.achievements-create .prompt-input {
+  margin-bottom: 10px;
+}
+
+.achievements-signin {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.achievements-create .achievements-label + .prompt-input {
+  margin-top: 4px;
+}
+
+.ach-passkeys {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.ach-passkeys li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ach-passkey-remove {
+  color: var(--red);
+}
+
+/* A recovery code, shown once: large, and easy to select whole. */
+.ach-recovery-code {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  background: var(--crt-bg);
+  border: 1px solid var(--monitor-border);
+  border-radius: 6px;
+  font-family: 'PetMe64', 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 1px;
+  color: var(--accent-bright);
+  text-align: center;
+  user-select: all;
+  -webkit-user-select: all;
+  overflow-wrap: anywhere;
+}
+
+/* ── Toasts: an unlock, a set's notice, a posted score ─────────────────
+   Bottom left when the display is missing, each filled with a tint of its
+   own colour. */
+.pwa-toast.ach-toast {
+  left: max(16px, env(safe-area-inset-left));
+  transform: none;
+  max-width: min(460px, calc(100vw - 32px));
+  text-align: left;
+  padding: 12px 14px;
+  border: 2px solid var(--toast-ink);
+  border-left-width: 6px;
+  background: color-mix(in srgb, var(--toast-ink) 20%, var(--panel-bg));
+  color: var(--text-bright);
+  font-size: 0.9rem;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--toast-ink) 35%, transparent),
+              0 8px 28px color-mix(in srgb, var(--shadow) 55%, transparent);
+  animation: ach-toast-in 180ms ease-out;
+}
+.ach-toast-unlock { --toast-ink: var(--amber); }
+.ach-toast-notice { --toast-ink: var(--red); }
+.ach-toast-score { --toast-ink: var(--green); }
+.ach-toast .pwa-toast-action { flex: none; white-space: nowrap; border-color: var(--toast-ink); color: var(--toast-ink); font-weight: bold; }
+.ach-toast .pwa-toast-action:hover { background: var(--toast-ink); color: var(--button-ink); }
+.ach-toast .pwa-toast-x { color: var(--text); }
+@keyframes ach-toast-in { from { opacity: 0; translate: -24px 0; } }
+
+/* On the display: in the C64's top border, from the border's left edge, sized
+   with the picture so it fits the border (36 of 272 lines) at every size. It
+   slides down from the top edge. */
+.crt-bezel {
+  container-type: inline-size;
+}
+.crt-bezel > .pwa-toast.ach-toast {
+  position: absolute;
+  top: 1.2cqw;
+  bottom: auto;
+  left: 1.2cqw;
+  max-width: calc(100% - 2.4cqw);
+  z-index: 20;
+  gap: 1.2cqw;
+  padding: 0.7cqw 1.2cqw;
+  border-width: max(1px, 0.25cqw);
+  border-left-width: max(3px, 0.8cqw);
+  border-radius: 0.6cqw;
+  font-size: clamp(0.6rem, 1.75cqw, 1.1rem);
+  line-height: 1.3;
+  box-shadow: 0 0 1.6cqw color-mix(in srgb, var(--toast-ink) 40%, transparent);
+  animation-name: ach-toast-drop;
+}
+@keyframes ach-toast-drop { from { opacity: 0; translate: 0 -100%; } }
+@media (prefers-reduced-motion: reduce) {
+  .pwa-toast.ach-toast { animation: none; }
+  .ach-card { transition: none; }
+  .ach-card:hover, .ach-card:focus-visible { transform: none; }
+}
+
+/* LOAD MORE under an activity feed: across the list, so the next page is easy to reach. */
+.achievements-more {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+}
+.achievements-more[hidden] {
+  display: none;
+}
+
+/* Room between CREATE ACCOUNT and the note that names what is public. */
+.achievements-public {
+  margin-top: 16px;
+}
+
+/* ── Profile pictures ─────────────────────────────────────────────────── */
+/* A badge shows whole, centred in its square, the tile's tint around it, any
+   shape. A block (not the tile's grid), so the picture's 100% height is the
+   square's and a tall one is not cut. */
+.ach-tile.has-picture {
+  display: block;
+  overflow: hidden;
+  padding: 0;
+}
+.ach-picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+/* Your own profile's tile: a click picks a picture. */
+.ach-picture-own {
+  display: flex;
+}
+.ach-picture-pick {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+}
+.ach-picture-hint {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 1px 0;
+  background: color-mix(in srgb, var(--panel-bg) 80%, transparent);
+  color: var(--text);
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.ach-picture-pick:hover .ach-picture-hint,
+.ach-picture-pick:focus-visible .ach-picture-hint,
+.ach-picture-pick .ach-tile:not(.has-picture) + .ach-picture-hint {
+  opacity: 1;
+}
+/* Under the name: change or remove it, and what happened. */
+.ach-picture-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 14px;
+  margin: 4px 0 0;
+  font-size: 0.72rem;
+}
+.ach-picture-actions .achievements-link {
+  font-size: inherit;
+}
+.ach-picture-status:empty {
+  display: none;
+}
+.ach-picture-status {
+  color: var(--dim);
+}
+/* Sign-up's optional picture. */
+.ach-new-picture {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.ach-new-picture-input {
+  display: none;
+}
+.ach-new-picture .ach-new-picture-btn {
+  flex: none;
+  width: auto;
+}
+
+/* The Hall of Fame: the high-score screen, with the achievements unlocked and
+   their points, each out of the game's all, ending where the scores above do.
+   A star after the name marks a finished set. */
+.ach-fame {
+  margin-top: 10px;
+}
+.ach-fame li,
+.ach-fame-cols {
+  /* Wide enough for "41/41" and "475/475", so every row's numbers line up. */
+  grid-template-columns: 3.5em 1fr minmax(calc(5ch + 1.4em), auto) minmax(calc(7ch + 1.4em), auto);
+}
+/* The gap is before each number only, so rank and name sit as in the scores above. */
+.ach-fame-num {
+  padding-left: 1.4em;
+  text-align: right;
+}
+/* ACHIEVEMENTS over the two numbers, to the right edge. */
+.ach-fame-cols {
+  display: grid;
+  padding: 0 4px;
+  color: var(--dim);
+  font-size: 0.85em;
+}
+.ach-fame-cols span {
+  grid-column: 2 / 5;
+  text-align: right;
+}
+.ach-fame .ach-fame-star {
+  color: var(--amber);
+}
+.ach-fame li.is-me .ach-fame-star {
+  color: inherit;
+}

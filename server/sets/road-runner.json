@@ -1,0 +1,22 @@
+{
+  "id": "road-runner",
+  "title": "Road Runner",
+  "source": "Achievements ported from c64-cheevos by hayesmaker (MIT), https://github.com/hayesmaker/c64-cheevos",
+  "hashes": [
+    {
+      "hash": "67d2234e9ae2dcae787a44c54527fd36",
+      "label": "OneLoad64 v5 MultiLoad64 EasyFlash cartridge (Road Runner (by $olo1870) [EasyFlash].crt)"
+    }
+  ],
+  "achievements": [],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score",
+      "description": "Highest score in one game.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH8096=0_0xH00eb=0_0xH00b5=5_0xH006b=0_0xH006c=0_0xH006d=0_0xH006e=0_0xH006f=0_0xH0070=0_0xH0071=0_0xH0072=0::CAN:0=1::SUB:0xH00b5=0::VAL:0xH006b*10000000_0xH006c*1000000_0xH006d*100000_0xH006e*10000_0xH006f*1000_0xH0070*100_0xH0071*10_0xH0072"
+    }
+  ]
+}

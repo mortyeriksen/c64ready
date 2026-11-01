@@ -9,21 +9,23 @@
 // tracked static dir served at /guide/, referenced from the compiled doc page)
 // as 1920-capped WebP via guide-image.mjs; re-runs overwrite the names in place.
 //
-//   node tools/guide-shots.mjs [baseURL] [dirArtD64] [rasterDemoD64]
+//   node tools/guide-shots.mjs [baseURL] [dirArtD64]
 //
-// baseURL defaults to http://localhost:5173. Both disks are optional, supplied
-// as arguments, and NOT part of the repo — bring your own:
+// baseURL defaults to http://localhost:5173. The disk is optional, supplied as
+// an argument, and NOT part of the repo — bring your own:
 //   dirArtD64      a PETSCII directory-art .d64 for the drive-8 / directory-zoom
 //                  shots (drive8-loaded, directory-zoom). Defaults to the
-//                  raster demo below, whose directory carries the art.
-//   rasterDemoD64  a raster demo .d64 for the "in action" overview-running shot.
-// Omit either and its shots are skipped; the rest still run.
+//                  raster demo, whose directory carries the art.
+// Omit it and its shots are skipped; the rest still run.
+//
+// overview is the blue READY. screen in the theme gallery's framing
+// (tools/guide-achievements.mjs captureScene).
 //
 // GUIDE_ONLY=drive8-empty,drive9 (env, comma-separated) regenerates only the
-// named shots and skips the slow retro-vibes / overview-running passes — a
+// named shots and skips the slow retro-vibes pass — a
 // targeted refresh that won't rewrite every tracked shot.
 //
-// The script captures 21 UI shots: overview, overview-running, the main feature
+// The script captures 20 UI shots: overview, the main feature
 // cards, the modals, the CRT settings panel, directory zoom, Retro Vibes, and
 // the SID player. It pre-seeds localStorage for reproducibility, including
 // hiding the PWA card and pinning the lighter VIBES model, and loads the app
@@ -37,7 +39,7 @@
 // Shared guide contexts use Phosphor dark. Theme galleries use their named themes.
 //   node tools/guide-shots.mjs                     21 shots (above)
 //   node tools/guide-monitor-shots.mjs             All Monitor sections and Video TL;DR
-//   node tools/guide-extra-shots.mjs               13 shots needing their own setup
+//   node tools/guide-extra-shots.mjs               16 shots needing their own setup
 //   node tools/guide-mobile-shots.mjs              portrait and landscape phone mockups
 //   node tools/guide-assembly64-shots.mjs          Assembly64 card and browser
 //   node tools/guide-setup-shot.mjs                ROM setup and theme picker
@@ -51,11 +53,9 @@
 // Bring your own inputs: a raster-demo .d64 and a game .tap (both registry), plus
 // the curated guide disks and states (also registry) for the dialogs. Every tool
 // takes GUIDE_OUT to write elsewhere, so a trial run leaves public/ untouched.
-// tools/pick-frames.mjs dumps a
-// per-second burst of a demo when a specific overview-running frame is wanted.
-import assert from 'node:assert/strict';
 import { createGuideContext } from './guide-context.mjs';
 import { launchShotBrowser, reportRenderer, slowWarning } from './shot-browser.mjs';
+import { captureScene } from './guide-achievements.mjs';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -75,16 +75,12 @@ const BASE = process.argv[2] || 'http://localhost:5173';
 // the art these shots use, so one entry serves both.
 const DISK = process.argv[3] || assetPath('raster-time-demo') || '';
 const hasDisk = DISK !== '' && fs.existsSync(DISK);
-// Disk for the "in action" running shot — a raster demo. Supplied as an
-// argument, else resolved from test/external-assets.json ('raster-time-demo',
-// or the C64_RASTER_TIME_D64 env var); omit both to skip that shot.
-const RASTER = process.argv[4] || assetPath('raster-time-demo') || '';
 // A tune for the SID player shot. The player draws its own screen out of the
 // file's header, so any .sid with a title, author and year in it will do.
 const TUNE = assetPath('guide-sid') || '';
 // Set GUIDE_ONLY=drive8-empty,drive9 (comma-separated) to regenerate only some
 // shots; empty = all. A targeted re-run refreshes a few cards without rewriting
-// every tracked shot or paying for the slow retro-vibes / overview-running passes.
+// every tracked shot or paying for the slow retro-vibes pass.
 const ONLY = (process.env.GUIDE_ONLY || '').split(',').map((s) => s.trim()).filter(Boolean);
 const want = (name) => ONLY.length === 0 || ONLY.includes(name);
 
@@ -219,18 +215,13 @@ async function shotPage(name, fullPage = false, timeout = 0) {
 // Full-window shot cropped to the actual content height — the side panel is
 // shorter than the window, so a plain full-page grab leaves ~30% dead space
 // below the panels. Clip to the bottom of `.main-wrap` (+ a small margin).
-async function shotCropped(name) {
+// An overview in the theme gallery's framing, from a context of its own.
+async function sceneShot(name, options = {}) {
   if (!want(name)) return;
   try {
-    const bottom = await page.evaluate(() => {
-      const mw = document.querySelector('.main-wrap');
-      return mw ? Math.ceil(mw.getBoundingClientRect().bottom) : 0;
-    });
-    const height = Math.min(1180, (bottom || 1180) + 24);
-    const shot = await page.screenshot({ clip: { x: 0, y: 0, width: 1460, height } });
-    const info = saveGuideShot(shot, OUT, name);
+    const info = saveGuideShot(await captureScene(browser, { base: BASE, ...options }), OUT, name);
     done.push(name);
-    console.log('  ✓', shotLabel(name, info), `(crop ${height}px)`);
+    console.log('  ✓', shotLabel(name, info));
   } catch (e) {
     skipped.push(name);
     console.error('  ✗', name, '—', e.message.split('\n')[0]);
@@ -263,9 +254,9 @@ await click('#btn-power');
 await page.waitForSelector('body.powered-on', { timeout: 8000 }).catch(() => {});
 await sleep(4200);                                     // blue screen settles to READY.
 
-// ── Full-interface overview (clean READY. screen) ───────────────────────
+// ── Full-interface overview (the blue READY. screen) ────────────────────
 console.log('\n[overview + panels]');
-await shotCropped('overview');
+await sceneShot('overview');
 if (await page.locator('.panel-restore-btn').isVisible()) {
   await click('.panel-restore-btn');
   while (await page.locator('.panel-restore-modal:not([hidden]) .panel-restore-item').count()) {
@@ -338,8 +329,8 @@ try {
 } catch {}
 
 // If only the shots up to here were requested, stop now — skip the modals,
-// the slow Retro Vibes / overview-running passes, and the disk load entirely.
-const restShots = ['options', 'crt-settings', 'keymap', 'library', 'save-states', 'key-joystick', 'retro-vibes', 'drive8-loaded', 'directory-zoom', 'overview-running'];
+// the slow Retro Vibes pass, and the disk load entirely.
+const restShots = ['options', 'crt-settings', 'keymap', 'library', 'save-states', 'key-joystick', 'retro-vibes', 'drive8-loaded', 'directory-zoom'];
 if (ONLY.length && !restShots.some(want)) {
   await browser.close();
   console.log(`\nDone. ${done.length} shots → ${OUT}`);
@@ -463,55 +454,6 @@ if (hasDisk && (want('drive8-loaded') || want('directory-zoom'))) {
   }
 } else {
   console.log('\n[disk] skipped —', DISK ? `no d64 at ${DISK}` : 'no directory-art d64 (argv[3] or the asset registry)');
-}
-
-// ── "In action" overview ────────────────────────────────────────────────
-// A colourful running frame ~58 s into the raster demo (the "PROJECT" logo over
-// the woven raster bars). The demo animates every frame, so a re-run lands on an
-// equivalent frame rather than the identical one; tools/pick-frames.mjs dumps a
-// per-second burst to choose from when a particular frame is wanted.
-// A separate context keeps the fresh default panel layout and excludes media
-// and preferences from the individual feature shots. TDE OFF makes loading instant.
-console.log('\n[in action]');
-if (want('overview-running') && fs.existsSync(RASTER)) {
-  const runningDone = slowWarning('The overview-running shot', 70, 2);   // most of it is a timed 58 s wait
-  try {
-    const runningContext = await createGuideContext(browser, { colorScheme: 'dark',
-      viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 2, reducedMotion: 'reduce' });
-    await runningContext.addInitScript(() => {
-      localStorage.setItem('c64emu.installDismissed', '1');
-      localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
-    });
-    page = await runningContext.newPage();
-    await page.goto(`${BASE}/?CRT_SHADER_SOFTWARE=1`, { waitUntil: 'networkidle' });
-    await page.waitForSelector('#btn-power:not([disabled])');
-    await click('#btn-power');
-    await sleep(4200);
-    const tde = page.locator('#btn-tde-toggle');
-    if (/ON/.test(await tde.textContent().catch(() => '')))
-      { await tde.click().catch(() => {}); await sleep(300); }
-    await page.setInputFiles('#d64-input', RASTER);
-    // A disk inserted with TDE off is offered TDE; keep it off, the instant
-    // trap load the frame below is timed against.
-    const offer = page.locator('#confirm-modal:not([hidden])');
-    if (await offer.waitFor({ timeout: 3000 }).then(() => true, () => false)) await click('#btn-confirm-cancel');
-    await sleep(2500);                                 // autoload + RUN hand off to the demo
-    await sleep(58000);                                // ~58 s in — "PROJECT" logo over the raster bars
-    assert.deepEqual(await page.locator('.panel-col').evaluateAll(columns => columns.map(column =>
-      [...column.querySelectorAll('[data-panel]')].filter(card => !card.classList.contains('is-panel-hidden')).map(card => card.dataset.panel))),
-    [['status', 'controls', 'ports'], ['media', 'media-browser', 'drive8']], 'overview-running uses the fresh default layout');
-    await shotCropped('overview-running');
-    await runningContext.close();
-    runningDone();
-  } catch (e) {
-    runningDone();
-    skipped.push('overview-running');
-    console.error('  ✗ overview-running —', e.message.split('\n')[0]);
-  }
-} else {
-  // Two different reasons land here; saying which saves a false "missing asset".
-  console.log('  skipped —', !want('overview-running') ? 'not in GUIDE_ONLY'
-    : RASTER ? `no raster demo d64 at ${RASTER}` : 'no raster demo d64 (pass argv[4])');
 }
 
 await browser.close();

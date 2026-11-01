@@ -1,0 +1,22 @@
+{
+  "id": "munchy-worm",
+  "title": "Munchy Worm",
+  "source": "Achievements ported from c64-cheevos by hayesmaker (MIT), https://github.com/hayesmaker/c64-cheevos",
+  "hashes": [
+    {
+      "hash": "1fe961b502abde7f580be7e7b67bf16e",
+      "label": "c64cade release (munchyworm_1_01.d64)"
+    }
+  ],
+  "achievements": [],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score",
+      "description": "Highest score in one game.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH2847=32_d0xH2847!=32::CAN:0=1::SUB:1=1S0xH2847=226_d0xH2847!=226S0xH2847>=36_0xH2847<=49_d0xH2847<36::VAL:b0xH284c*1000000_b0xH284b*10000_b0xH284a*100_b0xH2849"
+    }
+  ]
+}

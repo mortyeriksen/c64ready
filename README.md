@@ -181,13 +181,15 @@ dialog and in [Specifications & sources](docs/SPECIFICATIONS.md).
 ## Privacy
 
 Everything runs in your browser. ROMs, disks, tapes, cartridges and save states are kept in
-the browser's own storage (localStorage / IndexedDB) and are never uploaded. The optional
-chat connects to the chat server only once it is opened. It sends the nickname and messages
-to the room and the admin, and the server logs every message, join, leave and moderation
-step with the nickname and IP address, keeping the log for 90 days (`CHAT_LOG_DAYS`) so
-abuse and crime can be investigated. The admin's live view shows only a keyed hash of the
-address. The site sets no
-cookies and loads no third-party scripts. The only telemetry is a few empty marker pages the
+the browser's own storage (localStorage / IndexedDB) and are never uploaded. Achievements and
+the chat are the one part that talks to a server of ours. Loaded files are matched against
+the list of games with achievements in the browser, so only those games are looked up. An
+account is a name and a passkey (no email, no password), and its achievements, best scores
+and activity are public. Sign-ins are logged with the IP address and browser for 90 days,
+for the admin only. The chat connects only once it is opened, and the server logs
+messages, joins, leaves and moderation with the username and IP address for 90 days
+(`CHAT_LOG_DAYS`) so abuse and crime can be investigated. The admin's live view shows only a
+keyed hash of the address. The site sets no cookies and loads no third-party scripts. The only telemetry is a few empty marker pages the
 app requests (`/pwa.html`, `/pwa-installed.html`, `/roms-loaded.html`, `/roms-vice.html`,
 `/returned.html`, and one `/roms-theme-<theme>.html` per built-in theme plus `custom` for
 imported ones, see `src/main.js`) so the host's server-side statistics (Netlify Analytics)

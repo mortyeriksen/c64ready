@@ -1,0 +1,32 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright © 2026 Morten Øien Eriksen -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Admin sign-in</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+  <script type="module" src="/admin/login.js"></script>
+</head>
+<body class="login">
+  <main class="login-box">
+    <h1>C64 READY. <span class="sysop">admin</span></h1>
+    <section id="signin">
+      <p class="meta">Sign in with the console's passkey.</p>
+      <button type="button" id="btn-signin" class="primary">SIGN IN WITH PASSKEY</button>
+    </section>
+    <section id="setup">
+      <h2>Set up this device</h2>
+      <p class="meta">Enter a setup key: from <code>npm run admin-key</code>, the dev server's terminal, or <em>Add a device</em> in a signed-in console.</p>
+      <form id="setup-form">
+        <input id="setup-key" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXXX-XXXXX-XXXXX-XXXXX" aria-label="Setup key">
+        <input id="setup-label" autocomplete="off" maxlength="40" placeholder="This device's name (optional)" aria-label="Device name">
+        <button type="submit">SET UP</button>
+      </form>
+    </section>
+    <p id="msg" class="msg" role="alert"></p>
+  </main>
+</body>
+</html>

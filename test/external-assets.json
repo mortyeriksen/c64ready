@@ -133,6 +133,222 @@
    ],
    "link": "https://github.com/Klaus2m5/6502_65C02_functional_tests"
   },
+  "uridium-crt": {
+   "description": "Uridium (Hewson 1986), the OneLoad64 v5 cartridge, MD5 4255c6e2bd6ebe048dfef457a920d565: the release the ported Uridium achievement set targets",
+   "env": "C64_URIDIUM_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Uridium.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "commando-crt": {
+   "description": "Commando (Elite 1985), the OneLoad64 v5 cartridge, MD5 5ae8691fa102a3864745716be0c374e4: the release the Commando achievement set targets",
+   "env": "C64_COMMANDO_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Commando.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "ghosts-n-goblins-crt": {
+   "description": "Ghosts 'n Goblins (Elite 1986), the OneLoad64 v5 cartridge, MD5 f2056bc55e1b4b092a6fe43794b25b4d: the release its own-design achievement set targets",
+   "env": "C64_GHOSTS_N_GOBLINS_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Ghosts'n Goblins.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "bomb-jack-crt": {
+   "description": "Bomb Jack (Elite 1986), the OneLoad64 v5 cartridge, MD5 9f27d4a5ea48e17610fba4ae4e5ca795: the release its own-design achievement set targets",
+   "env": "C64_BOMB_JACK_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Bomb Jack.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "nemesis-crt": {
+   "description": "Nemesis (Konami 1987), the OneLoad64 v5 cartridge, MD5 a14218cf0a4457320f4bad2c00db05b8: the release its own-design achievement set targets",
+   "env": "C64_NEMESIS_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Nemesis.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "action-biker-crt": {
+   "description": "Action Biker (Mastertronic 1985), the OneLoad64 v5 cartridge, MD5 1301dcff05da315fd656e954bad7c9d5: the release its ported c64-cheevos set targets",
+   "env": "C64_ACTION_BIKER_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Action Biker.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "chuckie-egg-crt": {
+   "description": "Chuckie Egg (A'n'F 1984), the OneLoad64 v5 cartridge, MD5 bc4dffda1e427ecff485720fec0281a8: the release its ported c64-cheevos set targets",
+   "env": "C64_CHUCKIE_EGG_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Chuckie Egg.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "forbidden-forest-crt": {
+   "description": "Forbidden Forest (Cosmi 1983), the OneLoad64 v5 cartridge, MD5 12496fa1e94d8bf617b773642697f8a4: the release its ported c64-cheevos set targets",
+   "env": "C64_FORBIDDEN_FOREST_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Forbidden Forest.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "galaga-arlasoft-crt": {
+   "description": "Galaga (Arlasoft 2021), the OneLoad64 v5 cartridge, MD5 6a174d0b794b1c511ec1bbf76c6afb45: the release its ported c64-cheevos set targets",
+   "env": "C64_GALAGA_ARLASOFT_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Galaga (Arlasoft - 2021).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "gribblys-day-out-crt": {
+   "description": "Gribbly's Day Out (Hewson 1985), the OneLoad64 v5 cartridge, MD5 5fa127d6b4b224a509cc29ad382a4ac6: the release its ported c64-cheevos set targets",
+   "env": "C64_GRIBBLYS_DAY_OUT_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Gribbly's Day Out.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "hercules-crt": {
+   "description": "Hercules (Interdisc 1984), the OneLoad64 v5 cartridge, MD5 95b6ab953549eb1d5c0c4ca89c28cb8e: the release its ported c64-cheevos set targets",
+   "env": "C64_HERCULES_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Hercules (J1).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "panther-crt": {
+   "description": "Panther (Mastertronic 1986), the OneLoad64 v5 cartridge, MD5 4ccefa158b62ef222e794ccc98717dc0: the release its ported c64-cheevos set targets",
+   "env": "C64_PANTHER_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Panther.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "potty-pigeon-crt": {
+   "description": "Potty Pigeon (Gremlin 1984), the OneLoad64 v5 cartridge, MD5 67ca6b58ae7ad7d6144a352874c06a0b: the release its ported c64-cheevos set targets",
+   "env": "C64_POTTY_PIGEON_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Potty Pigeon.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "rainbow-islands-crt": {
+   "description": "Rainbow Islands (Ocean 1990), the OneLoad64 v5 MultiLoad64 EasyFlash cartridge by $olo1870, MD5 90f1ff371f71ef72d06afdf8fb721391: the release its ported c64-cheevos set targets",
+   "env": "C64_RAINBOW_ISLANDS_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/MultiLoad64/Rainbow Islands (by $olo1870) [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "road-runner-crt": {
+   "description": "Road Runner (US Gold 1987), the OneLoad64 v5 MultiLoad64 EasyFlash cartridge by $olo1870, MD5 67d2234e9ae2dcae787a44c54527fd36: the release its ported c64-cheevos set targets",
+   "env": "C64_ROAD_RUNNER_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/MultiLoad64/Road Runner (by $olo1870) [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "stix-crt": {
+   "description": "Stix (Supersoft 1983), the OneLoad64 v5 cartridge, MD5 19c3b801ad45c756085b080eea14cb3c: the release its ported c64-cheevos set targets",
+   "env": "C64_STIX_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Stix (J1).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "thrust-crt": {
+   "description": "Thrust (Firebird 1986), the OneLoad64 v5 cartridge, MD5 958404356aaf406ef2ea5babbcb917bb: the release its ported c64-cheevos set targets",
+   "env": "C64_THRUST_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Thrust (J1).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "tilt-crt": {
+   "description": "Tilt (Codemasters 1990), the OneLoad64 v5 cartridge, MD5 9549b88a8552144582c87bce4416e98c: the release its ported c64-cheevos set targets",
+   "env": "C64_TILT_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Tilt.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "up-n-down-crt": {
+   "description": "Up 'n Down (Sega / US Gold 1984), the official cartridge in the OneLoad64 v5 extras, MD5 9ec3ccd6cddbd04faf97c9589161b9c5: the release its ported c64-cheevos set targets",
+   "env": "C64_UP_N_DOWN_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Extras/OfficialCRTs/Up'n Down.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "mole-attack-crt": {
+   "description": "Mole Attack (Commodore 1982), the official Ultimax cartridge in the OneLoad64 v5 extras, MD5 9891c664b29204919a8f55f0b6f0b2c0: the release its ported c64-cheevos set targets",
+   "env": "C64_MOLE_ATTACK_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Extras/OfficialCRTs/Mole Attack.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "stix-official-crt": {
+   "description": "Stix (Supersoft 1983), the official 16K cartridge in the OneLoad64 v5 extras, MD5 e0bf1242e30efc5a97072610a63a1826: the release its ported c64-cheevos set targets",
+   "env": "C64_STIX_OFFICIAL_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Extras/OfficialCRTs/Stix.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "ik-plus-crt": {
+   "description": "IK+ (System 3 1987), the OneLoad64 v5 cartridge, MD5 819c741a29030beb67cbb36d8379f9d7: the release its own-design achievement set targets",
+   "env": "C64_IK_PLUS_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/IK+.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "exploding-fist-crt": {
+   "description": "The Way of the Exploding Fist (Melbourne House 1985), the OneLoad64 v5 cartridge, MD5 228d147421640b3b602144271e328aa3: the release its own-design achievement set targets",
+   "env": "C64_EXPLODING_FIST_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Way of the Exploding Fist, The.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "super-mario-bros-64-crt": {
+   "description": "Super Mario Bros 64 (ZeroPaige 2019), the OneLoad64 v5 cartridge, MD5 1c08be698922fdd0505d9d84ff4b63f6: the release its own-design achievement set targets",
+   "env": "C64_SUPER_MARIO_BROS_64_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Super Mario Bros 64 (Zeropaige - 2019).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "commando-arcade-crt": {
+   "description": "Commando Arcade (Nostalgia), the EasyFlash cartridge, MD5 1227141266752c0c04608fac355c7a4e: the release its own-design achievement set targets",
+   "env": "C64_COMMANDO_ARCADE_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/d64/CommandoArcade_Nostalgia/CommandoArcade_N0S_EF.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "last-ninja-crt": {
+   "description": "The Last Ninja (System 3 1987), the MultiLoad64 EasyFlash cartridge by $olo1870, MD5 504708239b910d8dd5c75e29e3dc346f: the release its own-design achievement set targets",
+   "env": "C64_LAST_NINJA_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/MultiLoad64/Last Ninja, The (by $olo1870) [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "out-run-a-crt": {
+   "description": "Out Run (Route A) OneLoad64 cartridge",
+   "env": "C64_OUT_RUN_A_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Out Run (Route A) (J1).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
   "ccgms": {
    "description": "CCGMS Future 0.2 terminal program (Craig Smith, alwyz, Michael Steil), for the User Guide's user port BBS shot \u2014 tools/guide-extra-shots.mjs",
    "env": "C64_CCGMS_PRG",
@@ -143,7 +359,7 @@
    "note": "Third-party program \u2014 bring your own; not distributed with this repo"
   },
   "raster-time-demo": {
-   "description": "Raster demo .d64 (Raster Time by Genesis Project, BCC Party #20) for the User Guide screenshots \u2014 the 'in action' overview-running shot, and the PETSCII directory art in drive8-loaded / directory-zoom \u2014 tools/guide-shots.mjs",
+   "description": "Raster demo .d64 (Raster Time by Genesis Project, BCC Party #20) for the User Guide screenshots \u2014 the PETSCII directory art in drive8-loaded / directory-zoom \u2014 tools/guide-shots.mjs",
    "env": "C64_RASTER_TIME_D64",
    "paths": [
     "~/projects/c64ready-workspace/c64media/d64/raster_time_gp.d64"
@@ -253,7 +469,9 @@
   "monitor-nine": {
    "description": "Nine demo, visual reference for the Monitor Frame Lab and learning examples",
    "env": "C64_NINE_PRG",
-   "paths": ["~/projects/c64ready-workspace/c64media/prg/nine.prg"],
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/prg/nine.prg"
+   ],
    "note": "External demo, not distributed with this repository"
   },
   "guide-state-nine": {
@@ -262,6 +480,38 @@
     "~/Downloads/Nine_-_Hyperscreen.c64state"
    ],
    "note": "External save state, not distributed with this repository"
+  },
+  "out-run-b-crt": {
+   "description": "Out Run (Route B) OneLoad64 cartridge",
+   "env": "C64_OUT_RUN_B_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Out Run (Route B) (J1).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "out-run-c-crt": {
+   "description": "Out Run (Route C) OneLoad64 cartridge",
+   "env": "C64_OUT_RUN_C_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Out Run (Route C) (J1).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "out-run-multiload-crt": {
+   "description": "Out Run MultiLoad64 EasyFlash cartridge",
+   "env": "C64_OUT_RUN_MULTILOAD_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/MultiLoad64/Out Run (by $olo1870) [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "defender-of-the-crown-crt": {
+   "description": "Defender of the Crown (Cinemaware), the EasyFlash cartridge from the OneLoad64 v5 extras, MD5 9bb7905207d10094d3f3fda527d0d1ac: the release its own-design achievement set targets",
+   "env": "C64_DEFENDER_OF_THE_CROWN_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Extras/OtherCRTs/Defender of the Crown [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   }
  }
 }

@@ -26,7 +26,7 @@ export async function checkKeyboard(page) {
       assert.deepEqual(await calls(), [], `${key} with a control focused does not reach the C64`);
       assert.equal(await explore.evaluate(node => node === document.activeElement), true, `${key} does not move control focus`);
     }
-    assert.equal(await page.locator('#keyboard-focus-hint').isVisible(), true, 'with a control focused the hint says to click the screen');
+    assert.equal(await page.locator('#keyboard-focus-hint').waitFor({ state: 'visible', timeout: 3000 }).then(() => true, () => false), true, 'with a control focused the hint says to click the screen, after a moment');
     for (const key of ['Enter', 'Space']) {
       await explore.focus(); await calls(); await page.keyboard.press(key);
       assert.equal(await page.locator('.mb-overlay').count(), 1, `${key} presses the focused EXPLORE button`);
@@ -65,7 +65,7 @@ export async function checkKeyboard(page) {
     await type.selectOption({ index: 1 });
     assert.equal(await page.evaluate(() => document.activeElement?.id), 'screen', 'picking from a dropdown with the mouse hands the keyboard back to the C64');
     await control.getByLabel('Search media', { exact: true }).focus();
-    assert.equal(await page.locator('#keyboard-focus-hint').isVisible(), true, 'Typing fields show the keyboard focus hint');
+    assert.equal(await page.locator('#keyboard-focus-hint').waitFor({ state: 'visible', timeout: 3000 }).then(() => true, () => false), true, 'Typing fields show the keyboard focus hint, after a moment');
     await page.locator('#screen').click();
     assert.equal(await page.locator('#keyboard-focus-hint').isVisible(), false, 'Clicking the screen clears the keyboard focus hint');
     // The C64 has no Tab key: from the running machine's screen, Tab moves on.

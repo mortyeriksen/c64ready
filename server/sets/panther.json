@@ -1,0 +1,26 @@
+{
+  "id": "panther",
+  "title": "Panther",
+  "source": "Achievements ported from c64-cheevos by hayesmaker (MIT), https://github.com/hayesmaker/c64-cheevos",
+  "hashes": [
+    {
+      "hash": "9188c8a20003ed2bc41c730e56731342",
+      "label": "c64cade cartridge (Panther.crt)"
+    },
+    {
+      "hash": "4ccefa158b62ef222e794ccc98717dc0",
+      "label": "OneLoad64 v5 cartridge (Panther.crt)"
+    }
+  ],
+  "achievements": [],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score",
+      "description": "Highest score in one game.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH0026=1_0xH0027=0_0xH0010>0_0xH0010<=6_0xH842a=0_0xH842b=0_0xH842c=0_0xH842d=0_0xH842e=0_0xH842f=0_0xH8430=0_0xH8431=0::CAN:0=1::SUB:O:0xH0010=0_0xH0027!=0::VAL:0xH842a*10000000_0xH842b*1000000_0xH842c*100000_0xH842d*10000_0xH842e*1000_0xH842f*100_0xH8430*10_0xH8431"
+    }
+  ]
+}

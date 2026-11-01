@@ -186,17 +186,17 @@
             <h2>Runs the hard stuff</h2>
             <p>The demos and fastloaders that stump other emulators run here, cycle for cycle.</p>
           </li>
+          <li class="card-achievements">
+            <img src="/screens/splash-achievements.webp" width="800" height="450" loading="lazy"
+              alt="Six game cards from the Achievements window: Commando Arcade, Uridium, Ghosts 'n Goblins, Bomb Jack, Out Run and Defender of the Crown, each with its achievements, points, players and your progress">
+            <h2>Unlock achievements</h2>
+            <p>Earn achievements in C64 classics and climb their high-score tables.</p>
+          </li>
           <li class="card-vibes">
             <img src="/screens/splash-vibes.webp" width="800" height="450" loading="lazy"
               alt="The 80s bedroom scene: the 1702 monitor glowing on a lamplit desk beside the C64 and its 1541 drive, the BASIC READY screen on the CRT">
             <h2>Virtual Breadbin</h2>
             <p>Step into different scenes and see your demo or game playing live on the 1702.</p>
-          </li>
-          <li class="card-disks">
-            <img src="/guide/drive8-loaded.webp" width="638" height="632" loading="lazy"
-              alt="The Disk Drive 8 panel: LOAD, BLANK, FORMAT and .D64 export controls above a directory whose filenames form PETSCII artwork">
-            <h2>Real disks, real saves</h2>
-            <p>LOAD, SAVE, format and export .d64s through a true 1541, run copy-protected .g64s. Save states resume anytime.</p>
           </li>
           <li class="card-phone">
             <div class="splash-phone">
@@ -211,7 +211,7 @@
         <footer class="splash-foot">
           <span>Free and open source
             (<a href="/docs/license.html">GPL-3.0</a>).
-            No ads, no tracking, no sign-ups.</span>
+            No ads, no tracking, no sign-up needed.</span>
           <nav aria-label="C64 READY. links">
             <a href="/docs/about.html">About</a>
             <a href="https://www.youtube.com/@c64ready">YouTube</a>
@@ -242,8 +242,11 @@
         <button class="credits-link" id="btn-credits"
             title="About C64 READY. — what it is, how it was built, and the credits." type="button">ABOUT</button>
         <a class="credits-link" id="docs-link" href="/docs/" title="Documentation">DOCS</a>
-        <button class="credits-link chat-open-btn" id="btn-chat" type="button" aria-label="Chat"
-            aria-expanded="false" title="Chat with other C64 READY users">CHAT<span class="chat-badge" hidden></span></button>
+        <button class="credits-link online-btn" id="btn-online" type="button" aria-label="Achievements"
+            aria-expanded="false" title="Achievements, leaderboards and chat"><svg viewBox="0 0 24 24" width="15" height="15"
+            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            aria-hidden="true" focusable="false"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path
+            d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg><span class="online-label">ACHIEVEMENTS</span><span class="chat-badge" hidden></span></button>
         <!-- Icon-only, and desktop-only: the mobile header has no room for them,
              and all three destinations are reachable from ABOUT. -->
         <a class="credits-link icon-link" id="github-link" href="https://github.com/mortyeriksen/c64ready"
@@ -270,6 +273,9 @@
         <div class="crt-bezel">
           <canvas id="screen" tabindex="0" aria-label="C64 display"></canvas>
           <div id="collision-indicator" hidden>COLLISION</div>
+          <!-- Shown over the picture while the C64 does not have the keyboard (a
+               pointer device), or until the first tap (a touch device). -->
+          <div class="screen-hint" id="keyboard-focus-hint" hidden><span class="hint-pointer">Click the screen to capture the keyboard</span><span class="hint-touch">Tap the screen to open the keyboard</span></div>
           <!-- Off-screen focusable input: tapping the screen on a touch device
                focuses this to raise the native soft keyboard (a <canvas> can't);
                keystrokes are routed to the C64 keyboard matrix in main.js. -->
@@ -298,12 +304,10 @@
           </div>
         </div>
       </div>
-      <!-- Sits below the monitor border, in the screen column. Touch devices
-           get the tap-to-keyboard hint; everything else keeps the drop-files
-           hint (drag-drop only works with a pointer). One is hidden via CSS. -->
+      <!-- Sits below the monitor border, in the screen column, on pointer
+           devices only: drag-drop needs a pointer. -->
       <div class="drop-hint hint-pointer">Drop <span class="drop-hint-types"
-          title="Supported: .PRG, .D64, .D71, .D81, .G64, .NBZ, .CRT, .TAP, .T64, .SID, .WAV, .DMP and .REU">files</span> onto the screen.<span id="keyboard-focus-hint" hidden> Click screen to capture keyboard.</span></div>
-      <div class="drop-hint hint-touch">Tap the screen to open the native keyboard</div>
+          title="Supported: .PRG, .D64, .D71, .D81, .G64, .NBZ, .CRT, .TAP, .T64, .SID, .WAV, .DMP and .REU">files</span> onto the screen.</div>
     </div>
 
     <!-- Side Panel -->
@@ -884,6 +888,9 @@
           <button class="btn" id="btn-run-background"
             title="Keep running while the tab is hidden or another window has focus. Needs sound on: a hidden tab runs at full speed only while audible.">RUN IN BACKGROUND:
             OFF</button>
+          <button class="btn" id="btn-achievements-toggle"
+            title="Achievements and high scores for games that have them. Off, nothing loaded is looked at and the machine runs without them. The chat stays.">ACHIEVEMENTS:
+            ON</button>
         </div>
       </div>
 
@@ -1100,6 +1107,32 @@
     </div>
   </div>
 
+  <div class="online-window float-window" id="online-window" role="dialog" aria-labelledby="online-window-title" hidden>
+    <div class="online-head float-head">
+      <h2 class="online-title" id="online-window-title">ACHIEVEMENTS</h2>
+      <button class="online-dock" type="button" id="btn-online-dock" aria-pressed="false" aria-label="Dock to the right" title="Dock to the right" hidden><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></svg></button>
+      <button class="dialog-close" type="button" id="btn-online-close" aria-label="Close" title="Close (you stay in the chat)"></button>
+    </div>
+    <div class="online-tabs" role="tablist" aria-label="Achievements">
+      <button type="button" role="tab" id="online-tab-game" aria-controls="achievements-game" data-tab="game">GAME</button>
+      <button type="button" role="tab" id="online-tab-activity" aria-controls="achievements-activity" data-tab="activity">ACTIVITY</button>
+      <button type="button" role="tab" id="online-tab-chat" aria-controls="online-chat" data-tab="chat">CHAT<span class="online-tab-badge" hidden></span></button>
+      <button type="button" role="tab" id="online-tab-games" aria-controls="achievements-games" data-tab="games">GAMES</button>
+      <button type="button" role="tab" id="online-tab-account" aria-controls="achievements-account" data-tab="account">ACCOUNT</button>
+    </div>
+    <section class="online-chat chat-window" id="online-chat" role="tabpanel" aria-labelledby="online-tab-chat" hidden></section>
+    <div class="online-body">
+      <section class="achievements-game" id="achievements-game" role="tabpanel" aria-labelledby="online-tab-game" hidden>
+        <h3>This game</h3>
+        <p class="achievements-note">No game with achievements is loaded.</p>
+      </section>
+      <section class="achievements-activity-view" id="achievements-activity" role="tabpanel" aria-labelledby="online-tab-activity" hidden></section>
+      <section class="achievements-games-view" id="achievements-games" role="tabpanel" aria-labelledby="online-tab-games" hidden></section>
+      <section class="achievements-account" id="achievements-account" role="tabpanel" aria-labelledby="online-tab-account" aria-live="polite" hidden></section>
+      <section class="achievements-detail" id="achievements-detail" hidden></section>
+    </div>
+  </div>
+
   <div class="modal-backdrop" id="prompt-modal" hidden>
     <div class="modal-card confirm-card" role="dialog" aria-modal="true" aria-labelledby="prompt-modal-title">
       <div class="panel-card-header">
@@ -1238,10 +1271,10 @@
   </div>
 
   <button class="dialog-close fs-close-btn" id="btn-fs-close" title="Exit fullscreen (ESC)" aria-label="Exit fullscreen"></button>
-  <button class="fs-chat-btn" id="btn-fs-chat" type="button" title="Chat" aria-label="Chat" aria-expanded="false"><svg
+  <button class="fs-online-btn" id="btn-fs-online" type="button" title="Achievements, leaderboards and chat" aria-label="Achievements" aria-expanded="false"><svg
       viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"
       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path
-      d="M4 5h16v11H9l-5 4z"/></svg><span class="chat-badge" hidden></span></button>
+      d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg><span class="chat-badge" hidden></span></button>
 
   <!-- Retro Vibes — 3D model viewer (opened by the 🌇 Retro Vibes button). Fills
        the browser window; the Three.js canvas is injected into .model-viewer-stage.

@@ -1,0 +1,90 @@
+{
+  "id": "out-run",
+  "title": "Out Run",
+  "hashes": [
+    {
+      "hash": "4f60fefef0e0f906ef3f79849e9c8c22",
+      "label": "OneLoad64 v5 cartridge (Out Run (Route A) (J1).crt)"
+    },
+    {
+      "hash": "8535cdd363b3bdf1699962c17bb2b732",
+      "label": "OneLoad64 v5 cartridge (Out Run (Route B) (J1).crt)"
+    },
+    {
+      "hash": "c360a1e770ce6b3d4a529f6b66931c0b",
+      "label": "OneLoad64 v5 cartridge (Out Run (Route C) (J1).crt)"
+    },
+    {
+      "hash": "87ae9de9671916c094ecb7902ad0e2c8",
+      "label": "MultiLoad64 EasyFlash cartridge (Out Run (by $olo1870))"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Checkpoint",
+      "description": "Reach stage 2.",
+      "points": 5,
+      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._0xH9144=1_d0xH9144=0"
+    },
+    {
+      "id": 2,
+      "title": "Halfway Down the Road",
+      "description": "Reach stage 3.",
+      "points": 10,
+      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._0xH9144=2_d0xH9144=1"
+    },
+    {
+      "id": 3,
+      "title": "Long Drive",
+      "description": "Reach stage 4.",
+      "points": 10,
+      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._0xH9144=3_d0xH9144=2"
+    },
+    {
+      "id": 4,
+      "title": "Final Stretch",
+      "description": "Reach stage 5, the last.",
+      "points": 25,
+      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._0xH9144=4_d0xH9144=3"
+    },
+    {
+      "id": 5,
+      "title": "Goal!",
+      "description": "Reach the goal at the end of stage 5.",
+      "points": 25,
+      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._0xH80A9=147_d0xH80A9=131"
+    },
+    {
+      "id": 6,
+      "title": "Cruising",
+      "description": "Score at least 500,000 points.",
+      "points": 5,
+      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._A:0xHAA56*1000000_A:0xHAA55*100000_A:0xHAA54*10000_A:0xHAA53*1000_A:0xHAA52*100_A:0xHAA51*10_0xHAA50>=500000"
+    },
+    {
+      "id": 7,
+      "title": "Fast Lane",
+      "description": "Score at least 1,000,000 points.",
+      "points": 10,
+      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._A:0xHAA56*1000000_A:0xHAA55*100000_A:0xHAA54*10000_A:0xHAA53*1000_A:0xHAA52*100_A:0xHAA51*10_0xHAA50>=1000000"
+    },
+    {
+      "id": 8,
+      "title": "Magical Sound Shower",
+      "description": "Score at least 2,000,000 points.",
+      "points": 25,
+      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._A:0xHAA56*1000000_A:0xHAA55*100000_A:0xHAA54*10000_A:0xHAA53*1000_A:0xHAA52*100_A:0xHAA51*10_0xHAA50>=2000000"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score",
+      "description": "Highest score in one game.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH9144=0_0xHAA22=7_0xHAA21=4_d0xHAA21=5_d0xHAA22=7::CAN:0=1::SUB:A:0xHAA56_A:0xHAA55_A:0xHAA54_A:0xHAA53_A:0xHAA52_A:0xHAA51_0xHAA50>0S0xHAA22=0_0xHAA21=0_d0xHAA21=1_d0xHAA22=0S0xH80A9=147_d0xH80A9=131::VAL:0xHAA56*1000000_0xHAA55*100000_0xHAA54*10000_0xHAA53*1000_0xHAA52*100_0xHAA51*10_0xHAA50"
+    }
+  ]
+}

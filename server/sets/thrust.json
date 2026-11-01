@@ -1,0 +1,22 @@
+{
+  "id": "thrust",
+  "title": "Thrust",
+  "source": "Achievements ported from c64-cheevos by hayesmaker (MIT), https://github.com/hayesmaker/c64-cheevos",
+  "hashes": [
+    {
+      "hash": "958404356aaf406ef2ea5babbcb917bb",
+      "label": "OneLoad64 v5 cartridge (Thrust (J1).crt)"
+    }
+  ],
+  "achievements": [],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score",
+      "description": "Highest score in one game.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH0063=0_0xH9403=3_0xH9402=0_0xH0180=0_0xH0181=0_0xH0182=0::CAN:0xH0180=0_0xH0181=0_0xH0182=0S0xT9403=1S0xH9402!=0S0xH0063!=0::SUB:A:0xH0180_A:0xH0181_0xH0182>0S0xT9403=1S0xH9402!=0S0xH0063!=0::VAL:b0xH0182*100000_b0xH0181*1000_b0xH0180*10"
+    }
+  ]
+}

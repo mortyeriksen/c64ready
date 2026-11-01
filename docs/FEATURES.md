@@ -321,22 +321,32 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **Cached in the browser**: provide them once; they auto-restore on later
   visits. A **CLEAR** button wipes the cache.
 
+## Achievements
+
+- **Achievements and high scores**: read from the running machine by
+  RetroAchievements' rcheevos, with your best score on the game's own
+  high-score screen.
+- **The Achievements window**: the loaded game's progress, everyone's latest
+  unlocks, every game and player profiles. It opens when such a game loads, and
+  floats, docks or shares the screen in fullscreen.
+- **Passkey accounts**: no password and no email. A recovery code, and passkeys
+  on more than one device, keep you from losing the account.
+- **Private by design**: the app matches a loaded file against the list of
+  games with achievements in the browser, so only those games are ever looked
+  up (see [Achievements](GUIDE-ACHIEVEMENTS.md)).
+
 ## Chat
 
-- **Rooms with no sign-up**: a nickname is all it takes. Rooms live only while
-  people are in them. The chat is logged for 90 days, so abuse can be
-  investigated (see [Chat](GUIDE-CHAT.md)).
-- **Rooms about what is loaded**: one tap starts a room named after the disk,
-  cartridge or tape in the machine. A room about an Assembly64 release offers
-  to load it for everyone who joins.
-- **Open to everyone**: every room is listed in the lobby, and anyone can
-  join it. A separate list below the rooms shows online nicknames from all
-  chatrooms, updated live.
-- **Moderated by the members**: the host mutes and removes people, a majority
-  vote removes anyone, and anyone can hide someone's messages or report them
-  to the admin.
+- **One chat for everyone signed in**, a tab of the Achievements window, under your
+  username. The chat is logged for 90 days, so abuse can be investigated
+  (see [Chat](GUIDE-ACHIEVEMENTS.md#chat)).
+- **Games in messages**: type @ to mention a game with achievements. It shows
+  as a link to the game's page.
+- **Unlocks and high scores**, announced in the chat as they happen.
+- **Moderated by the members**: a majority vote removes someone for an hour,
+  and anyone can hide someone's messages or report them to the admin.
 - **A floating window**: dragged and resized on a desktop, full screen on a
-  phone, and counting unread messages on the **CHAT** button while closed.
+  phone, and counting unread messages on the **ACHIEVEMENTS** button while closed.
 
 ## Extras & conveniences
 

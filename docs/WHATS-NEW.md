@@ -9,8 +9,32 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
-## Next release
+## 2026.11.1 — November 1, 2026
 
+Meet **Achievements**: goals to unlock and high scores to chase in classic C64
+games, with everyone's progress in one window. It runs on rcheevos, the engine
+behind RetroAchievements, and starts with 27 games, among them Uridium,
+Commando, Ghosts 'n Goblins, Bomb Jack and Rainbow Islands. Achievements is in
+beta: sets and scoring may still change while it settles.
+
+- **Play for achievements.** Load a game that has them, and each one unlocks
+  the moment you reach it. Your best score goes on the game's own high-score
+  screen, next to everyone else's, and its Hall of Fame ranks players by the
+  achievements they have unlocked. See
+  [the games](GUIDE-ACHIEVEMENTS.md#games-with-achievements).
+- **One window for it all.** **ACHIEVEMENTS** in the header, or
+  **Cmd/Ctrl+Shift+O**, shows the loaded game, everyone's latest unlocks,
+  every game, players' profiles, the chat and your account. It floats, docks
+  on the right, and shares the screen in fullscreen.
+- **Accounts with passkeys.** Sign in with your fingerprint, face or PIN, with
+  no password and no email. A recovery code gets you back in if you lose your
+  passkey. Add a badge to your profile, if you like.
+- **One chat for everyone.** The chat is now a tab of that window: one
+  conversation under your username. Type @ to mention a game, which
+  becomes a link to its page, and see unlocks and new high scores as they
+  happen.
+- **Fair play.** Some games notice a trainer and tell you.
+  Rather play without achievements? Turn them off in Options ▸ Other.
 - **Simpler ROM setup.** Download ROMs directly into your browser from editable
   links, or use the VICE folder and file upload tabs. ROMs are remembered for
   later visits. Press **Done** to start the C64.

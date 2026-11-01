@@ -420,6 +420,34 @@ carry, by disassembling it. What they turned out to be is in the
 - [Ultimate's Assembly64 client](https://github.com/GideonZ/1541ultimate/blob/master/software/network/assembly.cc)
   is a protocol and AQL syntax reference.
 
+### Achievements and leaderboards
+
+- **rcheevos** (RetroAchievements, MIT): the achievement runtime, compiled to
+  WebAssembly and run in the app. Its condition strings define every
+  achievement and leaderboard, and its hash identifies a game: for the C64, the
+  MD5 of the whole file.
+  <https://github.com/RetroAchievements/rcheevos>
+- **WASI** and **wasi-libc**: the system interface and C library the module is
+  built against with LLVM's clang. The app supplies the few WASI calls the
+  module imports.
+  <https://github.com/WebAssembly/wasi-libc>
+
+### Accounts and passkeys
+
+- **W3C**: _Web Authentication, Level 3_: the registration (§7.1) and
+  authentication (§7.2) checks the server makes, including the signature
+  counter's clone guard.
+  <https://www.w3.org/TR/webauthn-3/>
+- **RFC 8949**: _Concise Binary Object Representation (CBOR)_, the encoding of
+  a passkey's attestation and public key.
+  <https://www.rfc-editor.org/rfc/rfc8949>
+- **RFC 9053**: _CBOR Object Signing and Encryption (COSE)_, the key types
+  ES256, EdDSA and RS256 a passkey may use.
+  <https://www.rfc-editor.org/rfc/rfc9053>
+- **Crockford's Base32**: the alphabet of the recovery codes, which reads back
+  without confusing 0 and O, or 1, I and L.
+  <https://www.crockford.com/base32.html>
+
 ### Capture formats
 
 - **ISO base media / MP4 file format**: ISO/IEC 14496-12 and 14496-14 define
@@ -466,6 +494,19 @@ A special thanks goes to the following:
   <https://assembly64.hackerswithstyle.se/assembly/index.html>
 - **OneLoad64**: one-file C64 games collection.
   <https://oneload64.github.io/>
+
+### Achievements
+
+- **c64-cheevos** by hayesmaker (MIT): the achievement and leaderboard
+  definitions 16 of C64 READY.'s sets are ported from (each names it in its
+  `source` field, the rest are this project's own).
+  <https://github.com/hayesmaker/c64-cheevos>
+- **C64cade**: its game catalog identified the file each of those sets was
+  made for.
+  <https://www.c64cade.com/>
+- **RetroAchievements**: the rcheevos runtime, and the condition format the
+  sets are written in.
+  <https://retroachievements.org/>
 
 ### BBSes and terminal programs
 

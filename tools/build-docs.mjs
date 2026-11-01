@@ -51,7 +51,7 @@ const ORDER = [
   'GUIDE-MEDIA',
   'GUIDE-INPUT',
   'GUIDE-LOOKS',
-  'GUIDE-CHAT',
+  'GUIDE-ACHIEVEMENTS',
   'GUIDE-OPTIONS',
   'GUIDE-CLI',
   'SPECIFICATIONS',
@@ -84,7 +84,7 @@ const GUIDES = new Set([
 ]);
 
 // Each guide has a hub and ordered chapters, sharing navigation and paging.
-const GUIDE_PAGES = ['GUIDE-INTERFACE', 'GUIDE-MONITOR', 'GUIDE-MEDIA', 'GUIDE-INPUT', 'GUIDE-LOOKS', 'GUIDE-CHAT', 'GUIDE-OPTIONS', 'GUIDE-CLI'];
+const GUIDE_PAGES = ['GUIDE-INTERFACE', 'GUIDE-MONITOR', 'GUIDE-MEDIA', 'GUIDE-INPUT', 'GUIDE-LOOKS', 'GUIDE-ACHIEVEMENTS', 'GUIDE-OPTIONS', 'GUIDE-CLI'];
 const COMPONENT_PAGES = ['CPU', 'MEMORY', 'VIC', 'SID', 'CIA', 'DRIVE', 'TAPE', 'CRT', 'REU'].map(name => `COMPONENT-GUIDE-${name}`);
 const GUIDE_COLLECTIONS = [
   { hub: 'USER-GUIDE', title: 'User Guide', pages: GUIDE_PAGES },
@@ -94,7 +94,7 @@ const guideFor = name => GUIDE_COLLECTIONS.find(guide => guide.hub === name || g
 
 // Old page URLs redirect in public/_redirects. Exclude any retained source stubs
 // from the generated pages and remove stale HTML at these paths.
-const MOVED_SOURCES = new Set(['USER-GUIDE-CLI.md', 'USERPORT-DEVICES.md']);
+const MOVED_SOURCES = new Set(['USER-GUIDE-CLI.md', 'USERPORT-DEVICES.md', 'GUIDE-CHAT.md']);
 
 // The guide was one page; a link to a heading that moved to a topic page
 // (bookmarks, other sites, older release notes) is sent on to it by a small
@@ -652,7 +652,7 @@ ${tocHtml}
 ${bodyHtml}
 ${inGuide ? guidePager(meta.name) + '\n' : ''}    </article>
   </main>
-${meta.name === 'USER-GUIDE' ? guideRedirectScript() + '\n' : meta.name === 'GUIDE-INTERFACE' ? guideRedirectScript(CHAT_GUIDE_ANCHORS, true) + '\n' : ''}${guidePage ? guideJumpScript() + '\n' : ''}${foot()}`;
+${meta.name === 'USER-GUIDE' ? guideRedirectScript() + '\n' : meta.name === 'GUIDE-INTERFACE' ? guideRedirectScript(CHAT_GUIDE_ANCHORS, true) + '\n' : meta.name === 'GUIDE-ACHIEVEMENTS' ? guideRedirectScript(CHAT_GUIDE_ANCHORS) + '\n' : ''}${guidePage ? guideJumpScript() + '\n' : ''}${foot()}`;
 }
 
 // Compile a plain-text file (LICENSE, NOTICE.txt) verbatim into a styled doc

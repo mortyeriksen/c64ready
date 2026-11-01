@@ -1,0 +1,30 @@
+{
+  "id": "stix",
+  "title": "Stix",
+  "source": "Achievements ported from c64-cheevos by hayesmaker (MIT), https://github.com/hayesmaker/c64-cheevos",
+  "hashes": [
+    {
+      "hash": "b4be7e45be496ac3997d74aae2d71a95",
+      "label": "c64cade release (PRG)"
+    },
+    {
+      "hash": "19c3b801ad45c756085b080eea14cb3c",
+      "label": "OneLoad64 v5 cartridge (Stix (J1).crt)"
+    },
+    {
+      "hash": "e0bf1242e30efc5a97072610a63a1826",
+      "label": "Official cartridge, OneLoad64 v5 extras (Stix.crt)"
+    }
+  ],
+  "achievements": [],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score",
+      "description": "Highest score in one game.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH4b2d=3_d0xH4b2d=0::CAN:0xH4b23=0_d0xH4b23!=0_0xH4b2d=0_0xH4b2e=0_0xH4b2f=0_0xH4b30=0::SUB:0xH4b23=0_d0xH4b23!=0_0xH4b2d=0::VAL:b0xH4b30*10000_b0xH4b2f*100_b0xH4b2e"
+    }
+  ]
+}

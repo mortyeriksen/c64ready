@@ -2,7 +2,8 @@
 // Copyright © 2026 Morten Øien Eriksen
 // server/address.mjs — who is asking: the client's address (through a known
 // number of proxies), the key it is counted under, and the short hash the
-// admin sees and bans by. Addresses themselves are never stored or shown.
+// live view shows. The address itself goes only to the admin's records: the
+// login history, the bans and the chat log.
 
 import net from 'node:net';
 import crypto from 'node:crypto';

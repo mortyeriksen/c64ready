@@ -72,6 +72,36 @@ Workbox
     shell can be precached and run offline.
     (MIT license text reproduced at the bottom of this file.)
 
+rcheevos  (RetroAchievements' achievement runtime, v12.5.0)
+    Copyright (c) 2018 RetroAchievements.org
+    MIT License — https://github.com/RetroAchievements/rcheevos
+    Reads the C64's memory each frame to decide when an achievement is
+    earned or a leaderboard attempt starts and ends, and hashes loaded files
+    to identify the game. Vendored under native/rcheevos/rcheevos/ (with its
+    LICENSE) and compiled with this project's glue (native/rcheevos/
+    c64_cheevos.c) to WebAssembly, embedded base64 in
+    src/achievements/rcheevos-wasm-blob.js and rebuilt by
+    native/rcheevos/build.sh. native/rcheevos/ is the corresponding source
+    for the compiled module. The module statically includes portions of:
+      - wasi-libc (https://github.com/WebAssembly/wasi-libc), used under its
+        MIT option, including code from:
+          - musl libc, Copyright © 2005-2020 Rich Felker, et al., MIT License
+          - dlmalloc by Doug Lea, released to the public domain (CC0)
+          - cloudlibc, Copyright (c) 2015-2017 Nuxi (https://nuxi.nl/) and
+            contributors, BSD 2-Clause License (text reproduced at the bottom
+            of this file)
+      - LLVM compiler-rt builtins, Apache License v2.0 with LLVM Exceptions
+        (https://llvm.org/LICENSE.txt)
+    (MIT license text reproduced at the bottom of this file.)
+
+Achievement and leaderboard definitions  (the server/sets/*.json files
+whose "source" field names c64-cheevos)
+    Copyright (c) 2026 hayesmaker
+    MIT License — https://github.com/hayesmaker/c64-cheevos
+    Ported from c64-cheevos to rcheevos's condition syntax and served by the
+    chat server. The other sets in server/sets/ are this project's own work.
+    (MIT license text reproduced at the bottom of this file.)
+
 ================================================================================
 Ported / derived algorithms and model constants
 ================================================================================
@@ -228,8 +258,9 @@ NOT included — you must supply these
   project's own test/build-*.mjs scripts.
 
 ================================================================================
-MIT License  (applies to three.js and workbox above, and to the Rust
-standard library portions statically included in the compiled SID module)
+MIT License  (applies to three.js, workbox, rcheevos, musl and wasi-libc,
+and the c64-cheevos definitions above, and to the Rust standard library portions
+statically included in the compiled SID module)
 ================================================================================
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -276,3 +307,31 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+================================================================================
+BSD 2-Clause License  (applies to the cloudlibc portions of wasi-libc
+statically included in the compiled rcheevos module)
+================================================================================
+
+Copyright (c) 2015-2017 Nuxi (https://nuxi.nl/) and contributors.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.

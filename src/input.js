@@ -41,11 +41,28 @@ function c64HasKeyboard() {
     || !!(keymapModal && !keymapModal.hidden && keymapModal.contains(el));
 }
 
+// The hint over the picture. With a pointer: shown while the C64 does not have
+// the keyboard. On a touch device, where the keyboard opens on a tap: shown on
+// the running machine until the screen is first tapped.
 const keyboardFocusHint = document.getElementById('keyboard-focus-hint');
+const touchOnly = window.matchMedia?.('(hover: none) and (pointer: coarse)');
+let screenTapped = false;
+// The hint waits a second before it shows, so a brief click on a button (which
+// hands the keyboard straight back to the screen) never flashes it; it hides at once.
+const HINT_DELAY_MS = 1000;
+let hintTimer = 0;
+const hintWanted = () => (touchOnly?.matches
+  ? !screenTapped && document.body.classList.contains('powered-on')
+  : !(document.hasFocus() && c64HasKeyboard()));
 function updateKeyboardFocusHint() {
   if (!keyboardFocusHint) return;
-  keyboardFocusHint.hidden = document.hasFocus() && c64HasKeyboard();
+  if (!hintWanted()) { clearTimeout(hintTimer); hintTimer = 0; keyboardFocusHint.hidden = true; return; }
+  if (!keyboardFocusHint.hidden || hintTimer) return;
+  // Shown after the delay only if it is still wanted then.
+  hintTimer = setTimeout(() => { hintTimer = 0; keyboardFocusHint.hidden = !hintWanted(); }, HINT_DELAY_MS);
 }
+canvas?.addEventListener('pointerdown', () => { screenTapped = true; updateKeyboardFocusHint(); });
+new MutationObserver(updateKeyboardFocusHint).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
 // A mouse or touch click on a button, or a pick from a menu, hands the keyboard
 // back to the screen, so typing straight after clicking LOAD or POWER reaches
@@ -85,7 +102,7 @@ const IS_WINDOWS =
 
 // ── Injected core hooks (assigned by initInput) ──────────────────────────────
 let downloadSnapshot, clearPendingPaste, toggleCrtPanel, toggleVibesZoom, pasteFromShortcut, nextQueuedDisk;
-let toggleVibesStudio, cycleTheme;
+let toggleVibesStudio, cycleTheme, toggleOnline;
 
 // ── Control Port state ──────────────────────────────────────────────────────
 // C64 joystick bits: active-low
@@ -1848,6 +1865,12 @@ const RESERVED_CODES = new Set([
 // assigns later — it is only ever called from an event, so the binding is set by
 // then. Registered here rather than at each feature's call site so the dialog
 // order is the order of this list.
+// O, for Online. Chrome's bookmark manager and Firefox's Library are on it too,
+// but neither is reserved: the page's preventDefault wins.
+registerAppShortcut({
+  code: 'KeyO', label: 'Achievements and chat',
+  run: () => toggleOnline?.(),
+});
 registerAppShortcut({
   code: 'KeyV', label: 'Paste clipboard',
   run: () => pasteFromShortcut?.(),
@@ -2273,5 +2296,5 @@ document.addEventListener('pointerlockchange', () => {
 // ── Dependency injection ─────────────────────────────────────────────────────
 export function initInput(deps) {
   ({ downloadSnapshot, clearPendingPaste, toggleCrtPanel, toggleVibesZoom, pasteFromShortcut,
-     toggleVibesStudio, cycleTheme, nextQueuedDisk } = deps);
+     toggleVibesStudio, cycleTheme, nextQueuedDisk, toggleOnline } = deps);
 }

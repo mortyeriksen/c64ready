@@ -12,15 +12,18 @@ export const CHAT_SERVER = 'wss://c64ready-chat-production.up.railway.app/chat';
 const TOKEN_KEY = 'c64emu.chat.token';
 
 /**
- * Where to connect: the production server, in development too, unless
- * localStorage names another (`c64emu.chat.server`), as the tests do to use
- * the dev server's own /chat.
+ * Where to connect: localStorage's `c64emu.chat.server` when set (the tests
+ * name their own dev server's /chat), else the dev server's own /chat in
+ * development, else the production server.
  */
 export function chatServerUrl() {
   try {
     const override = localStorage.getItem('c64emu.chat.server');
     if (override) return override;
   } catch { /* storage blocked */ }
+  if (import.meta.env?.DEV && typeof location !== 'undefined') {
+    return `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/chat`;
+  }
   return CHAT_SERVER;
 }
 
@@ -32,9 +35,10 @@ function sessionStore() {
  * @param {object} o
  * @param {string} o.url
  * @param {(event: object) => void} o.onEvent      every pushed server event, and welcome
- * @param {(status: string) => void} o.onStatus    'connecting' | 'online' | 'offline' | 'replaced' | 'banned' | 'old'
+ * @param {(status: string) => void} o.onStatus    'connecting' | 'online' | 'offline' | 'replaced' | 'banned' | 'old' | 'signin'
+ * @param {() => string|null} o.accountToken     the signed-in account's session (src/account/account.js); chatting needs one
  */
-export function createChatConnection({ url, onEvent, onStatus }) {
+export function createChatConnection({ url, onEvent, onStatus, accountToken = () => null }) {
   const store = sessionStore();
   let ws = null;
   let status = 'offline';
@@ -60,7 +64,7 @@ export function createChatConnection({ url, onEvent, onStatus }) {
     let sock;
     try { sock = new WebSocket(url); } catch { schedule(); return; }
     ws = sock;
-    sock.addEventListener('open', () => sock.send(JSON.stringify({ t: 'hello', v: PROTOCOL, token: token() })));
+    sock.addEventListener('open', () => sock.send(JSON.stringify({ t: 'hello', v: PROTOCOL, token: token(), account: accountToken() || undefined })));
     sock.addEventListener('message', (e) => {
       let msg;
       try { msg = JSON.parse(e.data); } catch { return; }
@@ -83,6 +87,8 @@ export function createChatConnection({ url, onEvent, onStatus }) {
       if (e.code === 4001) { saveToken(null); wanted = false; setStatus('replaced'); return; }
       if (e.code === 4003) { saveToken(null); wanted = false; setStatus('banned'); return; }
       if (e.code === 4000) { wanted = false; setStatus('old'); return; }
+      // The account's session is gone (signed out elsewhere, expired): sign in again.
+      if (e.code === 4004) { saveToken(null); wanted = false; setStatus('signin'); return; }
       schedule();
     });
   }

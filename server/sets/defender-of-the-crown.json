@@ -1,0 +1,54 @@
+{
+  "id": "defender-of-the-crown",
+  "title": "Defender of the Crown",
+  "hashes": [
+    {
+      "hash": "9bb7905207d10094d3f3fda527d0d1ac",
+      "label": "OneLoad64 v5 extras, EasyFlash cartridge (Defender of the Crown [EasyFlash].crt)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "New Lands",
+      "description": "Win a territory for yourself.",
+      "points": 5,
+      "memaddr": "N:0xH0042=9_N:0xH0043=175_N:0xH0044=4_d0xH0044!=4.1._0xH0044=4_d0xH0044=4S0xH00D0=0_d0xH00D0>0_d0xH00D0<8S0xH00D1=0_d0xH00D1>0_d0xH00D1<8S0xH00D2=0_d0xH00D2>0_d0xH00D2<8S0xH00D3=0_d0xH00D3>0_d0xH00D3<8S0xH00D4=0_d0xH00D4>0_d0xH00D4<8S0xH00D5=0_d0xH00D5>0_d0xH00D5<8S0xH00D6=0_d0xH00D6>0_d0xH00D6<8S0xH00D7=0_d0xH00D7>0_d0xH00D7<8S0xH00D8=0_d0xH00D8>0_d0xH00D8<8S0xH00D9=0_d0xH00D9>0_d0xH00D9<8S0xH00DA=0_d0xH00DA>0_d0xH00DA<8S0xH00DB=0_d0xH00DB>0_d0xH00DB<8S0xH00DC=0_d0xH00DC>0_d0xH00DC<8S0xH00DD=0_d0xH00DD>0_d0xH00DD<8S0xH00DE=0_d0xH00DE>0_d0xH00DE<8S0xH00DF=0_d0xH00DF>0_d0xH00DF<8S0xH00E0=0_d0xH00E0>0_d0xH00E0<8S0xH00E1=0_d0xH00E1>0_d0xH00E1<8S0xH00E2=0_d0xH00E2>0_d0xH00E2<8"
+    },
+    {
+      "id": 2,
+      "title": "Castle Taker",
+      "description": "Take one of the other lords' castles.",
+      "points": 25,
+      "memaddr": "N:0xH0042=9_N:0xH0043=175_N:0xH0044=4_d0xH0044!=4.1._0xH0044=4_d0xH0044=4S0xH00D0=192_d0xH00D0>192_d0xH00D0<200S0xH00D1=192_d0xH00D1>192_d0xH00D1<200S0xH00D2=192_d0xH00D2>192_d0xH00D2<200S0xH00D3=192_d0xH00D3>192_d0xH00D3<200S0xH00D4=192_d0xH00D4>192_d0xH00D4<200S0xH00D5=192_d0xH00D5>192_d0xH00D5<200S0xH00D6=192_d0xH00D6>192_d0xH00D6<200S0xH00D7=192_d0xH00D7>192_d0xH00D7<200S0xH00D8=192_d0xH00D8>192_d0xH00D8<200S0xH00D9=192_d0xH00D9>192_d0xH00D9<200S0xH00DA=192_d0xH00DA>192_d0xH00DA<200S0xH00DB=192_d0xH00DB>192_d0xH00DB<200S0xH00DC=192_d0xH00DC>192_d0xH00DC<200S0xH00DD=192_d0xH00DD>192_d0xH00DD<200S0xH00DE=192_d0xH00DE>192_d0xH00DE<200S0xH00DF=192_d0xH00DF>192_d0xH00DF<200S0xH00E0=192_d0xH00E0>192_d0xH00E0<200S0xH00E1=192_d0xH00E1>192_d0xH00E1<200S0xH00E2=192_d0xH00E2>192_d0xH00E2<200"
+    },
+    {
+      "id": 3,
+      "title": "Full Coffers",
+      "description": "Hold at least 50 gold.",
+      "points": 5,
+      "memaddr": "N:0xH0042=9_N:0xH0043=175_N:0xH0044=4_d0xH0044!=4.1._0xH0044=4_d0xH0044=4_0xH007D>=50"
+    },
+    {
+      "id": 4,
+      "title": "Treasure House",
+      "description": "Hold at least 150 gold.",
+      "points": 10,
+      "memaddr": "N:0xH0042=9_N:0xH0043=175_N:0xH0044=4_d0xH0044!=4.1._0xH0044=4_d0xH0044=4_0xH007D>=150"
+    },
+    {
+      "id": 5,
+      "title": "A Year in the Saddle",
+      "description": "Still be fighting for the crown in October 1200.",
+      "points": 10,
+      "memaddr": "N:0xH0042=9_N:0xH0043=175_N:0xH0044=4_d0xH0044!=4.1._0xH0044=4_d0xH0044=4S0xH0043=176_0xH0042>=10S0xH0043>176"
+    },
+    {
+      "id": 6,
+      "title": "Long Campaign",
+      "description": "Still be fighting for the crown in October 1201.",
+      "points": 25,
+      "memaddr": "N:0xH0042=9_N:0xH0043=175_N:0xH0044=4_d0xH0044!=4.1._0xH0044=4_d0xH0044=4S0xH0043=177_0xH0042>=10S0xH0043>177"
+    }
+  ]
+}

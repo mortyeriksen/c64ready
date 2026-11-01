@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
-// server/protocol.mjs — the chat's shared rules: limits, text cleaning, room
-// codes and topic keys. The app imports this file too, so both sides agree.
+// server/protocol.mjs — the chat's shared rules: limits, text cleaning, and
+// the games a message mentions. The app imports this file too, so both sides
+// agree.
 
-export const PROTOCOL = 1;
+export const PROTOCOL = 2;
 
 export const LIMITS = Object.freeze({
   nick: 16,
   roomName: 32,
-  topicTitle: 48,
   text: 280,
-  roomSize: 32,
-  history: 50,
-  a64Id: 128,
-  fileName: 128,
+  mentions: 3,
+  channelSize: 500,
+  history: 100,
   reportMessages: 20,
 });
 
@@ -21,8 +20,6 @@ export const LIMITS = Object.freeze({
 export const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const CODE_LENGTH = 6;
 const CODE_RE = new RegExp(`^[${CODE_ALPHABET}]{${CODE_LENGTH}}$`);
-
-export const TOPIC_KINDS = Object.freeze(['disk', 'cart', 'tape', 'program', 'tune']);
 
 // Names nobody may take: the admin speaks as SYSOP.
 const RESERVED = new Set(['sysop', 'admin', 'administrator', 'moderator', 'system', 'c64ready']);
@@ -49,46 +46,30 @@ export function cleanName(value, max) {
   return s && length(s) <= max ? s : null;
 }
 
+/** Whether a name is the admin's, or reads as one: folded like a name key (NFKC), so "ＳＹＳＯＰ" is reserved too. */
 export function isReservedNick(nick) {
-  return RESERVED.has(String(nick).toLowerCase().replace(/[^a-z0-9]/g, ''));
+  return RESERVED.has(String(nick).normalize('NFKC').toLowerCase().replace(/[^a-z0-9]/g, ''));
 }
 
 export function isRoomCode(value) {
   return typeof value === 'string' && CODE_RE.test(value);
 }
 
-/** A title folded for comparison: "Commando (1985)" and "COMMANDO" match. */
-export function foldTitle(title) {
-  return String(title ?? '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-    .replace(/\(\d{4}\)|\[[^\]]*\]|\{[^}]*\}/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
-}
-
-const a64Part = (v) => (typeof v === 'string' && v.length > 0 && v.length <= LIMITS.a64Id && !/[\u0000-\u001f/\\]/.test(v) ? v : null);
+const GAME_ID = /^[a-z0-9-]{1,48}$/;
 
 /**
- * A room's topic as the server keeps it: { title, kind, a64? } or null. a64 is the
- * Assembly64 file the topic was loaded from: { item, cat, file, name }.
+ * The games a message mentions, as sent: game ids (a set's slug), each once,
+ * at most LIMITS.mentions. The server keeps only those it knows, whose
+ * `@Title` is in the text.
  */
-export function cleanTopic(value) {
-  if (!value || typeof value !== 'object') return null;
-  const title = cleanName(value.title, LIMITS.topicTitle);
-  if (!title || !TOPIC_KINDS.includes(value.kind)) return null;
-  const topic = { title, kind: value.kind };
-  const a = value.a64;
-  if (a && typeof a === 'object') {
-    const item = a64Part(a.item), file = a64Part(a.file);
-    const name = cleanName(a.name, LIMITS.fileName);
-    if (item && file && name && Number.isSafeInteger(a.cat) && a.cat >= 0 && a.cat < 10000) topic.a64 = { item, cat: a.cat, file, name };
-  }
-  return topic;
+export function cleanMentions(value) {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.filter((id) => typeof id === 'string' && GAME_ID.test(id)))].slice(0, LIMITS.mentions);
 }
 
-/** Rooms about the same thing share a key: the Assembly64 release when known, else the folded title. */
-export function topicKey(topic) {
-  if (!topic) return '';
-  if (topic.a64) return `a64:${topic.a64.cat}:${topic.a64.item}`;
-  const folded = foldTitle(topic.title);
-  return folded ? `t:${folded}` : '';
+/** Whether `text` names `title` as a mention: "@Bomb Jack", in any case. */
+export function mentions(text, title) {
+  return String(text).toLowerCase().includes(`@${String(title).toLowerCase()}`);
 }
 
 /** Words the operator has blocked, matched case-insensitively on word boundaries. */

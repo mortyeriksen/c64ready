@@ -307,14 +307,14 @@ body.crt-hum .logo-text::before,
   }
 }
 
-/* GitHub / YouTube / Facebook: icon-only, and desktop-only. The mobile header
-   has no room for them beside ABOUT and DOCS, and all three are linked from
-   ABOUT anyway, so hiding them there costs nothing. */
+/* GitHub / YouTube / Facebook: icon-only, and only on a wide screen. A
+   narrower header has no room for them beside ABOUT, DOCS and ACHIEVEMENTS,
+   and all three are linked from ABOUT anyway, so hiding them costs nothing. */
 .icon-link {
   display: none;
 }
 
-@media (min-width: 681px) {
+@media (min-width: 900px) {
   .icon-link {
     display: inline-flex;
     align-items: center;

@@ -34,10 +34,12 @@ const roomName = (code) => rooms.get(code)?.name ?? code;
 function act(msg) {
   if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ ...msg, id: nextId++ }));
 }
+// Cancelling either question, or giving no reason, bans nobody.
 function ban(addr, label) {
   const hours = Number(prompt(`Ban ${label} (${addr}) for how many hours? (1 to 720)`, '24'));
   if (!hours) return;
-  const reason = prompt('Reason (only you see it)', '') ?? '';
+  const reason = prompt('Reason, for the log (only you see it)', '');
+  if (!reason?.trim()) return;
   act({ t: 'ban', addr, hours, reason });
 }
 
@@ -102,16 +104,20 @@ function messageItem(code, m, withRoom) {
   li.append(el('span', time(m.at), 'meta'));
   if (withRoom) li.append(el('span', `[${roomName(code)}]`, 'tag'));
   const member = rooms.get(code)?.members.find((x) => x.id === m.from.id);
-  li.append(el('span', m.from.nick, 'who'));
+  // An announced unlock or new best has no author: it names the player.
+  const text = m.event ? `${m.event.user.name} ${m.event.kind === 'unlock' ? `unlocked ${m.event.achievement.title}` : `scored ${m.event.value} on ${m.event.leaderboard.title}`} in ${m.event.game.title}` : m.text;
+  li.append(el('span', m.event ? 'announce' : m.from.nick, 'who'));
   if (member) li.append(el('span', member.addr, 'addr'));
-  li.append(el('span', m.text, 'text'));
+  li.append(el('span', text, 'text'));
   li.append(button('delete', () => act({ t: 'delete', room: code, n: m.n })));
   return li;
 }
 
 function renderFeed() {
   const list = $('feed');
+  // Rebuilding resets the scroll: at the bottom it follows new lines, else it stays where you are reading.
   const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 40;
+  const top = list.scrollTop;
   list.replaceChildren();
   if (selected === null) {
     for (const e of feed) {
@@ -121,7 +127,7 @@ function renderFeed() {
   } else {
     for (const m of rooms.get(selected)?.history ?? []) list.append(messageItem(selected, m, false));
   }
-  if (atBottom) list.scrollTop = list.scrollHeight;
+  list.scrollTop = atBottom ? list.scrollHeight : top;
 }
 
 function renderRoomHead() {
@@ -136,9 +142,10 @@ function renderRoomHead() {
   list.replaceChildren();
   for (const m of r.members) {
     const li = el('li', null, m.here ? '' : 'away');
-    li.append(el('span', `${m.nick}${m.id === r.owner ? ' (host)' : ''}${m.muted ? ' (muted)' : ''}`), el('span', m.addr, 'addr'));
+    li.append(el('span', `${m.nick}${m.muted ? ' (muted)' : ''}`), el('span', m.addr, 'addr'));
     li.append(button(m.muted ? 'unmute' : 'mute', () => act({ t: 'mute', room: r.code, member: m.id, on: !m.muted })));
     li.append(button('kick', () => act({ t: 'kick', room: r.code, member: m.id })));
+    li.append(button('remove badge', () => act({ t: 'unpicture', room: r.code, member: m.id })));
     li.append(button('ban', () => ban(m.addr, m.nick), 'danger'));
     list.append(li);
   }
@@ -170,9 +177,9 @@ function renderBans() {
   if (!bans.length) list.append(el('li', 'None.', 'meta'));
   for (const b of bans) {
     const li = el('li');
-    li.append(el('div', `${b.addr} until ${new Date(b.until).toLocaleString()}`));
+    li.append(el('div', `${b.ip ?? b.key} (${b.addr}) until ${new Date(b.until).toLocaleString()}`));
     if (b.reason) li.append(el('div', b.reason, 'meta'));
-    li.append(button('unban', () => act({ t: 'unban', addr: b.addr })));
+    li.append(button('unban', () => act({ t: 'unban', key: b.key })));
     list.append(li);
   }
 }
@@ -208,13 +215,6 @@ function onEvent(e) {
       if (selected === e.room.code) renderRoomHead();
       break;
     }
-    case 'closed':
-      pushFeed({ room: e.room, notice: `room closed (${e.reason})` });
-      if (selected === e.room) selected = null;
-      renderFeed();
-      rooms.delete(e.room);
-      renderAll();
-      break;
     case 'msg': {
       const r = rooms.get(e.room);
       if (r) { r.history.push(e.m); if (r.history.length > 50) r.history.shift(); }
@@ -255,20 +255,19 @@ function connect() {
   ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/admin/live`);
   ws.addEventListener('open', () => { failures = 0; });
   ws.addEventListener('message', (m) => { try { onEvent(JSON.parse(m.data)); } catch { /* ignore a bad event */ } });
-  ws.addEventListener('close', () => {
+  ws.addEventListener('close', (e) => {
     live = false;
     renderOnline();
+    // The sign-in ended (signed out, or run out): to the passkey sign-in.
+    if (e.code === 4001) { location.href = '/admin/login'; return; }
     $('stats').textContent = 'disconnected, retrying…';
-    // A refused socket usually means the console cookie expired: reloading asks for the password again.
+    // A refused socket usually means the console cookie expired: reloading goes to the sign-in.
     if (++failures >= 3) location.reload();
     else setTimeout(connect, 2000);
   });
 }
 
 $('all-rooms').addEventListener('click', () => select(null));
-$('close-room').addEventListener('click', () => {
-  if (selected && confirm(`Close room "${roomName(selected)}" for everyone?`)) act({ t: 'close', room: selected });
-});
 $('say').addEventListener('submit', (e) => {
   e.preventDefault();
   const text = $('say-text').value.trim();

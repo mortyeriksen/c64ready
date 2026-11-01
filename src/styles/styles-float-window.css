@@ -1,0 +1,120 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2026 Morten Øien Eriksen */
+/* src/styles/styles-float-window.css – the floating windows (the chat and
+   Achievements, src/ui/floating-window.js): the frame, its title bar and its
+   resize handles, and the full-screen form on a phone. */
+
+.float-window {
+  position: fixed;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  background: var(--ui-bg);
+  /* Floating over the page, so its edge stands out: the border drawn toward
+     the text colour (lighter on dark themes, darker on light ones). */
+  border: 3px solid color-mix(in srgb, var(--border) 55%, var(--text) 45%);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--shadow) 55%, transparent);
+  color: var(--text);
+  overflow: hidden;
+}
+.float-window[hidden] {
+  display: none;
+}
+/* Below the modal dialogs (z 1000), so a confirm opened from a window shows on
+   top. Fullscreen lifts the monitor to z 1000, so the windows rise with it. */
+body.fullscreen-mode .float-window {
+  z-index: 1500;
+}
+.float-window.is-full {
+  left: 0;
+  right: 0;
+  top: var(--float-top, 0px);
+  height: var(--float-vh, 100dvh);
+  border: 0;
+  border-radius: 0;
+  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.float-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-bg);
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.is-full .float-head {
+  cursor: default;
+  padding-top: max(8px, env(safe-area-inset-top));
+}
+
+.float-resize {
+  position: absolute;
+  z-index: 1;
+  touch-action: none;
+}
+.float-resize-e  { top: 40px; right: 0; bottom: 12px; width: 6px; cursor: ew-resize; }
+.float-resize-w  { top: 40px; left: 0; bottom: 12px; width: 6px; cursor: ew-resize; }
+.float-resize-s  { left: 12px; right: 12px; bottom: 0; height: 6px; cursor: ns-resize; }
+.float-resize-se { right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize; }
+.float-resize-sw { left: 0; bottom: 0; width: 14px; height: 14px; cursor: nesw-resize; }
+.is-full .float-resize {
+  display: none;
+}
+
+/* Docked on the right, full height: the page narrows beside it, and only the
+   left edge resizes it. */
+.float-window.is-docked {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: auto;
+  height: 100dvh;
+  border-width: 0 0 0 3px;
+  border-radius: 0;
+  box-shadow: none;
+}
+.is-docked .float-head {
+  cursor: default;
+}
+.is-docked .float-resize:not(.float-resize-w) {
+  display: none;
+}
+.is-docked .float-resize-w {
+  top: 0;
+  bottom: 0;
+  width: 8px;
+}
+body.has-docked-window {
+  padding-right: calc(var(--float-dock-w, 0px) + 12px);
+}
+/* The page's corner controls (the panels' + button, the drop zone for hiding a
+   panel, the equipment hint) move left with it, out from under the window. */
+body.has-docked-window .panel-restore-btn,
+body.has-docked-window .panel-hide-target {
+  right: calc(var(--float-dock-w, 0px) + max(20px, env(safe-area-inset-right)));
+}
+body.has-docked-window .panel-equipment-hint {
+  right: calc(var(--float-dock-w, 0px) + max(20px, env(safe-area-inset-right)) + 54px);
+}
+/* Fullscreen with a docked window is a split screen: the picture fills what is
+   left of the width, and its toolbar buttons sit beside the window. */
+body.fullscreen-mode.has-docked-window .c64-monitor {
+  right: var(--float-dock-w, 0px);
+  width: auto;
+}
+body.fullscreen-mode.has-docked-window .crt-bezel {
+  width: min(calc(100vw - var(--float-dock-w, 0px)), calc(100dvh * 384 / 272));
+  height: min(100dvh, calc((100vw - var(--float-dock-w, 0px)) * 272 / 384));
+}
+body.fullscreen-mode.has-docked-window .fs-close-btn.dialog-close {
+  right: calc(var(--float-dock-w, 0px) + 12px);
+}
+body.fullscreen-mode.has-docked-window .fs-online-btn {
+  right: calc(var(--float-dock-w, 0px) + 66px);
+}

@@ -12,8 +12,8 @@
 
    Not themed, and so written as plain colours where they are used: the monitor
    and the CRT looks drawn over the picture (black glass, scanlines, shine, hum),
-   the scanline overlays on the logo, the collision badge on the screen, the
-   splash (Phosphor's colours in either mode, and its video frame), and the
+   the scanline overlays on the logo, the collision badge and the keyboard hint
+   on the screen, the splash (Phosphor's colours in either mode, and its video frame), and the
    Retro Vibes 3D scenes, which carry their own per-scene palettes. */
 
 /* Dark mode: the default values, and what .mode-dark areas keep in light mode

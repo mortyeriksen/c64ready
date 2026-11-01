@@ -6,16 +6,35 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
-  <title>Chat SYSOP</title>
+  <title>C64 READY. admin</title>
   <link rel="stylesheet" href="/admin/admin.css">
   <script type="module" src="/admin/admin.js"></script>
+  <script type="module" src="/admin/players.js"></script>
 </head>
 <body>
   <header class="top">
-    <h1>C64 READY chat <span class="sysop">SYSOP</span></h1>
-    <span class="top-right"><span class="stats" id="stats">connecting…</span> <a href="/admin/logs">Logs</a></span>
+    <h1>C64 READY. <span class="sysop">admin</span></h1>
+    <nav class="tabs" aria-label="Console">
+      <button type="button" class="tab" data-tab="overview" aria-pressed="true">Overview</button>
+      <button type="button" class="tab" data-tab="players" aria-pressed="false">Players</button>
+      <button type="button" class="tab" data-tab="live" aria-pressed="false">Live</button>
+    </nav>
+    <span class="top-right"><span class="stats" id="stats">connecting…</span> <a href="/admin/logs">Logs</a>
+      <a href="/admin/api/export" download>Export database</a>
+      <button type="button" id="btn-devices">Devices</button> <button type="button" id="btn-signout">Sign out</button></span>
   </header>
-  <main class="cols">
+  <main class="page" id="tab-overview" aria-label="Overview"></main>
+  <main class="page players" id="tab-players" aria-label="Players" hidden>
+    <section class="player-list">
+      <input id="player-search" class="search" type="search" placeholder="Search players" aria-label="Search players" autocomplete="off">
+      <table id="player-table" class="table"><thead><tr id="player-head"></tr></thead><tbody id="player-rows"></tbody></table>
+      <div class="row pager"><button type="button" id="page-prev">‹ Previous</button><span class="meta" id="page-info"></span><button type="button" id="page-next">Next ›</button></div>
+    </section>
+    <section class="player-detail" id="player-detail" aria-live="polite"><p class="meta">Pick a player.</p></section>
+  </main>
+  <dialog id="devices" class="devices"><h2>Admin passkeys</h2><ul id="device-list" class="list"></ul><p id="device-key" class="key"></p>
+    <div class="row"><button type="button" id="btn-add-device">Add a device</button><button type="button" id="btn-close-devices">Close</button></div></dialog>
+  <main class="cols" id="tab-live" hidden>
     <section class="col rooms" aria-labelledby="rooms-h">
       <h2 id="rooms-h">Rooms</h2>
       <button type="button" class="room-item all" id="all-rooms" aria-pressed="true">All rooms (live feed)</button>
@@ -27,7 +46,6 @@
       <div class="room-head" id="room-head" hidden>
         <div class="room-title"><h2 id="room-name"></h2><span class="meta" id="room-meta"></span></div>
         <div class="row">
-          <button type="button" id="close-room" class="danger">Close room</button>
         </div>
         <ul id="members" class="members"></ul>
       </div>

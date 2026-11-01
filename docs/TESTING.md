@@ -276,38 +276,71 @@ searches, cached ROMs, saved D64/REU loading, and exclusion of media/API respons
 from the service worker cache. Browser capture output goes in
 `investigation/assembly64/`.
 
-## Chat tests
+## Chat, accounts and achievements tests
 
-The chat's tests live in `test/chat/`. `chat-server-spec-test.js` runs the
-chat server with real WebSocket clients and a clock it drives: rooms, the
-lobby and its live online nicknames, the grace period, moderation by members,
-limits, bans, the log and its retention, the admin console, and requests that try to pollute prototypes,
-smuggle fields or write control characters to the log or a notification.
-`now-loaded-spec-test.js` checks how loaded media are named.
+These live in `test/chat/` and `test/achievements/`.
 
-`chat-window-browser-test.js` drives the window in headless Chromium against a
-dev server: dragging and resizing on a desktop, the phone view and joining
-from the lobby, online nicknames before joining, messages, the unread count and removal.
-`chat-injection-browser-test.js` attacks the chat window and the admin console:
-HTML, script and URL payloads in room names, topics, nicknames, messages and a
-loaded file's name must all show as text, never run or become elements. It
-also checks that a room's **LOAD** fetches the release from Assembly64
-(mocked), refuses a file the release does not have, and names what the
-catalog says. Both browser tests need no ROMs, and skip without Playwright's
-Chromium.
+- `chat-server-spec-test.js` runs the chat server with real WebSocket clients
+  and a clock it drives. A hello needs an account, and its username is the
+  name in the chat. It checks the one channel, which never closes, the grace
+  period, games mentioned in messages, announced unlocks and best scores, and
+  votes, counted by address, that remove someone for an hour. Then limits,
+  bans, the log and its retention, the admin console, and requests that try to
+  pollute prototypes, smuggle fields or write control characters to the log or
+  a notification. Accounts are stubbed there.
+- `accounts-spec-test.js` checks passkey sign-up and sign-in against the
+  WebAuthn rules with a software authenticator making real keys, sessions,
+  CORS and rate limits, more passkeys per account, and the recovery code: shown
+  once, kept as a hash, single-use, and locked for an hour after five wrong
+  tries.
+- `admin-console-spec-test.js` checks the admin console: the passkey sign-in,
+  setting up the first passkey with the single-use setup key (only its hash on
+  the server), device keys that last 10 minutes, the players API (overview,
+  players, a player's details and login history with address and browser),
+  and that each action needs a reason from the console's own page, does what
+  it says and is logged. A banned address reads only what is public, is
+  flagged in the players list, stays banned in the database, and is let back
+  in when the ban is lifted. A software authenticator (`_authenticator.js`) stands
+  in for the passkeys.
+- `games-api-spec-test.js` checks the games API: sets loading and checked,
+  games found by file hash, unlocks, leaderboards with shared ranks, the
+  activity feeds, profiles, and what is told to the chat.
+- `test/achievements/` holds the rcheevos module's own checks, the engine (a
+  file without a set never leaves the browser), and one spec test per
+  achievement set, which synthesizes RAM frame by frame.
+- `now-loaded-spec-test.js` checks how loaded media are named.
 
-The injection browser test also checks the admin's separate online-user list:
-names from multiple rooms, room navigation, joins, disconnects, reconnects,
-removal and room closure. Nicknames must remain plain text there too.
+The browser tests drive the app in headless Chromium against a dev server,
+with Chromium's virtual authenticator as the passkey device:
+
+- `achievements-account-browser-test.js`: signing up, the recovery code,
+  signing in again, recovering on a second device, managing passkeys, the
+  floating window and its shortcut.
+- `achievements-browser-test.js`: loading the Uridium cartridge opens the
+  window on its set (on a phone it flashes the button instead), then the
+  activity feed, profiles and game pages.
+- `chat-window-browser-test.js`: signing in to chat, mentioning a game with @
+  and opening it from the message, dragging and resizing on a desktop, the
+  phone view, messages, the unread count, hiding a member and signing out.
+- `chat-injection-browser-test.js` attacks the chat and the admin console:
+  HTML, script and URL payloads in usernames, messages and a mentioned
+  game's title must all show as text, never run or become elements, and a
+  forged mention is dropped. It also checks that the admin's online list
+  follows joins, disconnects, reconnects, removal and leaving.
+
+The browser tests keep their accounts in memory (`VITE_ACCOUNTS_IN_MEMORY=1`),
+never in `server/.data`. Only `achievements-browser-test.js` needs the ROMs and
+the Uridium cartridge (`uridium-crt` in `test/external-assets.json`). All of
+them skip without Playwright's Chromium.
 
 The app connects to the production chat on Railway, in development too. The
 browser tests point it at the dev server's own chat instead (`/chat`, set in
 localStorage as `c64emu.chat.server`), so they never reach production. To try
 a change to the server by hand, do the same in DevTools:
 `localStorage.setItem('c64emu.chat.server', 'ws://localhost:5173/chat')`, with
-the dev server's port. Its admin console is at `/admin` on the dev server: the
-user is `sysop`, and the password is printed with the server's address when it
-starts, fresh each time. The chat log is off in development: run
+the dev server's port. Its admin console is at `/admin` on the dev server.
+Until it has a passkey, the dev server prints a setup key when it starts:
+enter it at `/admin` under *Set up this device*. The chat log is off in development: run
 `server/main.mjs` with `CHAT_LOG_DIR` set to try it.
 
 ## Test categories

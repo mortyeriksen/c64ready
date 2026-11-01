@@ -1,12 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
-import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { buildDocs } from './tools/build-docs.mjs';
 import { docsPaths } from './tools/docs-paths.mjs';
 import { attachRelay } from './cli/relay.mjs';
 import { createChatServer } from './server/chat.mjs';
+import { createAccounts } from './server/accounts.mjs';
+import { openDatabase } from './server/db.mjs';
+import { gameRoutes, gameById, loadSets } from './server/games.mjs';
+import { createAdminData } from './server/admin-data.mjs';
+import { createAdminPasskeys } from './server/admin-passkeys.mjs';
+import { createBans } from './server/bans.mjs';
 import { switchOn } from './src/switches.js';
 
 // Cross-origin isolation for the SID worklet's SharedArrayBuffer. Dev + preview only;
@@ -71,27 +79,46 @@ const userportRelayPlugin = {
 };
 
 // A chat server of the dev server's own (/chat), with its admin console at
-// /admin, for the tests and for trying changes to the server. The app uses
-// the production chat unless localStorage's c64emu.chat.server names this one
-// (ws://localhost:<port>/chat). The console's password is made fresh at each
-// start and printed with the server's address, so a dev server reachable from
-// the network never has a known one. There is no chat log in development.
+// /admin. In development the app uses it (src/chat/connection.js), unless
+// localStorage's c64emu.chat.server names another. Until the console has a
+// passkey, a one-time setup key is made at each start and printed with the
+// server's address, so a dev server reachable from the network never has a known one. There is no chat log in development.
+// Accounts (/api) are kept in server/.data/c64ready.db (git-ignored), so a
+// passkey made on this machine keeps working across restarts (in memory with
+// the viteAccountsInMemory switch).
 const chatDevPlugin = {
   name: 'c64:chat',
   configureServer: (server) => {
     if (!server.httpServer) return;
-    const password = crypto.randomBytes(9).toString('base64url');
+    const dataDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'server', '.data');
+    let dbPath = ':memory:';
+    if (!switchOn('viteAccountsInMemory')) { fs.mkdirSync(dataDir, { recursive: true }); dbPath = path.join(dataDir, 'c64ready.db'); }
+    const db = openDatabase(dbPath);
+    const info = (t) => server.config.logger.info(`  ${t}`);
+    loadSets(db, path.join(path.dirname(fileURLToPath(import.meta.url)), 'server', 'sets'), info);
+    const bans = createBans({ db });
+    const accounts = createAccounts({ db, allowLoopback: true, extend: (api) => gameRoutes({ ...api, onActivity: (e) => chat.announce(e) }), log: info, bans });
+    const adminPasskeys = createAdminPasskeys({ db });
     const chat = createChatServer({
-      admin: { user: 'sysop', passwordSha256: crypto.createHash('sha256').update(password).digest('hex') },
+      allowLoopback: true,
+      // The console signs in with a passkey: the first is set up with the key shown below.
+      admin: { passkeys: adminPasskeys, keyUsed: adminPasskeys.keyUsed, useKey: adminPasskeys.useKey },
+      adminData: createAdminData({ db, accounts, bans }),
+      bans,
+      authenticate: (token) => accounts.userForToken(token),
+      findGame: (id) => gameById(db, id),
+      removePicture: (uid) => accounts.removePicture(uid),
       log: (t) => server.config.logger.warn(t),
     });
+    const setupKey = chat.adminSetupKey();
     server.middlewares.use((req, res, next) => {
+      if ((req.url || '').startsWith('/api/') && accounts.handleRequest(req, res)) return;
       if (!(req.url || '').startsWith('/admin') || !chat.handleRequest(req, res)) next();
     });
     server.httpServer.on('upgrade', (req, sock, head) => { chat.handleUpgrade(req, sock, head); });
-    server.httpServer.on('close', () => chat.close());
+    server.httpServer.on('close', () => { chat.close(); accounts.close(); });
     server.httpServer.once('listening', () => {
-      server.config.logger.info(`  chat admin: /admin  (user sysop, password ${password})`);
+      server.config.logger.info(setupKey ? `  chat admin: /admin  (set up a passkey with the key ${setupKey})` : '  chat admin: /admin  (sign in with your admin passkey)');
     });
   },
 };

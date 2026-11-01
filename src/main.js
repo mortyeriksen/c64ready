@@ -45,7 +45,16 @@ import {
   _cachedTapDeck, _restoreDeck,
 } from './media.js';
 import { initializeAssembly64 } from './assembly64/start.js';
-import { initChat } from './chat/start.js';
+import { initOnline } from './online/window.js';
+import { createAchievementEngine } from './achievements/engine.js';
+import { createAccount, apiBase } from './account/account.js';
+
+// Achievements for the loaded game (src/achievements/engine.js), set up with the
+// panel below; the frame loop and machine resets reach it through this.
+let achievements = null;
+// The engine while achievements are on, null while off: the frame loop and a
+// reset reach it only through this, so off takes it out of the machine's path.
+let achievementsLive = null;
 import { initInput, updateJoyPorts, _releaseAllLatched, softKeyboardInput } from './input.js';
 import { pushEscapeLayer, popEscapeLayer } from './ui/escape-stack.js';
 import { createAvMarker, avMarkerEnabled } from './av-marker.js';
@@ -1529,6 +1538,7 @@ function rafLoop(timestamp) {
     } else {
       c64.runFrame();
     }
+    achievementsLive?.frame(c64.ram());
     // Drive sounds edge-sample motor/half-track per emulated frame (a seek can
     // step several half-tracks within one rAF tick, so this must stay in the
     // loop to catch every stepper click) — but only when the feature is on:
@@ -1812,6 +1822,8 @@ function _createAndWireMachine({ keepKey = true, reuRam = null } = {}) {
   // (no BASIC prompt), so a later PRG load must still reset.
   setPristineBoot(!_cachedCartData);
   setHasBeenReady(false);
+  // A new machine: every achievement waits for its conditions to be false again.
+  achievementsLive?.reset();
 }
 
 // Peripheral state cached so a power-off → power-on cycle can re-apply
@@ -2424,6 +2436,69 @@ function _openCredits()  { if (creditsModal) { creditsModal.hidden = false; _loa
 function _closeCredits() { if (creditsModal) creditsModal.hidden = true; popEscapeLayer(_creditsEscape); }
 const _creditsIsOpen = () => creditsModal && !creditsModal.hidden;
 const _creditsEscape = { close: _closeCredits, isOpen: _creditsIsOpen };
+
+// Achievements: the header's trophy button opens the account and the loaded
+// game's achievements. One account serves the panel and the engine.
+let achievementsPanel = null;
+// One account serves achievements and the chat: signing in or out changes both.
+const achievementAccount = createAccount({ onChange: () => { achievementsPanel?.refresh(); achievements?.accountChanged(); achievementsPanel?.accountChanged(); } });
+// A browser that signed in before checks its session now, so achievements
+// earned before the panel is ever opened go to the account.
+if (achievementAccount.token) achievementAccount.restore();
+// An achievement, notice or score toast: in the C64's top border, over the
+// picture, in its kind's colour (styles-achievements.css). Without the display
+// it stays where every toast goes.
+function _achToast(kind, text, ms, actionLabel = null, onAction = null) {
+  const el = _pwaToast(text, actionLabel, onAction, ms);
+  el.classList.add('ach-toast', `ach-toast-${kind}`);
+  document.querySelector('.crt-bezel')?.append(el);
+}
+achievements = createAchievementEngine({
+  account: achievementAccount,
+  base: apiBase(),
+  onChange: () => achievementsPanel?.refresh(),
+  onUnlock: ({ achievement, saved, signedIn }) => {
+    const note = !signedIn ? ' Sign in to keep it.' : saved ? '' : ' It is saved once the account server can be reached.';
+    _achToast('unlock', `🏆 ${achievement.title}: ${achievement.description}${note}`, 7000, signedIn ? null : 'SIGN IN', signedIn ? null : () => achievementsPanel?.open('account'));
+  },
+  // A set's notice, such as a trainer that keeps the game from counting.
+  onNotice: ({ text }) => _achToast('notice', `⚠ ${text}`, 9000),
+  // The server no longer knows the session: checking it signs the page out, so the window and the toasts say so.
+  onSessionLost: () => { achievementAccount.restore(); },
+  onLeaderboard: (e) => {
+    // The window shows the running score, and fetches the standings again once one is posted.
+    achievementsPanel?.leaderboardEvent(e);
+    const { type, leaderboard, value, result, signedIn } = e;
+    if (type !== 'submitted') return;
+    const shown = achievements.format(value, leaderboard.format);
+    const note = !signedIn ? ' Sign in to keep it.' : result ? ` Your best: ${achievements.format(result.best, leaderboard.format)}, rank ${result.rank}.` : ' It is posted once the account server can be reached.';
+    _achToast('score', `${leaderboard.title}: ${shown}.${note}`, 7000, signedIn ? null : 'SIGN IN', signedIn ? null : () => achievementsPanel?.open('account'));
+  },
+});
+// Options ▸ Other ▸ ACHIEVEMENTS. Off, the engine leaves the machine's path:
+// no hashing of what is loaded, no lookups, nothing read per frame.
+let achievementsOn = (() => {
+  try { return localStorage.getItem('c64emu.achievements') !== 'off'; } catch { return true; }
+})();
+const achievementsBtn = document.getElementById('btn-achievements-toggle');
+function _applyAchievementsPref() {
+  achievements.setEnabled(achievementsOn);
+  achievementsLive = achievementsOn ? achievements : null;
+  if (achievementsBtn) achievementsBtn.textContent = `ACHIEVEMENTS: ${achievementsOn ? 'ON' : 'OFF'}`;
+}
+_applyAchievementsPref();
+achievementsBtn?.addEventListener('click', () => {
+  achievementsOn = !achievementsOn;
+  try { localStorage.setItem('c64emu.achievements', achievementsOn ? 'on' : 'off'); } catch {}
+  _applyAchievementsPref();
+});
+achievementsPanel = initOnline({
+  buttons: [document.getElementById('btn-online'), document.getElementById('btn-fs-online')],
+  win: document.getElementById('online-window'),
+  closeBtn: document.getElementById('btn-online-close'),
+  account: achievementAccount,
+  engine: achievements,
+});
 
 if (creditsBtn)   creditsBtn.addEventListener('click', _openCredits);
 if (creditsClose) creditsClose.addEventListener('click', _closeCredits);
@@ -3175,6 +3250,7 @@ initInput({
     if (mv.isOpen()) mv.toggleStudio();
     else { mv.open(); mv.setStudio(true); }
   },
+  toggleOnline: () => { if (achievementsPanel?.isOpen()) achievementsPanel.close(); else achievementsPanel?.open(); },
 });
 
 // ── Wire media.js ────────────────────────────────────────────────────────────
@@ -3231,8 +3307,6 @@ initMedia({
 });
 
 void initializeAssembly64();
-// The CHAT buttons and invite links; the window itself loads on first use.
-initChat();
 
 // ── Wire recorder.js ─────────────────────────────────────────────────────────
 // Screen + audio recorder (RECORD button). Audio is tapped live at record time

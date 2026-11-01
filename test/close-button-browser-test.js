@@ -161,9 +161,9 @@ try {
   await page.keyboard.press('Control+Shift+KeyF');
   await page.locator('.crt-panel-close').click();
   assert.equal(await page.locator('.crt-panel').isVisible(), false, 'the floating CRT panel keeps its delegated close action');
-  await page.click('#btn-chat');
-  await page.locator('.chat-close').click();
-  assert.equal(await page.locator('.chat-window').isVisible(), false, 'chat uses the same control to close');
+  await page.click('#btn-online');
+  await page.locator('#btn-online-close').click();
+  assert.equal(await page.locator('#online-window').isVisible(), false, 'the Achievements window uses the same control to close');
   assert.deepEqual(errors, [], 'dialog close actions have no browser errors');
   console.log('ok  - shared close controls match on desktop and phone and preserve keyboard, cancel, Escape and focus behavior');
 } finally { await browser.close(); await vite.close(); }

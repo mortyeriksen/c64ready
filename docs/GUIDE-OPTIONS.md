@@ -85,6 +85,7 @@ system rate makes the browser resample the SID stream, which adds a fixed lag.
 | --- | --- |
 | **RECORDER** | The ceiling for what **● RECORD** captures, cycling **720p → 1080p → 1440p → 4K → NATIVE**. 1080p is the default. A shared surface larger than the ceiling is scaled down to fit inside it, aspect ratio intact; anything smaller is recorded as it is. **NATIVE** applies no ceiling at all. The choice takes effect on the next take, not the one already running. |
 | **RUN IN BACKGROUND** | **OFF** (default): the machine pauses the moment the app leaves the foreground (another window takes focus, the tab is hidden, the phone locks) and resumes when it comes back. **ON**: it keeps running and playing through all of that. A hidden tab is only allowed to run at full speed while it is audible, so keep the sound on; muted, the browser slows it to a crawl until you return. |
+| **ACHIEVEMENTS** | **ON** (default): games with a set earn [achievements and high scores](GUIDE-ACHIEVEMENTS.md). **OFF**: nothing you load is looked at, and the machine runs without them. The chat still works. |
 
 See [Recording](GUIDE-LOOKS.md#recording) for what the ceiling is for.
 

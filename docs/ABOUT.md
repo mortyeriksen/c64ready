@@ -47,7 +47,9 @@ It's a work in progress: a few small visual glitches remain, and there's more pe
 
 Everything runs in your browser. Your ROMs, disks, tapes, cartridges and save states stay in the browser's own storage and are never uploaded. There are no cookies and no third-party scripts. The only thing counted is a few anonymous page hits the app makes, once per launch or ROM setup. Those hits let the hosting service's server-side statistics show how many sessions run installed or with ROMs. They carry no data and no identifier.
 
-The optional [chat](/docs/guide-chat.html) is the one thing that talks to a server of ours, and only once you open it. Your nickname and messages go to the people in your room and to the moderator. The chat server logs every message with your nickname and IP address and keeps the log for 90 days, so abuse and crime can be investigated. Only the moderator reads it, and it is shared only when the law requires it.
+[Achievements](/docs/guide-achievements.html) and the [chat](/docs/guide-achievements.html#chat) are the one part that talks to a server of ours. Your files are matched against the list of games with achievements in the browser, so the server never learns what else you load. An account is a username and a passkey, with no email and no password. Your achievements, best scores and activity are public under that username. Sign-ins are logged with your IP address and browser for 90 days, readable only by the moderator. Deleting the account deletes all of it.
+
+The chat connects only once you open it. The chat server logs messages with your username and IP address for 90 days, so abuse and crime can be investigated. Only the moderator reads the log, and it is shared only when the law requires it.
 
 ## About the author
 

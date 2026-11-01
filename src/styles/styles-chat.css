@@ -1,24 +1,57 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright © 2026 Morten Øien Eriksen */
-/* src/styles/styles-chat.css – the chat: the CHAT buttons with their unread
-   badge, and the window (src/chat/window.js), floating and resizable on a
-   desktop, full screen on a phone. */
+/* src/styles/styles-chat.css – the chat: the ACHIEVEMENTS button's unread
+   badge, and the chat pane (src/chat/window.js) in the Achievements window. */
 
 /* ── Ways in ───────────────────────────────────────────────────────────── */
-.chat-open-btn,
-.fs-chat-btn {
+.online-btn,
+.fs-online-btn {
   position: relative;
 }
-/* CHAT stands out in the header: filled with the theme's accent, with the
-   text colour each theme pairs with it. */
-.credits-link.chat-open-btn,
-.credits-link.chat-open-btn:hover {
-  background: var(--accent);
+/* ACHIEVEMENTS is a toggle: outlined in the theme's accent while the window is
+   closed, and pressed in (filled with the accent, an inner shadow, the text
+   colour each theme pairs with it) while it is open. */
+.credits-link.online-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   border-color: var(--accent);
-  color: var(--on-accent);
+  color: var(--accent);
 }
-.credits-link.chat-open-btn:hover {
-  filter: brightness(1.12);
+.credits-link.online-btn:hover {
+  color: var(--text-bright);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.credits-link.online-btn[aria-expanded="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: inset 0 2px 4px color-mix(in srgb, var(--shadow) 45%, transparent);
+  transform: translateY(1px);
+}
+.credits-link.online-btn[aria-expanded="true"]:hover {
+  filter: brightness(1.08);
+}
+/* A phone's header has room for the trophy only; the button keeps its name. */
+@media (max-width: 680px) {
+  .online-btn .online-label {
+    display: none;
+  }
+}
+/* A game with achievements was loaded where the window would cover it: the
+   button that opens it flashes three times. */
+@keyframes online-flash {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; filter: none; }
+  50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 60%, transparent); filter: brightness(1.4); }
+}
+.online-btn.is-flashing,
+.fs-online-btn.is-flashing {
+  animation: online-flash 0.6s ease-in-out 3;
+}
+@media (prefers-reduced-motion: reduce) {
+  .online-btn.is-flashing,
+  .fs-online-btn.is-flashing {
+    animation: online-flash 1.8s steps(1, end) 1;
+  }
 }
 .chat-badge {
   display: inline-block;
@@ -36,14 +69,15 @@
 .chat-badge[hidden] {
   display: none;
 }
-.fs-chat-btn .chat-badge {
+.fs-online-btn .chat-badge {
   position: absolute;
   top: -4px;
   right: -6px;
   margin: 0;
 }
-/* Beside the fullscreen close button, on the fullscreen toolbar only. */
-.fs-chat-btn {
+/* Beside the fullscreen close button, on the fullscreen toolbar only. Its ring
+   and disc are the close button's (styles-vibes.css). */
+.fs-online-btn {
   display: none;
   position: fixed;
   top: max(12px, env(safe-area-inset-top));
@@ -53,68 +87,23 @@
   height: 44px;
   padding: 0;
   border-radius: 50%;
-  border: 1px solid var(--accent);
-  background: rgba(0, 0, 0, 0.6);
-  color: var(--accent);
   cursor: pointer;
   align-items: center;
   justify-content: center;
 }
-.fs-chat-btn:hover {
-  filter: brightness(1.2);
-}
-body.fullscreen-mode .fs-chat-btn {
+body.fullscreen-mode .fs-online-btn {
   display: flex;
 }
 
-/* ── The window ────────────────────────────────────────────────────────── */
-.chat-window {
-  position: fixed;
-  z-index: 900;
-  display: flex;
-  flex-direction: column;
-  background: var(--ui-bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 8px 32px color-mix(in srgb, var(--shadow) 55%, transparent);
-  color: var(--text);
-  font-size: 0.86rem;
-  overflow: hidden;
-}
-.chat-window[hidden] {
-  display: none;
-}
-/* Below the modal dialogs (z 1000), so a confirm opened from the chat shows on
-   top. Fullscreen lifts the monitor to z 1000, so the window rises with it. */
-body.fullscreen-mode .chat-window {
-  z-index: 1500;
-}
-.chat-window.is-full {
-  left: 0;
-  right: 0;
-  top: var(--chat-top, 0px);
-  height: var(--chat-vh, 100dvh);
-  border: 0;
-  border-radius: 0;
-  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-}
-
-.chat-head {
+/* ── The CHAT tab of the Achievements window ──────────────────────────────────── */
+.chat-bar {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
+  padding: 6px 12px;
   border-bottom: 1px solid var(--border);
-  background: var(--panel-bg);
-  cursor: move;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
 }
-.is-full .chat-head {
-  cursor: default;
-  padding-top: max(8px, env(safe-area-inset-top));
-}
+
 .chat-title {
   flex: 1;
   min-width: 0;
@@ -250,113 +239,90 @@ body.fullscreen-mode .chat-window {
 .chat-link.chat-danger {
   color: var(--red);
 }
-.chat-who-row {
-  justify-content: space-between;
-  color: var(--dim);
-  font-size: 0.8rem;
-}
 
-.chat-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.chat-chip {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  max-width: 100%;
-  padding: 6px 10px;
-  border: 1px solid var(--accent);
-  border-radius: 8px;
-  background: var(--control-bg);
-  color: var(--text-bright);
-  font: inherit;
-  cursor: pointer;
-  text-align: left;
-}
-.chat-chip:hover {
-  background: var(--row-hover);
-}
-.chat-chip-title {
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-.chat-chip-meta {
-  color: var(--dim);
-  font-size: 0.72rem;
-}
-
-.chat-rooms {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.chat-room {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-}
-.chat-room.is-match {
-  border-color: var(--accent);
-}
-.chat-room-text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-.chat-room-name {
-  color: var(--text-bright);
-  overflow-wrap: anywhere;
-}
-.chat-room-meta {
-  color: var(--dim);
-  font-size: 0.75rem;
-}
-.chat-online {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  font-size: 0.78rem;
-  overflow-wrap: anywhere;
-}
-.chat-online > li {
-  max-width: 100%;
-}
-
-/* ── The room ──────────────────────────────────────────────────────────── */
+/* ── The channel ───────────────────────────────────────────────────────── */
 .chat-room-bar {
   flex-wrap: wrap;
 }
-.chat-topic {
+/* Just above the message box, at its left edge: it belongs to the next message. */
+/* A game a message mentions: its icon and title in the game's colour (a
+   .chat-cN class), a link to its page under GAMES. */
+.chat-mention {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 1px;
+  padding: 0 5px 0 3px;
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+  border-radius: 3px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  font: inherit;
+  font-weight: bold;
+  line-height: 1.35;
+  vertical-align: baseline;
+  cursor: pointer;
+}
+.chat-mention:hover,
+.chat-mention:focus-visible {
+  background: color-mix(in srgb, currentColor 24%, transparent);
+}
+.chat-mention .ach-game-icon {
+  flex: none;
+}
+/* The games '@' offers, over the messages, just above the message box. */
+.chat-mentions {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 58px;
+  z-index: 2;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--shadow) 45%, transparent);
+}
+.chat-mentions[hidden] {
+  display: none;
+}
+.chat-mention-pick {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
-  padding: 6px 8px;
-  border: 1px dashed var(--border);
-  border-radius: 6px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.82rem;
+  cursor: pointer;
 }
-.chat-topic[hidden] {
-  display: none;
-}
-.chat-topic-text {
-  flex: 1;
+.chat-mention-pick.is-active {
+  background: var(--row-hover);
   color: var(--text-bright);
 }
-.chat-topic-have {
+.chat-mention-loaded {
+  margin-left: auto;
   color: var(--green);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
+}
+/* An unlock or a new best, announced in the channel. */
+.chat-event {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 6px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.76rem;
+  color: var(--dim);
+}
+.chat-event svg {
+  flex: none;
+  color: var(--amber);
+}
+.chat-pts {
+  color: var(--amber);
 }
 .chat-people {
   max-height: 45%;
@@ -392,7 +358,12 @@ body.fullscreen-mode .chat-window {
   width: 100%;
 }
 
+/* The chat is in the activity's monospace, like the rest of the window. */
+#online-chat {
+  font-family: 'Share Tech Mono', monospace;
+}
 .chat-log {
+  font-size: 0.86rem;
   flex: 1;
   min-height: 0;
   overflow: auto;
@@ -413,6 +384,10 @@ body.fullscreen-mode .chat-window {
 .chat-nick {
   margin-right: 6px;
   font-weight: 600;
+}
+/* A player's name, as in the activity: their colour, not bold. */
+.chat-nick:has(.ach-player-chip) {
+  font-weight: normal;
 }
 .chat-msg.is-me .chat-nick::after {
   content: ' (you)';
@@ -494,17 +469,19 @@ body.fullscreen-mode .chat-window {
 .chat-c6 { color: color-mix(in srgb, #a1683c 70%, var(--text)); }
 .chat-c7 { color: color-mix(in srgb, #9ae29b 70%, var(--text)); }
 
-/* ── Resize handles (desktop) ──────────────────────────────────────────── */
-.chat-resize {
-  position: absolute;
-  z-index: 1;
-  touch-action: none;
+/* A player in a message: their badge or tile and their name, a link to their profile. */
+.chat-msg .ach-player-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  vertical-align: middle;
 }
-.chat-resize-e  { top: 40px; right: 0; bottom: 12px; width: 6px; cursor: ew-resize; }
-.chat-resize-w  { top: 40px; left: 0; bottom: 12px; width: 6px; cursor: ew-resize; }
-.chat-resize-s  { left: 12px; right: 12px; bottom: 0; height: 6px; cursor: ns-resize; }
-.chat-resize-se { right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize; }
-.chat-resize-sw { left: 0; bottom: 0; width: 14px; height: 14px; cursor: nesw-resize; }
-.is-full .chat-resize {
-  display: none;
+.chat-msg .ach-player-chip .ach-tile {
+  width: 18px;
+  height: 18px;
+  font-size: 0.45rem;
+}
+/* An unlock or new best: the activity feed's own row. */
+.chat-log .chat-activity {
+  list-style: none;
 }

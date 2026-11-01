@@ -1,0 +1,22 @@
+{
+  "id": "roc-n-rope",
+  "title": "Roc'n Rope",
+  "source": "Achievements ported from c64-cheevos by hayesmaker (MIT), https://github.com/hayesmaker/c64-cheevos",
+  "hashes": [
+    {
+      "hash": "ea5315209e83bdd1b0578cc5e5fc9230",
+      "label": "c64cade EasyFlash cartridge (rocknrope.crt), the Broken Bytes conversion; not in the OneLoad64 collection"
+    }
+  ],
+  "achievements": [],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score",
+      "description": "Highest score in one game.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xHa983=3_d0xHa983!=3::CAN:0=1::SUB:0xHa983=0::VAL:0xWa980"
+    }
+  ]
+}

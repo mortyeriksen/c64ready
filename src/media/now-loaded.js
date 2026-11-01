@@ -5,7 +5,8 @@
 // anything that names what is running, such as the chat's rooms. Each change
 // is announced as a `c64-media` window event.
 //
-// A slot entry is { ref, kind, fileName?, headerName?, embeddedTitle?, release? }.
+// A slot entry is { ref, kind, fileName?, headerName?, embeddedTitle?, release?,
+// bytes? }, `bytes` being the file as loaded (what the achievements hash).
 // `ref` identifies the medium (the disk object, the tape's name): setting the
 // same ref again keeps what was learned about it, so a power cycle that re-fires
 // the load hooks does not forget where a disk came from.
@@ -73,6 +74,11 @@ export function describe(entry) {
 /** Everything loaded, in slot order: [{ slot, label, title, kind, a64 }]. */
 export function loadedItems() {
   return SLOTS.filter((s) => slots.has(s)).map((s) => ({ slot: s, label: SLOT_LABEL[s], ...describe(slots.get(s)) }));
+}
+
+/** The loaded files whose bytes are known, in slot order: [{ slot, title, ref, bytes }]. */
+export function loadedFiles() {
+  return SLOTS.filter((s) => slots.get(s)?.bytes).map((s) => ({ slot: s, title: describe(slots.get(s)).title, ref: slots.get(s).ref, bytes: slots.get(s).bytes }));
 }
 
 /** Test seam. */

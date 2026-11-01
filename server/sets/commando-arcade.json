@@ -1,0 +1,131 @@
+{
+  "id": "commando-arcade",
+  "title": "Commando Arcade",
+  "hashes": [
+    {
+      "hash": "1227141266752c0c04608fac355c7a4e",
+      "label": "Nostalgia EasyFlash cartridge (CommandoArcade_N0S_EF.crt)"
+    },
+    {
+      "hash": "3cc433ea1cb9eb978ef7d13d4cd25d09",
+      "label": "OneLoad64 v5 extras, EasyFlash cartridge (Commando Arcade - Special Edition [EasyFlash].crt)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Area 1 Cleared",
+      "description": "Clear area 1.",
+      "points": 5,
+      "memaddr": "N:0xH0410=5_N:d0xH0410=0_N:0xH04F3=0_N:0xH04F8=0_N:0xH04F9=0_N:0xH04FA=0_0xH0E48=205.1._0xH0E48=205_0xH0410>0_d0xH0410>0_0xH04F3=1_d0xH04F3=0"
+    },
+    {
+      "id": 2,
+      "title": "Area 2 Cleared",
+      "description": "Clear area 2.",
+      "points": 5,
+      "memaddr": "N:0xH0410=5_N:d0xH0410=0_N:0xH04F3=0_N:0xH04F8=0_N:0xH04F9=0_N:0xH04FA=0_0xH0E48=205.1._0xH0E48=205_0xH0410>0_d0xH0410>0_0xH04F3=2_d0xH04F3=1"
+    },
+    {
+      "id": 3,
+      "title": "Area 3 Cleared",
+      "description": "Clear area 3.",
+      "points": 10,
+      "memaddr": "N:0xH0410=5_N:d0xH0410=0_N:0xH04F3=0_N:0xH04F8=0_N:0xH04F9=0_N:0xH04FA=0_0xH0E48=205.1._0xH0E48=205_0xH0410>0_d0xH0410>0_0xH04F3=3_d0xH04F3=2"
+    },
+    {
+      "id": 4,
+      "title": "Area 4 Cleared",
+      "description": "Clear area 4.",
+      "points": 10,
+      "memaddr": "N:0xH0410=5_N:d0xH0410=0_N:0xH04F3=0_N:0xH04F8=0_N:0xH04F9=0_N:0xH04FA=0_0xH0E48=205.1._0xH0E48=205_0xH0410>0_d0xH0410>0_0xH04F3=4_d0xH04F3=3"
+    },
+    {
+      "id": 5,
+      "title": "Area 5 Cleared",
+      "description": "Clear area 5.",
+      "points": 10,
+      "memaddr": "N:0xH0410=5_N:d0xH0410=0_N:0xH04F3=0_N:0xH04F8=0_N:0xH04F9=0_N:0xH04FA=0_0xH0E48=205.1._0xH0E48=205_0xH0410>0_d0xH0410>0_0xH04F3=5_d0xH04F3=4"
+    },
+    {
+      "id": 6,
+      "title": "Area 6 Cleared",
+      "description": "Clear area 6.",
+      "points": 25,
+      "memaddr": "N:0xH0410=5_N:d0xH0410=0_N:0xH04F3=0_N:0xH04F8=0_N:0xH04F9=0_N:0xH04FA=0_0xH0E48=205.1._0xH0E48=205_0xH0410>0_d0xH0410>0_0xH04F3=6_d0xH04F3=5"
+    },
+    {
+      "id": 7,
+      "title": "Area 7 Cleared",
+      "description": "Clear area 7.",
+      "points": 25,
+      "memaddr": "N:0xH0410=5_N:d0xH0410=0_N:0xH04F3=0_N:0xH04F8=0_N:0xH04F9=0_N:0xH04FA=0_0xH0E48=205.1._0xH0E48=205_0xH0410>0_d0xH0410>0_0xH04F3=7_d0xH04F3=6"
+    },
+    {
+      "id": 8,
+      "title": "Area 8 Cleared",
+      "description": "Clear area 8, the last before the loop.",
+      "points": 25,
+      "memaddr": "N:0xH0410=5_N:d0xH0410=0_N:0xH04F3=0_N:0xH04F8=0_N:0xH04F9=0_N:0xH04FA=0_0xH0E48=205.1._0xH0E48=205_0xH0410>0_d0xH0410>0_0xH04F3=8_d0xH04F3=7"
+    },
+    {
+      "id": 9,
+      "title": "Untouchable",
+      "description": "Clear area 1 without losing a man.",
+      "points": 10,
+      "memaddr": "N:0xH0410=5_N:d0xH0410=0_N:0xH04F3=0_N:0xH04F8=0_N:0xH04F9=0_N:0xH04FA=0_0xH0E48=205.1._0xH0E48=205_0xH0410>0_d0xH0410>0_R:0xH0410<d0xH0410_0xH04F3=1_d0xH04F3=0"
+    },
+    {
+      "id": 10,
+      "title": "Grenadier",
+      "description": "Pick up a box of grenades.",
+      "points": 5,
+      "memaddr": "N:0xH0410=5_N:d0xH0410=0_N:0xH04F3=0_N:0xH04F8=0_N:0xH04F9=0_N:0xH04FA=0_0xH0E48=205.1._0xH0E48=205_0xH0410>0_d0xH0410>0_0xH04FF>d0xH04FF"
+    },
+    {
+      "id": 11,
+      "title": "Super Joe",
+      "description": "Score at least 10,000 points.",
+      "points": 5,
+      "memaddr": "N:0xH0410=5_N:d0xH0410=0_N:0xH04F3=0_N:0xH04F8=0_N:0xH04F9=0_N:0xH04FA=0_0xH0E48=205.1._0xH0E48=205_0xH0410>0_d0xH0410>0_A:0xU04FA*100000_A:0xL04FA*10000_A:0xU04F9*1000_A:0xL04F9*100_A:0xU04F8*10_0xL04F8>=100"
+    },
+    {
+      "id": 12,
+      "title": "Front Line",
+      "description": "Score at least 25,000 points.",
+      "points": 10,
+      "memaddr": "N:0xH0410=5_N:d0xH0410=0_N:0xH04F3=0_N:0xH04F8=0_N:0xH04F9=0_N:0xH04FA=0_0xH0E48=205.1._0xH0E48=205_0xH0410>0_d0xH0410>0_A:0xU04FA*100000_A:0xL04FA*10000_A:0xU04F9*1000_A:0xL04F9*100_A:0xU04F8*10_0xL04F8>=250"
+    },
+    {
+      "id": 13,
+      "title": "Field Marshal",
+      "description": "Score at least 50,000 points.",
+      "points": 10,
+      "memaddr": "N:0xH0410=5_N:d0xH0410=0_N:0xH04F3=0_N:0xH04F8=0_N:0xH04F9=0_N:0xH04FA=0_0xH0E48=205.1._0xH0E48=205_0xH0410>0_d0xH0410>0_A:0xU04FA*100000_A:0xL04FA*10000_A:0xU04F9*1000_A:0xL04F9*100_A:0xU04F8*10_0xL04F8>=500"
+    },
+    {
+      "id": 14,
+      "title": "War Hero",
+      "description": "Score at least 100,000 points.",
+      "points": 25,
+      "memaddr": "N:0xH0410=5_N:d0xH0410=0_N:0xH04F3=0_N:0xH04F8=0_N:0xH04F9=0_N:0xH04FA=0_0xH0E48=205.1._0xH0E48=205_0xH0410>0_d0xH0410>0_A:0xU04FA*100000_A:0xL04FA*10000_A:0xU04F9*1000_A:0xL04F9*100_A:0xU04F8*10_0xL04F8>=1000"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score",
+      "description": "Highest score in one game without trainers.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH0410=5_d0xH0410=0_0xH04F3=0_0xH04F8=0_0xH04F9=0_0xH04FA=0_0xH0E48=205::CAN:0xH0E48!=205::SUB:0xH0410=0_d0xH0410>0S0xH04F8>0S0xH04F9>0S0xH04FA>0::VAL:0xU04FA*10000000_0xL04FA*1000000_0xU04F9*100000_0xL04F9*10000_0xU04F8*1000_0xL04F8*100"
+    }
+  ],
+  "notices": [
+    {
+      "id": 1,
+      "text": "A trainer is on, so this game's achievements and high score are not tracked. Start a game without trainers to play for them.",
+      "memaddr": "0xH0E48=76_0xH0410>0"
+    }
+  ]
+}

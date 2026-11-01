@@ -1,0 +1,176 @@
+{
+  "id": "nemesis",
+  "title": "Nemesis",
+  "hashes": [
+    {
+      "hash": "a14218cf0a4457320f4bad2c00db05b8",
+      "label": "OneLoad64 v5 cartridge (Nemesis.crt)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "First Sortie",
+      "description": "Clear stage 1.",
+      "points": 5,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_0xH6ED3=1_0xH4C49=1_d0xH4C49=0"
+    },
+    {
+      "id": 2,
+      "title": "Second Wave",
+      "description": "Clear stage 2.",
+      "points": 5,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_0xH6ED3=1_0xH4C49=2_d0xH4C49=1"
+    },
+    {
+      "id": 3,
+      "title": "Third Front",
+      "description": "Clear stage 3.",
+      "points": 10,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_0xH6ED3=1_0xH4C49=3_d0xH4C49=2"
+    },
+    {
+      "id": 4,
+      "title": "Halfway Home",
+      "description": "Clear stage 4.",
+      "points": 10,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_0xH6ED3=1_0xH4C49=4_d0xH4C49=3"
+    },
+    {
+      "id": 5,
+      "title": "Deep Space",
+      "description": "Clear stage 5.",
+      "points": 10,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_0xH6ED3=1_0xH4C49=5_d0xH4C49=4"
+    },
+    {
+      "id": 6,
+      "title": "Into the Cells",
+      "description": "Clear stage 6.",
+      "points": 25,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_0xH6ED3=1_0xH4C49=6_d0xH4C49=5"
+    },
+    {
+      "id": 7,
+      "title": "Final Approach",
+      "description": "Clear stage 7.",
+      "points": 25,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_0xH6ED3=1_0xH4C49=7_d0xH4C49=6"
+    },
+    {
+      "id": 8,
+      "title": "Nemesis Defeated",
+      "description": "Clear stage 8, the last stage.",
+      "points": 25,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_0xH6ED3=1_0xH4C49=0_d0xH4C49=7"
+    },
+    {
+      "id": 9,
+      "title": "Clean Sweep",
+      "description": "Clear stage 1 of a new game without losing a life.",
+      "points": 25,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_R:0xH5F98<d0xH5F98_0xH6ED3=1_0xH4C49=1_d0xH4C49=0"
+    },
+    {
+      "id": 10,
+      "title": "Speed Up",
+      "description": "Buy a speed up from the power meter.",
+      "points": 5,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_0xH4CE8>d0xH4CE8_d0xH4CE8>0"
+    },
+    {
+      "id": 11,
+      "title": "Full Throttle",
+      "description": "Reach top speed.",
+      "points": 10,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_0xH4CE8=4_d0xH4CE8=3"
+    },
+    {
+      "id": 12,
+      "title": "Missile Away",
+      "description": "Buy missiles from the power meter.",
+      "points": 5,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_0xH50D9=1_d0xH50D9=0"
+    },
+    {
+      "id": 13,
+      "title": "Double Trouble",
+      "description": "Buy the double shot from the power meter.",
+      "points": 5,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_0xH50DA=1_d0xH50DA=0"
+    },
+    {
+      "id": 14,
+      "title": "Laser Focus",
+      "description": "Buy the laser from the power meter.",
+      "points": 10,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_0xH50DB=1_d0xH50DB=0"
+    },
+    {
+      "id": 15,
+      "title": "Multiple Choice",
+      "description": "Buy a multiple from the power meter.",
+      "points": 10,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_0xH5404=2_d0xH5404=1"
+    },
+    {
+      "id": 16,
+      "title": "Twin Multiples",
+      "description": "Fly with two multiples.",
+      "points": 10,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_0xH5404=3_d0xH5404=2"
+    },
+    {
+      "id": 17,
+      "title": "Force Field",
+      "description": "Buy the shield from the power meter.",
+      "points": 10,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_0xH52E6=4_d0xH52E6<4"
+    },
+    {
+      "id": 18,
+      "title": "Fully Loaded",
+      "description": "Fly with missiles, the laser, two multiples and the shield at once.",
+      "points": 25,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_0xH50D9=1_0xH50DB=1_0xH5404=3_0xH52E6>0"
+    },
+    {
+      "id": 19,
+      "title": "Ace Pilot",
+      "description": "Score at least 20,000 points.",
+      "points": 5,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_A:0xH4002*100000_A:0xH4003*10000_A:0xH4004*1000_A:0xH4005*100_A:0xH4006*10_0xH4007>=200"
+    },
+    {
+      "id": 20,
+      "title": "Squadron Leader",
+      "description": "Score at least 50,000 points.",
+      "points": 10,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_A:0xH4002*100000_A:0xH4003*10000_A:0xH4004*1000_A:0xH4005*100_A:0xH4006*10_0xH4007>=500"
+    },
+    {
+      "id": 21,
+      "title": "Wing Commander",
+      "description": "Score at least 100,000 points.",
+      "points": 10,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_A:0xH4002*100000_A:0xH4003*10000_A:0xH4004*1000_A:0xH4005*100_A:0xH4006*10_0xH4007>=1000"
+    },
+    {
+      "id": 22,
+      "title": "Hero of Gradius",
+      "description": "Score at least 250,000 points.",
+      "points": 25,
+      "memaddr": "N:0xH16D3=1_N:0xH0258=3_N:d0xH0258=0_N:0xH0202=0_N:0xH0203=0_N:0xH0204=0_N:0xH0205=0_N:0xH0206=0_0xH0207=0.1._0xH16D3=1_0xH0258>0_A:0xH4002*100000_A:0xH4003*10000_A:0xH4004*1000_A:0xH4005*100_A:0xH4006*10_0xH4007>=2500"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score",
+      "description": "Highest score in one game.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH16D3=1_0xH0258=3_d0xH0258=0_0xH0202=0_0xH0203=0_0xH0204=0_0xH0205=0_0xH0206=0_0xH0207=0::CAN:0=1::SUB:0xH16D3=1_0xH0258=0_d0xH0258=1S0xH4002>0S0xH4003>0S0xH4004>0S0xH4005>0S0xH4006>0S0xH4007>0::VAL:0xH4002*10000000_0xH4003*1000000_0xH4004*100000_0xH4005*10000_0xH4006*1000_0xH4007*100"
+    }
+  ]
+}

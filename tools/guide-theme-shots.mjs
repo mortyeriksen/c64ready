@@ -6,78 +6,46 @@
 //   node tools/guide-theme-shots.mjs [baseURL] [themeId ...]
 //
 // baseURL defaults to http://localhost:5173 (the live dev server). Naming theme
-// ids shoots only those. The machine is powered on at READY. with the raster
-// demo's disk in drive 8 (autorun off), so the directory colours show; the disk comes from
-// the asset registry (raster-time-demo) and is skipped when missing.
-// Output: public/guide/theme-<id>.webp (GUIDE_OUT redirects it). It also shoots
-// overview-<id>.webp for every theme, including Classic. The theme gallery uses
-// these explicit images independently of the shared screenshot theme.
+// ids shoots only those. Every shot is the same scene: Commando Arcade's title
+// screen at 2.5X, its Achievements window docked on the right, signed in as a
+// player with results beside four others (tools/guide-achievements.mjs), 1720px
+// wide and cropped with as much room below the C64 screen as above it. Run it
+// against a dev server with accounts in memory (VITE_ACCOUNTS_IN_MEMORY=1).
+// Output: public/guide/theme-<id>.webp (GUIDE_OUT redirects it), and
+// overview-<id>.webp, the dark mode alone at 2x, for every theme including
+// Classic. Set GUIDE_OVERVIEW_ONLY=1 to shoot only the overviews.
 import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { assetPath } from '../test/external-assets.js';
 import { saveGuideShot, shotLabel } from './guide-image.mjs';
+import { COMMANDO_ARCADE_ME, COMMANDO_ARCADE_PLAYERS, captureScene, deleteAccounts, seedPlayers } from './guide-achievements.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = process.env.GUIDE_OUT ? path.resolve(process.env.GUIDE_OUT) : path.join(root, 'public', 'guide');
 fs.mkdirSync(OUT, { recursive: true });
 const BASE = process.argv[2] || 'http://localhost:5173';
 const ONLY = process.argv.slice(3);
-const DISK = assetPath('raster-time-demo') || '';
+const GAME = assetPath('commando-arcade-crt') || '';
+const OVERVIEW_ONLY = process.env.GUIDE_OVERVIEW_ONLY === '1';
 const THEMES = ['classic', 'geos', 'breadbin', 'phosphor', 'outrun', 'commando', 'artdeco', 'lookout'].filter((t) => !ONLY.length || ONLY.includes(t));
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-const romCache = {};
-for (const [slot, asset] of Object.entries({ kernal: 'kernal', basic: 'basic', charRom: 'chargen', drive1541: 'drive1541' })) {
-  const file = assetPath(asset);
-  if (file) romCache['c64emu.rom.' + slot] = fs.readFileSync(file).toString('base64');
-}
 
 const browser = await chromium.launch();
 
-// One mode of one theme: a fresh context, so nothing carries over between shots.
-// `overview` is the guide-shots overview: retina, a clean READY. with no disk,
-// running, cropped 24px below the panels.
+// The overviews' players, made once for every theme's shot.
+const tokens = [];
+let account = null;
+if (GAME && fs.existsSync(GAME)) {
+  const set = JSON.parse(fs.readFileSync(path.join(root, 'server/sets/commando-arcade.json'), 'utf8'));
+  try { account = await seedPlayers(browser, BASE, set.hashes[0].hash, COMMANDO_ARCADE_PLAYERS, COMMANDO_ARCADE_ME, tokens); }
+  catch (e) { console.error('  ✗ overview players —', e.message.split('\n')[0]); }
+}
+
+// One mode of one theme, in a fresh context. `overview` shoots at 2x (the gallery's pairs at 1x).
 async function capture(theme, mode, overview = false) {
-  const ctx = await browser.newContext({ colorScheme: mode, viewport: { width: 1460, height: 1180 }, deviceScaleFactor: overview ? 2 : 1, reducedMotion: 'reduce' });
-  await ctx.addInitScript(({ cache, theme, mode }) => {
-    try {
-      localStorage.setItem('c64emu.equipmentHintShown', '1');
-      localStorage.setItem('c64emu.installDismissed', '1');
-      localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
-      localStorage.setItem('c64emu.appearance', mode);
-      localStorage.setItem('c64emu.autorun', 'off');   // a disk goes in without loading
-      if (theme !== 'classic') localStorage.setItem('c64emu.theme', theme);
-      for (const [key, value] of Object.entries(cache)) localStorage.setItem(key, value);
-    } catch {}
-  }, { cache: romCache, theme, mode });
-  const page = await ctx.newPage();
-  await page.goto(`${BASE}/?CRT_SHADER_SOFTWARE=1`, { waitUntil: 'networkidle' });
-  await page.waitForSelector('#btn-power:not([disabled])', { timeout: 20000 });
-  await page.locator('#btn-power').click();
-  await sleep(4200);                                   // blue screen settles to READY.
-  if (overview) {
-    const bottom = await page.evaluate(() => Math.ceil(document.querySelector('.main-wrap').getBoundingClientRect().bottom));
-    const png = await page.screenshot({ clip: { x: 0, y: 0, width: 1460, height: Math.min(1180, bottom + 24) } });
-    await ctx.close();
-    return png;
-  }
-  if (DISK && fs.existsSync(DISK)) {
-    // With autorun off, inserting it types nothing: the screen stays at READY.
-    await page.locator('#d64-input').setInputFiles(DISK);
-    const ask = page.locator('#confirm-modal:not([hidden])');
-    if (await ask.waitFor({ timeout: 2000 }).then(() => true, () => false)) await page.locator('#btn-confirm-cancel').click();
-    await sleep(1200);
-    await page.keyboard.press('Escape');
-  }
-  await page.evaluate(() => document.getElementById('btn-pause')?.click());
-  await sleep(500);
-  // The interface down to the bottom of the tallest column.
-  const bottom = await page.evaluate(() => Math.ceil(document.querySelector('.main-wrap').getBoundingClientRect().bottom) + 16);
-  const png = await page.screenshot({ clip: { x: 0, y: 0, width: 1460, height: Math.min(1180, bottom) } });
-  await ctx.close();
-  return png;
+  if (!(GAME && fs.existsSync(GAME))) throw new Error('no Commando Arcade cartridge (commando-arcade-crt)');
+  return captureScene(browser, { base: BASE, theme, mode, dpr: overview ? 2 : 1, game: GAME, account });
 }
 
 // Dark and light side by side, drawn on a canvas in the browser.
@@ -103,7 +71,7 @@ async function sideBySide(dark, light) {
 
 console.log(`\nTheme gallery → ${OUT}\n  base=${BASE}`);
 for (const theme of THEMES) {
-  try {
+  if (!OVERVIEW_ONLY) try {
     const info = saveGuideShot(await sideBySide(await capture(theme, 'dark'), await capture(theme, 'light')), OUT, `theme-${theme}`);
     console.log('  ✓', shotLabel(`theme-${theme}`, info));
   } catch (e) {
@@ -116,4 +84,5 @@ for (const theme of THEMES) {
     console.error('  ✗', `overview-${theme}`, '—', e.message.split('\n')[0]);
   }
 }
+await deleteAccounts(BASE, tokens);
 await browser.close();

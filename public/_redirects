@@ -33,3 +33,8 @@ https://c64ready.netlify.app/*  https://c64ready.com/:splat  301!
 
 /docs/userport-devices.html  /docs/device-plugins.html  301
 /docs/userport-devices       /docs/device-plugins.html  301
+
+# The chat guide became the Chat section of the Achievements guide. Its old
+# heading ids are sent on to the new ones by a script on that page.
+/docs/guide-chat.html  /docs/guide-achievements.html  301
+/docs/guide-chat       /docs/guide-achievements.html  301

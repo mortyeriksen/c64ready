@@ -101,6 +101,14 @@ const SWITCHES = {
     default: true,
     env: ['VITE_BUILD_DOCS'],
   },
+
+  // The dev server keeps accounts and unlocks in server/.data/c64ready.db.
+  // Tests that start their own dev server keep them in memory instead, so they
+  // never touch the developer's accounts: VITE_ACCOUNTS_IN_MEMORY=1.
+  viteAccountsInMemory: {
+    default: false,
+    env: ['VITE_ACCOUNTS_IN_MEMORY'],
+  },
 };
 
 // Resolve a switch by name: env override ('1'/'0') if present, else — in the

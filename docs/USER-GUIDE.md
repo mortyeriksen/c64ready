@@ -15,7 +15,7 @@ from blank screen to running demo, start with
 ![The interface in the Phosphor theme's dark mode: amber on black.](/guide/overview-phosphor.webp)
 
 **Classic**
-![The C64 READY. interface: the CRT display on the left showing the blue BASIC boot screen, with the side panel of controls on the right.](/guide/overview-classic.webp)
+![The C64 READY. interface in the Classic theme's dark mode: Commando Arcade's title screen on the CRT, the side panel of controls, and the Achievements window docked on the right.](/guide/overview-classic.webp)
 
 **GEOS**
 ![The interface in the GEOS theme's dark mode: white on black.](/guide/overview-geos.webp)
@@ -37,16 +37,14 @@ from blank screen to running demo, start with
 
 <!-- /gallery -->
 
-Three regions: the **header** (branding and links), the **display** (the
-emulated CRT), and the **side panel** of control cards.
+Four regions: the **header** (branding, links and **ACHIEVEMENTS**), the
+**display** (the emulated CRT), the **side panel** of control cards, and the
+[Achievements window](GUIDE-ACHIEVEMENTS.md), docked on the right here with
+Commando Arcade loaded.
 
 The panel is two columns at the default **2X**, narrows as the picture grows,
 and is a single column at **MAX**. On a phone it moves [below the screen](GUIDE-INTERFACE.md#mobile-support). Most of
 it stays greyed out until the ROMs load and you power on.
-
-The same interface with a demo running:
-
-![The interface running the raster_time demo: dense, colourful rasterbars beneath the scrolling logo, while a disk sits in drive 8.](/guide/overview-running.webp)
 
 ---
 
@@ -57,7 +55,7 @@ The same interface with a demo running:
 - **[Media and drives](GUIDE-MEDIA.md)**: Loading programs, disks, cartridges, tapes and tunes, and the Assembly64 catalog.
 - **[Input](GUIDE-INPUT.md)**: Joysticks, mice, paddles and the keyboard and touch sticks on the two control ports.
 - **[Looks and Retro Vibes](GUIDE-LOOKS.md)**: Themes and their file format, the Retro Vibes 3D viewer, and recording what you play.
-- **[Chat](GUIDE-CHAT.md)**: Rooms, shared games and moderation.
+- **[Achievements](GUIDE-ACHIEVEMENTS.md)**: Achievements and high scores for games, everyone's activity, profiles, the chat, and your passkey account.
 - **[Options and setup](GUIDE-OPTIONS.md)**: Every setting in the Options dialog, and the first-run setup.
 - **[The command line](GUIDE-CLI.md)**: The `c64rdy` tool for your cassettes, cartridges and disks: convert, inspect, repair and run them in batches.
 
@@ -94,6 +92,7 @@ on every platform.
 
 | With the modifier | Action |
 | --- | --- |
+| **O** | Opens the **ACHIEVEMENTS** window: the loaded game's achievements and high scores, everyone's activity, the chat and your account. Press it again, or **Esc**, to close. |
 | **V** | Pastes the clipboard into the C64 as keystrokes, same as **PASTE**. |
 | **F** | Opens **CRT SETTINGS** (also a button in [Options](GUIDE-OPTIONS.md#options)): the six looks and a slider for every setting behind them, remembered per look, with **Reset preset**. Drag it by its title bar. Press again, or **Esc**, to close. |
 | **Y** | Switches to the next [theme](GUIDE-LOOKS.md#themes), the same as **THEME** in Options. The status line shows which one. |

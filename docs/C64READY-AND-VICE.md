@@ -35,7 +35,8 @@ compatibility.
 
 **Pick C64 READY.** when you want nothing to install, a C64 on a phone or
 tablet, an app that runs offline, worn cassettes recovered from `.wav`
-recordings, demos found and started from the Assembly64 catalog, browser printing, or the five Retro Vibes 3D scenes.
+recordings, demos found and started from the Assembly64 catalog, achievements
+and high scores, browser printing, or the five Retro Vibes 3D scenes.
 
 ---
 
@@ -162,6 +163,8 @@ plugins alongside the drives. IEC and User Port have independent switches.
 | Library | Your own folders | Everything you open, kept in the browser and searchable |
 | SID music | VSID, a dedicated player | A `.sid` plays on the emulated C64 in its own player screen |
 | 3D and VR | No | Retro Vibes: the machine in five 3D scenes, from an 80s bedroom to a synthwave neon grid, with experimental VR |
+| Achievements and high scores | No | For 27 games, run on RetroAchievements' rcheevos, with leaderboards, everyone's activity and player profiles. See [Achievements](GUIDE-ACHIEVEMENTS.md) |
+| Chat | No | One chat for everyone signed in, where a message can carry the loaded game |
 
 ### The projects
 

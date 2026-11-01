@@ -28,6 +28,10 @@ investigation/
 !package.json
 !package-lock.json
 !test/external-assets.json
+# Achievement sets ship with the server.
+!server/sets/*.json
+# rcheevos's build output: the app ships it embedded in src/achievements/rcheevos-wasm-blob.js.
+native/rcheevos/build/
 *.zip
 *.c64states
 *.c64state
@@ -38,3 +42,5 @@ investigation/
 !public/models/spotlight_real.glb
 !public/models/spotlight_real_small.glb
 !public/models/synthwave.glb
+# The dev server's accounts database (vite.config.js)
+server/.data/

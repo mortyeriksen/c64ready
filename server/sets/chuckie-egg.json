@@ -1,0 +1,22 @@
+{
+  "id": "chuckie-egg",
+  "title": "Chuckie Egg",
+  "source": "Achievements ported from c64-cheevos by hayesmaker (MIT), https://github.com/hayesmaker/c64-cheevos",
+  "hashes": [
+    {
+      "hash": "bc4dffda1e427ecff485720fec0281a8",
+      "label": "OneLoad64 v5 cartridge (Chuckie Egg.crt)"
+    }
+  ],
+  "achievements": [],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score",
+      "description": "Highest score in one game.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH006a=5_d0xH006a=0::CAN:0=1::SUB:0xH006a=0_d0xH006a>0::VAL:0xH0064*100000_0xH0065*10000_0xH0066*1000_0xH0067*100_0xH0068*10"
+    }
+  ]
+}

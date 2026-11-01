@@ -1,0 +1,140 @@
+{
+  "id": "marios-cement-factory",
+  "title": "Mario's Cement Factory",
+  "source": "Achievements ported from c64-cheevos by hayesmaker (MIT), https://github.com/hayesmaker/c64-cheevos",
+  "hashes": [
+    {
+      "hash": "0758056df7e4da9c1747cdafc78ed79a",
+      "label": "c64cade release (the PRG its online emulator runs)"
+    },
+    {
+      "hash": "9df1d5b0d709387b7ca9a35e30dc799c",
+      "label": "c64cade release for Ultimate 64 (mario-cf131.prg)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Welcome to your new job",
+      "description": "Score your first 100 points",
+      "points": 5,
+      "memaddr": "N:0xH982c=1_d0xH982c=0.1._A:b0xH8122*100_b0xH8121>=100"
+    },
+    {
+      "id": 2,
+      "title": "Hope you had a wonderful first day",
+      "description": "Score 200 points",
+      "points": 5,
+      "memaddr": "N:0xH982c=1_d0xH982c=0.1._A:b0xH8122*100_b0xH8121>=200"
+    },
+    {
+      "id": 3,
+      "title": "Bonus Milestone",
+      "description": "Score 300 points",
+      "points": 5,
+      "memaddr": "N:0xH982c=1_d0xH982c=0.1._A:b0xH8122*100_b0xH8121>=300"
+    },
+    {
+      "id": 4,
+      "title": "Promotion",
+      "description": "Score 400 points",
+      "points": 5,
+      "memaddr": "N:0xH982c=1_d0xH982c=0.1._A:b0xH8122*100_b0xH8121>=400"
+    },
+    {
+      "id": 5,
+      "title": "Sucked in to Overtime",
+      "description": "Score 500",
+      "points": 10,
+      "memaddr": "N:0xH982c=1_d0xH982c=0.1._A:b0xH8122*100_b0xH8121>=500"
+    },
+    {
+      "id": 6,
+      "title": "Frantic Freddie",
+      "description": "Score 600",
+      "points": 10,
+      "memaddr": "N:0xH982c=1_d0xH982c=0.1._A:b0xH8122*100_b0xH8121>=600"
+    },
+    {
+      "id": 7,
+      "title": "Trying to impress the boss",
+      "description": "Score 700 points",
+      "points": 10,
+      "memaddr": "N:0xH982c=1_d0xH982c=0.1._A:b0xH8122*100_b0xH8121>=700"
+    },
+    {
+      "id": 8,
+      "title": "There's easier ways to do this",
+      "description": "Score 800 points",
+      "points": 10,
+      "memaddr": "N:0xH982c=1_d0xH982c=0.1._A:b0xH8122*100_b0xH8121>=800"
+    },
+    {
+      "id": 9,
+      "title": "Starting to smell like cement",
+      "description": "Score 900",
+      "points": 25,
+      "memaddr": "N:0xH982c=1_d0xH982c=0.1._A:b0xH8122*100_b0xH8121>=900"
+    },
+    {
+      "id": 10,
+      "title": "Cement King",
+      "description": "Score 1000",
+      "points": 25,
+      "memaddr": "N:0xH982c=1_d0xH982c=0.1._A:b0xH8122*100_b0xH8121>=1000"
+    },
+    {
+      "id": 11,
+      "title": "Verbal Warning",
+      "description": "Oh no.. Your first Miss!",
+      "points": 1,
+      "memaddr": "N:0xH982c=1_d0xH982c=0.1._0xH824c=1_d0xH824c=0"
+    },
+    {
+      "id": 12,
+      "title": "Final Warning",
+      "description": "Get 2nd Miss",
+      "points": 1,
+      "memaddr": "N:0xH982c=1_d0xH982c=0.1._0xH824c=2_d0xH824c=1"
+    },
+    {
+      "id": 13,
+      "title": "Gross Misconduct",
+      "description": "You're Fired!",
+      "points": 1,
+      "memaddr": "N:0xH982c=1_d0xH982c=0.1._0xH824c=3_d0xH824c=2"
+    },
+    {
+      "id": 14,
+      "title": "Double Score Factory",
+      "description": "Reached 300 without losing a life",
+      "points": 10,
+      "memaddr": "N:0xH982c=1_d0xH982c=0.1._0xH8126=1_d0xH8126=0_d0xH824c=0"
+    },
+    {
+      "id": 15,
+      "title": "Escape Artist",
+      "description": "Used the escape floor and reached safety",
+      "points": 10,
+      "memaddr": "N:0xH8da1=4_0xH8da0=1.1._R:0xH824c>d0xH824cS0xH8da1=2_0xH8da0=1S0xH8da1=2_0xH8da0=4S0xH8da1=3_0xH8da0=1S0xH8da1=3_0xH8da0=4"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score (Game A)",
+      "description": "Highest score in one Game A.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH982c=1_d0xH982c=0_0xH824c=0_0xH20c9=0::CAN:0=1::SUB:0xH824c=3_d0xH824c=2::VAL:b0xH8122*100_b0xH8121"
+    },
+    {
+      "id": 2,
+      "title": "High Score (Game B)",
+      "description": "Highest score in one Game B.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH982c=1_d0xH982c=0_0xH824c=0_0xH20c9=1::CAN:0=1::SUB:0xH824c=3_d0xH824c=2::VAL:b0xH8122*100_b0xH8121"
+    }
+  ]
+}

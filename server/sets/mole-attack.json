@@ -1,0 +1,26 @@
+{
+  "id": "mole-attack",
+  "title": "Mole Attack",
+  "source": "Achievements ported from c64-cheevos by hayesmaker (MIT), https://github.com/hayesmaker/c64-cheevos",
+  "hashes": [
+    {
+      "hash": "6453dda36850233f5d196968d15c56da",
+      "label": "c64cade release (PRG conversion of the cartridge)"
+    },
+    {
+      "hash": "9891c664b29204919a8f55f0b6f0b2c0",
+      "label": "Official cartridge, OneLoad64 v5 extras (Mole Attack.crt)"
+    }
+  ],
+  "achievements": [],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score",
+      "description": "Highest score in one game.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH0050=1_d0xH0050=0::CAN:0=1::SUB:0xH0050=0_d0xH0050=1::VAL:b0xH000b*100_b0xH000a"
+    }
+  ]
+}

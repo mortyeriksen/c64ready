@@ -982,6 +982,7 @@ async function _insertPRG(data, verb = 'loaded', fileName = '', { autorun = getA
   }
 
   disk._libName = fileName || `${disk.diskName}.d64`;
+  disk._fileBytes = data instanceof Uint8Array ? data : new Uint8Array(data);   // the PRG itself, not the disk made for it
   const startCmd = prgAutostart(data);
   // Before the disk goes in, so the answer is in force for the LOAD that follows.
   await _offerTdeOffForPrg();
@@ -1127,7 +1128,7 @@ function _setElementVisible(el, visible) {
 
 export function _onCRTLoaded(info) {
   _currentCartInfo = info;
-  setLoaded('cart', { ref: _cachedCartData, kind: 'crt', embeddedTitle: info.name === 'cartridge' ? '' : info.name });
+  setLoaded('cart', { ref: _cachedCartData, kind: 'crt', embeddedTitle: info.name === 'cartridge' ? '' : info.name, bytes: _cachedCartData instanceof Uint8Array ? _cachedCartData : _cachedCartData && new Uint8Array(_cachedCartData) });
   if (crtLabel) crtLabel.textContent = `${info.name} (${info.mode})`;
   if (crtDropzone) crtDropzone.classList.add('loaded');
   _syncCRTEjectButton();
@@ -1282,7 +1283,7 @@ if (crtFreezeBtn) {
 // and its header name.
 function _diskEntry(disk) {
   const ext = /\.([a-z0-9]+)$/i.exec(disk._libName || '')?.[1]?.toLowerCase();
-  return { ref: disk, kind: ext === 'prg' ? 'prg' : _diskType(disk), fileName: disk._libName || null, headerName: disk.diskName };
+  return { ref: disk, kind: ext === 'prg' ? 'prg' : _diskType(disk), fileName: disk._libName || null, headerName: disk.diskName, bytes: disk._fileBytes || (disk.img instanceof Uint8Array ? disk.img : null) };
 }
 
 function _onD64Loaded(disk) {
@@ -2194,7 +2195,7 @@ if (tapBtn && tapInput) {
 
 export function _onTapLoaded(name, data) {
   const label = name.replace(/\.tap$/i, '');
-  setLoaded('tape', { ref: name, kind: 'tap', fileName: name });
+  setLoaded('tape', { ref: name, kind: 'tap', fileName: name, bytes: data instanceof Uint8Array ? data : data && new Uint8Array(data) });
   if (tapLabel) tapLabel.textContent = label;
   _syncTapEjectButton();
   _syncTapeButtons();

@@ -627,7 +627,7 @@ below Control Ports in the left column; saved panel arrangements take precedence
   buttons, **Home** / **End** to the first or last. Escape closes the top dialog.
   Typing in either quick text field stays there; clicking other quick controls
   returns keyboard input to the emulator. When a field or dialog owns input,
-  the screen shows "Click screen to capture keyboard." alongside the drop-files hint.
+  the screen shows "Click the screen to capture the keyboard" over the picture.
 
 ### Charts
 

@@ -175,6 +175,29 @@ stay inline. See the [machine facade and capture model](MACHINE-ARCHITECTURE.md#
 [VIC-II evidence model](VIC2-ARCHITECTURE.md) and
 [performance limits](PERFORMANCE-ANALYSIS.md#1-cost-model).
 
+---
+
+### Achievements
+
+Achievements run on **rcheevos** v12.5.0 (RetroAchievements, MIT), the C
+library that evaluates achievement and leaderboard conditions against a
+machine's memory. It is vendored unmodified in `native/rcheevos/rcheevos/`.
+
+| Layer | Responsibility |
+| --- | --- |
+| Native | `native/rcheevos/c64_cheevos.c` is a thin glue over `rc_runtime` and `rc_hash`. `build.sh` compiles it with clang to `wasm32-wasip1` (without the disc, console-ROM, zip and encrypted-file hashers), and `tools/embed-rcheevos-wasm.mjs` checks the module and embeds it as base64 in `src/achievements/rcheevos-wasm-blob.js`, so the app's build needs no C compiler. |
+| Loader | `src/achievements/rcheevos.js` instantiates the module with stub WASI imports (it never touches files or clocks) and exposes `hash(bytes)` (for a C64 file, its MD5), `activateAchievement`, `activateLeaderboard`, `doFrame(ram)`, `reset` and `clear`. |
+| Engine | `src/achievements/engine.js`. On each `c64-media` event (`media/now-loaded.js`) it hashes the loaded files and compares them, in the browser, with the hashes from `/api/games`. Only a match is looked up, so no other file leaves the machine. The game's unlocked achievements are left out, the rest and its leaderboards go to rcheevos, and after every emulated frame `main.js` calls `frame(c64.ram())`. rcheevos reads the raw 64 KB of RAM, not the CPU's banked view. Its events become unlocks and leaderboard posts (`src/achievements/api.js`), and a set's *notices* (a state the player should know about, such as a trainer) are conditions armed under ids above 1,000,000,000 and re-armed after each trigger. |
+| Game lifetime | Another file of the same game (a tape side) carries the game on. Ejecting its cartridge, or a reset with none of its files loaded, ends it. A machine reset calls `rc.reset()`, so every condition waits to be false again. |
+| Off switch | Options ▸ Other ▸ ACHIEVEMENTS. Off, `main.js` holds `achievementsLive = null`, so the frame loop and resets never reach the engine, and the engine ignores media events. |
+| Server | `server/games.mjs` loads the sets in `server/sets/*.json` at start (`checkSet` validates their shape) into `node:sqlite` (`server/db.mjs`). It retires games whose sets are gone, and serves the games, unlocks, leaderboards, activity and profiles. `server/accounts.mjs` holds the WebAuthn passkey accounts and recovery codes, and `server/chat.mjs` announces unlocks and new bests in the chat, and keeps only the mentions (`@Title`) of games it knows. |
+| UI | `src/online/window.js` is the Achievements window, a `ui/floating-window.js` that floats, docks, or fills a phone. `src/achievements/browse.js` draws its views, and `src/chat/window.js` its CHAT tab. |
+
+Each set has a spec test in `test/achievements/` that parses every condition
+through the same rcheevos module and drives it with synthesized RAM laid out as
+the game keeps it. The [Achievements guide](GUIDE-ACHIEVEMENTS.md#write-a-set)
+says how to write one.
+
 ## 3. The master cycle (timing backbone)
 
 Everything is driven by `machine._runMasterCycle()`, called 19656 times per
@@ -365,6 +388,8 @@ Why the timing is this fussy, and how it is kept honest:
   `dialogs.js`; **DOM refs** → `dom.js`; **shared runtime state** → `state.js`;
   **console debug tools** → `debug.js`; **the UI's way into the machine** →
   `machine-facade.js`.
+- **Achievements** → `achievements/engine.js` and `rcheevos.js`, the sets in
+  `server/sets/` + [Achievements](#achievements) above.
 - **CIA timers / keyboard / TOD** → `cia.js`. **SID synthesis** → `sid-worklet.js`
   / `sid-voice.js`. **Tape** → `datasette.js`.
 ```

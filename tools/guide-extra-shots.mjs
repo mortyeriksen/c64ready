@@ -28,9 +28,19 @@
 //                        relay, from the dial to its title screen. Needs the
 //                        'ccgms' asset, img2webp, the network and the BBS's one
 //                        line free. GUIDE_BBS=host:port picks another board.
-//   chat.webp            the chat window over Commando running, in a room started
-//                        from the loaded game, two guests talking in it. Uses the
-//                        dev server's own chat (/chat), never the production one.
+//   chat.webp            the CHAT tab of the Achievements window, docked beside Commando running,
+//                        two guests talking with the player, who mentions the
+//                        game with @. The three sign up with passkeys on the
+//                        dev server's own chat (/chat, /api) and are deleted
+//                        afterwards; never the production one.
+//   achievements-game.webp / -games.webp / -activity.webp  the Achievements
+//                        window docked beside Uridium running: its GAME tab
+//                        (progress, the high scores, the Hall of Fame, the
+//                        achievements), then GAMES, then ACTIVITY. Five players
+//                        sign up on the dev server, post unlocks and scores
+//                        through the games API, and are deleted afterwards.
+//                        Run it against a dev server with accounts in memory
+//                        (VITE_ACCOUNTS_IN_MEMORY=1) so no real player shows.
 //
 // Drives the LIVE dev server (start your Vite first). Shots land in public/guide/
 // as 1920-capped WebP (guide-image.mjs).
@@ -38,6 +48,7 @@
 // drive8D64 defaults to the 'raster-time-demo' asset (test/external-assets.json).
 // Set GUIDE_ONLY=update-toast (comma-separated) to regenerate only some shots.
 import { chromium } from 'playwright';
+import { deleteAccounts as deleteAccountsAt, signUpWith } from './guide-achievements.mjs';
 import { createGuideContext } from './guide-context.mjs';
 import { execFileSync } from 'child_process';
 import fs from 'fs';
@@ -582,11 +593,16 @@ if (want('user-port-bbs')) {
   }
 }
 
-// ── desktop: the chat, floating over a game, in a room about it ──────────────────
+// Accounts made with a virtual passkey, and deleted again afterwards (tools/guide-achievements.mjs).
+const deleteAccounts = (tokens) => deleteAccountsAt(BASE, tokens);
+
+// ── desktop: the chat, docked beside a game, the player mentioning it ───────────────
 if (want('chat')) {
-  const guests = [];
+  const guests = [], tokens = [];
+  const signUp = (ctx, page, name) => signUpWith(tokens, ctx, page, name);
   try {
     const chatUrl = `${BASE.replace(/^http/, 'ws')}/chat`;
+    const { PROTOCOL } = await import('../server/protocol.mjs');
     const ctx = await createGuideContext(browser, { colorScheme: 'dark',
       viewport: { width: 1460, height: 900 }, deviceScaleFactor: 2, reducedMotion: 'reduce',
     });
@@ -595,45 +611,57 @@ if (want('chat')) {
         localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1');
         localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
         localStorage.setItem('c64emu.chat.server', url);
-        localStorage.setItem('c64emu.chat.nick', 'RetroMorty');
-        localStorage.removeItem('c64emu.chat.rect');
+        localStorage.removeItem('c64emu.online.rect');
       } catch {}
     }, chatUrl);
     const page = await bootPage(ctx);
+    await signUp(ctx, page, 'Pixel');
+    await page.reload({ waitUntil: 'networkidle' });   // the app picks up the stored session
+    await page.waitForSelector('#btn-power:not([disabled])', { timeout: 20000 });
     if (!(GAME && fs.existsSync(GAME))) throw new Error(`no game to talk about (${GAME || 'commando asset unset'})`);
     await page.setInputFiles('#prg-input', GAME);
     const offer = page.locator('#confirm-modal:not([hidden])');
     if (await offer.waitFor({ timeout: 3000 }).then(() => true, () => false)) await page.locator('#btn-confirm-ok').click();
     await sleep(8000);   // load + autorun → the game's title screen
-    await page.locator('#btn-chat').click();
-    await page.locator('.chat-chip', { hasText: 'Commando' }).first().click();
-    await page.locator('.chat-view-room').waitFor({ state: 'visible', timeout: 10000 });
+    if (await page.locator('#online-window').isHidden()) await page.locator('#btn-online').click();
+    await page.locator('#online-tab-chat').click();
+    await page.locator('.chat-view-channel').waitFor({ state: 'visible', timeout: 10000 });
 
-    // Two guests find the room in the lobby and join it.
-    const guest = (nick) => new Promise((resolve, reject) => {
-      const w = new WebSocket(chatUrl, { headers: { origin: new URL(BASE).origin } });
-      guests.push(w);
-      let id = 0;
-      const req = (msg) => w.send(JSON.stringify({ id: ++id, ...msg }));
-      w.onopen = () => w.send(JSON.stringify({ t: 'hello', v: 1 }));
-      w.onmessage = (e) => {
-        const d = JSON.parse(e.data);
-        if (d.t === 'welcome') req({ t: 'lobby' });
-        else if (d.t === 'lobby' && !w.joined) {
-          const room = d.rooms.find((r) => r.name === 'Commando');
-          if (!room) return;
-          w.joined = true;
-          req({ t: 'join', nick, code: room.code });
-        } else if (d.t === 'ok' && d.room) resolve((text) => req({ t: 'say', text }));
-        else if (d.t === 'err') reject(new Error(`${nick}: ${d.code}`));
-      };
-      w.onerror = () => reject(new Error(`${nick} could not connect to ${chatUrl}`));
-    });
+    // Two guests sign up the same way, then talk over the chat socket.
+    const guest = async (name) => {
+      const gctx = await browser.newContext();
+      const gpage = await gctx.newPage();
+      await gpage.goto(BASE, { waitUntil: 'domcontentloaded' });
+      const { token } = await signUp(gctx, gpage, name);
+      await gctx.close();
+      return new Promise((resolve, reject) => {
+        const w = new WebSocket(chatUrl, { headers: { origin: new URL(BASE).origin } });
+        guests.push(w);
+        let id = 0;
+        w.onopen = () => w.send(JSON.stringify({ t: 'hello', v: PROTOCOL, account: token }));
+        w.onmessage = (e) => {
+          const d = JSON.parse(e.data);
+          if (d.t === 'welcome') d.room ? resolve((text) => w.send(JSON.stringify({ id: ++id, t: 'say', text }))) : reject(new Error(`${name} was kept out of the chat`));
+          else if (d.t === 'err' && !d.id) reject(new Error(`${name}: ${d.code}`));
+        };
+        w.onerror = () => reject(new Error(`${name} could not connect to ${chatUrl}`));
+      });
+    };
     const zak = await guest('Zak');
     const ruby = await guest('Ruby');
-    const me = async (text) => { await page.fill('.chat-compose .chat-input', text); await page.press('.chat-compose .chat-input', 'Enter'); };
+    // The player's lines are typed, so '@comm' and Enter pick Commando from the list.
+    const me = async (text) => {
+      const input = page.locator('.chat-compose .chat-input');
+      await input.click();
+      for (const part of text.split(/(@\w+)/)) {
+        if (!part) continue;
+        await input.pressSequentially(part);
+        if (part.startsWith('@')) { await page.locator('.chat-mentions').waitFor({ timeout: 5000 }); await input.press('Enter'); }
+      }
+      await input.press('Enter');
+    };
     for (const say of [
-      () => me('Anyone else still stuck at the first gate?'),
+      () => me('Anyone else still stuck at the first gate in @comm'),
       () => zak('Stay left and lob grenades over the sandbags'),
       () => ruby('That worked for me. The music still slaps after 40 years'),
       () => me('Rob Hubbard at his best'),
@@ -646,6 +674,88 @@ if (want('chat')) {
     await ctx.close();
   } catch (e) { skipped.push('chat'); console.error('  ✗ chat —', e.message.split('\n')[0]); }
   for (const w of guests) w.close();
+  await deleteAccounts(tokens);
+}
+
+// ── desktop: the Achievements window over Uridium, then GAMES docked, then ACTIVITY ──
+if (want('achievements')) {
+  const tokens = [];
+  const URIDIUM = assetPath('uridium-crt') || '';
+  try {
+    if (!(URIDIUM && fs.existsSync(URIDIUM))) throw new Error(`no Uridium cartridge (${missingNote('uridium-crt')})`);
+    const set = JSON.parse(fs.readFileSync(path.join(root, 'server/sets/uridium.json'), 'utf8'));
+    const hash = set.hashes[0].hash;
+    const ctx = await createGuideContext(browser, { colorScheme: 'dark',
+      viewport: { width: 1460, height: 900 }, deviceScaleFactor: 2, reducedMotion: 'reduce',
+    });
+    await ctx.addInitScript(() => {
+      try {
+        localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1');
+        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+        localStorage.removeItem('c64emu.online.rect'); localStorage.removeItem('c64emu.online.dock'); localStorage.removeItem('c64emu.achievements');
+      } catch {}
+    });
+    const page = await bootPage(ctx);
+    const { token: mine } = await signUpWith(tokens, ctx, page, 'Pixel');
+    // Other players, each with their own unlocks and best score, so the
+    // high-score screen, the activity and the cards have people in them.
+    // A post over the server's limit (ten at once, then one each 2 seconds) waits and tries again.
+    const post = async (token, url, body) => {
+      for (;;) {
+        const r = await fetch(`${BASE}/api${url}`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, Origin: new URL(BASE).origin, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (r.status === 429) { await sleep(2100); continue; }
+        if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
+        return;
+      }
+    };
+    const play = async (token, ids, score) => {
+      for (const id of ids) await post(token, `/games/${hash}/unlocks`, { achievementId: id, hardcore: false });
+      if (score) await post(token, `/games/${hash}/leaderboards/1/entries`, { value: score, hardcore: false });
+    };
+    for (const [name, ids, score] of [
+      ['Zak', [1, 2, 3, 16, 17, 21], 64250],
+      ['Ruby', [1, 2, 3, 4, 5, 6, 16, 17, 18, 21, 22], 118700],
+      ['Nova', [1, 16], 21400],
+      ['Hubbard', [1, 2, 3, 4, 16, 17, 21], 87900],
+    ]) {
+      const gctx = await browser.newContext();
+      const gpage = await gctx.newPage();
+      await gpage.goto(BASE, { waitUntil: 'domcontentloaded' });
+      const { token } = await signUpWith(tokens, gctx, gpage, name);
+      await gctx.close();
+      await play(token, ids, score);
+    }
+    await play(mine, [1, 2, 16, 21], 52300);
+    await page.reload({ waitUntil: 'networkidle' });   // the app picks up the stored session
+    await page.waitForSelector('#btn-power:not([disabled])', { timeout: 20000 });
+    await page.setInputFiles('#prg-input', URIDIUM);
+    const offer = page.locator('#confirm-modal:not([hidden])');
+    if (await offer.waitFor({ timeout: 3000 }).then(() => true, () => false)) await page.locator('#btn-confirm-ok').click();
+    // A game with a set opens the window on its GAME tab.
+    await page.locator('#online-window .ach-screen').first().waitFor({ timeout: 20000 });
+    await sleep(16000);   // the cartridge's title screen behind it
+    await page.mouse.move(10, 890);
+    await sleep(400);
+    let info = saveGuideShot(await page.screenshot(), OUT, 'achievements-game');
+    done.push('achievements-game'); console.log('  ✓', shotLabel('achievements-game', info));
+
+    await page.locator('#online-tab-games').click();
+    if (!(await page.evaluate(() => document.body.classList.contains('has-docked-window')))) await page.locator('#btn-online-dock').click();
+    await page.locator('.ach-card').first().waitFor({ timeout: 10000 });
+    await page.mouse.move(10, 890);
+    await sleep(600);
+    info = saveGuideShot(await page.screenshot(), OUT, 'achievements-games');
+    done.push('achievements-games'); console.log('  ✓', shotLabel('achievements-games', info));
+
+    await page.locator('#online-tab-activity').click();
+    await page.locator('#achievements-activity li').first().waitFor({ timeout: 10000 });
+    await page.mouse.move(10, 890);
+    await sleep(600);
+    info = saveGuideShot(await page.screenshot(), OUT, 'achievements-activity');
+    done.push('achievements-activity'); console.log('  ✓', shotLabel('achievements-activity', info));
+    await ctx.close();
+  } catch (e) { skipped.push('achievements'); console.error('  ✗ achievements —', e.message.split('\n')[0]); }
+  await deleteAccounts(tokens);
 }
 
 await browser.close();

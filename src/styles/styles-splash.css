@@ -367,7 +367,6 @@ body.splash-open #splash {
   object-fit: cover;
   border-bottom: 1px solid var(--border);
 }
-.splash-cards .card-disks img { object-position: 50% 100%; }   /* lead with the PETSCII directory art, not the button row */
 .splash-cards h2 {
   margin: 12px 12px 6px;
   font-family: 'PetMe64', 'Share Tech Mono', monospace;
@@ -450,11 +449,6 @@ body.splash-open #splash {
   }
   .splash-cta-row { gap: 10px; }
   .splash-power-btn { width: 100%; padding: 22px 20px; text-align: center; }
-  /* Two cards on phones: Retro Vibes, and the phone card — a visitor reading
-     this ON a phone is the audience for "Desktop or in your pocket". */
-  .splash-cards li { display: none; }
-  .splash-cards li.card-vibes,
-  .splash-cards li.card-phone { display: flex; }
   .splash-chip-more { display: list-item; }
 }
 

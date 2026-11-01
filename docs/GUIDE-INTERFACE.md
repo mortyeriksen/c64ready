@@ -8,7 +8,7 @@ The header, display, mobile layout and control cards. Part of the [User Guide](U
 
 ## Header
 
-![The header: the C64 READY. wordmark on the left, and ABOUT, DOCS, GitHub, YouTube and Facebook buttons on the right.](/guide/header.webp)
+![The header: the C64 READY. wordmark on the left, and the appearance switch, ABOUT, DOCS, ACHIEVEMENTS, GitHub, YouTube and Facebook buttons on the right.](/guide/header.webp)
 
 | Control | What it does |
 | --- | --- |
@@ -16,7 +16,7 @@ The header, display, mobile layout and control cards. Part of the [User Guide](U
 | **Appearance** (moon, sun or screen) | Switches the interface between dark, light and following your system's setting. From following the system (the default), the first click shows the other mode, the second your system's own, the third goes back to following the system. The icon shows the current setting: a moon for dark, a sun for light, a screen for following the system (the default). The same setting is **APPEARANCE** in Options ▸ Theme. Shown on phones too. |
 | **ABOUT** | Opens the About panel: what the emulator is, how the project started, the current known-issues, and credits. |
 | **DOCS** | Opens this documentation site. |
-| **CHAT** | Opens the [chat](GUIDE-CHAT.md) with other C64 READY. users. A number on the button counts messages that arrived while the chat was closed. Shown on phones too. |
+| **ACHIEVEMENTS** (the trophy) | Opens the [Achievements window](GUIDE-ACHIEVEMENTS.md): achievements, high scores, activity and the chat with other C64 READY. users. A number on the button counts chat messages that arrived while the window was closed. Shown on phones too, as the trophy alone. |
 | **GitHub** | The full source, on GitHub. Desktop only; on a phone the same link is in the About panel. |
 | **YouTube** | The C64 READY. channel. Desktop only, likewise. |
 | **Facebook** | The C64 READY. page on Facebook. Desktop only, likewise. |
@@ -39,11 +39,12 @@ size may be taller than the screen: scroll, or pick a smaller size. **⛶ FULL**
 centres the picture on the whole screen with bars around it.
 
 - **Click the screen** to give it keyboard focus, needed before typing or
-  before a game that polls the keyboard will see your keys.
+  before a game that polls the keyboard will see your keys. While something
+  else has the keyboard, the screen says so in the middle of the picture.
 - **Drag & drop** a `.PRG`, `.D64`, `.CRT`, `.TAP`, `.T64`, `.SID` or `.REU` file
   onto the screen to load it (pointer devices). The hint below the monitor reminds you.
-- **On touch devices**, tap the screen to raise the on-screen keyboard; the hint
-  changes to say so.
+- **On touch devices**, tap the screen to raise the on-screen keyboard. The
+  screen says so until your first tap.
 
 ---
 
@@ -185,5 +186,6 @@ the *Raster Time* disk by Genesis Project).
 
 ## Chat
 
-Open **CHAT** in the header to talk with other users. See the
-[Chat guide](GUIDE-CHAT.md) for rooms, shared games and moderation.
+Open **ACHIEVEMENTS** in the header (the trophy) for the chat, the loaded game's
+achievements and high scores, everyone's activity and your account. See
+[Achievements](GUIDE-ACHIEVEMENTS.md#chat).
