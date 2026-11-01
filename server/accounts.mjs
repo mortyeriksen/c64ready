@@ -470,7 +470,9 @@ export function createAccounts({ db, origins = [], allowLoopback = false, trustP
       const p = /^\d{1,12}$/.test(id) ? q.picture.get(Number(id)) : undefined;
       if (!p?.avatar) throw new HttpError(404, 'no picture');
       // The address carries the version, so a cached copy is right until the picture changes.
-      return new Raw(Buffer.from(p.avatar), p.avatar_type, { 'Cache-Control': 'public, max-age=86400', 'Content-Security-Policy': "default-src 'none'" });
+      // The app's page is cross-origin isolated (require-corp) and the API is another
+      // site, so the picture says it may be embedded anywhere: it is public anyway.
+      return new Raw(Buffer.from(p.avatar), p.avatar_type, { 'Cache-Control': 'public, max-age=86400', 'Content-Security-Policy': "default-src 'none'", 'Cross-Origin-Resource-Policy': 'cross-origin' });
     },
     'DELETE /api/me'(body, req) {
       const user = requireConfirmed(req);

@@ -104,9 +104,8 @@ function messageItem(code, m, withRoom) {
   li.append(el('span', time(m.at), 'meta'));
   if (withRoom) li.append(el('span', `[${roomName(code)}]`, 'tag'));
   const member = rooms.get(code)?.members.find((x) => x.id === m.from.id);
-  // An announced unlock or new best has no author: it names the player.
-  const text = m.event ? `${m.event.user.name} ${m.event.kind === 'unlock' ? `unlocked ${m.event.achievement.title}` : `scored ${m.event.value} on ${m.event.leaderboard.title}`} in ${m.event.game.title}` : m.text;
-  li.append(el('span', m.event ? 'announce' : m.from.nick, 'who'));
+  const text = m.text;
+  li.append(el('span', m.from.nick, 'who'));
   if (member) li.append(el('span', member.addr, 'addr'));
   li.append(el('span', text, 'text'));
   li.append(button('delete', () => act({ t: 'delete', room: code, n: m.n })));

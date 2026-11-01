@@ -63,8 +63,7 @@ if (db) loadSets(db, path.join(path.dirname(fileURLToPath(import.meta.url)), 'se
 const accounts = db
   ? createAccounts({
       db,
-      // Unlocks and new best scores are announced in the chat.
-      extend: (api) => gameRoutes({ ...api, onActivity: (e) => chat.announce(e) }),
+      extend: gameRoutes,
       origins: list(env.CHAT_ORIGINS || 'https://c64ready.com'),
       allowLoopback: env.CHAT_ALLOW_LOCAL === '1',
       trustProxy: Math.max(0, Number.parseInt(env.CHAT_TRUST_PROXY || '0', 10) || 0),

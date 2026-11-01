@@ -307,23 +307,6 @@ body.fullscreen-mode .fs-online-btn {
   color: var(--green);
   font-size: 0.7rem;
 }
-/* An unlock or a new best, announced in the channel. */
-.chat-event {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0 6px;
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.76rem;
-  color: var(--dim);
-}
-.chat-event svg {
-  flex: none;
-  color: var(--amber);
-}
-.chat-pts {
-  color: var(--amber);
-}
 .chat-people {
   max-height: 45%;
   overflow: auto;
@@ -480,8 +463,4 @@ body.fullscreen-mode .fs-online-btn {
   width: 18px;
   height: 18px;
   font-size: 0.45rem;
-}
-/* An unlock or new best: the activity feed's own row. */
-.chat-log .chat-activity {
-  list-style: none;
 }

@@ -15,7 +15,7 @@ import { pushEscapeLayer, popEscapeLayer } from '../ui/escape-stack.js';
 import { confirmDialog } from '../ui/dialogs.js';
 import { floatingWindow, resizeHandles, fillsScreen } from '../ui/floating-window.js';
 import { LIMITS } from '../../server/protocol.mjs';
-import { h, renderActivity, renderGames, renderGamePage, renderProfile, gameHead, highScoreScreen, achievementList, activityItem, playerChip, hallOfFame } from '../achievements/browse.js';
+import { h, renderActivity, renderGames, renderGamePage, renderProfile, gameHead, highScoreScreen, achievementList, playerChip, hallOfFame } from '../achievements/browse.js';
 
 const TABS = ['game', 'activity', 'chat', 'games', 'account'];
 const POLL_MS = 30_000;
@@ -73,10 +73,8 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
       chat = createChatPane({
         container: chatEl, onUnread: setUnread, isFull: () => win.classList.contains('is-full'),
         account, onSignIn: () => selectTab('account'),
-        format: (v, f) => engine?.format(v, f) ?? String(v),
-        // Players and unlocks look and click as in the activity feed.
+        // Players look and click as in the activity feed.
         player: (user) => playerChip(ctx, user),
-        activity: (e, at) => activityItem(ctx, { ...e, at }, true),
         // A message mentions games with achievements, and a mention opens the
         // game's page under GAMES.
         games: listGames,
@@ -197,11 +195,13 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     detail.pop();
     showView();
   }
-  function selectTab(name) {
+  // The tab button takes focus only when the keyboard moved to it (the arrow
+  // keys): a click leaves the keyboard with the C64, as elsewhere in the app.
+  function selectTab(name, focus = false) {
     tab = name;
     detail = [];
     showView();
-    tabButtons.get(name)?.focus();
+    if (focus) tabButtons.get(name)?.focus();
   }
 
   /** Shows the chosen tab, or the newest profile or game page over it, and loads what it needs. */
@@ -316,8 +316,9 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     busy = true; error = ''; errorAt = at; render();
     try { await task(); } catch (e) { error = passkeyMessage(e); }
     busy = false; render();
-    const to = acct.code ? '#achievements-recovery-copy' : error ? back : null;
-    if (to) accountEl.querySelector(to)?.focus();
+    // A failed step puts the cursor back in its field; a new recovery code is
+    // announced by its status region, and the keyboard stays where it was.
+    if (error && back && !acct.code) accountEl.querySelector(back)?.focus();
   }
 
   // What the ACCOUNT tab holds between draws: a recovery code to show once,
@@ -460,7 +461,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
       const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
       if (!step) return;
       e.preventDefault();
-      selectTab(TABS[(TABS.indexOf(currentTab()) + step + TABS.length) % TABS.length]);
+      selectTab(TABS[(TABS.indexOf(currentTab()) + step + TABS.length) % TABS.length], true);
     });
   }
   for (const b of buttons) {

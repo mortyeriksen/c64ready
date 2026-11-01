@@ -97,7 +97,7 @@ const chatDevPlugin = {
     const info = (t) => server.config.logger.info(`  ${t}`);
     loadSets(db, path.join(path.dirname(fileURLToPath(import.meta.url)), 'server', 'sets'), info);
     const bans = createBans({ db });
-    const accounts = createAccounts({ db, allowLoopback: true, extend: (api) => gameRoutes({ ...api, onActivity: (e) => chat.announce(e) }), log: info, bans });
+    const accounts = createAccounts({ db, allowLoopback: true, extend: gameRoutes, log: info, bans });
     const adminPasskeys = createAdminPasskeys({ db });
     const chat = createChatServer({
       allowLoopback: true,

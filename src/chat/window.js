@@ -3,15 +3,15 @@
 // src/chat/window.js — the chat, the CHAT tab of the Achievements window
 // (src/online/window.js): one channel for everyone signed in, named by their
 // account. A message can mention games with achievements (`@Bomb Jack`,
-// picked from a list as you type), each a link to its page, and unlocks and
-// new best scores are announced in it. Members hide, report or vote out a member. The window
+// picked from a list as you type), each a link to its page. Unlocks and new
+// best scores are in the ACTIVITY tab, not here. Members hide, report or vote out a member. The window
 // mounts it and tells it when it shows and hides; it is loaded the first time
 // the CHAT tab opens, so the app does not carry it.
 
 import { LIMITS } from '../../server/protocol.mjs';
 import { createChatConnection, chatServerUrl } from './connection.js';
 import { pushEscapeLayer, popEscapeLayer } from '../ui/escape-stack.js';
-import { playerHue, trophyIcon, starIcon, gameIcon } from '../achievements/browse.js';
+import { playerHue, gameIcon } from '../achievements/browse.js';
 import { confirmDialog } from '../ui/dialogs.js';
 
 const RESUME_KEY = 'c64emu.chat.resume';
@@ -79,14 +79,12 @@ export function findMentions(text, games) {
  * @param {{ user: object|null, token: string|null }} o.account  the signed-in account: chatting needs one, and its name is the name in the chat
  * @param {() => void} [o.onSignIn]           shows where to sign in
  * @param {() => boolean} [o.isFull]          the window fills a phone's screen
- * @param {(value: number, format: string) => string} [o.format]  a leaderboard value, as its game shows it
  * @param {() => Promise<{id: string, title: string}[]>} [o.games]  the games with achievements, which a message can mention
  * @param {() => string|null} [o.loadedGame]  the loaded game's id, first in the list of mentions
  * @param {(id: string) => void} [o.onGame]    a mention was clicked: show that game
  * @param {(user: object) => HTMLElement} [o.player]  a player, as the activity names them: badge or tile, a link to their profile
- * @param {(event: object, at: number) => HTMLElement} [o.activity]  an unlock or new best, drawn as in the activity feed
  */
-export function createChatPane({ container, onUnread, account, onSignIn = () => {}, isFull = () => false, format = (v) => String(v), games = async () => [], loadedGame = () => null, onGame = () => {}, player = null, activity = null }) {
+export function createChatPane({ container, onUnread, account, onSignIn = () => {}, isFull = () => false, games = async () => [], loadedGame = () => null, onGame = () => {}, player = null }) {
   const st = {
     view: 'signin', me: null, channel: null, log: [], out: '',
     hidden: new Set(), status: 'offline', unread: 0, peopleOpen: false,
@@ -105,7 +103,7 @@ export function createChatPane({ container, onUnread, account, onSignIn = () => 
   container.append(bar, body);
 
   const signinView = h('div', { class: 'chat-view chat-view-signin' },
-    h('p', { class: 'chat-intro' }, 'Talk with everyone playing on C64 READY. Sign in to chat: your account name is your name in the chat.'),
+    h('p', { class: 'chat-intro' }, 'Talk with everyone playing on C64 READY. Sign in to chat: your username is your name in the chat.'),
     h('ul', { class: 'chat-facts' },
       h('li', {}, 'Messages are logged with your account and IP address and kept for 90 days, so abuse can be investigated.'),
       h('li', {}, 'The chat is moderated: members can vote someone out for an hour, and the admin can mute, remove and ban.')),
@@ -138,7 +136,6 @@ export function createChatPane({ container, onUnread, account, onSignIn = () => 
     channelView.hidden = view !== 'channel';
     if (view === 'channel') renderChannel();
     renderHead();
-    if (visible && !isFull() && view === 'channel') say.focus();   // no surprise keyboard on a phone
   }
 
   function renderHead() {
@@ -160,18 +157,8 @@ export function createChatPane({ container, onUnread, account, onSignIn = () => 
     return out;
   }
 
-  function eventItem(m) {
-    const e = m.event;
-    if (activity) { const li = activity(e, m.at); li.dataset.n = String(m.n); li.classList.add('chat-activity'); return li; }
-    const who = h('span', { class: `chat-nick ${hue(e.user)}` }, e.user.name);
-    return e.kind === 'unlock'
-      ? h('li', { class: 'chat-event is-unlock', 'data-n': String(m.n) }, trophyIcon(13), who, ` unlocked ${e.achievement.title} in ${e.game.title} `, h('span', { class: 'chat-pts' }, `+${e.achievement.points}`))
-      : h('li', { class: 'chat-event is-score', 'data-n': String(m.n) }, starIcon(13), who, ` scored ${format(e.value, e.leaderboard.format)} on ${e.leaderboard.title} in ${e.game.title}`);
-  }
-
   function messageItem(m) {
     if (m.notice) return h('li', { class: 'chat-notice' }, m.notice);
-    if (m.event) return eventItem(m);
     if (st.hidden.has(m.from.id)) return h('li', { class: 'chat-notice' }, `A message from ${m.from.nick} is hidden.`);
     const cls = ['chat-msg', m.from.id === st.me ? 'is-me' : '', m.sysop ? 'is-sysop' : ''].filter(Boolean).join(' ');
     return h('li', { class: cls, 'data-n': String(m.n) },
@@ -362,7 +349,7 @@ export function createChatPane({ container, onUnread, account, onSignIn = () => 
         break;
       case 'msg':
         appendLog(e.m);
-        if (e.m.from.id !== st.me && !e.m.event && (!visible || document.hidden)) { st.unread++; onUnread?.(st.unread); }
+        if (e.m.from.id !== st.me && (!visible || document.hidden)) { st.unread++; onUnread?.(st.unread); }
         break;
       case 'notice':
         appendLog({ notice: e.text });
@@ -408,6 +395,7 @@ export function createChatPane({ container, onUnread, account, onSignIn = () => 
       closeEmoji();
       closeMentions();
       renderCompose();
+      say.focus();   // SEND clicked: the next line is typed here, as after Enter
     } catch (e) { sayNote.hidden = false; sayNote.textContent = errorText(e); }
   }
 

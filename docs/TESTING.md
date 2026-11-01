@@ -283,7 +283,7 @@ These live in `test/chat/` and `test/achievements/`.
 - `chat-server-spec-test.js` runs the chat server with real WebSocket clients
   and a clock it drives. A hello needs an account, and its username is the
   name in the chat. It checks the one channel, which never closes, the grace
-  period, games mentioned in messages, announced unlocks and best scores, and
+  period, games mentioned in messages (and that unlocks stay out of it), and
   votes, counted by address, that remove someone for an hour. Then limits,
   bans, the log and its retention, the admin console, and requests that try to
   pollute prototypes, smuggle fields or write control characters to the log or

@@ -62,6 +62,13 @@
 .online-chat[hidden] {
   display: none;
 }
+/* The tabs' content, text and spacing alike, 15% larger than the app's
+   (its sizes are in rem, so a zoom scales them where a font-size could not).
+   The window's title and tabs keep their size. */
+.online-body > section,
+.online-chat > * {
+  zoom: 1.15;
+}
 
 .online-chat {
   flex: 1;

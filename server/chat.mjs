@@ -2,8 +2,8 @@
 // Copyright © 2026 Morten Øien Eriksen
 // server/chat.mjs — the chat: one channel for everyone, for signed-in accounts
 // (the account's name is the name in the chat). A message can mention games
-// with achievements (`@Bomb Jack`), and unlocks and new best scores are announced in it
-// (announce()). Members vote out a member (a majority of the other addresses
+// with achievements (`@Bomb Jack`); unlocks and new best scores go to the
+// activity feed (server/games.mjs), not here. Members vote out a member (a majority of the other addresses
 // present, for an hour), and the admin's live view mutes, removes, bans and
 // deletes. The last messages are held in memory, so a restart clears them. With a chat log (server/log.mjs), every message and every join,
 // leave and moderation step is also written there, with the IP address.
@@ -126,11 +126,10 @@ export function createChatServer({
     broadcast(room, { t: 'notice', room: room.code, text });
     adminBroadcast({ t: 'notice', room: room.code, text });
   }
-  function addMessage(room, from, text, sysop = false, games = null, event = null) {
+  function addMessage(room, from, text, sysop = false, games = null) {
     const m = { n: ++room.n, from, text, at: now() };
     if (sysop) m.sysop = true;
     if (games?.length) m.games = games;
-    if (event) m.event = event;
     room.history.push(m);
     if (room.history.length > LIMITS.history) room.history.shift();
     room.lastMessageAt = m.at;
@@ -715,22 +714,6 @@ export function createChatServer({
   return {
     /** A setup key for the dev server's terminal while the console has no passkey; else null. */
     adminSetupKey: () => gate?.devSetupKey() ?? null,
-    /**
-     * Posts an unlock or a new best score into the channel:
-     * { kind: 'unlock'|'score', user: {id, name}, game: {title, hash}, achievement?: {title, points}, leaderboard?: {title, format}, value? }
-     */
-    announce(event) {
-      const e = {
-        kind: event.kind === 'score' ? 'score' : 'unlock',
-        user: { id: event.user.id, name: event.user.name, avatar: event.user.avatar || 0 },
-        game: { title: event.game.title, hash: event.game.hash },
-        ...(event.kind === 'score'
-          ? { leaderboard: { title: event.leaderboard.title, format: event.leaderboard.format }, value: event.value }
-          : { achievement: { title: event.achievement.title, points: event.achievement.points } }),
-      };
-      record({ ev: 'announce', room: channel.code, kind: e.kind, uid: e.user.id, game: e.game.title });
-      return addMessage(channel, { id: 'system', nick: '' }, '', false, null, e).n;
-    },
     /** Handles /chat and /admin/live upgrades; returns false for any other path. */
     handleUpgrade(req, sock, head) {
       const path = String(req.url || '').split('?')[0];

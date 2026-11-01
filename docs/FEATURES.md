@@ -342,7 +342,6 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   (see [Chat](GUIDE-ACHIEVEMENTS.md#chat)).
 - **Games in messages**: type @ to mention a game with achievements. It shows
   as a link to the game's page.
-- **Unlocks and high scores**, announced in the chat as they happen.
 - **Moderated by the members**: a majority vote removes someone for an hour,
   and anyone can hide someone's messages or report them to the admin.
 - **A floating window**: dragged and resized on a desktop, full screen on a

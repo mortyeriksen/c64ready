@@ -47,8 +47,7 @@ write('demo.json', {
 let clock = 1_700_000_000_000;
 const db = openDatabase(':memory:');
 loadSets(db, sets);
-const told = [];   // what the chat would announce
-const accounts = createAccounts({ db, origins: ['https://c64ready.com'], now: () => clock, extend: (api) => gameRoutes({ ...api, onActivity: (e) => told.push(e) }) });
+const accounts = createAccounts({ db, origins: ['https://c64ready.com'], now: () => clock, extend: gameRoutes });
 const server = http.createServer((req, res) => { if (!accounts.handleRequest(req, res)) res.writeHead(404).end(); });
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const base = `http://127.0.0.1:${server.address().port}`;
@@ -140,10 +139,9 @@ const ann = account('Ann'), ben = account('Ben'), cat = account('Cat');
 {
   const rows = db.prepare('SELECT kind, ref, value FROM activity WHERE user_id = ? ORDER BY id').all(ann.id);
   expect(rows.map((r) => `${r.kind}:${r.ref}:${r.value ?? ''}`).join() === 'unlock:1:,score:1:500,score:2:900,score:2:700', `activity records firsts and improvements (got ${rows.map((r) => `${r.kind}:${r.ref}:${r.value ?? ''}`)})`);
-  const mine = told.filter((e) => e.user.name === 'Ann');
-  expect(mine.map((e) => e.kind).join() === 'unlock,score,score,score', 'each new unlock and new best is told to the chat, and nothing else');
-  expect(mine[0].game.title === 'Demo Game' && mine[0].game.hash === HASH && mine[0].achievement.title === 'First' && mine[0].achievement.points === 5, 'an unlock names the game and the achievement');
-  expect(mine[1].leaderboard.title === 'High Score' && mine[1].leaderboard.format === 'SCORE' && mine[1].value === 500, 'a new best names the board, its format and the value');
+  const feed = (await api('GET', '/api/activity')).body.items.filter((x) => x.user.name === 'Ann').reverse();
+  expect(feed[0]?.game.title === 'Demo Game' && feed[0].game.hash === HASH && feed[0].achievement.title === 'First' && feed[0].achievement.points === 5, 'the feed names an unlock\'s game and achievement');
+  expect(feed[1]?.leaderboard.title === 'High Score' && feed[1].leaderboard.format === 'SCORE' && feed[1].value === 500, 'and a new best\'s board, its format and the value');
   ok('activity');
 }
 
@@ -197,30 +195,26 @@ const ann = account('Ann'), ben = account('Ben'), cat = account('Cat');
   ok('activity feeds');
 }
 
-// 8b. Scores cannot flood the feed or the chat: a few at once, and a run of bests is one entry, told once.
+// 8b. Scores cannot flood the feed: a few at once, and a run of bests is one entry.
 {
   clock += 6 * 60_000;
-  const toldBefore = told.length;
   const feedBefore = (await api('GET', '/api/activity')).body.items[0].id;
   const statuses = [];
   for (let v = 5000; v < 5011; v++) statuses.push((await api('POST', `/api/games/${HASH}/leaderboards/1/entries`, { token: cat.token, body: { value: v } })).status);
   expect(statuses.slice(0, 10).every((x) => x === 200) && statuses[10] === 429, `ten posts at once, then the player waits (got ${statuses})`);
   const fresh = (await api('GET', '/api/activity')).body.items.filter((x) => x.id > feedBefore);
   expect(fresh.length === 1 && fresh[0].value === 5009, `the run of bests is one entry in the feed, with the latest (got ${fresh.map((x) => x.value)})`);
-  expect(told.length - toldBefore === 1, 'and is told to the chat once');
   const mine = (await api('GET', `/api/games/${HASH}/leaderboards/1`, { token: cat.token })).body.me;
   expect(mine.value === 5009, 'while the leaderboard keeps the best');
-  expect((await api('POST', `/api/games/${HASH}/unlocks`, { token: cat.token, body: { achievementId: 2 } })).status === 429, 'unlocks share the limit, so a whole set cannot pour into the chat at once');
-  // A run of bests minutes apart: the entry keeps the run's first time, so the
-  // chat catches up once that is five minutes ago, however often bests come.
+  expect((await api('POST', `/api/games/${HASH}/unlocks`, { token: cat.token, body: { achievementId: 2 } })).status === 429, 'unlocks share the limit, so a whole set cannot pour into the feed at once');
+  // A run of bests minutes apart: the entry keeps the run's first time, so a new
+  // entry follows once that is five minutes ago, however often bests come.
   clock += 6 * 60_000;
   const runFrom = (await api('GET', '/api/activity')).body.items[0].id;
-  const toldRun = told.length;
   for (const [v, step] of [[7000, 0], [7100, 4], [7200, 4]]) { clock += step * 60_000; await api('POST', `/api/games/${HASH}/leaderboards/1/entries`, { token: cat.token, body: { value: v } }); }
   const run = (await api('GET', '/api/activity')).body.items.filter((x) => x.id > runFrom);
   expect(run.map((x) => x.value).join() === '7200,7100', `bests 4 minutes apart: the second folds into the first, the third (8 minutes on) is new (got ${run.map((x) => x.value)})`);
-  expect(told.length - toldRun === 2 && told.at(-1).value === 7200, 'and the chat hears the first and the latest');
-  ok('posts cannot flood the feed or the chat');
+  ok('posts cannot flood the feed');
 }
 
 // 8c. The Hall of Fame: players by achievement points, earlier first on equal points, which share a place.

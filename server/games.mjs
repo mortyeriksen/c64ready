@@ -34,11 +34,11 @@ const ID_RE = /^[a-z0-9][a-z0-9-]{0,47}$/;
 const isId = (n) => Number.isInteger(n) && n > 0 && n < 2 ** 31;
 const PAGE = 30;
 // Unlocks and scores a player may post: ten at once, then one each 2 seconds,
-// so no account can pour a whole set into the chat at once.
+// so no account can pour a whole set into the activity at once.
 const POST_RATE = 0.5, POST_BURST = 10;
 // New bests on one board within this long of the run's first are one entry in
-// the activity (its value raised, its time kept), told to the chat once. The
-// next best after that is a new entry, so the chat catches up.
+// the activity (its value raised, its time kept), so a run of bests does not
+// fill the feed. The next best after that is a new entry.
 const SCORE_QUIET_MS = 5 * 60_000;
 /** A whole-number query parameter within [min, max], else `fallback`. */
 function queryInt(req, name, fallback, min, max) {
@@ -124,10 +124,9 @@ export function loadSets(db, dir, log = () => {}) {
 }
 
 /**
- * The game routes, for createAccounts({ extend }). `onActivity` hears each new
- * unlock and new best (the chat announces them): { kind, user, game, achievement | leaderboard, value }.
+ * The game routes, for createAccounts({ extend }).
  */
-export function gameRoutes({ db, now, HttpError, requireUser, optionalUser, onActivity = () => {} }) {
+export function gameRoutes({ db, now, HttpError, requireUser, optionalUser }) {
   const postBuckets = new Map();   // user id → Bucket
   // A game's players by achievement points: [{ user, name, avatar, unlocked, points, last }].
   const POINTS = `SELECT x.user_id, COUNT(*) AS unlocked, SUM(a.points) AS points, MAX(x.unlocked_at) AS last
@@ -181,7 +180,6 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser, onAc
     return lb;
   }
   const order = (lb) => (lb.lower_is_better ? 'low' : 'high');
-  const tell = (e) => { try { onActivity(e); } catch { /* the activity is saved either way */ } };
   // Best first; a tie shares the rank, and the next value skips past the tied ones.
   const rankEntries = (rows) => rows.map((e, i) => ({ rank: i && rows[i - 1].value === e.value ? 0 : i + 1, user: { id: e.user_id, name: e.name, avatar: e.avatar_at || 0 }, name: e.name, value: e.value, at: e.submitted_at }))
     .map((e, i, all) => { if (!e.rank) e.rank = all[i - 1].rank; return e; });
@@ -268,7 +266,6 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser, onAc
       const added = q.unlock.run(user.id, g.id, id, body.hardcore ? 1 : 0, t).changes > 0;
       if (added) {
         q.activity.run(t, user.id, g.id, 'unlock', id, null);
-        tell({ kind: 'unlock', user, game: { title: g.title, hash }, achievement: { title: a.title, points: a.points } });
       }
       return { ok: true, new: added };
     },
@@ -286,10 +283,7 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser, onAc
         q.putEntry.run(user.id, g.id, lb.id, value, body.hardcore ? 1 : 0, t);
         const last = q.lastScore.get(user.id, g.id, lb.id);
         if (last && t - last.at < SCORE_QUIET_MS) q.raiseScore.run(value, last.id);
-        else {
-          q.activity.run(t, user.id, g.id, 'score', lb.id, value);
-          tell({ kind: 'score', user, game: { title: g.title, hash }, leaderboard: { title: lb.title, format: lb.format }, value });
-        }
+        else q.activity.run(t, user.id, g.id, 'score', lb.id, value);
       }
       const best = better ? value : prev.value;
       return { best, rank: rankOf(g, lb, best), improved: better };

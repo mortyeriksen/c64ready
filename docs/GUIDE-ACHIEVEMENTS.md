@@ -147,8 +147,9 @@ opens as you type, with the loaded one first. Pick one with the arrow keys and
 **Enter**, or a click. In the message the game shows as a link in its colour,
 and clicking it opens the game's page under **GAMES**.
 
-The chat also announces unlocks and new best scores. Closing the window does
-not leave it: the **ACHIEVEMENTS** button counts new messages.
+Unlocks and new best scores are in [ACTIVITY](#activity-games-and-profiles), not in the chat.
+Closing the window does not leave the chat: the **ACHIEVEMENTS** button counts
+new messages.
 
 ### Moderation
 

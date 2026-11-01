@@ -4,7 +4,7 @@
 // (accounts are stubbed here: the token "acct:Ann" is the account Ann; the
 // real lookup is server/accounts.mjs); there is one channel, which every
 // session joins on hello and which never closes; the server sets every
-// author; a message can mention games with achievements; unlocks and new bests are announced;
+// author; a message can mention games with achievements, while unlocks and new bests stay out of it;
 // members vote a member out for an hour, counted by address; limits hold;
 // bans act on the client address behind the trusted proxy; the log keeps
 // every message with its IP address for the retention period; and the admin
@@ -327,15 +327,9 @@ function rawSocket(ip = freshIp()) {
   expect(JSON.stringify((await b.next((m) => m.t === 'msg')).m.games) === '[{"id":"uridium","title":"Uridium"}]', 'only a known game whose @title is in the text counts');
   await host.req('say', { text: 'no games here', games: ['uridium'] });
   expect(!(await b.next((m) => m.t === 'msg')).m.games, 'a message that mentions nothing carries no games');
-  const n = chat.announce({ kind: 'unlock', user: { id: 7, name: 'Nova', secret: 1 }, game: { title: 'Uridium', hash: 'h' }, achievement: { title: 'Gold', points: 10 } });
-  const told = await b.next((m) => m.t === 'msg' && m.m.n === n);
-  expect(told.m.event?.kind === 'unlock' && told.m.event.user.name === 'Nova' && told.m.event.achievement.points === 10 && told.m.event.user.secret === undefined, 'an unlock is announced to everyone, with only what to show');
-  expect(told.m.from.id === 'system' && told.m.text === '', 'it has no author and no text');
-  chat.announce({ kind: 'score', user: { id: 7, name: 'Nova' }, game: { title: 'Uridium', hash: 'h' }, leaderboard: { title: 'High Score', format: 'SCORE' }, value: 48210 });
-  const best = await b.next((m) => m.t === 'msg' && m.m.event?.kind === 'score');
-  expect(best.m.event.value === 48210 && best.m.event.leaderboard.format === 'SCORE', 'a new best is announced with its value and format');
+  expect(chat.announce === undefined, 'the chat posts no unlocks or new bests: those are in the activity feed');
   host.ws.close(); b.ws.close();
-  ok('a message can mention games, and unlocks and new bests are announced');
+  ok('a message can mention games; unlocks and new bests stay out of the chat');
 }
 
 // ── The log ──────────────────────────────────────────────────────────────────

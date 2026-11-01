@@ -94,7 +94,8 @@ try {
   expect(typeof token === 'string' && token.length > 20, 'the session token is kept');
   const recoveryCode = (await account.locator('#achievements-recovery-code').textContent({ timeout: 10_000 }).catch(() => '')).trim();
   expect(/^[0-9A-HJKMNP-TV-Z]{5}(-[0-9A-HJKMNP-TV-Z]{5}){3}$/.test(recoveryCode), `the new account's recovery code is shown (got "${recoveryCode}")`);
-  expect(await page.evaluate(() => document.activeElement?.id) === 'achievements-recovery-copy', 'with the focus on COPY, so it is not missed');
+  expect(await account.locator('#achievements-recovery-code').evaluate((el) => !!el.closest('[role="status"]')), 'in a status region, so a screen reader announces it');
+  expect(await page.evaluate(() => document.activeElement?.id) !== 'achievements-recovery-copy', 'without taking the keyboard to COPY: only text fields take it');
   await account.locator('button', { hasText: 'I HAVE SAVED IT' }).click();
   expect(await account.locator('#achievements-recovery-code').count() === 0, 'and put away once saved');
   await account.locator('.ach-passkeys li').first().waitFor({ timeout: 10_000 });

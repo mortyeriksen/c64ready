@@ -359,6 +359,7 @@ const first = await register('Alice', alice);
   const bytes = Buffer.from(await got.arrayBuffer());
   expect(got.status === 200 && got.headers.get('content-type') === 'image/png' && bytes.equals(png(64, 64)), 'it is served as itself, with its type');
   expect(got.headers.get('x-content-type-options') === 'nosniff' && /default-src 'none'/.test(got.headers.get('content-security-policy') || ''), 'never sniffed, and never runs anything');
+  expect(got.headers.get('cross-origin-resource-policy') === 'cross-origin', 'and may be embedded by the app\'s cross-origin isolated page, on another site');
   const again = await put(jpeg(128, 128));
   expect(again.body.user.avatar > set.body.user.avatar, 'a new picture gets a new version, so caches fetch it');
   expect((await api('GET', `/api/me`, { token: tok })).body.user.avatar === again.body.user.avatar, 'the account says which');

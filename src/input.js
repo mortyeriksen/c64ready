@@ -65,15 +65,18 @@ new MutationObserver(updateKeyboardFocusHint).observe(document.body, { attribute
 
 // A mouse or touch click on a button, or a pick from a menu, hands the keyboard
 // back to the screen, so typing straight after clicking LOAD or POWER reaches
-// the C64. Focus moved by the keyboard stays where it was put. Dialogs keep
-// their own focus.
+// the C64. That holds in the floating windows (the Achievements window) too:
+// only their text fields keep the keyboard, and the chat's message row, whose
+// buttons belong to its field. Focus moved by the keyboard stays where it was
+// put. Modal dialogs keep their own focus.
 let _lastInputPointer = false;
 document.addEventListener('pointerdown', () => { _lastInputPointer = true; }, true);
 document.addEventListener('keydown', () => { _lastInputPointer = false; }, true);
 const _giveBackKeyboard = (target) => {
   if (!_lastInputPointer || !target?.closest) return;
-  if (target.closest('[role="dialog"], dialog, .modal-backdrop, .mb-overlay')) return;
-  if (!target.closest('.main-wrap, body > header')) return;
+  const floating = target.closest('.float-window');
+  if (floating ? target.closest('.chat-compose') : target.closest('[role="dialog"], dialog, .modal-backdrop, .mb-overlay')) return;
+  if (!floating && !target.closest('.main-wrap, body > header')) return;
   if (target.matches('input:not([type="checkbox"]):not([type="file"]), textarea') || target.isContentEditable) return;
   canvas.focus({ preventScroll: true });
 };
