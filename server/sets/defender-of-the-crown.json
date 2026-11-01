@@ -49,6 +49,20 @@
       "description": "Still be fighting for the crown in October 1201.",
       "points": 25,
       "memaddr": "N:0xH0042=9_N:0xH0043=175_N:0xH0044=4_d0xH0044!=4.1._0xH0044=4_d0xH0044=4S0xH0043=177_0xH0042>=10S0xH0043>177"
+    },
+    {
+      "id": 7,
+      "title": "Unhorsed",
+      "description": "Win a joust in a tournament.",
+      "points": 10,
+      "memaddr": "N:0xH0042=9_N:0xH0043=175_N:0xH0044=4_d0xH0044!=4.1._0xH0044=4_d0xH0044=4_d0xH02EF>=1_d0xH02EF<=3_0xH02EF<d0xH02EF"
+    },
+    {
+      "id": 8,
+      "title": "Champion of the Lists",
+      "description": "Win a tournament.",
+      "points": 25,
+      "memaddr": "N:0xH0042=9_N:0xH0043=175_N:0xH0044=4_d0xH0044!=4.1._0xH0044=4_d0xH0044=4_d0xH02EF=1_0xH02EF=0"
     }
   ]
 }

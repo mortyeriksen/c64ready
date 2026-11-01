@@ -6,6 +6,8 @@
 //   $7D the player's gold (the other five lords' follow at $7E-$82).
 //   $D0-$E2 one byte per territory: the owner in the low nibble (0 the player, 1-5 the other lords,
 //         7 nobody), $C0 set on a castle, and $80 set for a moment while a battle is drawn there.
+//   $02EF jousts left to win a tournament: set to 3 when one starts, one less for each joust won (the
+//         lance in the shield's box when fire is pressed); a tournament won at 0, one lost leaves it.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -117,6 +119,26 @@ function month() { const m = ram[MONTH] === 12 ? 1 : ram[MONTH] + 1; setDate(m, 
   for (let i = 0; i < 12; i++) month();
   expect(has('Long Campaign'), 'Long Campaign in October 1201');
   ok('time');
+}
+
+// 7. Tournaments: a joust won, and a tournament won, not one lost or one starting.
+{
+  const LEFT = 0x2ef;
+  activate();
+  characterScreen(); ram[LEFT] = 3; frames(5); ram[LEFT] = 2; frames(5);
+  expect(!has('Unhorsed'), 'a joust before a game has started is no joust');
+  start(); month();
+  ram[LEFT] = 3; frames(10);
+  expect(!has('Unhorsed'), 'a tournament starting unlocks nothing');
+  frames(60);
+  expect(!has('Unhorsed'), 'a lost joust leaves the count, and unlocks nothing');
+  ram[LEFT] = 2; frames(10);
+  expect(has('Unhorsed') && !has('Champion of the Lists'), 'the first joust won unlocks Unhorsed, not the championship');
+  ram[LEFT] = 1; frames(10);
+  expect(!has('Champion of the Lists'), 'not after two');
+  ram[LEFT] = 0; frames(10);
+  expect(has('Champion of the Lists'), 'the third joust won is the tournament');
+  ok('jousts and tournaments');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }
