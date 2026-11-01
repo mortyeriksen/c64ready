@@ -334,11 +334,12 @@ body.fullscreen-mode .fs-online-btn {
   color: var(--dim);
   font-size: 0.75rem;
 }
+/* After the name, at the right; on a line of their own only when the row is too narrow. */
 .chat-person-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  width: 100%;
+  margin-left: auto;
 }
 
 /* The chat is in the activity's monospace, like the rest of the window. */

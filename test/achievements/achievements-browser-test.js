@@ -197,6 +197,13 @@ try {
   const rest = order.slice(1);
   expect(/Uridium/.test(order[0] ?? ''), `the loaded game comes first (got ${order[0]})`);
   expect(rest.every((t, i) => i === 0 || rest[i - 1].localeCompare(t, undefined, { sensitivity: 'base' }) <= 0), 'and the rest follow alphabetically');
+  const ordered = await page.evaluate(async () => {
+    const { gameOrder } = await import('/src/achievements/browse.js');
+    const g = (title, achievements, mine) => ({ title, hash: title, achievements, ...(mine ? { mine } : {}) });
+    return gameOrder([g('Alpha', 10), g('Bravo', 10, { unlocked: 2 }), g('Charlie', 4, { unlocked: 2 }), g('Delta', 0, { unlocked: 0, last: 1 }),
+      g('Echo', 20, { unlocked: 10 }), g('Foxtrot', 10, { unlocked: 9 }), g('Golf', 10)], 'Golf').map((x) => x.title).join();
+  });
+  expect(ordered === 'Golf,Foxtrot,Charlie,Echo,Bravo,Delta,Alpha', `played games go by the share of their achievements unlocked, most first, ties by title (got ${ordered})`);
   await filter.fill('uridium');
   const card = gamesTab.locator('.ach-card', { hasText: 'Uridium' });
   expect(await card.evaluate((el) => el.classList.contains('is-loaded')) && /LOADED/.test(await card.textContent()), 'the loaded game\'s card is marked LOADED');
@@ -228,6 +235,8 @@ try {
   expect(await versions.isHidden() && await info.getAttribute('aria-expanded') === 'false', 'which version the set is for waits behind the info button on the title line');
   await info.click();
   expect(await versions.isVisible() && /OneLoad64/.test(await versions.textContent()) && await info.getAttribute('aria-expanded') === 'true', 'and the button opens it under the title');
+  const about = versions.locator('a.ach-about');
+  expect(await about.innerText() === 'About the game' && await about.getAttribute('href') === 'https://www.lemon64.com/game/uridium' && await about.getAttribute('target') === '_blank' && /noopener/.test(await about.getAttribute('rel')), 'ending with About the game, the game\'s page on Lemon64 in a new window');
   await info.click();
   expect(await versions.isHidden(), 'and closes it again');
   await page.keyboard.press('Escape');

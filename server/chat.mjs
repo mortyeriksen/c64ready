@@ -287,9 +287,11 @@ export function createChatServer({
       if (!voters) room.votes.set(target.id, voters = new Set());
       voters.add(s.id);
       record({ ev: 'vote', room: room.code, target: target.id, ...who(s) });
-      if (voteCount(room, target) >= votesNeeded(room, target)) kickMember(room, target.id, 'vote');
-      else pushRoom(room);
-      return {};
+      // A vote from the target's own address does not count, so one person cannot vote with many accounts.
+      const votes = voteCount(room, target), need = votesNeeded(room, target), counted = s.addrId !== target.session.addrId;
+      if (votes >= need) { kickMember(room, target.id, 'vote'); return { votes, need, counted, removed: true }; }
+      pushRoom(room);
+      return { votes, need, counted };
     },
     report(s, msg) {
       const { room, me } = memberOf(s);

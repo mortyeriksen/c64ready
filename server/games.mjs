@@ -80,6 +80,8 @@ export function checkSet(set, where = 'set') {
     nSeen.add(n.id);
     if (!text(n.text, 200) || !text(n.memaddr, 4096)) fail(`notice ${n.id} needs a text and a memaddr`);
   }
+  // A page about the game elsewhere, linked from its page in the app.
+  if (set.url !== undefined && !/^https:\/\/[^\s]{1,200}$/.test(set.url)) fail('url must be an https address');
   return set;
 }
 
@@ -104,8 +106,8 @@ export function loadSets(db, dir, log = () => {}) {
     db.exec('BEGIN');
     try {
       const notices = set.notices?.length ? JSON.stringify(set.notices.map((n) => ({ id: n.id, text: n.text, memaddr: n.memaddr }))) : null;
-      db.prepare('INSERT INTO games (id, title, source, notices) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET title = excluded.title, source = excluded.source, notices = excluded.notices')
-        .run(set.id, set.title, set.source ?? null, notices);
+      db.prepare('INSERT INTO games (id, title, source, notices, url) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET title = excluded.title, source = excluded.source, notices = excluded.notices, url = excluded.url')
+        .run(set.id, set.title, set.source ?? null, notices, set.url ?? null);
       for (const t of ['game_hashes', 'achievements', 'leaderboards']) db.prepare(`DELETE FROM ${t} WHERE game_id = ?`).run(set.id);
       const addHash = db.prepare('INSERT INTO game_hashes (hash, game_id, label) VALUES (?, ?, ?)');
       for (const h of set.hashes) addHash.run(h.hash, set.id, h.label ?? null);
@@ -146,7 +148,7 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser }) {
     topComplete: db.prepare(`SELECT COUNT(*) AS n FROM (${POINTS}) WHERE unlocked = ?`),
     lastScore: db.prepare("SELECT id, at FROM activity WHERE user_id = ? AND game_id = ? AND kind = 'score' AND ref = ? ORDER BY id DESC LIMIT 1"),
     raiseScore: db.prepare('UPDATE activity SET value = ? WHERE id = ?'),
-    gameByHash: db.prepare('SELECT g.id, g.title, g.notices FROM game_hashes h JOIN games g ON g.id = h.game_id WHERE h.hash = ?'),
+    gameByHash: db.prepare('SELECT g.id, g.title, g.notices, g.url FROM game_hashes h JOIN games g ON g.id = h.game_id WHERE h.hash = ?'),
     achievements: db.prepare('SELECT id, title, description, points, memaddr FROM achievements WHERE game_id = ? ORDER BY sort'),
     achievement: db.prepare('SELECT id, title, points FROM achievements WHERE game_id = ? AND id = ?'),
     leaderboards: db.prepare('SELECT id, title, description, format, lower_is_better, definition FROM leaderboards WHERE game_id = ? ORDER BY sort'),
@@ -252,7 +254,7 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser }) {
       const user = optionalUser(req);
       const mine = user ? q.unlocked.all(user.id, g.id) : [];
       return {
-        game: { id: g.id, title: g.title },
+        game: { id: g.id, title: g.title, ...(g.url ? { url: g.url } : {}) },
         files: q.files.all(g.id).map((f) => ({ hash: f.hash, label: f.label })),
         achievements: q.achievements.all(g.id),
         leaderboards: q.leaderboards.all(g.id).map((l) => ({ id: l.id, title: l.title, description: l.description, format: l.format, lowerIsBetter: !!l.lower_is_better, definition: l.definition })),

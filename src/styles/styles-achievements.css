@@ -275,6 +275,15 @@
   margin-top: 3px;
 }
 
+/* The link to a page about the game, under the versions. */
+.ach-about {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  color: var(--accent-bright, var(--accent));
+}
+
 .ach-game-title .achievements-link {
   color: inherit;
 }

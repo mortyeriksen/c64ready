@@ -33,7 +33,7 @@ const HASH = 'aa'.repeat(16), HASH2 = 'bb'.repeat(16), OTHER = 'cc'.repeat(16);
 const sets = fs.mkdtempSync(path.join(os.tmpdir(), 'c64sets-'));
 const write = (name, set) => fs.writeFileSync(path.join(sets, name), JSON.stringify(set));
 write('demo.json', {
-  id: 'demo', title: 'Demo Game', hashes: [{ hash: HASH, label: 'disk' }, { hash: HASH2, label: 'cartridge' }],
+  id: 'demo', title: 'Demo Game', url: 'https://example.com/demo-game', hashes: [{ hash: HASH, label: 'disk' }, { hash: HASH2, label: 'cartridge' }],
   achievements: [
     { id: 1, title: 'First', description: 'Do the first thing.', points: 5, memaddr: '0xH0010=1' },
     { id: 2, title: 'Second', description: 'Do the second thing.', points: 10, memaddr: '0xH0010=2' },
@@ -78,6 +78,7 @@ const ann = account('Ann'), ben = account('Ben'), cat = account('Cat');
   expect(bad({ achievements: [{ id: 1, title: 'A', description: 'a', memaddr: '1=1' }, { id: 1, title: 'B', description: 'b', memaddr: '1=1' }] }), 'achievement ids are unique');
   expect(bad({ leaderboards: [{ id: 1, title: 'L', description: 'l', format: 'NOPE', definition: 'STA:1::CAN:1::SUB:1::VAL:1' }] }), 'a leaderboard format must be an rcheevos one');
   expect(bad({ leaderboards: [{ id: 1, title: 'L', description: 'l', format: 'SCORE', definition: 'VAL:1' }] }), 'a leaderboard needs STA, CAN, SUB and VAL');
+  expect(bad({ url: 'http://example.com/x' }) && bad({ url: 'javascript:alert(1)' }) && !bad({ url: 'https://example.com/x' }), 'a url, when a set has one, is an https address');
   ok('set files are checked');
 }
 
@@ -91,6 +92,7 @@ const ann = account('Ann'), ben = account('Ben'), cat = account('Cat');
   expect(JSON.stringify(g.body.unlocked) === '[]', 'signed out, nothing is unlocked');
   const g2 = await api('GET', `/api/games/${HASH2}`);
   expect(g2.status === 200 && g2.body.game.id === 'demo', 'every hash a set lists finds the same game');
+  expect(g.body.game.url === 'https://example.com/demo-game', 'and the game carries its set\'s url');
   expect((await api('GET', `/api/games/${OTHER}`)).status === 404, 'an unknown hash is not a game');
   expect((await api('GET', '/api/games/nothex')).status === 400, 'a malformed hash is refused');
   ok('games are found by hash');
@@ -165,6 +167,7 @@ const ann = account('Ann'), ben = account('Ben'), cat = account('Cat');
   const { body } = await api('GET', '/api/games');
   const demo = body.games.find((g) => g.id === 'demo');
   expect(body.games.map((g) => g.title).join() === 'Another Game,Demo Game', 'games are listed by title');
+  expect(!('url' in (await api('GET', `/api/games/${OTHER}`)).body.game), 'a game whose set has no url carries none');
   expect(demo.hash === HASH && demo.achievements === 2 && demo.points === 15 && demo.leaderboards === 2, 'with the first hash of the set, and the size of the set');
   expect(JSON.stringify(demo.hashes) === JSON.stringify([HASH, HASH2]), 'and every file hash it is for, so the app can match files itself');
   expect(demo.players === 2 && body.games[0].players === 0, `and how many have played (got ${demo.players})`);

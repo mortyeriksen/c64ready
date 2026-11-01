@@ -1,0 +1,86 @@
+{
+  "id": "wizball",
+  "title": "Wizball",
+  "url": "https://www.lemon64.com/game/wizball",
+  "hashes": [
+    {
+      "hash": "24181f379eb31592fe580981d7f68f45",
+      "label": "OneLoad64 v5 cartridge (Wizball.crt)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "First Points",
+      "description": "Score some points.",
+      "points": 5,
+      "memaddr": "0xH0314=0_0xH7110=172_0xH7c78=72_0xHbfd8=1_A:d0xHbfdb_A:d0xHbfdc_A:d0xHbfdd_A:d0xHbfde_A:d0xHbfdf_d0xHbfe0=0_A:0xHbfdb_A:0xHbfdc_A:0xHbfdd_A:0xHbfde_A:0xHbfdf_0xHbfe0>0"
+    },
+    {
+      "id": 2,
+      "title": "One Thousand",
+      "description": "Score 1,000 points.",
+      "points": 10,
+      "memaddr": "0xH0314=0_0xH7110=172_0xH7c78=72_0xHbfd8=1_O:0xHbfdb>0_O:0xHbfdc>0_0xHbfdd>0"
+    },
+    {
+      "id": 3,
+      "title": "Ten Thousand",
+      "description": "Score 10,000 points.",
+      "points": 10,
+      "memaddr": "0xH0314=0_0xH7110=172_0xH7c78=72_0xHbfd8=1_O:0xHbfdb>0_0xHbfdc>0"
+    },
+    {
+      "id": 4,
+      "title": "Top Score",
+      "description": "Score 50,000 points.",
+      "points": 25,
+      "memaddr": "0xH0314=0_0xH7110=172_0xH7c78=72_0xHbfd8=1_O:0xHbfdb>0_0xHbfdc>=5"
+    },
+    {
+      "id": 5,
+      "title": "A Droplet",
+      "description": "Collect a coloured droplet.",
+      "points": 5,
+      "memaddr": "0xH0314=0_0xH7110=172_0xH7c78=72_0xHbfd8=1_O:0xHb12e>0_O:0xHb12f>0_0xHb130>0"
+    },
+    {
+      "id": 6,
+      "title": "Three Cauldrons",
+      "description": "Put a droplet in each cauldron.",
+      "points": 10,
+      "memaddr": "0xH0314=0_0xH7110=172_0xH7c78=72_0xHbfd8=1_0xHb12e>0_0xHb12f>0_0xHb130>0"
+    },
+    {
+      "id": 7,
+      "title": "Colour Complete",
+      "description": "Complete a colour.",
+      "points": 25,
+      "memaddr": "0xH0314=0_0xH7110=172_0xH7c78=72_0xHbfd8=1_O:0xHb122>=3_O:0xHb123>=3_0xHb124>=3"
+    },
+    {
+      "id": 8,
+      "title": "Every Colour",
+      "description": "Complete all three colours.",
+      "points": 50,
+      "memaddr": "0xH0314=0_0xH7110=172_0xH7c78=72_0xHbfd8=1_0xHb122>=3_0xHb123>=3_0xHb124>=3"
+    },
+    {
+      "id": 9,
+      "title": "Extra Life",
+      "description": "Gain an extra life.",
+      "points": 10,
+      "memaddr": "0xH0314=0_0xH7110=172_0xH7c78=72_0xHbfd8=1_d0xHb27b<4_0xHb27b>=4"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Score",
+      "description": "Your score when the game ends.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH0314=0_0xH7110=172_0xH7c78=72_0xHbfd8=1::CAN:0=1::SUB:0xH0314=0_0xH7110=172_0xH7c78=72_0xHbfd8=1_d0xHb27b>0_0xHb27b=0_A:0xHbfdb_A:0xHbfdc_A:0xHbfdd_A:0xHbfde_A:0xHbfdf_0xHbfe0>0::VAL:0xHbfdb*100000_0xHbfdc*10000_0xHbfdd*1000_0xHbfde*100_0xHbfdf*10_0xHbfe0"
+    }
+  ]
+}

@@ -456,14 +456,19 @@ function rawSocket(ip = freshIp()) {
   const { first: target } = await channelWith(1);
   const ip = freshIp();
   const x1 = await guest({ ip }), x2 = await guest({ ip }), x3 = await guest({ ip });
-  for (const g of [x1, x2, x3]) await g.req('vote', { member: target.id });
+  const first = await x1.req('vote', { member: target.id });
+  expect(first.counted === true && first.votes === 1 && first.need === 2 && !first.removed, `a vote answers whether it counted and how many are needed (got ${JSON.stringify(first)})`);
+  for (const g of [x2, x3]) await g.req('vote', { member: target.id });
+  const twin = await guest({ ip: target.ip });
+  const own = await twin.req('vote', { member: target.id });
+  expect(own.counted === false && own.votes === 1, `a vote from the member's own address does not count (got ${JSON.stringify(own)})`);
   const view = await x1.req('join');
   expect(view.room.members.some((m) => m.id === target.id), 'several sessions from one address cannot vote a member out');
   expect(view.room.members.find((m) => m.id === target.id)?.votes === 1, 'they count as one vote');
   const other = await guest();
   await other.req('vote', { member: target.id });
   expect((await target.next((m) => m.t === 'kicked')).by === 'vote', 'a second address agreeing makes the majority');
-  for (const g of [target, x1, x2, x3, other]) g.ws.close();
+  for (const g of [target, x1, x2, x3, twin, other]) g.ws.close();
   ok('votes count addresses, not sessions, and one newcomer alone removes nobody');
 }
 

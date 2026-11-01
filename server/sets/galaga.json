@@ -1,6 +1,7 @@
 {
   "id": "galaga",
   "title": "Galaga",
+  "url": "https://www.lemon64.com/game/galaga-arlasoft",
   "source": "Achievements ported from c64-cheevos by hayesmaker (MIT), https://github.com/hayesmaker/c64-cheevos",
   "hashes": [
     {

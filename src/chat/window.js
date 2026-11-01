@@ -407,7 +407,15 @@ export function createChatPane({ container, onUnread, account, onSignIn = () => 
   }
 
   async function vote(m) {
-    try { await conn.request('vote', { member: m.id }); } catch (e) { appendLog({ notice: errorText(e) }); }
+    const ok = await confirmDialog(`Vote to remove ${m.nick} from the chat? When most of the others here agree, they are kept out for an hour.`, { title: 'Vote to remove', okLabel: 'VOTE' });
+    if (!ok) return;
+    try {
+      const r = await conn.request('vote', { member: m.id });
+      if (r.removed) return;   // the chat's own notice says so
+      appendLog({ notice: r.counted
+        ? `You voted to remove ${m.nick}: ${r.votes} of the ${r.need} votes needed.`
+        : `Your vote to remove ${m.nick} does not count: you are on the same network as them, and a network has one vote.` });
+    } catch (e) { appendLog({ notice: errorText(e) }); }
   }
 
   async function report(m) {

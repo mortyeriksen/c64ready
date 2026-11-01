@@ -144,6 +144,8 @@ const MIGRATIONS = [
   // Banned addresses (an IPv4 address, or an IPv6 /64), for the chat and the
   // accounts alike, until a time.
   `CREATE TABLE bans (key TEXT PRIMARY KEY, ip TEXT, until INTEGER NOT NULL, reason TEXT, at INTEGER NOT NULL);`,
+  // A page about the game elsewhere, from its set.
+  `ALTER TABLE games ADD COLUMN url TEXT;`,
 ];
 
 /** The schema version a fully migrated database records. */

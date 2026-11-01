@@ -153,9 +153,9 @@ export function progress(got, total, points, totalPoints) {
  * A game's head: its title (a link, or plain for the loaded game), meter and
  * progress. A game with high scores and no achievements says so instead.
  */
-export function gameHead(ctx, game, achievements, isUnlocked, { link = false, versions = [] } = {}) {
+export function gameHead(ctx, game, achievements, isUnlocked, { link = false, versions = [], url = null } = {}) {
   const title = h('h3', { class: 'ach-game-title' }, link ? gameLink(ctx, game) : game.title);
-  const top = versions.length ? [h('div', { class: 'ach-game-top' }, title, versionButton()), versionCard(versions)] : [title];
+  const top = versions.length ? [h('div', { class: 'ach-game-top' }, title, versionButton()), versionCard(versions, game.title, url)] : [title];
   if (!achievements.length) return h('div', { class: 'ach-game' }, ...top, h('p', { class: 'achievements-note' }, 'This game has high scores, and no achievements yet.'));
   const got = achievements.filter(isUnlocked);
   const pts = (list) => list.reduce((n, a) => n + (a.points || 0), 0);
@@ -165,7 +165,7 @@ export function gameHead(ctx, game, achievements, isUnlocked, { link = false, ve
 }
 
 // The versions of a game a set is for, behind an info button on the title line: the button opens
-// a card right under it.
+// a card right under it, which ends with a link to a page about the game, opening in a new window.
 let versionCards = 0;
 function versionButton() {
   const id = `ach-versions-${++versionCards}`;
@@ -174,10 +174,14 @@ function versionButton() {
     on: { click: (e) => { const b = e.currentTarget, card = document.getElementById(id); const open = card.hidden; card.hidden = !open; b.setAttribute('aria-expanded', String(open)); } },
   }, icon(['M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18z', 'M12 11v6', 'M12 7.5v.01'], 18));
 }
-function versionCard(versions) {
+function versionCard(versions, title, url) {
+  let site = url;
+  try { site = new URL(url).hostname.replace(/^www\./, ''); } catch {}
   return h('div', { class: 'ach-versions', id: `ach-versions-${versionCards}`, hidden: true },
     h('p', {}, 'Achievements need this version of the game:'),
-    h('ul', {}, versions.map((v) => h('li', {}, v))));
+    h('ul', {}, versions.map((v) => h('li', {}, v))),
+    ...(url ? [h('a', { class: 'ach-about', href: url, target: '_blank', rel: 'noopener noreferrer', title: `${title} on ${site}`, 'aria-label': `About the game: ${title} on ${site}, opens in a new window` },
+      'About the game', icon(['M14 4h6v6', 'M20 4l-9 9', 'M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5'], 12))] : []));
 }
 
 // A row on either screen: the top three in the C64 face, ranks in gold, silver and bronze; the rest
@@ -313,12 +317,7 @@ export async function renderGames(el, ctx) {
   try {
     const { games: all } = await ctx.api.games();
     if (gen !== el._gen) return;
-    // The loaded game comes first, then the games you have played (unlocked something in, or posted a
-    // score to), then the rest; each part alphabetically.
-    const loadedNow = ctx.loaded?.() ?? null;
-    const isLoaded = (g) => (g.hashes ?? [g.hash]).includes(loadedNow);
-    const rank = (g) => (isLoaded(g) ? 2 : g.mine?.unlocked > 0 || g.mine?.last ? 1 : 0);
-    const games = [...all].sort((a, b) => rank(b) - rank(a) || a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
+    const games = gameOrder(all, ctx.loaded?.() ?? null);
     if (!games.length) { el.replaceChildren(note('No games have achievements yet.')); return; }
     const list = h('ul', { class: 'ach-games achievements-games' });
     const count = h('p', { class: 'achievements-note ach-games-count', role: 'status', 'aria-live': 'polite' });
@@ -399,6 +398,18 @@ function gameCard(ctx, g, isLoaded) {
     g.achievements ? h('span', { class: 'ach-card-bar', 'aria-hidden': 'true' }, h('span', { style: `width: ${Math.round((100 * got) / g.achievements)}%` })) : null);
 }
 
+/**
+ * The GAMES list's order: the loaded game first, then the games you have played (unlocked something
+ * in, or posted a score to) by the share of their achievements you have unlocked, then the rest.
+ * Ties go alphabetically.
+ */
+export function gameOrder(games, loadedHash = null) {
+  const isLoaded = (g) => (g.hashes ?? [g.hash]).includes(loadedHash);
+  const rank = (g) => (isLoaded(g) ? 2 : g.mine?.unlocked > 0 || g.mine?.last ? 1 : 0);
+  const share = (g) => (rank(g) === 1 && g.achievements ? (g.mine?.unlocked ?? 0) / g.achievements : 0);
+  return [...games].sort((a, b) => rank(b) - rank(a) || share(b) - share(a) || a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
+}
+
 /** A game's page: its head, the versions the set is for, leaderboards, achievements and activity. */
 export async function renderGamePage(el, ctx, hash) {
   const gen = (el._gen = (el._gen || 0) + 1);
@@ -414,7 +425,7 @@ export async function renderGamePage(el, ctx, hash) {
     const labels = (g.files ?? []).map((f) => f.label).filter(Boolean);
     const feed = h('div', { class: 'achievements-feed' }, note('Loading…'));
     el.replaceChildren(...[
-      gameHead(ctx, g.game, g.achievements, isUnlocked, { versions: labels }),
+      gameHead(ctx, g.game, g.achievements, isUnlocked, { versions: labels, url: g.game.url }),
       ...g.leaderboards.map((l, i) => highScoreScreen(ctx, g.game.title, l, boards[i] ?? { entries: [], players: 0 })),
       g.achievements.length ? hallOfFame(ctx, g.game.title, top) : null,
       ...(g.achievements.length ? [heading('Your achievements'), achievementList(g.achievements, isUnlocked, (a) => at.get(a.id))] : []),

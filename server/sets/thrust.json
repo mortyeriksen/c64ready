@@ -1,6 +1,7 @@
 {
   "id": "thrust",
   "title": "Thrust",
+  "url": "https://www.lemon64.com/game/thrust",
   "source": "Achievements ported from c64-cheevos by hayesmaker (MIT), https://github.com/hayesmaker/c64-cheevos",
   "hashes": [
     {

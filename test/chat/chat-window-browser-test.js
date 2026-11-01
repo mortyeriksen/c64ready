@@ -238,6 +238,20 @@ try {
   await desktop.click('.chat-room-bar button:has-text("PEOPLE")');
   const pocket = desktop.locator('.chat-person', { hasText: 'Pocket' });
   expect(await pocket.locator('button', { hasText: 'vote to remove' }).count() === 1 && await pocket.locator('button', { hasText: 'report' }).count() === 1, 'a member can be voted out or reported, and no one is host');
+  const placed = await pocket.evaluate((row) => {
+    const [n, a] = [row.querySelector('.chat-nick'), row.querySelector('.chat-person-actions')].map((x) => x.getBoundingClientRect());
+    return { same: Math.abs(n.top - a.top) < 6, right: Math.abs(row.getBoundingClientRect().right - a.right) < 2 };
+  });
+  expect(placed.same && placed.right, `a member's links sit after the name, at the right (${JSON.stringify(placed)})`);
+  const voteBtn = pocket.locator('button', { hasText: 'vote to remove' });
+  await voteBtn.click();
+  expect(await desktop.locator('#confirm-modal').isVisible() && await desktop.locator('#confirm-modal-title').innerText() === 'Vote to remove', 'voting asks first');
+  await desktop.click('#btn-confirm-cancel');
+  expect(await desktop.locator('.chat-notice', { hasText: 'remove Pocket' }).count() === 0, 'and cancelling casts no vote');
+  await voteBtn.click();
+  await desktop.click('#btn-confirm-ok');
+  await desktop.locator('.chat-notice', { hasText: 'remove Pocket' }).waitFor({ timeout: 5000 }).catch(() => {});
+  expect(/You voted to remove Pocket: \d+ of the \d+ votes needed|does not count: you are on the same network/.test(await desktop.locator('.chat-notice', { hasText: 'remove Pocket' }).innerText().catch(() => '')), 'a vote says whether it counted');
   await pocket.locator('button', { hasText: 'hide' }).click();
   expect(await desktop.locator('.chat-notice', { hasText: 'A message from Pocket is hidden.' }).count() > 0, 'hiding a member hides their messages here');
   await desktop.locator('.chat-person', { hasText: 'Pocket' }).locator('button', { hasText: 'show' }).click();

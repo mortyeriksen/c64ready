@@ -173,6 +173,30 @@
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
+  "buggy-boy-crt": {
+   "description": "Buggy Boy (Elite 1987), the OneLoad64 v5 cartridge, MD5 c44a8c4d2bd634ece5fba68f56626150: the release its own-design achievement set targets",
+   "env": "C64_BUGGY_BOY_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Buggy Boy.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "impossible-mission-crt": {
+   "description": "Impossible Mission (Epyx 1984), the OneLoad64 v5 cartridge, MD5 bf923fe8d24a1c9ef874484c62e857af: the release its own-design achievement set targets",
+   "env": "C64_IMPOSSIBLE_MISSION_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Impossible Mission.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "wizball-crt": {
+   "description": "Wizball (Sensible Software 1987), the OneLoad64 v5 cartridge, MD5 24181f379eb31592fe580981d7f68f45: the release its own-design achievement set targets",
+   "env": "C64_WIZBALL_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Wizball.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
   "nemesis-crt": {
    "description": "Nemesis (Konami 1987), the OneLoad64 v5 cartridge, MD5 a14218cf0a4457320f4bad2c00db05b8: the release its own-design achievement set targets",
    "env": "C64_NEMESIS_CRT",

@@ -1,0 +1,107 @@
+{
+  "id": "buggy-boy",
+  "title": "Buggy Boy",
+  "url": "https://www.lemon64.com/game/buggy-boy",
+  "hashes": [
+    {
+      "hash": "c44a8c4d2bd634ece5fba68f56626150",
+      "label": "OneLoad64 v5 cartridge (Buggy Boy.crt)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Under Way",
+      "description": "Reach leg 2.",
+      "points": 5,
+      "memaddr": "N:0xH44db=49_N:0xH44de=48_N:0xH44df=48_N:0xH44e0=48_N:0xH44e1=48_0xH44e2=48.1._d0xH44db=49_0xH44db=50"
+    },
+    {
+      "id": 2,
+      "title": "Making Time",
+      "description": "Reach leg 3.",
+      "points": 5,
+      "memaddr": "N:0xH44db=49_N:0xH44de=48_N:0xH44df=48_N:0xH44e0=48_N:0xH44e1=48_0xH44e2=48.1._d0xH44db=50_0xH44db=51"
+    },
+    {
+      "id": 3,
+      "title": "Final Leg",
+      "description": "Reach leg 5.",
+      "points": 10,
+      "memaddr": "N:0xH44db=49_N:0xH44de=48_N:0xH44df=48_N:0xH44e0=48_N:0xH44e1=48_0xH44e2=48.1._d0xH44db=52_0xH44db=53"
+    },
+    {
+      "id": 4,
+      "title": "Offroad",
+      "description": "Finish Offroad.",
+      "points": 10,
+      "memaddr": "N:0xH44db=49_N:0xH44de=48_N:0xH44df=48_N:0xH44e0=48_N:0xH44e1=48_0xH44e2=48.1._0xH033a=0_d0xH0350=8_0xH0350=10"
+    },
+    {
+      "id": 5,
+      "title": "North",
+      "description": "Finish North.",
+      "points": 10,
+      "memaddr": "N:0xH44db=49_N:0xH44de=48_N:0xH44df=48_N:0xH44e0=48_N:0xH44e1=48_0xH44e2=48.1._0xH033a=1_d0xH0350=8_0xH0350=10"
+    },
+    {
+      "id": 6,
+      "title": "East",
+      "description": "Finish East.",
+      "points": 10,
+      "memaddr": "N:0xH44db=49_N:0xH44de=48_N:0xH44df=48_N:0xH44e0=48_N:0xH44e1=48_0xH44e2=48.1._0xH033a=2_d0xH0350=8_0xH0350=10"
+    },
+    {
+      "id": 7,
+      "title": "West",
+      "description": "Finish West.",
+      "points": 10,
+      "memaddr": "N:0xH44db=49_N:0xH44de=48_N:0xH44df=48_N:0xH44e0=48_N:0xH44e1=48_0xH44e2=48.1._0xH033a=3_d0xH0350=8_0xH0350=10"
+    },
+    {
+      "id": 8,
+      "title": "South",
+      "description": "Finish South.",
+      "points": 25,
+      "memaddr": "N:0xH44db=49_N:0xH44de=48_N:0xH44df=48_N:0xH44e0=48_N:0xH44e1=48_0xH44e2=48.1._0xH033a=4_d0xH0350=8_0xH0350=10"
+    },
+    {
+      "id": 9,
+      "title": "Points Ahead",
+      "description": "Score at least 5,000 points.",
+      "points": 5,
+      "memaddr": "N:0xH44db=49_N:0xH44de=48_N:0xH44df=48_N:0xH44e0=48_N:0xH44e1=48_0xH44e2=48.1._0xH44db>=49_0xH44db<=53_0xL44de<10_0xL44df<10_0xL44e0<10_0xL44e1<10_0xL44e2<10_A:0xL44de*10000_A:0xL44df*1000_A:0xL44e0*100_A:0xL44e1*10_0xL44e2>=5000"
+    },
+    {
+      "id": 10,
+      "title": "Five Figures",
+      "description": "Score at least 10,000 points.",
+      "points": 10,
+      "memaddr": "N:0xH44db=49_N:0xH44de=48_N:0xH44df=48_N:0xH44e0=48_N:0xH44e1=48_0xH44e2=48.1._0xH44db>=49_0xH44db<=53_0xL44de<10_0xL44df<10_0xL44e0<10_0xL44e1<10_0xL44e2<10_A:0xL44de*10000_A:0xL44df*1000_A:0xL44e0*100_A:0xL44e1*10_0xL44e2>=10000"
+    },
+    {
+      "id": 11,
+      "title": "Table Leader",
+      "description": "Score at least 20,000 points.",
+      "points": 10,
+      "memaddr": "N:0xH44db=49_N:0xH44de=48_N:0xH44df=48_N:0xH44e0=48_N:0xH44e1=48_0xH44e2=48.1._0xH44db>=49_0xH44db<=53_0xL44de<10_0xL44df<10_0xL44e0<10_0xL44e1<10_0xL44e2<10_A:0xL44de*10000_A:0xL44df*1000_A:0xL44e0*100_A:0xL44e1*10_0xL44e2>=20000"
+    },
+    {
+      "id": 12,
+      "title": "Long Haul",
+      "description": "Score at least 50,000 points.",
+      "points": 25,
+      "memaddr": "N:0xH44db=49_N:0xH44de=48_N:0xH44df=48_N:0xH44e0=48_N:0xH44e1=48_0xH44e2=48.1._0xH44db>=49_0xH44db<=53_0xL44de<10_0xL44df<10_0xL44e0<10_0xL44e1<10_0xL44e2<10_A:0xL44de*10000_A:0xL44df*1000_A:0xL44e0*100_A:0xL44e1*10_0xL44e2>=50000"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score",
+      "description": "Highest score in one race.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH44db=49_0xH44de=48_0xH44df=48_0xH44e0=48_0xH44e1=48_0xH44e2=48::CAN:0=1::SUB:0xH9c4e=0_0xH44db>=49_0xH44db<=53::VAL:0xL44de*10000_0xL44df*1000_0xL44e0*100_0xL44e1*10_0xL44e2"
+    }
+  ]
+}

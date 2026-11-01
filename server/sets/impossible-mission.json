@@ -1,0 +1,93 @@
+{
+  "id": "impossible-mission",
+  "title": "Impossible Mission",
+  "url": "https://www.lemon64.com/game/impossible-mission",
+  "hashes": [
+    {
+      "hash": "bf923fe8d24a1c9ef874484c62e857af",
+      "label": "OneLoad64 v5 cartridge (Impossible Mission.crt)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Puzzle Piece",
+      "description": "Find a puzzle piece.",
+      "points": 5,
+      "memaddr": "N:0xH00d4=18_N:0xH00d5=0_N:0xH00d6=0_N:0xH00d7=0_N:0xH00d8=0_N:0xH0043=0_N:0xH00d9=0_N:0xH00da=0_N:0xH00db=0_N:0xH00dc=0_N:0xH83a9=201_0xH83b2=201.1._d0xH00d6=0_0xH00d6=1"
+    },
+    {
+      "id": 2,
+      "title": "Ten Pieces",
+      "description": "Find 10 puzzle pieces.",
+      "points": 10,
+      "memaddr": "N:0xH00d4=18_N:0xH00d5=0_N:0xH00d6=0_N:0xH00d7=0_N:0xH00d8=0_N:0xH0043=0_N:0xH00d9=0_N:0xH00da=0_N:0xH00db=0_N:0xH00dc=0_N:0xH83a9=201_0xH83b2=201.1._0xH00d6>=10"
+    },
+    {
+      "id": 3,
+      "title": "Snooze or Lift",
+      "description": "Find a snooze password or a lift reset.",
+      "points": 5,
+      "memaddr": "N:0xH00d4=18_N:0xH00d5=0_N:0xH00d6=0_N:0xH00d7=0_N:0xH00d8=0_N:0xH0043=0_N:0xH00d9=0_N:0xH00da=0_N:0xH00db=0_N:0xH00dc=0_N:0xH83a9=201_0xH83b2=201.1._d0xH00d7=0_0xH00d7=1"
+    },
+    {
+      "id": 4,
+      "title": "Puzzle Solved",
+      "description": "Solve a puzzle.",
+      "points": 10,
+      "memaddr": "N:0xH00d4=18_N:0xH00d5=0_N:0xH00d6=0_N:0xH00d7=0_N:0xH00d8=0_N:0xH0043=0_N:0xH00d9=0_N:0xH00da=0_N:0xH00db=0_N:0xH00dc=0_N:0xH83a9=201_0xH83b2=201.1._d0xH00d8=0_0xH00d8=1"
+    },
+    {
+      "id": 5,
+      "title": "Three Puzzles",
+      "description": "Solve 3 puzzles.",
+      "points": 10,
+      "memaddr": "N:0xH00d4=18_N:0xH00d5=0_N:0xH00d6=0_N:0xH00d7=0_N:0xH00d8=0_N:0xH0043=0_N:0xH00d9=0_N:0xH00da=0_N:0xH00db=0_N:0xH00dc=0_N:0xH83a9=201_0xH83b2=201.1._0xH00d8>=3"
+    },
+    {
+      "id": 6,
+      "title": "The Password",
+      "description": "Solve all nine puzzles.",
+      "points": 25,
+      "memaddr": "N:0xH00d4=18_N:0xH00d5=0_N:0xH00d6=0_N:0xH00d7=0_N:0xH00d8=0_N:0xH0043=0_N:0xH00d9=0_N:0xH00da=0_N:0xH00db=0_N:0xH00dc=0_N:0xH83a9=201_0xH83b2=201.1._0xH00d8>=9"
+    },
+    {
+      "id": 7,
+      "title": "Control Room",
+      "description": "Open the door to the control room.",
+      "points": 50,
+      "memaddr": "N:0xH00d4=18_N:0xH00d5=0_N:0xH00d6=0_N:0xH00d7=0_N:0xH00d8=0_N:0xH0043=0_N:0xH00d9=0_N:0xH00da=0_N:0xH00db=0_N:0xH00dc=0_N:0xH83a9=201_0xH83b2=201.1._d0xH00dc=0_0xH00dc=1"
+    },
+    {
+      "id": 8,
+      "title": "One O'Clock",
+      "description": "Play on to one o'clock.",
+      "points": 5,
+      "memaddr": "N:0xH00d4=18_N:0xH00d5=0_N:0xH00d6=0_N:0xH00d7=0_N:0xH00d8=0_N:0xH0043=0_N:0xH00d9=0_N:0xH00da=0_N:0xH00db=0_N:0xH00dc=0_N:0xH83a9=201_0xH83b2=201.1._d0xH00d4=18_0xH00d4=1"
+    },
+    {
+      "id": 9,
+      "title": "Three O'Clock",
+      "description": "Play on to three o'clock.",
+      "points": 5,
+      "memaddr": "N:0xH00d4=18_N:0xH00d5=0_N:0xH00d6=0_N:0xH00d7=0_N:0xH00d8=0_N:0xH0043=0_N:0xH00d9=0_N:0xH00da=0_N:0xH00db=0_N:0xH00dc=0_N:0xH83a9=201_0xH83b2=201.1._d0xH00d4=2_0xH00d4=3"
+    },
+    {
+      "id": 10,
+      "title": "Five O'Clock",
+      "description": "Play on to five o'clock.",
+      "points": 10,
+      "memaddr": "N:0xH00d4=18_N:0xH00d5=0_N:0xH00d6=0_N:0xH00d7=0_N:0xH00d8=0_N:0xH0043=0_N:0xH00d9=0_N:0xH00da=0_N:0xH00db=0_N:0xH00dc=0_N:0xH83a9=201_0xH83b2=201.1._d0xH00d4=4_0xH00d4=5"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Score",
+      "description": "Your score when the mission ends.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH00d4=18_0xH00d5=0_0xH00d6=0_0xH00d7=0_0xH00d8=0_0xH0043=0_0xH00d9=0_0xH00da=0_0xH00db=0_0xH00dc=0_0xH83a9=201_0xH83b2=201::CAN:0=1::SUB:A:0xH00d9_A:0xH00da_0xH00db>0::VAL:b0xH00db*10000_b0xH00da*100_b0xH00d9"
+    }
+  ]
+}

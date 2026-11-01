@@ -14,9 +14,17 @@ The version you are running is shown at the bottom of the About dialog.
 - **New games with achievements and high scores:**
   - **Bubble Bobble** on the OneLoad64 cartridge. Clear rounds, collect EXTEND,
     and your best game goes on the board.
+  - **Buggy Boy** on the OneLoad64 cartridge. Reach the later legs, finish a
+    course, and your best race goes on the board.
   - **Ghosts 'n Goblins Arcade**, the arcade conversion on its EasyFlash
     cartridge. Clear the levels, rack up points and get through the first level
     without losing a life.
+  - **Impossible Mission** on the OneLoad64 cartridge. Find the pieces, solve
+    the puzzles and open the control room, and your score goes on the board.
+  - **Wizball** on the OneLoad64 cartridge. Collect the colours, finish them,
+    and your score goes on the board when the game ends.
+- **Lemon64 links.** A game's page in the achievements window links to the
+  game on Lemon64, for its story, reviews and manual.
 - **The Last Ninja.** Crossing the river, and picking up each weapon, now count.
 - **Bomb Jack.** Clearing a round counts for the round you finished.
 

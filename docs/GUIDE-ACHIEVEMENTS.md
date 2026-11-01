@@ -75,6 +75,7 @@ To play without achievements, turn them off in Options ▸ Other ▸
 | Action Biker | 41 | yes | OneLoad64 v5: `Action Biker.crt` |
 | Bomb Jack | 19 | yes | OneLoad64 v5: `Bomb Jack.crt` |
 | Bubble Bobble | 14 | yes | OneLoad64 v5: `Bubble Bobble.crt` |
+| Buggy Boy | 12 | yes | OneLoad64 v5: `Buggy Boy.crt` |
 | Chuckie Egg | | yes | OneLoad64 v5: `Chuckie Egg.crt` |
 | Commando | 14 | yes | OneLoad64 v5: `Commando.crt` |
 | Commando Arcade | 14 | yes | Nostalgia's EasyFlash `CommandoArcade_N0S_EF.crt`, or OneLoad64 v5 extras: `Commando Arcade - Special Edition [EasyFlash].crt` |
@@ -85,6 +86,7 @@ To play without achievements, turn them off in Options ▸ Other ▸
 | Ghosts 'n Goblins Arcade | 10 | yes | OneLoad64 v5 extras: `Ghosts'n Goblins Arcade [EasyFlash].crt` |
 | Gribbly's Day Out | | yes | OneLoad64 v5: `Gribbly's Day Out.crt` |
 | IK+ | 13 | yes | OneLoad64 v5: `IK+.crt` |
+| Impossible Mission | 10 | yes | OneLoad64 v5: `Impossible Mission.crt` |
 | Mario's Cement Factory | 15 | Game A and Game B | c64cade's PRG, or `mario-cf131.prg` |
 | Mole Attack | | yes | OneLoad64 v5 extras: `Mole Attack.crt` (the official cartridge), or c64cade's PRG |
 | Munchy Worm | | yes | c64cade's `munchyworm_1_01.d64` |
@@ -93,7 +95,6 @@ To play without achievements, turn them off in Options ▸ Other ▸
 | Panther | | yes | OneLoad64 v5: `Panther.crt`, or c64cade's cartridge |
 | Rainbow Islands | 24 | yes | OneLoad64 v5 MultiLoad64: `Rainbow Islands (by $olo1870) [EasyFlash].crt`, or c64cade's copy |
 | Road Runner | | yes | OneLoad64 v5 MultiLoad64: `Road Runner (by $olo1870) [EasyFlash].crt` |
-| Roc'n Rope | | yes | c64cade's `rocknrope.crt` (the Broken Bytes conversion) |
 | Stix | | yes | OneLoad64 v5: `Stix (J1).crt`, the official cartridge `Stix.crt` in the extras, or c64cade's PRG |
 | Super Mario Bros 64 | 17 | yes | OneLoad64 v5: `Super Mario Bros 64 (Zeropaige - 2019).crt` |
 | The Last Ninja | 10 |  | OneLoad64 v5 MultiLoad64: `Last Ninja, The (by $olo1870) [EasyFlash].crt` |
@@ -101,8 +102,9 @@ To play without achievements, turn them off in Options ▸ Other ▸
 | Thrust | | yes | OneLoad64 v5: `Thrust (J1).crt` |
 | Uridium | 22 | yes | OneLoad64 v5: `Uridium.crt` |
 | Vegetables Deluxe | | Shopping, Classic and Countdown | c64cade's `vegdlxnointro.prg` |
+| Wizball | 9 | yes | OneLoad64 v5: `Wizball.crt` |
 
-All but Bomb Jack, Bubble Bobble, Commando, Commando Arcade, Defender of the Crown, Ghosts 'n Goblins, Ghosts 'n Goblins Arcade, IK+, Nemesis, Out Run, Super Mario Bros 64, The Last Ninja and The Way of the Exploding Fist are ported from
+All but Bomb Jack, Bubble Bobble, Buggy Boy, Commando, Commando Arcade, Defender of the Crown, Ghosts 'n Goblins, Ghosts 'n Goblins Arcade, IK+, Impossible Mission, Nemesis, Out Run, Super Mario Bros 64, The Last Ninja, The Way of the Exploding Fist and Wizball are ported from
 [c64-cheevos](https://github.com/hayesmaker/c64-cheevos) by hayesmaker (MIT),
 the achievements of [C64Cade](https://c64cade.com).
 
@@ -116,10 +118,12 @@ page, pages the same way. A player keeps the same colour here and in the chat.
 ![The ACTIVITY tab, docked beside the app with Uridium running: players' unlocks and high scores, newest first, each with its points.](/guide/achievements-activity.webp)
 
 **GAMES** lists every game with your progress: the loaded game first, then the
-games you have played, with when you last played them where the window has
-room. **Filter
+games you have played, most complete first, with when you last played them
+where the window has room. **Filter
 games** narrows the list by title. A game's page shows its high-score screen,
 its Hall of Fame, your achievements, its activity and the versions it accepts.
+Its **i** button shows the versions, and **About the game** under them opens the
+game's page on [Lemon64](https://www.lemon64.com) in a new window.
 
 ![The GAMES tab docked on the right of the app: a row for each game, with its pixel icon, its title, your count and a meter of your progress.](/guide/achievements-games.webp)
 
