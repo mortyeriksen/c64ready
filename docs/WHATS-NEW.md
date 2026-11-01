@@ -11,11 +11,12 @@ The version you are running is shown at the bottom of the About dialog.
 
 ## Next release
 
-- **Bubble Bobble.** Achievements and a high score for the OneLoad64 cartridge.
-  Clear rounds, collect EXTEND, and your best game goes on the board.
-- **Ghosts 'n Goblins Arcade.** Achievements and a high score for the arcade
-  conversion on its EasyFlash cartridge: clear the levels, rack up points and
-  get through the first level without losing a life.
+- **New games with achievements and high scores:**
+  - **Bubble Bobble** on the OneLoad64 cartridge. Clear rounds, collect EXTEND,
+    and your best game goes on the board.
+  - **Ghosts 'n Goblins Arcade**, the arcade conversion on its EasyFlash
+    cartridge. Clear the levels, rack up points and get through the first level
+    without losing a life.
 - **The Last Ninja.** Crossing the river, and picking up each weapon, now count.
 - **Bomb Jack.** Clearing a round counts for the round you finished.
 

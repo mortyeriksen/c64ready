@@ -149,6 +149,19 @@ export const GAME_ICONS = {
     '..#.##.#..',
     '..######..',
   ],
+  // A gravestone with a cross, where the arcade game begins.
+  'ghosts-n-goblins-arcade': [
+    '...####...',
+    '..######..',
+    '.####.###.',
+    '.###...##.',
+    '.####.###.',
+    '.####.###.',
+    '.########.',
+    '.########.',
+    '.########.',
+    '+########+',
+  ],
   // A round creature with one eye, on two feet.
   'gribblys-day-out': [
     '..........',

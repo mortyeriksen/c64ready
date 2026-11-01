@@ -115,8 +115,9 @@ page, pages the same way. A player keeps the same colour here and in the chat.
 
 ![The ACTIVITY tab, docked beside the app with Uridium running: players' unlocks and high scores, newest first, each with its points.](/guide/achievements-activity.webp)
 
-**GAMES** lists every game with your progress, the games you have started
-first, with when you last played them where the window has room. **Filter
+**GAMES** lists every game with your progress: the loaded game first, then the
+games you have played, with when you last played them where the window has
+room. **Filter
 games** narrows the list by title. A game's page shows its high-score screen,
 its Hall of Fame, your achievements, its activity and the versions it accepts.
 

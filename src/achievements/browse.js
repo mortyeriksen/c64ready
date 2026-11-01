@@ -62,10 +62,11 @@ export function ago(at, now = Date.now()) {
   if (s < 7 * 86400) return `${Math.floor(s / 86400)} d ago`;
   return new Date(at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
-/** How long ago `at` was in one short unit: "just now", "3h ago", "2d ago", "5w ago", "1y ago". */
+/** How long ago `at` was in one short unit: "just now", "5m ago", "3h ago", "2d ago", "5w ago", "1y ago". */
 export function agoShort(at, now = Date.now()) {
-  const hrs = Math.floor(Math.max(0, now - at) / 3_600_000);
-  if (hrs < 1) return 'just now';
+  const mins = Math.floor(Math.max(0, now - at) / 60_000), hrs = Math.floor(mins / 60);
+  if (mins < 1) return 'just now';
+  if (hrs < 1) return `${mins}m ago`;
   if (hrs < 24) return `${hrs}h ago`;
   if (hrs < 24 * 7) return `${Math.floor(hrs / 24)}d ago`;
   if (hrs < 24 * 365) return `${Math.floor(hrs / (24 * 7))}w ago`;
@@ -312,9 +313,12 @@ export async function renderGames(el, ctx) {
   try {
     const { games: all } = await ctx.api.games();
     if (gen !== el._gen) return;
-    // The games you have unlocked something in come first, then the rest; each part alphabetically.
-    const started = (g) => (g.mine?.unlocked > 0 ? 1 : 0);
-    const games = [...all].sort((a, b) => started(b) - started(a) || a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
+    // The loaded game comes first, then the games you have played (unlocked something in, or posted a
+    // score to), then the rest; each part alphabetically.
+    const loadedNow = ctx.loaded?.() ?? null;
+    const isLoaded = (g) => (g.hashes ?? [g.hash]).includes(loadedNow);
+    const rank = (g) => (isLoaded(g) ? 2 : g.mine?.unlocked > 0 || g.mine?.last ? 1 : 0);
+    const games = [...all].sort((a, b) => rank(b) - rank(a) || a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
     if (!games.length) { el.replaceChildren(note('No games have achievements yet.')); return; }
     const list = h('ul', { class: 'ach-games achievements-games' });
     const count = h('p', { class: 'achievements-note ach-games-count', role: 'status', 'aria-live': 'polite' });
@@ -376,20 +380,22 @@ function revealOnScroll(list, reveal) {
 
 /**
  * A game as a row in GAMES: its pixel icon (or initial), title and the reader's count, with a thin
- * meter under them, and for a game the reader has started, when they last played it (where it fits
- * beside the title). The whole row opens the game's page, which has the rest.
+ * meter under them, and for a game the reader has played, when they last did (where it fits beside
+ * the title). The whole row opens the game's page, which has the rest.
  */
 function gameCard(ctx, g, isLoaded) {
   const got = g.mine?.unlocked ?? 0;
+  // A game the reader has played (an unlock or a score) has its count in amber.
+  const played = got > 0 || !!g.mine?.last;
   const icon = GAME_ICONS[g.id] ? pixelArt(GAME_ICONS[g.id], 24, 'ach-game-icon') : g.title.replace(/^the\s+/i, '').slice(0, 1).toUpperCase();
   return h('button', { type: 'button', class: `ach-card ${playerHue(g.id)}${isLoaded ? ' is-loaded' : ''}`, on: { click: () => ctx.go({ type: 'game', hash: g.hash }) } },
     h('span', { class: `ach-tile${GAME_ICONS[g.id] ? ' has-icon' : ''}`, 'aria-hidden': 'true' }, icon),
     h('span', { class: 'ach-card-name' }, h('span', { class: 'ach-games-title' }, g.title),
       isLoaded ? h('span', { class: 'ach-card-loaded' }, 'LOADED') : null,
-      got && g.mine.last ? h('em', { class: 'ach-card-when' }, `(last played ${agoShort(g.mine.last)})`) : null),
+      g.mine?.last ? h('em', { class: 'ach-card-when' }, `(last played ${agoShort(g.mine.last)})`) : null),
     g.achievements
-      ? h('span', { class: `ach-card-count${got ? ' is-started' : ''}`, 'aria-label': `${got} of ${g.achievements} unlocked` }, `${got}/${g.achievements}`)
-      : h('span', { class: 'ach-card-count' }, 'scores'),
+      ? h('span', { class: `ach-card-count${played ? ' is-started' : ''}`, 'aria-label': `${got} of ${g.achievements} unlocked` }, `${got}/${g.achievements}`)
+      : h('span', { class: `ach-card-count${played ? ' is-started' : ''}` }, 'scores'),
     g.achievements ? h('span', { class: 'ach-card-bar', 'aria-hidden': 'true' }, h('span', { style: `width: ${Math.round((100 * got) / g.achievements)}%` })) : null);
 }
 

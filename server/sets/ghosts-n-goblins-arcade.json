@@ -13,70 +13,70 @@
       "title": "Graveyard Shift",
       "description": "Clear level 1.",
       "points": 5,
-      "memaddr": "N:0xH078D=0_N:d0xH078D>5_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_d0xH078D=0_0xH078D=1"
+      "memaddr": "N:0xH078D=0_N:d0xH07F3=0_N:0xH07F3>0_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_d0xH078D=0_0xH078D=1"
     },
     {
       "id": 2,
       "title": "Thin Ice",
       "description": "Clear level 2.",
       "points": 10,
-      "memaddr": "N:0xH078D=0_N:d0xH078D>5_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_d0xH078D=1_0xH078D=2"
+      "memaddr": "N:0xH078D=0_N:d0xH07F3=0_N:0xH07F3>0_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_d0xH078D=1_0xH078D=2"
     },
     {
       "id": 3,
       "title": "Cave Dweller",
       "description": "Clear level 3.",
       "points": 10,
-      "memaddr": "N:0xH078D=0_N:d0xH078D>5_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_d0xH078D=2_0xH078D=3"
+      "memaddr": "N:0xH078D=0_N:d0xH07F3=0_N:0xH07F3>0_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_d0xH078D=2_0xH078D=3"
     },
     {
       "id": 4,
       "title": "Deeper Down",
       "description": "Clear level 4.",
       "points": 25,
-      "memaddr": "N:0xH078D=0_N:d0xH078D>5_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_d0xH078D=3_0xH078D=4"
+      "memaddr": "N:0xH078D=0_N:d0xH07F3=0_N:0xH07F3>0_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_d0xH078D=3_0xH078D=4"
     },
     {
       "id": 5,
       "title": "At the Castle Gates",
       "description": "Clear level 5 and reach the last level.",
       "points": 25,
-      "memaddr": "N:0xH078D=0_N:d0xH078D>5_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_d0xH078D=4_0xH078D=5"
+      "memaddr": "N:0xH078D=0_N:d0xH07F3=0_N:0xH07F3>0_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_d0xH078D=4_0xH078D=5"
     },
     {
       "id": 6,
       "title": "Not a Scratch",
       "description": "Clear level 1 without losing a life.",
       "points": 10,
-      "memaddr": "N:0xH078D=0_N:d0xH078D>5_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_N:0xH07EB=1_R:d0xH07EB=0_d0xH078D=0_0xH078D=1"
+      "memaddr": "N:0xH078D=0_N:d0xH07F3=0_N:0xH07F3>0_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_N:0xH07EB=1_R:d0xH07EB=0_d0xH078D=0_0xH078D=1"
     },
     {
       "id": 7,
       "title": "Knight Errant",
       "description": "Score at least 10,000 points.",
       "points": 5,
-      "memaddr": "N:0xH078D=0_N:d0xH078D>5_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_A:0xU07F0*1000_A:0xL07F0*100_A:0xU07F1*10_0xL07F1>=100"
+      "memaddr": "N:0xH078D=0_N:d0xH07F3=0_N:0xH07F3>0_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_A:0xU07F0*1000_A:0xL07F0*100_A:0xU07F1*10_0xL07F1>=100"
     },
     {
       "id": 8,
       "title": "Knight of the Realm",
       "description": "Score at least 25,000 points.",
       "points": 10,
-      "memaddr": "N:0xH078D=0_N:d0xH078D>5_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_A:0xU07F0*1000_A:0xL07F0*100_A:0xU07F1*10_0xL07F1>=250"
+      "memaddr": "N:0xH078D=0_N:d0xH07F3=0_N:0xH07F3>0_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_A:0xU07F0*1000_A:0xL07F0*100_A:0xU07F1*10_0xL07F1>=250"
     },
     {
       "id": 9,
       "title": "Champion Knight",
       "description": "Score at least 50,000 points.",
       "points": 10,
-      "memaddr": "N:0xH078D=0_N:d0xH078D>5_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_A:0xU07F0*1000_A:0xL07F0*100_A:0xU07F1*10_0xL07F1>=500"
+      "memaddr": "N:0xH078D=0_N:d0xH07F3=0_N:0xH07F3>0_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_A:0xU07F0*1000_A:0xL07F0*100_A:0xU07F1*10_0xL07F1>=500"
     },
     {
       "id": 10,
       "title": "Sir Arthur",
       "description": "Score at least 100,000 points.",
       "points": 25,
-      "memaddr": "N:0xH078D=0_N:d0xH078D>5_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_A:0xU07F0*1000_A:0xL07F0*100_A:0xU07F1*10_0xL07F1>=1000"
+      "memaddr": "N:0xH078D=0_N:d0xH07F3=0_N:0xH07F3>0_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_A:0xU07F0*1000_A:0xL07F0*100_A:0xU07F1*10_0xL07F1>=1000"
     }
   ],
   "leaderboards": [
@@ -86,7 +86,7 @@
       "description": "Highest score on one credit, without trainers.",
       "format": "SCORE",
       "lowerIsBetter": false,
-      "definition": "STA:0xH078D=0_d0xH078D>5_0xH07F2=5_0xH07F0=0_0xH07F1=0_0xH5BA5=205::CAN:0xH5BA5!=205::SUB:0xH07F2=1_0xH07EB=1_d0xH07EB=0::VAL:0xU07F0*100000_0xL07F0*10000_0xU07F1*1000_0xL07F1*100"
+      "definition": "STA:0xH078D=0_d0xH07F3=0_0xH07F3>0_0xH07F2=5_0xH07F0=0_0xH07F1=0_0xH5BA5=205::CAN:0xH5BA5!=205::SUB:0xH07F2=1_0xH07EB=1_d0xH07EB=0::VAL:0xU07F0*100000_0xL07F0*10000_0xU07F1*1000_0xL07F1*100"
     }
   ],
   "notices": [

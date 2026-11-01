@@ -195,14 +195,14 @@ try {
   expect(await page.locator('#online-window').isVisible(), 'without closing the window');
   const order = await gamesTab.locator('.ach-card .ach-games-title').allTextContents();
   const rest = order.slice(1);
-  expect(/Uridium/.test(order[0] ?? ''), `the game the account has progress in comes first (got ${order[0]})`);
+  expect(/Uridium/.test(order[0] ?? ''), `the loaded game comes first (got ${order[0]})`);
   expect(rest.every((t, i) => i === 0 || rest[i - 1].localeCompare(t, undefined, { sensitivity: 'base' }) <= 0), 'and the rest follow alphabetically');
   await filter.fill('uridium');
   const card = gamesTab.locator('.ach-card', { hasText: 'Uridium' });
   expect(await card.evaluate((el) => el.classList.contains('is-loaded')) && /LOADED/.test(await card.textContent()), 'the loaded game\'s card is marked LOADED');
   expect(await card.locator('.ach-card-count').textContent() === '1/22' && await card.locator('.ach-card-bar').count() === 1, 'and shows the account\'s own progress, with its meter');
   const when = card.locator('em.ach-card-when');
-  expect(await when.textContent() === '(last played just now)', `and when the account last played it (got ${JSON.stringify(await when.textContent())})`);
+  expect(/^\(last played (just now|\d+m ago)\)$/.test(await when.textContent()), `and when the account last played it (got ${JSON.stringify(await when.textContent())})`);
   const placed = () => card.locator('.ach-card-name').evaluate((cell) => {
     const [t, n, c] = [cell.querySelector('.ach-games-title'), cell.querySelector('.ach-card-when'), cell].map((x) => x.getBoundingClientRect());
     return { beside: Math.abs(n.bottom - t.bottom) < 3 && n.bottom <= c.bottom + 1, hidden: n.top >= c.bottom - 1 };

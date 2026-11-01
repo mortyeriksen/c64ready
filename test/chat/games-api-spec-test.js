@@ -174,6 +174,13 @@ const ann = account('Ann'), ben = account('Ben'), cat = account('Cat');
   expect(annDemo.mine?.unlocked === 1 && annDemo.mine.points === 5 && signed.find((g) => g.id === 'second').mine?.unlocked === 0, 'signed in, each game carries the account\'s own unlocks and points');
   const annLast = db.prepare("SELECT MAX(at) AS at FROM activity WHERE user_id = ? AND game_id = 'demo'").get(ann.id).at;
   expect(annDemo.mine.last === annLast && !signed.find((g) => g.id === 'second').mine.last, `and when the account last played it (got ${annDemo.mine.last}, its last activity ${annLast})`);
+  const dee = account('Dee');
+  clock += 60_000;
+  await api('POST', `/api/games/${HASH}/leaderboards/1/entries`, { token: dee.token, body: { value: 300 } });
+  const deeDemo = (await api('GET', '/api/games', { token: dee.token })).body.games.find((g) => g.id === 'demo');
+  expect(deeDemo.mine.unlocked === 0 && deeDemo.mine.last === clock, `a score alone counts as playing the game (got ${JSON.stringify(deeDemo.mine)})`);
+  confirm(dee);
+  await api('DELETE', '/api/me', { token: dee.token });
   ok('the list of games');
 }
 

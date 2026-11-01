@@ -216,10 +216,15 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser }) {
         (SELECT COUNT(DISTINCT user_id) FROM activity WHERE game_id = g.id) AS players,
         (SELECT MAX(at) FROM activity WHERE game_id = g.id) AS last
       FROM games g ORDER BY g.title COLLATE NOCASE`),
-    mine: db.prepare(`SELECT un.game_id, COUNT(*) AS unlocked, COALESCE(SUM(ach.points), 0) AS points,
-        (SELECT MAX(at) FROM activity a WHERE a.user_id = un.user_id AND a.game_id = un.game_id) AS last FROM unlocks un
-      JOIN achievements ach ON ach.game_id = un.game_id AND ach.id = un.achievement_id
-      WHERE un.user_id = ? GROUP BY un.game_id`),
+    // Every game the account has played: unlocked something in or posted a score to. Unlocks count only
+    // achievements the set still has.
+    mine: db.prepare(`SELECT p.game_id,
+        (SELECT COUNT(*) FROM unlocks un JOIN achievements ach ON ach.game_id = un.game_id AND ach.id = un.achievement_id
+          WHERE un.user_id = p.user_id AND un.game_id = p.game_id) AS unlocked,
+        (SELECT COALESCE(SUM(ach.points), 0) FROM unlocks un JOIN achievements ach ON ach.game_id = un.game_id AND ach.id = un.achievement_id
+          WHERE un.user_id = p.user_id AND un.game_id = p.game_id) AS points,
+        (SELECT MAX(at) FROM activity a WHERE a.user_id = p.user_id AND a.game_id = p.game_id) AS last
+      FROM (SELECT user_id, game_id FROM unlocks WHERE user_id = ? UNION SELECT user_id, game_id FROM activity WHERE user_id = ?) p`),
   };
   const profile = {
     user: db.prepare('SELECT id, name, created_at, avatar_at FROM users WHERE id = ?'),
@@ -325,7 +330,7 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser }) {
     },
     'GET /api/games'(body, req) {
       const user = optionalUser(req);
-      const mine = new Map(user ? games.mine.all(user.id).map((r) => [r.game_id, { unlocked: r.unlocked, points: r.points, last: r.last }]) : []);
+      const mine = new Map(user ? games.mine.all(user.id, user.id).map((r) => [r.game_id, { unlocked: r.unlocked, points: r.points, last: r.last }]) : []);
       return { games: games.list.all().map((g) => ({
         id: g.id, title: g.title, hash: g.hash, hashes: q.files.all(g.id).map((f) => f.hash),
         achievements: g.achievements, points: g.points, leaderboards: g.leaderboards, players: g.players, last: g.last,
