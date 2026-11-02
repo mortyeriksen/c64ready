@@ -122,18 +122,18 @@ function gameOver() { ram[MODE] = 3; frames(20); ram[MODE] = 0; frames(10); }
   flagpole();
   expect(has('First Steps'), 'First Steps when 1-1 ends');
   flagpole(); flagpole();
-  expect(!has('World 1 Cleared'), 'not before the castle');
+  expect(!has('Wrong Castle'), 'not before the castle');
   castle(true);
-  expect(has('World 1 Cleared'), 'World 1 Cleared when the castle steps the world (with a frame at level 4)');
+  expect(has('Wrong Castle'), 'World 1 Cleared when the castle steps the world (with a frame at level 4)');
   for (let w = 2; w <= 7; w++) {
     flagpole(); flagpole(); flagpole(); castle();
     expect(has(`World ${w} Cleared`), `World ${w} Cleared`);
   }
-  expect(ram[WORLD] === 7 && !has('Princess Rescued'), 'in World 8, the princess is still waiting');
+  expect(ram[WORLD] === 7 && !has('Right Castle'), 'in World 8, the princess is still waiting');
   flagpole(); flagpole(); flagpole();
   ram[MODE] = 2; frames(5);
-  expect(has('Princess Rescued'), 'Princess Rescued when 8-4 ends in the victory');
-  expect(!has('Warp Pipe'), 'no warp was taken');
+  expect(has('Right Castle'), 'Princess Rescued when 8-4 ends in the victory');
+  expect(!has('Shortcut'), 'no warp was taken');
   ok('levels, castles and the princess');
 }
 
@@ -141,7 +141,7 @@ function gameOver() { ram[MODE] = 3; frames(20); ram[MODE] = 0; frames(10); }
 {
   activate(); title(); start(); flagpole();
   ram[WORLD] = 3; ram[LEVEL] = 0; frames(5);
-  expect(has('Warp Pipe') && !has('World 1 Cleared'), 'Warp Pipe from 1-2 to 4-1, which is no castle clear');
+  expect(has('Shortcut') && !has('Wrong Castle'), 'Warp Pipe from 1-2 to 4-1, which is no castle clear');
   ok('warp pipe');
 }
 
@@ -156,7 +156,7 @@ function gameOver() { ram[MODE] = 3; frames(20); ram[MODE] = 0; frames(10); }
 {
   activate(); title(); start();
   ram[LIVES] = 3; frames(2);
-  expect(has('One Up'), 'One Up for a life gained');
+  expect(has('1-Up'), 'One Up for a life gained');
   for (let c = 1; c <= 99; c++) { ram[COINS] = c; frame(); }
   expect(!has('Coin Collector'), '99 coins are not 100');
   ram[COINS] = 0; ram[LIVES] = 4; frames(2);
@@ -176,14 +176,14 @@ function gameOver() { ram[MODE] = 3; frames(20); ram[MODE] = 0; frames(10); }
 {
   activate(); title(); start(); ram[LIVES] = 1; frames(2);
   gameOver(); title(); start();
-  expect(!has('One Up'), 'a new game\'s lives are not an extra life');
+  expect(!has('1-Up'), 'a new game\'s lives are not an extra life');
   ok('one up needs play');
 }
 
 // 10. Score tiers, in tens.
 {
   activate(); title(); start();
-  for (const [t, pts] of [['Score 50,000', 50000], ['Score 100,000', 100000], ['Score 250,000', 250000]]) {
+  for (const [t, pts] of [['Fifty Grand', 50000], ['Six Figures', 100000], ['Super Score', 250000]]) {
     setScore(pts - 50); frames(2);
     expect(!has(t), `${t}: ${pts - 50} is short`);
     setScore(pts); frames(2);

@@ -11,7 +11,7 @@
   "achievements": [
     {
       "id": 1,
-      "title": "Puzzle Piece",
+      "title": "Another Visitor",
       "description": "Find a puzzle piece.",
       "points": 5,
       "memaddr": "N:0xH00d4=18_N:0xH00d5=0_N:0xH00d6=0_N:0xH00d7=0_N:0xH00d8=0_N:0xH0043=0_N:0xH00d9=0_N:0xH00da=0_N:0xH00db=0_N:0xH00dc=0_N:0xH83a9=201_0xH83b2=201.1._d0xH00d6=0_0xH00d6=1"
@@ -25,38 +25,38 @@
     },
     {
       "id": 3,
-      "title": "Snooze or Lift",
-      "description": "Find a snooze password or a lift reset.",
-      "points": 5,
-      "memaddr": "N:0xH00d4=18_N:0xH00d5=0_N:0xH00d6=0_N:0xH00d7=0_N:0xH00d8=0_N:0xH0043=0_N:0xH00d9=0_N:0xH00da=0_N:0xH00db=0_N:0xH00dc=0_N:0xH83a9=201_0xH83b2=201.1._d0xH00d7=0_0xH00d7=1"
-    },
-    {
-      "id": 4,
       "title": "Puzzle Solved",
       "description": "Solve a puzzle.",
       "points": 10,
       "memaddr": "N:0xH00d4=18_N:0xH00d5=0_N:0xH00d6=0_N:0xH00d7=0_N:0xH00d8=0_N:0xH0043=0_N:0xH00d9=0_N:0xH00da=0_N:0xH00db=0_N:0xH00dc=0_N:0xH83a9=201_0xH83b2=201.1._d0xH00d8=0_0xH00d8=1"
     },
     {
-      "id": 5,
+      "id": 4,
       "title": "Three Puzzles",
       "description": "Solve 3 puzzles.",
       "points": 10,
       "memaddr": "N:0xH00d4=18_N:0xH00d5=0_N:0xH00d6=0_N:0xH00d7=0_N:0xH00d8=0_N:0xH0043=0_N:0xH00d9=0_N:0xH00da=0_N:0xH00db=0_N:0xH00dc=0_N:0xH83a9=201_0xH83b2=201.1._0xH00d8>=3"
     },
     {
-      "id": 6,
+      "id": 5,
       "title": "The Password",
       "description": "Solve all nine puzzles.",
       "points": 25,
       "memaddr": "N:0xH00d4=18_N:0xH00d5=0_N:0xH00d6=0_N:0xH00d7=0_N:0xH00d8=0_N:0xH0043=0_N:0xH00d9=0_N:0xH00da=0_N:0xH00db=0_N:0xH00dc=0_N:0xH83a9=201_0xH83b2=201.1._0xH00d8>=9"
     },
     {
-      "id": 7,
-      "title": "Control Room",
-      "description": "Open the door to the control room.",
+      "id": 6,
+      "title": "Stay a While",
+      "description": "Open the door to Elvin's control room.",
       "points": 50,
       "memaddr": "N:0xH00d4=18_N:0xH00d5=0_N:0xH00d6=0_N:0xH00d7=0_N:0xH00d8=0_N:0xH0043=0_N:0xH00d9=0_N:0xH00da=0_N:0xH00db=0_N:0xH00dc=0_N:0xH83a9=201_0xH83b2=201.1._d0xH00dc=0_0xH00dc=1"
+    },
+    {
+      "id": 7,
+      "title": "Searching...",
+      "description": "Find a snooze password or a lift reset.",
+      "points": 5,
+      "memaddr": "N:0xH00d4=18_N:0xH00d5=0_N:0xH00d6=0_N:0xH00d7=0_N:0xH00d8=0_N:0xH0043=0_N:0xH00d9=0_N:0xH00da=0_N:0xH00db=0_N:0xH00dc=0_N:0xH83a9=201_0xH83b2=201.1._d0xH00d7=0_0xH00d7=1"
     },
     {
       "id": 8,
@@ -83,7 +83,7 @@
   "leaderboards": [
     {
       "id": 1,
-      "title": "Score",
+      "title": "Hiscores",
       "description": "Your score when the mission ends.",
       "format": "SCORE",
       "lowerIsBetter": false,

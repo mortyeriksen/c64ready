@@ -1,0 +1,177 @@
+{
+  "id": "hitchhikers-guide",
+  "title": "The Hitchhiker's Guide to the Galaxy",
+  "url": "https://www.lemon64.com/game/hitchhikers-guide-to-the-galaxy",
+  "hashes": [
+    {
+      "hash": "a0c7dedd339ddca37ab122b0265e950d",
+      "label": "Release 47 disk (hitchhikers_guide[infocom_1984](r47).d64)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Headache Gone",
+      "description": "Take the analgesic. Thursdays are hard.",
+      "points": 5,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xH48ca<128_0xI48ca>=10_O:d0xI48ca<10_d0xH48ca>=128"
+    },
+    {
+      "id": 2,
+      "title": "The Horse and Groom",
+      "description": "Go to the pub with Ford.",
+      "points": 5,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xI48c8=134_d0xI48c8!=134"
+    },
+    {
+      "id": 3,
+      "title": "Hitching a Ride",
+      "description": "Get off the Earth and into the Vogon hold.",
+      "points": 10,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xI48c8=121_d0xI48c8!=121"
+    },
+    {
+      "id": 4,
+      "title": "Babel Fish",
+      "description": "Get the babel fish into your ear.",
+      "points": 25,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xI48c8=121_A:d0xI48ca_v12=0xI48ca"
+    },
+    {
+      "id": 5,
+      "title": "Vogon Poetry",
+      "description": "Sit through the captain's poetry. Survive it.",
+      "points": 10,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xI48c8=108_d0xI48c8!=108"
+    },
+    {
+      "id": 6,
+      "title": "Out of the Airlock",
+      "description": "Get thrown out of the airlock.",
+      "points": 10,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xI48c8=101_d0xI48c8!=101"
+    },
+    {
+      "id": 7,
+      "title": "Improbable Rescue",
+      "description": "Get picked up by the Heart of Gold.",
+      "points": 10,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xI48c8=190_d0xI48c8!=190"
+    },
+    {
+      "id": 8,
+      "title": "On the Bridge",
+      "description": "Reach the bridge of the Heart of Gold.",
+      "points": 10,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xI48c8=201_d0xI48c8!=201"
+    },
+    {
+      "id": 9,
+      "title": "Engine Room",
+      "description": "Talk your way into the engine room.",
+      "points": 10,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xI48c8=188_d0xI48c8!=188"
+    },
+    {
+      "id": 10,
+      "title": "Party Time",
+      "description": "Go to the party as Trillian.",
+      "points": 10,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xI48c8=76_d0xI48c8!=76"
+    },
+    {
+      "id": 11,
+      "title": "You Are in the Dark",
+      "description": "Find yourself somewhere dark.",
+      "points": 5,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xI48c8=25_d0xI48c8!=25"
+    },
+    {
+      "id": 12,
+      "title": "President of the Galaxy",
+      "description": "Stand on the dais on Damogran.",
+      "points": 10,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xI48c8=54_d0xI48c8!=54"
+    },
+    {
+      "id": 13,
+      "title": "Towel Required",
+      "description": "Enter the lair of the Ravenous Bugblatter Beast.",
+      "points": 10,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xI48c8=99_d0xI48c8!=99"
+    },
+    {
+      "id": 14,
+      "title": "War Chamber",
+      "description": "Visit the war chamber.",
+      "points": 10,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xI48c8=86_d0xI48c8!=86"
+    },
+    {
+      "id": 15,
+      "title": "Oh No, Not Again",
+      "description": "End up inside the sperm whale.",
+      "points": 10,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xI48c8=213_d0xI48c8!=213"
+    },
+    {
+      "id": 16,
+      "title": "Marvin's Pantry",
+      "description": "Find Marvin's pantry.",
+      "points": 10,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xI48c8=218_d0xI48c8!=218"
+    },
+    {
+      "id": 17,
+      "title": "Tea and No Tea",
+      "description": "Hold tea and no tea at once, then drink the tea.",
+      "points": 25,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_A:d0xI48ca_v100=0xI48ca"
+    },
+    {
+      "id": 18,
+      "title": "So Long, and Thanks",
+      "description": "Walk down the ramp onto Magrathea. The end.",
+      "points": 50,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xI48c8=174_d0xI48c8!=174"
+    },
+    {
+      "id": 19,
+      "title": "Hundred Points",
+      "description": "Score 100 points.",
+      "points": 10,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xH48ca<128_0xI48ca>=100_O:d0xI48ca<100_d0xH48ca>=128"
+    },
+    {
+      "id": 20,
+      "title": "Two Hundred",
+      "description": "Score 200 points.",
+      "points": 15,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xH48ca<128_0xI48ca>=200_O:d0xI48ca<200_d0xH48ca>=128"
+    },
+    {
+      "id": 21,
+      "title": "Three Hundred",
+      "description": "Score 300 points.",
+      "points": 25,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xH48ca<128_0xI48ca>=300_O:d0xI48ca<300_d0xH48ca>=128"
+    },
+    {
+      "id": 22,
+      "title": "Mostly Harmless",
+      "description": "Score all 400 points.",
+      "points": 50,
+      "memaddr": "N:0xH2a00=3_N:0xH2a03=47_N:0xH2a12=56_N:0xH2a13=52_N:0xH2a14=48_N:0xH2a15=57_N:0xH2a16=49_N:0xH2a17=52_N:0xI48c8=168_N:0xI48cc=0_0xI48ca=0.1._0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xH48ca<128_0xI48ca>=400_O:d0xI48ca<400_d0xH48ca>=128"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Fewest Moves",
+      "description": "Moves taken to score all 400 points.",
+      "format": "VALUE",
+      "lowerIsBetter": true,
+      "definition": "STA:0xH2a00=3_0xH2a03=47_0xH2a12=56_0xH2a13=52_0xH2a14=48_0xH2a15=57_0xH2a16=49_0xH2a17=52_0xI48cc=1_d0xI48cc=0_0xI48ca=0::CAN:0xI48cc<d0xI48cc::SUB:0xH48ca<128_0xI48ca=400_d0xI48ca!=400::VAL:0xI48cc"
+    }
+  ]
+}

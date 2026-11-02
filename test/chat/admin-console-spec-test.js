@@ -176,6 +176,26 @@ db.prepare("INSERT INTO activity (at, user_id, game_id, kind, ref, value) VALUES
   ok('the overview and the players list');
 }
 
+// 6b. Flagged results: listed for review, approved into public view or cleared, from the console only.
+{
+  db.prepare("INSERT OR REPLACE INTO unlocks (user_id, game_id, achievement_id, hardcore, unlocked_at, flag) VALUES (?, 'demo', 2, 1, ?, 'many unlocks at once')").run(bob.id, clock - 5000);
+  db.prepare("INSERT OR REPLACE INTO lb_entries (user_id, game_id, leaderboard_id, value, hardcore, submitted_at, flag) VALUES (?, 'demo', 1, 999999, 1, ?, 'a score just after the game was opened')").run(bob.id, clock - 4000);
+  const list = (await call('GET', '/admin/api/flags', { cookie })).body.items;
+  expect(list.length === 2 && list[0].kind === 'score' && list[0].value === 999999 && list[1].kind === 'unlock' && list[1].flag === 'many unlocks at once' && list[0].user.name === 'Bob', `flagged results are listed newest first, with who, what and why (got ${JSON.stringify(list)})`);
+  expect((await call('GET', '/admin/api/overview', { cookie })).body.toReview === 2, 'and counted on the overview');
+  const decide = (body, opts = {}) => call('POST', '/admin/api/flags', { cookie, body, ...opts });
+  expect((await decide({ kind: 'unlock', user: bob.id, game: 'demo', ref: 2, decision: 'approve' }, { origin: 'https://evil.example' })).status === 403, 'a decision must come from the console itself');
+  const feedBefore = db.prepare("SELECT COUNT(*) AS n FROM activity WHERE user_id = ? AND kind = 'unlock'").get(bob.id).n;
+  expect((await decide({ kind: 'unlock', user: bob.id, game: 'demo', ref: 2, decision: 'approve' })).status === 200, 'an approval is accepted');
+  expect(db.prepare("SELECT flag FROM unlocks WHERE user_id = ? AND game_id = 'demo' AND achievement_id = 2").get(bob.id).flag === null
+    && db.prepare("SELECT COUNT(*) AS n FROM activity WHERE user_id = ? AND kind = 'unlock'").get(bob.id).n === feedBefore + 1, 'approved, it counts and joins the activity');
+  expect((await decide({ kind: 'score', user: bob.id, game: 'demo', ref: 1, decision: 'clear' })).status === 200
+    && !db.prepare("SELECT 1 FROM lb_entries WHERE user_id = ? AND game_id = 'demo' AND leaderboard_id = 1").get(bob.id), 'cleared, it is gone');
+  expect((await decide({ kind: 'score', user: bob.id, game: 'demo', ref: 1, decision: 'clear' })).status === 404, 'a result no longer flagged cannot be decided again');
+  expect((await call('GET', '/admin/api/flags', { cookie })).body.items.length === 0, 'and the list is empty');
+  ok('flagged results are reviewed: approved or cleared');
+}
+
 // 7. Actions: a reason, from the console's page, done, and logged.
 {
   const actOn = (id, action, body = { reason: 'test' }, opts = {}) => call('POST', `/admin/api/players/${id}/${action}`, { cookie, body, ...opts });
@@ -191,7 +211,9 @@ db.prepare("INSERT INTO activity (at, user_id, game_id, kind, ref, value) VALUES
   await actOn(bob.id, 'delete', { reason: 'asked to' });
   expect((await call('GET', `/admin/api/players/${bob.id}`, { cookie })).status === 404, 'delete removes the account');
   await chatLog.flush();
-  const logged = readLog().filter((e) => e.ev === 'admin').map((e) => `${e.action}:${e.reason}`);
+  const reviews = readLog().filter((e) => e.ev === 'admin' && e.action.startsWith('review-')).map((e) => e.action);
+  expect(reviews.join() === 'review-approve,review-clear', `each review is logged too (got ${reviews})`);
+  const logged = readLog().filter((e) => e.ev === 'admin' && !e.action.startsWith('review-')).map((e) => `${e.action}:${e.reason}`);
   expect(logged.join() === 'signout:shared device,score:cheated,results:trainer,rename:rude name,delete:asked to', `every action is logged with its reason (got ${logged})`);
   ok('each action needs a reason, does what it says and is logged');
 }

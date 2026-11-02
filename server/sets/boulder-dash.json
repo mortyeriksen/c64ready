@@ -1,0 +1,99 @@
+{
+  "id": "boulder-dash",
+  "title": "Boulder Dash",
+  "url": "https://www.lemon64.com/game/boulder-dash",
+  "hashes": [
+    { "hash": "eac1087608ec1efef947e054d8968328", "label": "OneLoad64 v5 cartridge (Boulder Dash (J1).crt)" }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Shiny!",
+      "description": "Collect a diamond.",
+      "points": 5,
+      "memaddr": "0xHa2=0_0xHa0=0_d0xHb0=0_d0xHb1=0_O:0xHb0>0_0xHb1>0"
+    },
+    {
+      "id": 2,
+      "title": "Quota Met",
+      "description": "Collect enough diamonds to open the exit.",
+      "points": 10,
+      "memaddr": "0xHa2=0_0xHa0=0_d0xH90=0_0xH90=1"
+    },
+    {
+      "id": 3,
+      "title": "Dig Out",
+      "description": "Enter the exit.",
+      "points": 15,
+      "memaddr": "0xHa2=0_0xHa0=0_0xH90=1_d0xH9f=0_0xH9f=1"
+    },
+    {
+      "id": 4,
+      "title": "Cave B",
+      "description": "Reach cave B.",
+      "points": 10,
+      "memaddr": "0xHa2=0_0xH9f=1_d0xH5d=1_0xH5d=2"
+    },
+    {
+      "id": 5,
+      "title": "Cave E",
+      "description": "Reach cave E.",
+      "points": 15,
+      "memaddr": "0xHa2=0_d0xH5d!=5_0xH5d=5"
+    },
+    {
+      "id": 6,
+      "title": "Cave I",
+      "description": "Reach cave I.",
+      "points": 25,
+      "memaddr": "0xHa2=0_d0xH5d!=9_0xH5d=9"
+    },
+    {
+      "id": 7,
+      "title": "Cave M",
+      "description": "Reach cave M.",
+      "points": 25,
+      "memaddr": "0xHa2=0_d0xH5d!=13_0xH5d=13"
+    },
+    {
+      "id": 8,
+      "title": "Hard Rock",
+      "description": "Reach difficulty 5.",
+      "points": 50,
+      "memaddr": "0xHa2=0_d0xH5e=3_0xH5e=4"
+    },
+    {
+      "id": 9,
+      "title": "One More Go",
+      "description": "Earn an extra life.",
+      "points": 10,
+      "memaddr": "0xHa2=0_0xHa0=0_d0xH5c>=1_0xH5c>d0xH5c"
+    },
+    {
+      "id": 10,
+      "title": "Rockford's Grand",
+      "description": "Score 1,000 points.",
+      "points": 10,
+      "score": 1000,
+      "memaddr": "0xHa2=0_0xHa0=0_O:0xH5f>0_O:0xH60>0_0xH61>0"
+    },
+    {
+      "id": 11,
+      "title": "Rolling in It",
+      "description": "Score 10,000 points.",
+      "points": 25,
+      "score": 10000,
+      "memaddr": "0xHa2=0_0xHa0=0_O:0xH5f>0_0xH60>0"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Hiscores",
+      "description": "Your score when the game ends.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH73f5=165_0xHa2=0_0xHa0=0_0xH5c=3_0xH5f=0_0xH60=0_0xH61=0_0xH62=0_0xH63=0_0xH64=0::CAN:0=1::SUB:0xH73f5=165_0xHa2=0_d0xHa0=0_0xHa0=1_O:0xH5f>0_O:0xH60>0_O:0xH61>0_O:0xH62>0_O:0xH63>0_0xH64>0::VAL:0xH5f*100000_0xH60*10000_0xH61*1000_0xH62*100_0xH63*10_0xH64"
+    }
+  ]
+}

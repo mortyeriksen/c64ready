@@ -180,6 +180,7 @@ available over the 3D scene.
 | **Double-click / double-tap** | Powers the C64 on when it's off, so you can boot the machine without leaving the 3D scene. |
 | **🎬** | Change the scene. |
 | **⛶** | Glides the camera to a head-on view that fills the frame with the monitor, a virtual fullscreen. From the side or behind, it swings around the monitor to its screen. Drag or scroll to break out of it. |
+| **Toast** | While achievements are on: drag a sample [toast](GUIDE-ACHIEVEMENTS.md#toasts) to where toasts should show, and its corner to size them. Click again or press **Esc** when done. |
 | **Fog** | In Foggy Spotlight on a computer, turns the stage smoke off and on. With it off, the beam shows as a soft cone, as on phones and tablets. It is remembered. |
 | **🥽 ENTER VR** | View in VR (shown when a headset or the WebXR emulator is available). |
 | **ⓘ model credit** | Shows attribution for the 3D model. |

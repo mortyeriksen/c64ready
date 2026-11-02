@@ -93,15 +93,15 @@ function setScore(n) {
 // 4. Round clears. The round on screen is one more than $10, and a clear moves $10 on past it.
 {
   begin();
-  const rounds = [[1, 'Ready'], [5, 'Still Floating'], [10, 'Double Figures'], [20, 'Round Twenty'], [30, 'Thirty Rounds'], [50, 'Halfway There']];
+  const rounds = [[1, 'Pop!'], [5, 'Still Floating'], [10, 'Double Figures'], [20, 'Twenty Bubbles Deep'], [30, 'Thirty Rounds'], [50, 'Halfway Down']];
   for (const [round, title] of rounds) {
     expect(!has(title), `${title} not before round ${round} is cleared`);
     clear(round - 1);
     expect(has(title), `${title} when round ${round} is cleared`);
   }
-  expect(!has('The Last Round'), 'round 100 not among the earlier clears');
+  expect(!has('Happy Ending'), 'round 100 not among the earlier clears');
   clear(99, 100);
-  expect(has('The Last Round'), 'The Last Round when round 100 is finished and $10 becomes 100');
+  expect(has('Happy Ending'), 'The Last Round when round 100 is finished and $10 becomes 100');
   ok('clearing rounds');
 }
 
@@ -110,17 +110,17 @@ function setScore(n) {
 {
   begin();
   clear(19, 21);
-  expect(has('Round Twenty'), 'skipping from round 20 to round 22 still clears round 20');
+  expect(has('Twenty Bubbles Deep'), 'skipping from round 20 to round 22 still clears round 20');
   expect(!has('Thirty Rounds'), 'that skip is not round 30');
   begin();
   ram[LEVEL] = 0xff; frames(2);
-  expect(!has('Ready') && !has('No Mistakes'), 'round 1 abandoned for the title is not a clear');
+  expect(!has('Pop!') && !has('Clean Start'), 'round 1 abandoned for the title is not a clear');
   begin();
   ram[LEVEL] = 4; frames(2); ram[LEVEL] = 0xff; frames(2);
   expect(!has('Still Floating'), 'round 5 abandoned for the title is not a clear');
   begin();
   ram[LEVEL] = 99; frames(2); ram[LEVEL] = 0xff; frames(2);
-  expect(!has('The Last Round'), 'round 100 abandoned for the title is not a clear');
+  expect(!has('Happy Ending'), 'round 100 abandoned for the title is not a clear');
   ok('skips and an abandoned round');
 }
 
@@ -141,19 +141,19 @@ function setScore(n) {
 {
   fresh();
   ram[ITEM] = 0x3f; frames(3);
-  expect(!has('Spelled Out'), 'the item value before a game has started is not EXTEND');
+  expect(!has('E-X-T-E-N-D'), 'the item value before a game has started is not EXTEND');
   begin();
   ram[ITEM] = 0x3f; frames(2);
-  expect(has('Spelled Out'), 'EXTEND when the last letter lands');
+  expect(has('E-X-T-E-N-D'), 'EXTEND when the last letter lands');
   ok('EXTEND');
 }
 
 // 8. No Mistakes: round 1 cleared with the three starting lives still there. A lost life cancels it.
 {
   begin(); clear(0);
-  expect(has('No Mistakes'), 'round 1 with no life lost');
+  expect(has('Clean Start'), 'round 1 with no life lost');
   begin(); ram[LIVES] = 2; frames(2); clear(0);
-  expect(!has('No Mistakes'), 'not after a life is lost, even when round 1 is then cleared');
+  expect(!has('Clean Start'), 'not after a life is lost, even when round 1 is then cleared');
   ok('round 1 without losing a life');
 }
 
@@ -162,7 +162,7 @@ function setScore(n) {
   fresh();
   setScore(400000); ram[LEVEL] = 0; frames(5);
   expect(unlocked.size === 0, `a score before the game starts counts for nothing (got ${[...unlocked]})`);
-  const goals = [[10000, 'Five Figures'], [30000, 'Bonus Score'], [100000, 'Six Figures'], [400000, 'Treasure Hoard']];
+  const goals = [[10000, 'Five Figures'], [30000, 'Sweet Tooth'], [100000, 'Six Figures'], [400000, 'Treasure Hoard']];
   begin();
   for (const [n, title] of goals) {
     expect(!has(title), `${title} not below ${n}`);

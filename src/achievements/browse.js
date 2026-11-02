@@ -153,15 +153,29 @@ export function progress(got, total, points, totalPoints) {
  * A game's head: its title (a link, or plain for the loaded game), meter and
  * progress. A game with high scores and no achievements says so instead.
  */
-export function gameHead(ctx, game, achievements, isUnlocked, { link = false, versions = [], url = null } = {}) {
+export function gameHead(ctx, game, achievements, isUnlocked, { link = false, versions = [], url = null, refresh = null } = {}) {
   const title = h('h3', { class: 'ach-game-title' }, link ? gameLink(ctx, game) : game.title);
-  const top = versions.length ? [h('div', { class: 'ach-game-top' }, title, versionButton()), versionCard(versions, game.title, url)] : [title];
+  const buttons = [versions.length ? versionButton() : null, refresh ? refreshButton(refresh) : null].filter(Boolean);
+  const top = buttons.length ? [h('div', { class: 'ach-game-top' }, title, ...buttons), ...(versions.length ? [versionCard(versions, game.title, url)] : [])] : [title];
   if (!achievements.length) return h('div', { class: 'ach-game' }, ...top, h('p', { class: 'achievements-note' }, 'This game has high scores, and no achievements yet.'));
   const got = achievements.filter(isUnlocked);
   const pts = (list) => list.reduce((n, a) => n + (a.points || 0), 0);
   return h('div', { class: 'ach-game' }, ...top,
     meter(achievements.map(isUnlocked)),
     progress(got.length, achievements.length, pts(got), pts(achievements)));
+}
+
+// Fetches the game's standings and checks again, spinning until they are in.
+function refreshButton(refresh) {
+  return h('button', {
+    type: 'button', class: 'ach-info-btn ach-refresh-btn', 'aria-label': 'Refresh', title: 'Refresh',
+    on: { click: async (e) => {
+      const b = e.currentTarget;
+      if (b.classList.contains('is-busy')) return;
+      b.classList.add('is-busy');
+      try { await refresh(); } finally { b.classList.remove('is-busy'); }
+    } },
+  }, icon(['M20 11a8 8 0 1 0-2.3 5.7', 'M20 4v7h-7'], 18));
 }
 
 // The versions of a game a set is for, behind an info button on the title line: the button opens
@@ -187,7 +201,8 @@ function versionCard(versions, title, url) {
 // A row on either screen: the top three in the C64 face, ranks in gold, silver and bronze; the rest
 // in the regular face, a step quieter; the reader's own in reverse video.
 const rankRow = (rank, isMe) => `${rank <= 3 ? `is-podium is-rank-${rank}` : 'is-rest'}${isMe ? ' is-me' : ''}`;
-const rankCell = (rank) => h('span', { class: 'ach-rank' }, ordinal(rank).toUpperCase());
+// No rank: the player's own best is being checked before it takes a place.
+const rankCell = (rank) => h('span', { class: 'ach-rank' }, rank == null ? '' : ordinal(rank).toUpperCase());
 
 /**
  * A leaderboard as the game's own high-score screen: the top rows, then the
@@ -197,19 +212,20 @@ const rankCell = (rank) => h('span', { class: 'ach-rank' }, ordinal(rank).toUppe
 export function highScoreScreen(ctx, gameTitle, board, standings, live = null) {
   const me = ctx.me();
   const entries = standings?.entries ?? [];
-  const row = (rank, user, value, isMe) => h('li', { class: rankRow(rank, isMe) },
+  const row = (rank, user, value, isMe) => h('li', { class: `${rankRow(rank, isMe)}${rank == null ? ' is-checking' : ''}` },
     rankCell(rank),
-    h('span', { class: 'ach-screen-name' }, user?.id != null ? h('button', { type: 'button', class: 'ach-screen-link', on: { click: () => ctx.go({ type: 'profile', id: user.id }) } }, user.name) : user?.name ?? ''),
+    h('span', { class: 'ach-screen-name' }, user?.id != null ? h('button', { type: 'button', class: 'ach-screen-link', on: { click: () => ctx.go({ type: 'profile', id: user.id }) } }, user.name) : user?.name ?? '',
+      rank == null && isMe ? h('span', { class: 'ach-checking' }, ' (check)') : null),
     h('span', {}, ctx.format(value, board.format)),
     isMe ? h('span', { class: 'sr-only' }, ' (you)') : null);
   const rows = entries.map((e) => row(e.rank, e.user ?? { name: e.name }, e.value, !!me && e.user?.id === me.id));
   const mineShown = me && entries.some((e) => e.user?.id === me.id);
-  if (standings?.me && !mineShown) rows.push(h('li', { class: 'ach-screen-gap', 'aria-hidden': 'true' }, '...'), row(standings.me.rank, me, standings.me.value, true));
+  if (standings?.me && !mineShown) rows.push(h('li', { class: 'ach-screen-gap', 'aria-hidden': 'true' }, '...'), row(standings.me.checking ? null : standings.me.rank, me, standings.me.value, true));
   const players = standings?.players ?? entries.length;
   const now = live == null ? null : h('p', { class: 'ach-screen-live', 'data-board': String(board.id), 'aria-live': 'off' },
     h('span', {}, 'NOW'), h('span', {}, me?.name ?? 'YOU'), h('span', { class: 'ach-screen-live-value' }, ctx.format(live, board.format)));
-  // The game's name is already above it: the screen names only the board, a plain one HISCORES.
-  const heading = /^high ?scores?$/i.test(board.title.trim()) ? 'Hiscores' : board.title;
+  // The game's name is already above it: the screen names only the board.
+  const heading = board.title;
   return h('section', { class: 'ach-screen', 'aria-label': `${gameTitle}: ${board.title}` },
     h('div', { class: 'ach-screen-head' }, h('span', {}, heading)),
     standings == null ? h('p', { class: 'ach-screen-foot' }, 'LOADING...')
@@ -245,16 +261,19 @@ export function hallOfFame(ctx, gameTitle, top) {
 }
 
 /** Achievements with a badge: a trophy when unlocked, its number while locked. */
-export function achievementList(achievements, isUnlocked, unlockedAt = () => null) {
+export function achievementList(achievements, isUnlocked, unlockedAt = () => null, checking = () => false) {
   return h('ul', { class: 'ach-list achievements-list' }, achievements.map((a, i) => {
     const got = isUnlocked(a);
     const at = got ? unlockedAt(a) : null;
+    // The player's own unlock the server flagged: it counts in public once checked.
+    const check = got && checking(a);
     return h('li', { class: `ach-item ${got ? 'is-unlocked' : 'is-locked'}` },
       h('span', { class: 'ach-badge', 'aria-hidden': 'true' }, got ? trophyIcon(15) : String(i + 1)),
       h('span', { class: 'ach-what' },
         h('strong', {}, a.title),
         h('span', { class: 'ach-desc' }, a.description),
         at ? h('span', { class: 'ach-when' }, `Unlocked ${ago(at)}`) : null,
+        check ? h('span', { class: 'ach-checking' }, 'Being checked') : null,
         h('span', { class: 'sr-only' }, got ? ' Unlocked.' : ' Locked.')),
       h('span', { class: 'ach-pts' }, String(a.points)));
   }));
@@ -266,7 +285,8 @@ export function activityItem(ctx, x, withGame) {
   const inGame = withGame ? [' in ', gameLink(ctx, x.game, 'achievements-link ach-event-game')] : [];
   const what = x.kind === 'unlock'
     ? [playerLink(ctx, x.user), ' unlocked ', h('b', {}, x.achievement.title), ...inGame]
-    : [playerLink(ctx, x.user), ' scored ', h('b', {}, ctx.format(x.value, x.leaderboard.format)), ` on ${x.leaderboard.title}`, ...inGame];
+    // A game's one Hiscores goes unnamed: "scored 034600 in Commando". Others are named: "on Hiscores (Game A)", "on Fewest Moves".
+    : [playerLink(ctx, x.user), ' scored ', h('b', {}, ctx.format(x.value, x.leaderboard.format)), x.leaderboard.title === 'Hiscores' ? '' : ` on ${x.leaderboard.title}`, ...inGame];
   return h('li', { class: `ach-event achievements-activity-item is-${x.kind}` },
     tile(ctx, x.user),
     h('span', { class: 'ach-event-text achievements-activity-text' }, ...what),

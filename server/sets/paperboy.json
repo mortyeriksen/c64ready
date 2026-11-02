@@ -1,0 +1,164 @@
+{
+  "id": "paperboy",
+  "title": "Paperboy",
+  "url": "https://www.lemon64.com/game/paperboy",
+  "hashes": [
+    {
+      "hash": "ff7e7212443d9b28215df5777b05fc09",
+      "label": "OneLoad64 v5 cartridge (Paperboy.crt)"
+    },
+    {
+      "hash": "3c5c6c6a901f174069fb2fe16dca3f45",
+      "label": "OneLoad64 v5 crunched program (Paperboy.prg)"
+    },
+    {
+      "hash": "2451dfe3396a28125307d4d1d0878008",
+      "label": "OneLoad64 v5 uncrunched program (Paperboy.prg)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Manic Monday",
+      "description": "Complete Monday.",
+      "points": 5,
+      "memaddr": "0xH2a90=47_d0xH2a90=47_0xH2a91<=1_0xH2b1e=0_d0xH359a=0_0xH359a=1"
+    },
+    {
+      "id": 2,
+      "title": "Tuesday Tribune",
+      "description": "Complete Tuesday.",
+      "points": 5,
+      "memaddr": "0xH2a90=47_d0xH2a90=47_0xH2a91<=1_0xH2b1e=0_d0xH359a=1_0xH359a=2"
+    },
+    {
+      "id": 3,
+      "title": "Hump Day",
+      "description": "Complete Wednesday.",
+      "points": 10,
+      "memaddr": "0xH2a90=47_d0xH2a90=47_0xH2a91<=1_0xH2b1e=0_d0xH359a=2_0xH359a=3"
+    },
+    {
+      "id": 4,
+      "title": "Thursday Dispatch",
+      "description": "Complete Thursday.",
+      "points": 10,
+      "memaddr": "0xH2a90=47_d0xH2a90=47_0xH2a91<=1_0xH2b1e=0_d0xH359a=3_0xH359a=4"
+    },
+    {
+      "id": 5,
+      "title": "Thank Paper It's Friday",
+      "description": "Complete Friday.",
+      "points": 15,
+      "memaddr": "0xH2a90=47_d0xH2a90=47_0xH2a91<=1_0xH2b1e=0_d0xH359a=4_0xH359a=5"
+    },
+    {
+      "id": 6,
+      "title": "Weekend Special",
+      "description": "Complete Saturday.",
+      "points": 25,
+      "memaddr": "0xH2a90=47_d0xH2a90=47_0xH2a91<=1_0xH2b1e=0_d0xH359a=5_0xH359a=6"
+    },
+    {
+      "id": 7,
+      "title": "Sunday Supplement",
+      "description": "Complete Sunday and finish the week.",
+      "points": 50,
+      "memaddr": "0xH2a90=47_d0xH2a90=47_0xH2a91<=1_d0xH359a=6_0xH359a=0_d0xH2b1e=0_0xH2b1e=1"
+    },
+    {
+      "id": 8,
+      "title": "Last Bike Standing",
+      "description": "Reach 1,000 points with no spare lives left.",
+      "points": 10,
+      "memaddr": "0xH2a90=47_0xH2a91<=1_0xU2a92<10_0xL2a92<10_0xU2a93<10_0xL2a93<10_0xU2a94<10_0xL2a94<10_0xH2a91=0_A:0xU2a92*100000_A:0xL2a92*10000_A:0xU2a93*1000_A:0xL2a93*100_A:0xU2a94*10_0xL2a94>=1000"
+    },
+    {
+      "id": 9,
+      "title": "Stop the Presses",
+      "description": "Finish a game with 1,000 points or more.",
+      "points": 15,
+      "memaddr": "0xH2a90=47_0xU2a92<10_0xL2a92<10_0xU2a93<10_0xL2a93<10_0xU2a94<10_0xL2a94<10_A:0xU2a92*100000_A:0xL2a92*10000_A:0xU2a93*1000_A:0xL2a93*100_A:0xU2a94*10_0xL2a94>=1000S0xH2a91=255_d0xH2a91=0S0xH2b1e=1_d0xH2b1e=0_d0xH359a=6_0xH359a=0"
+    },
+    {
+      "id": 10,
+      "title": "Final Edition",
+      "description": "Finish a game with 10,000 points or more.",
+      "points": 25,
+      "memaddr": "0xH2a90=47_0xU2a92<10_0xL2a92<10_0xU2a93<10_0xL2a93<10_0xU2a94<10_0xL2a94<10_A:0xU2a92*100000_A:0xL2a92*10000_A:0xU2a93*1000_A:0xL2a93*100_A:0xU2a94*10_0xL2a94>=10000S0xH2a91=255_d0xH2a91=0S0xH2b1e=1_d0xH2b1e=0_d0xH359a=6_0xH359a=0"
+    },
+    {
+      "id": 11,
+      "title": "Extra! Extra!",
+      "description": "Put the first points on the board.",
+      "points": 5,
+      "memaddr": "0xH2a90=47_0xH2a91<=1_0xU2a92<10_0xL2a92<10_0xU2a93<10_0xL2a93<10_0xU2a94<10_0xL2a94<10_A:0xU2a92*100000_A:0xL2a92*10000_A:0xU2a93*1000_A:0xL2a93*100_A:0xU2a94*10_0xL2a94>=1"
+    },
+    {
+      "id": 12,
+      "title": "First Edition",
+      "description": "Score 100 points.",
+      "points": 5,
+      "score": 100,
+      "memaddr": "0xH2a90=47_0xH2a91<=1_0xU2a92<10_0xL2a92<10_0xU2a93<10_0xL2a93<10_0xU2a94<10_0xL2a94<10_A:0xU2a92*100000_A:0xL2a92*10000_A:0xU2a93*1000_A:0xL2a93*100_A:0xU2a94*10_0xL2a94>=100"
+    },
+    {
+      "id": 13,
+      "title": "Local News",
+      "description": "Score 500 points.",
+      "points": 10,
+      "score": 500,
+      "memaddr": "0xH2a90=47_0xH2a91<=1_0xU2a92<10_0xL2a92<10_0xU2a93<10_0xL2a93<10_0xU2a94<10_0xL2a94<10_A:0xU2a92*100000_A:0xL2a92*10000_A:0xU2a93*1000_A:0xL2a93*100_A:0xU2a94*10_0xL2a94>=500"
+    },
+    {
+      "id": 14,
+      "title": "Morning Rush",
+      "description": "Score 1,000 points.",
+      "points": 10,
+      "score": 1000,
+      "memaddr": "0xH2a90=47_0xH2a91<=1_0xU2a92<10_0xL2a92<10_0xU2a93<10_0xL2a93<10_0xU2a94<10_0xL2a94<10_A:0xU2a92*100000_A:0xL2a92*10000_A:0xU2a93*1000_A:0xL2a93*100_A:0xU2a94*10_0xL2a94>=1000"
+    },
+    {
+      "id": 15,
+      "title": "Circulation Boom",
+      "description": "Score 2,500 points.",
+      "points": 15,
+      "score": 2500,
+      "memaddr": "0xH2a90=47_0xH2a91<=1_0xU2a92<10_0xL2a92<10_0xU2a93<10_0xL2a93<10_0xU2a94<10_0xL2a94<10_A:0xU2a92*100000_A:0xL2a92*10000_A:0xU2a93*1000_A:0xL2a93*100_A:0xU2a94*10_0xL2a94>=2500"
+    },
+    {
+      "id": 16,
+      "title": "Front Page",
+      "description": "Score 5,000 points.",
+      "points": 25,
+      "score": 5000,
+      "memaddr": "0xH2a90=47_0xH2a91<=1_0xU2a92<10_0xL2a92<10_0xU2a93<10_0xL2a93<10_0xU2a94<10_0xL2a94<10_A:0xU2a92*100000_A:0xL2a92*10000_A:0xU2a93*1000_A:0xL2a93*100_A:0xU2a94*10_0xL2a94>=5000"
+    },
+    {
+      "id": 17,
+      "title": "Citywide Edition",
+      "description": "Score 10,000 points.",
+      "points": 25,
+      "score": 10000,
+      "memaddr": "0xH2a90=47_0xH2a91<=1_0xU2a92<10_0xL2a92<10_0xU2a93<10_0xL2a93<10_0xU2a94<10_0xL2a94<10_A:0xU2a92*100000_A:0xL2a92*10000_A:0xU2a93*1000_A:0xL2a93*100_A:0xU2a94*10_0xL2a94>=10000"
+    },
+    {
+      "id": 18,
+      "title": "Press Baron",
+      "description": "Score 25,000 points.",
+      "points": 50,
+      "score": 25000,
+      "memaddr": "0xH2a90=47_0xH2a91<=1_0xU2a92<10_0xL2a92<10_0xU2a93<10_0xL2a93<10_0xU2a94<10_0xL2a94<10_A:0xU2a92*100000_A:0xL2a92*10000_A:0xU2a93*1000_A:0xL2a93*100_A:0xU2a94*10_0xL2a94>=25000"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Hiscores",
+      "description": "Your score when the week or your bikes run out.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH2a90=47_0xH2a91<=1_0xU2a92<10_0xL2a92<10_0xU2a93<10_0xL2a93<10_0xU2a94<10_0xL2a94<10_A:0xU2a92*100000_A:0xL2a92*10000_A:0xU2a93*1000_A:0xL2a93*100_A:0xU2a94*10_0xL2a94>=1::CAN:0xH2a90!=47::SUB:1=1S0xH2a91=255_d0xH2a91=0S0xH2b1e=1_d0xH2b1e=0_d0xH359a=6_0xH359a=0::VAL:0xU2a92*100000_0xL2a92*10000_0xU2a93*1000_0xL2a93*100_0xU2a94*10_0xL2a94"
+    }
+  ]
+}

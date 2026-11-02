@@ -345,7 +345,7 @@ export async function libImport(input, onProgress) {
   let metas;
   try { metas = await libList(); } catch { metas = []; }
   // Present-set keyed exactly like libSave's dedup: (type, name).
-  const present = new Set(metas.map(e => `${e.type} ${e.name}`));
+  const present = new Set(metas.map(e => `${e.type}\0${e.name}`));
 
   const total = obj.entries.length;
   let imported = 0, skipped = 0, invalid = 0;
@@ -359,7 +359,7 @@ export async function libImport(input, onProgress) {
     const type = String((e && e.type) || '').toLowerCase();
     const name = e && e.name ? String(e.name) : '';
     if (!VALID_TYPES.has(type) || !name || typeof e.data !== 'string') { invalid++; report(i + 1); continue; }
-    const key = `${type} ${name}`;
+    const key = `${type}\0${name}`;
     if (present.has(key)) { skipped++; report(i + 1); continue; }     // already present → don't import
     let data;
     try { data = _b64decode(e.data); } catch { invalid++; report(i + 1); continue; }

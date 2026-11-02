@@ -11,7 +11,7 @@
   "achievements": [
     {
       "id": 1,
-      "title": "First Dan",
+      "title": "White Belt No More",
       "description": "Reach 1st dan.",
       "points": 5,
       "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xH00AF=1_d0xH00AF=0"
@@ -40,13 +40,13 @@
     {
       "id": 5,
       "title": "Tenth Dan",
-      "description": "Reach 10th dan.",
+      "description": "Reach 10th dan, the top of the ladder.",
       "points": 25,
       "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xH00AF=10_d0xH00AF=9"
     },
     {
       "id": 6,
-      "title": "Bull Fighter",
+      "title": "Matador",
       "description": "Defeat the charging bull.",
       "points": 10,
       "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xH00C2=128_d0xH00C2=0"
@@ -54,37 +54,40 @@
     {
       "id": 7,
       "title": "Unblemished",
-      "description": "Win a contest without the computer scoring a point.",
+      "description": "Win a contest without conceding a point.",
       "points": 10,
       "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0S0xH00B5=1_d0xH00B5=2_d0xH008B=0S0xH00AF>d0xH00AF_d0xH008B=0"
     },
     {
       "id": 8,
       "title": "Rising Star",
-      "description": "Score at least 10,000 points.",
+      "description": "Score 10,000 points.",
       "points": 5,
+      "score": 10000,
       "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xHCC31<58_0xHCC32<58_0xHCC33<58_0xHCC34<58_A:0xLCC31*1000_A:0xLCC32*100_A:0xLCC33*10_0xLCC34>=100"
     },
     {
       "id": 9,
       "title": "Exploding Fist",
-      "description": "Score at least 25,000 points.",
+      "description": "Score 25,000 points.",
       "points": 10,
+      "score": 25000,
       "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xHCC31<58_0xHCC32<58_0xHCC33<58_0xHCC34<58_A:0xLCC31*1000_A:0xLCC32*100_A:0xLCC33*10_0xLCC34>=250"
     },
     {
       "id": 10,
       "title": "Grand Master",
-      "description": "Score at least 50,000 points.",
+      "description": "Score 50,000 points.",
       "points": 25,
+      "score": 50000,
       "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xHCC31<58_0xHCC32<58_0xHCC33<58_0xHCC34<58_A:0xLCC31*1000_A:0xLCC32*100_A:0xLCC33*10_0xLCC34>=500"
     }
   ],
   "leaderboards": [
     {
       "id": 1,
-      "title": "High Score",
-      "description": "Highest score in one game against the computer.",
+      "title": "Hiscores",
+      "description": "Your best score against the computer.",
       "format": "SCORE",
       "lowerIsBetter": false,
       "definition": "STA:0xH00AE=0_0xH0065=0_d0xH0065=1_0xH00AF=0_0xH00B5=2::CAN:0xH00AE!=0::SUB:0xH00AE=0_0xH0065=1_d0xH0065=0_d0xHCC31<58_d0xHCC32<58_d0xHCC33<58_d0xHCC34<58Sd0xLCC31>0Sd0xLCC32>0Sd0xLCC33>0Sd0xLCC34>0::VAL:d0xLCC31*100000_d0xLCC32*10000_d0xLCC33*1000_d0xLCC34*100"

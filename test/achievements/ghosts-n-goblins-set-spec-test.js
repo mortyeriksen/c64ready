@@ -221,19 +221,19 @@ function gameOver() {
 // 12. Not a Scratch: stage 1 of a new game with no hit and no death.
 {
   activate(); title(); newGame(); clearStage(1);
-  expect(has('Not a Scratch'), 'a clean stage 1 unlocks Not a Scratch');
+  expect(has('Fully Dressed'), 'a clean stage 1 unlocks Not a Scratch');
 
   activate(); title(); newGame(); hit(); clearStage(1);
-  expect(has('Graveyard Shift') && !has('Not a Scratch'), 'losing the armour rules it out');
+  expect(has('Graveyard Shift') && !has('Fully Dressed'), 'losing the armour rules it out');
 
   activate(); title(); newGame();
   ram[DYING] = 1; frames(130); ram[LIVES]--; ram[DYING] = 0; frames(5);   // the clock ran out
   clearStage(1);
-  expect(!has('Not a Scratch'), 'a death by the clock rules it out');
+  expect(!has('Fully Dressed'), 'a death by the clock rules it out');
 
   activate(); title(); newGame(); hit(); die(); clearStage(1); clearStage(2); clearStage(3); clearStage(4);
   clearStage(1);
-  expect(!has('Not a Scratch'), 'stage 1 on the second round does not count after a hit');
+  expect(!has('Fully Dressed'), 'stage 1 on the second round does not count after a hit');
   ok('Not a Scratch needs stage 1 clean from a new game');
 }
 
@@ -244,27 +244,27 @@ function gameOver() {
   ram[STAGE] = 0; setScore(0); ram[LIVES] = 5; ram[WEAPON] = LANCE; frames(2);
   ram[ARMOUR] = 0x40; ram[DYING] = 0; frames(5);
   clearStage(1);
-  expect(has('Not a Scratch'), 'Not a Scratch after a game that ended in a death');
+  expect(has('Fully Dressed'), 'Not a Scratch after a game that ended in a death');
   ok('the last game\'s dying flag does not spoil the next');
 }
 
 // 14. Round Two: stage 1 cleared again after stage 4, in the same game.
 {
   activate(); title(); newGame(); clearStage(1);
-  expect(!has('Round Two'), 'not on the first stage 1');
+  expect(!has('It Was All a Dream'), 'not on the first stage 1');
   clearStage(2); clearStage(3); clearStage(4);
-  expect(!has('Round Two'), 'not on stage 4 itself');
+  expect(!has('It Was All a Dream'), 'not on stage 4 itself');
   clearStage(1);
-  expect(has('Round Two'), 'Round Two on stage 1 after stage 4');
+  expect(has('It Was All a Dream'), 'Round Two on stage 1 after stage 4');
 
   activate(); title(); newGame(); ram[STAGE] = 3; frames(2); clearStage(4);
   ram[LIVES] = 1; gameOver(); newGame(); clearStage(1);
-  expect(!has('Round Two'), 'a game over in between cancels it');
+  expect(!has('It Was All a Dream'), 'a game over in between cancels it');
 
   activate(); title(); newGame(); ram[STAGE] = 3; frames(2); clearStage(4);
   title(); newGame(); clearStage(1);
-  expect(!has('Round Two'), 'a new game without a game over (a reset) cancels it');
-  ok('Round Two');
+  expect(!has('It Was All a Dream'), 'a new game without a game over (a reset) cancels it');
+  ok('It Was All a Dream');
 }
 
 // 15. High Score: one attempt per game, submitted on the last life's game over with the shown score.

@@ -1,0 +1,113 @@
+{
+  "id": "yie-ar-kung-fu",
+  "title": "Yie Ar Kung-Fu",
+  "url": "https://www.lemon64.com/game/yie-ar-kung-fu",
+  "hashes": [
+    {
+      "hash": "eab8e5d1e9791b6778372e29683d3a01",
+      "label": "OneLoad64 v5 cartridge (Yie Ar Kung-Fu.crt)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Buchu Down",
+      "description": "Beat Buchu.",
+      "points": 10,
+      "memaddr": "0xHa080>0_0xHa080<9_0xHa07e<10_d0xHa07e=0_0xHa07e=1"
+    },
+    {
+      "id": 2,
+      "title": "Nuncha",
+      "description": "Reach Nuncha.",
+      "points": 10,
+      "memaddr": "0xHa080>0_0xHa080<9_0xHa07e>=2_0xHa07e<10"
+    },
+    {
+      "id": 3,
+      "title": "Club",
+      "description": "Reach Club.",
+      "points": 15,
+      "memaddr": "0xHa080>0_0xHa080<9_0xHa07e>=5_0xHa07e<10"
+    },
+    {
+      "id": 4,
+      "title": "Tonfun",
+      "description": "Reach Tonfun.",
+      "points": 25,
+      "memaddr": "0xHa080>0_0xHa080<9_0xHa07e>=8_0xHa07e<10"
+    },
+    {
+      "id": 5,
+      "title": "Fifth Life",
+      "description": "Earn a fifth life.",
+      "points": 10,
+      "memaddr": "0xHa07e<10_d0xHa080=4_0xHa080=5"
+    },
+    {
+      "id": 6,
+      "title": "Hiyah!",
+      "description": "Put the first points on the board.",
+      "points": 5,
+      "memaddr": "0xHa080>0_0xHa080<9_0xHa07e<10_O:0xH0380>0_O:0xH0381>0_0xH0382>0"
+    },
+    {
+      "id": 7,
+      "title": "Five Hundred",
+      "description": "Score 500 points.",
+      "points": 5,
+      "score": 500,
+      "memaddr": "0xHa080>0_0xHa080<9_0xHa07e<10_O:0xH0381>=5_0xH0382>0"
+    },
+    {
+      "id": 8,
+      "title": "One Thousand",
+      "description": "Score 1,000 points.",
+      "points": 10,
+      "score": 1000,
+      "memaddr": "0xHa080>0_0xHa080<9_0xHa07e<10_O:0xH0381>=16_0xH0382>0"
+    },
+    {
+      "id": 9,
+      "title": "Five Thousand",
+      "description": "Score 5,000 points.",
+      "points": 10,
+      "score": 5000,
+      "memaddr": "0xHa080>0_0xHa080<9_0xHa07e<10_O:0xH0381>=80_0xH0382>0"
+    },
+    {
+      "id": 10,
+      "title": "Ten Thousand",
+      "description": "Score 10,000 points.",
+      "points": 15,
+      "score": 10000,
+      "memaddr": "0xHa080>0_0xHa080<9_0xHa07e<10_0xH0382>=1"
+    },
+    {
+      "id": 11,
+      "title": "Twenty Thousand",
+      "description": "Score 20,000 points.",
+      "points": 20,
+      "score": 20000,
+      "memaddr": "0xHa080>0_0xHa080<9_0xHa07e<10_0xH0382>=2"
+    },
+    {
+      "id": 12,
+      "title": "Fifty Thousand",
+      "description": "Score 50,000 points.",
+      "points": 25,
+      "score": 50000,
+      "memaddr": "0xHa080>0_0xHa080<9_0xHa07e<10_0xH0382>=5"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Hiscores",
+      "description": "Your score when the last life is lost.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xHa07e<10_0xHa080=4_0xH0380=0_0xH0381=0_0xH0382=0::CAN:0xHa07e<10_d0xHa080=1_0xHa080=0_0xH0380=0_0xH0381=0_0xH0382=0::SUB:0xHa07e<10_d0xHa080=1_0xHa080=0_O:0xH0380>0_O:0xH0381>0_0xH0382>0::VAL:0xU0382*100000_0xL0382*10000_0xU0381*1000_0xL0381*100_0xU0380*10_0xL0380"
+    }
+  ]
+}

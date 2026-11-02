@@ -62,13 +62,26 @@ function account(name) {
 }
 // The session as just confirmed by a passkey: deleting the account needs that.
 const confirm = (who) => db.prepare('UPDATE sessions SET confirmed_at = ? WHERE user_id = ?').run(clock, who.id);
-async function api(method, url, { body, token } = {}) {
+// A result posted as the app posts it: hardcore, with the game open for an hour already, as
+// the server's fair-play checks expect. `raw` posts exactly what is given.
+function asPlayed(url, body, token) {
+  const m = /^\/api\/games\/([0-9a-f]{32})\/(unlocks|leaderboards\/\d+\/entries)$/.exec(url);
+  if (!m || !token || !body || body.hardcore !== undefined) return body;
+  const game = db.prepare('SELECT game_id FROM game_hashes WHERE hash = ?').get(m[1]);
+  const user = db.prepare('SELECT user_id FROM sessions WHERE token_hash = ?').get(crypto.createHash('sha256').update(token).digest('hex'));
+  if (game && user) db.prepare('INSERT INTO plays (user_id, game_id, started_at, seen_at) VALUES (?, ?, ?, ?) ON CONFLICT(user_id, game_id) DO UPDATE SET seen_at = excluded.seen_at').run(user.user_id, game.game_id, clock - 3600_000, clock);
+  return { ...body, hardcore: true };
+}
+async function api(method, url, { body, token, raw = false } = {}) {
+  if (method === 'POST' && !raw) body = asPlayed(url, body, token);
   const headers = { 'Content-Type': 'application/json', Origin: 'https://c64ready.com' };
   if (token) headers.Authorization = `Bearer ${token}`;
   const r = await fetch(base + url, { method, headers, body: body ? JSON.stringify(body) : undefined });
   return { status: r.status, body: await r.json() };
 }
 const ann = account('Ann'), ben = account('Ben'), cat = account('Cat');
+// The account opens the game, as the app does when it loads one: the server's fair-play checks need that.
+const open = (who, hash = HASH) => api('GET', `/api/games/${hash}`, { token: who.token });
 
 // 1. Set files are checked before they load.
 {
@@ -78,6 +91,8 @@ const ann = account('Ann'), ben = account('Ben'), cat = account('Cat');
   expect(bad({ achievements: [{ id: 1, title: 'A', description: 'a', memaddr: '1=1' }, { id: 1, title: 'B', description: 'b', memaddr: '1=1' }] }), 'achievement ids are unique');
   expect(bad({ leaderboards: [{ id: 1, title: 'L', description: 'l', format: 'NOPE', definition: 'STA:1::CAN:1::SUB:1::VAL:1' }] }), 'a leaderboard format must be an rcheevos one');
   expect(bad({ leaderboards: [{ id: 1, title: 'L', description: 'l', format: 'SCORE', definition: 'VAL:1' }] }), 'a leaderboard needs STA, CAN, SUB and VAL');
+  expect(bad({ achievements: [{ id: 1, title: 'A', description: 'a', memaddr: '1=1', score: -5 }] }), 'a milestone score is a whole number above 0');
+  expect(bad({ achievements: [{ id: 1, title: 'A', description: 'a', memaddr: '1=1', score: 100 }], leaderboards: [{ id: 1, title: 'L', description: 'l', format: 'VALUE', lowerIsBetter: true, definition: 'STA:1::CAN:1::SUB:1::VAL:1' }] }), 'milestones need a board where higher is better');
   expect(bad({ url: 'http://example.com/x' }) && bad({ url: 'javascript:alert(1)' }) && !bad({ url: 'https://example.com/x' }), 'a url, when a set has one, is an https address');
   ok('set files are checked');
 }
@@ -102,7 +117,7 @@ const ann = account('Ann'), ben = account('Ben'), cat = account('Cat');
 {
   const anon = await api('POST', `/api/games/${HASH}/unlocks`, { body: { achievementId: 1 } });
   expect(anon.status === 401, 'unlocking needs an account');
-  const first = await api('POST', `/api/games/${HASH}/unlocks`, { token: ann.token, body: { achievementId: 1, hardcore: false } });
+  const first = await api('POST', `/api/games/${HASH}/unlocks`, { token: ann.token, body: { achievementId: 1 } });
   const again = await api('POST', `/api/games/${HASH2}/unlocks`, { token: ann.token, body: { achievementId: 1 } });
   expect(first.status === 200 && first.body.new === true, 'a first unlock is new');
   expect(again.status === 200 && again.body.new === false, 'unlocking again, from another of the game\'s files, is not new');
@@ -118,11 +133,13 @@ const ann = account('Ann'), ben = account('Ben'), cat = account('Cat');
 // 4. Leaderboards: best per account, by the board's own order, ranks with ties.
 {
   // Minutes apart, so each best is its own entry in the activity.
-  const post = (who, id, value) => { clock += 6 * 60_000; return api('POST', `/api/games/${HASH}/leaderboards/${id}/entries`, { token: who.token, body: { value } }); };
+  const post = (who, id, value) => { clock += 6 * 60_000; return api('POST', `/api/games/${HASH}/leaderboards/${id}/entries`, { token: who.token, body: { value, hardcore: true } }); };
+  await open(ann); await open(ben); await open(cat);
   expect((await api('POST', `/api/games/${HASH}/leaderboards/1/entries`, { body: { value: 5 } })).status === 401, 'posting needs an account');
   const a1 = await post(ann, 1, 500);
   const a2 = await post(ann, 1, 300);
   expect(a1.body.improved && !a2.body.improved && a2.body.best === 500, 'a higher-is-better board keeps the best (500 over 300)');
+  expect(a1.body.previous === null && a1.body.previousRank === null && a2.body.previous === 500 && a2.body.previousRank === 1 && a2.body.players === 1, `a post says the old best, its rank and how many are on the board (got ${JSON.stringify(a2.body)})`);
   await post(ben, 1, 800); await post(cat, 1, 500);
   const top = await api('GET', `/api/games/${HASH}/leaderboards/1`, { token: ann.token });
   expect(top.body.entries.map((e) => `${e.name}:${e.value}`).join() === 'Ben:800,Ann:500,Cat:500', 'entries are ordered best first, earlier first on a tie');
@@ -284,6 +301,90 @@ const ann = account('Ann'), ben = account('Ben'), cat = account('Cat');
   expect(!list.some((g) => g.id === 'second') && (await api('GET', `/api/games/${OTHER}`)).status === 404, 'a game whose set file is gone leaves the list and is not found');
   expect(db.prepare("SELECT COUNT(*) AS n FROM unlocks WHERE game_id = 'second'").get().n === 1, 'while its players\' unlocks are kept, in case the set returns');
   ok('dropped achievements and games leave the views, not the results');
+}
+
+// 14. Fair play. Only hardcore results with no flag count in public: softcore unlocks are the
+// player's own, softcore scores go on no board, and odd results wait for an admin.
+{
+  const eve = account('Eve'), fay = account('Fay'), gus = account('Gus'), hal = account('Hal');
+  const raw = (who, path, body) => api('POST', `/api/games/${HASH}/${path}`, { token: who.token, body, raw: true });
+  const flagOf = (table, who) => db.prepare(`SELECT flag FROM ${table} WHERE user_id = ? AND game_id = 'demo' ORDER BY rowid DESC LIMIT 1`).get(who.id)?.flag ?? null;
+  const feed = async () => (await api('GET', `/api/games/${HASH}/activity`)).body.events ?? (await api('GET', `/api/games/${HASH}/activity`)).body;
+  const named = async (name) => JSON.stringify(await feed()).includes(`"${name}"`);
+  const topNames = async () => (await api('GET', `/api/games/${HASH}/top?limit=100`)).body.entries.map((e) => e.user?.name ?? e.name);
+  const boardNames = async () => (await api('GET', `/api/games/${HASH}/leaderboards/1?limit=100`)).body.entries.map((e) => e.name);
+
+  await open(eve); clock += 60_000;
+  const soft = await raw(eve, 'unlocks', { achievementId: 1, hardcore: false });
+  expect(soft.body.new === true && !(await topNames()).includes('Eve') && !(await named('Eve')), 'a softcore unlock is kept, out of the Hall of Fame and the activity');
+  const mine = await api('GET', `/api/games/${HASH}`, { token: eve.token });
+  expect(JSON.stringify(mine.body.unlocked) === '[1]', 'and the player still sees it as theirs');
+  clock += 60_000;
+  const hard = await raw(eve, 'unlocks', { achievementId: 1, hardcore: true });
+  expect(hard.body.new === true && (await topNames()).includes('Eve') && await named('Eve'), 'the same unlock made hardcore later counts, and is new');
+  clock += 60_000;
+  const softScore = await raw(eve, 'leaderboards/1/entries', { value: 9999, hardcore: false });
+  expect(softScore.body.softcore === true && !(await boardNames()).includes('Eve'), 'a softcore score goes on no board');
+
+  // Flags: kept and out of public view, with a reason.
+  clock += 60_000;
+  const cold = await raw(fay, 'unlocks', { achievementId: 1, hardcore: true });
+  expect(cold.body.flagged === true && flagOf('unlocks', fay) === 'posted without the game open' && !(await topNames()).includes('Fay'), 'an unlock with the game never opened is flagged and kept out of public view');
+  await open(gus);
+  clock += 5_000;
+  const early = await raw(gus, 'leaderboards/1/entries', { value: 4000, hardcore: true });
+  expect(early.body.flagged === true && flagOf('lb_entries', gus) === 'a score just after the game was opened' && !(await boardNames()).includes('Gus'), 'a score seconds after the game was opened is flagged');
+  clock += 30_000;
+  const gusSees = (await api('GET', `/api/games/${HASH}/leaderboards/1`, { token: gus.token })).body.me;
+  expect(gusSees?.checking === true && gusSees.rank === null && gusSees.value === 4000, `the player sees their flagged best as being checked, with no rank (got ${JSON.stringify(gusSees)})`);
+  const fays = (await api('GET', `/api/games/${HASH}`, { token: fay.token })).body.unlocks;
+  expect(fays.length === 1 && fays[0].checking === true, 'and a flagged unlock as being checked, on their own game');
+  const later = await raw(gus, 'leaderboards/1/entries', { value: 4100, hardcore: true });
+  expect(!later.body.flagged && (await boardNames()).includes('Gus'), 'a later better score is not, and shows');
+  await open(hal);
+  clock += 60_000;
+  db.prepare("UPDATE leaderboards SET max_value = 100000 WHERE game_id = 'demo' AND id = 1").run();
+  const huge = await raw(hal, 'leaderboards/1/entries', { value: 2_000_000, hardcore: true });
+  expect(huge.body.flagged === true && flagOf('lb_entries', hal) === "over the board's limit", "a score over the board's limit is flagged");
+  db.prepare("UPDATE leaderboards SET max_value = NULL WHERE game_id = 'demo'").run();
+  // Many unlocks at once: the fifth within three seconds.
+  const ivy = account('Ivy');
+  await open(ivy); clock += 60_000;
+  db.prepare("INSERT INTO achievements (game_id, id, title, description, points, memaddr, sort) VALUES ('demo', 11, 'X1', 'x', 1, '1=1', 11), ('demo', 12, 'X2', 'x', 1, '1=1', 12), ('demo', 13, 'X3', 'x', 1, '1=1', 13)").run();
+  const burst = [];
+  for (const id of [1, 2, 11, 12, 13]) burst.push((await raw(ivy, 'unlocks', { achievementId: id, hardcore: true })).body.flagged === true);
+  expect(burst.join() === 'false,false,false,false,true', `the fifth unlock within three seconds is flagged (got ${burst})`);
+  db.prepare("DELETE FROM achievements WHERE game_id = 'demo' AND id > 10").run();
+  ok('fair play: softcore results stay private, odd results are flagged');
+}
+
+// 15. Score milestones: a best past milestones the account has not unlocked waits for them. The
+// score waits on the unlocks, never the other way, so either can arrive first and both end up counting.
+{
+  db.prepare("INSERT INTO achievements (game_id, id, title, description, points, memaddr, sort, score_at) VALUES ('demo', 21, 'K1', 'Score 1,000 points.', 1, '1=1', 21, 1000), ('demo', 22, 'K5', 'Score 5,000 points.', 1, '1=1', 22, 5000)").run();
+  const jon = account('Jon'), kim = account('Kim'), lee = account('Lee');
+  const flagOf = (who) => db.prepare("SELECT flag FROM lb_entries WHERE user_id = ? AND game_id = 'demo' AND leaderboard_id = 1").get(who.id)?.flag ?? null;
+  const onBoard = async (name) => (await api('GET', `/api/games/${HASH}/leaderboards/1?limit=100`)).body.entries.some((e) => e.name === name);
+  const scoreFed = (who) => !!db.prepare("SELECT 1 FROM activity WHERE user_id = ? AND game_id = 'demo' AND kind = 'score'").get(who.id);
+  const post = (who, path, body) => api('POST', `/api/games/${HASH}/${path}`, { token: who.token, body });
+
+  await post(jon, 'unlocks', { achievementId: 21 }); clock += 60_000;
+  const j = await post(jon, 'leaderboards/1/entries', { value: 3000 });
+  expect(!j.body.flagged && await onBoard('Jon'), 'a score past only the milestones the player has counts');
+  const l = await post(lee, 'leaderboards/1/entries', { value: 500 });
+  expect(!l.body.flagged, 'a score under every milestone counts');
+  const k = await post(kim, 'leaderboards/1/entries', { value: 6000 });
+  expect(k.body.flagged === true && flagOf(kim) === 'past milestones not unlocked' && !(await onBoard('Kim')), 'a score past milestones not unlocked is flagged');
+  clock += 60_000;
+  const u1 = await post(kim, 'unlocks', { achievementId: 21 });
+  expect(!u1.body.flagged && flagOf(kim) === 'past milestones not unlocked', 'a milestone is never held back by a score, and one of two leaves the score waiting');
+  clock += 60_000;
+  const u2 = await post(kim, 'unlocks', { achievementId: 22 });
+  expect(!u2.body.flagged && flagOf(kim) === null && await onBoard('Kim') && scoreFed(kim), 'the last milestone arriving lets the score count, with its activity');
+  const slow = await post(lee, 'leaderboards/2/entries', { value: 99999 });
+  expect(!slow.body.flagged, 'a board where fewer is better has no milestones');
+  db.prepare("DELETE FROM achievements WHERE game_id = 'demo' AND id > 20").run();
+  ok('score milestones: a score waits for its milestones, and counts when they arrive');
 }
 
 accounts.close();

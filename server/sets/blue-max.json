@@ -1,0 +1,140 @@
+{
+  "id": "blue-max",
+  "title": "Blue Max",
+  "url": "https://www.lemon64.com/game/blue-max",
+  "hashes": [
+    {
+      "hash": "c42cd2ab88300117ea2c4e307c6e3be3",
+      "label": "OneLoad64 v5 cartridge (Blue Max.crt)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Runway Sweeper",
+      "description": "Finish a game ranked Runway Sweeper or better.",
+      "points": 5,
+      "memaddr": "N:0xH4093=0_N:0xH0f80=70_N:d0xH0f80!=70_N:0xH40be=0_N:0xH40bf=0_N:0xH40c0=0_N:0xH40c1=0_0xH4073=0.1._R:0xH4093=1_0xH5da7=109_0xH5da8=193_0xH4093=0_0xH0f89=67_d0xH0f89!=67_0xH408e>=1_0xH408e<=5"
+    },
+    {
+      "id": 2,
+      "title": "Air Cadet",
+      "description": "Finish a game ranked Air Cadet or better.",
+      "points": 10,
+      "memaddr": "N:0xH4093=0_N:0xH0f80=70_N:d0xH0f80!=70_N:0xH40be=0_N:0xH40bf=0_N:0xH40c0=0_N:0xH40c1=0_0xH4073=0.1._R:0xH4093=1_0xH5da7=109_0xH5da8=193_0xH4093=0_0xH0f89=67_d0xH0f89!=67_0xH408e>=2_0xH408e<=5"
+    },
+    {
+      "id": 3,
+      "title": "Flying Tiger",
+      "description": "Finish a game ranked Flying Tiger or better.",
+      "points": 25,
+      "memaddr": "N:0xH4093=0_N:0xH0f80=70_N:d0xH0f80!=70_N:0xH40be=0_N:0xH40bf=0_N:0xH40c0=0_N:0xH40c1=0_0xH4073=0.1._R:0xH4093=1_0xH5da7=109_0xH5da8=193_0xH4093=0_0xH0f89=67_d0xH0f89!=67_0xH408e>=3_0xH408e<=5"
+    },
+    {
+      "id": 4,
+      "title": "Squadron Leader",
+      "description": "Finish a game ranked Squadron Leader or better.",
+      "points": 25,
+      "memaddr": "N:0xH4093=0_N:0xH0f80=70_N:d0xH0f80!=70_N:0xH40be=0_N:0xH40bf=0_N:0xH40c0=0_N:0xH40c1=0_0xH4073=0.1._R:0xH4093=1_0xH5da7=109_0xH5da8=193_0xH4093=0_0xH0f89=67_d0xH0f89!=67_0xH408e>=4_0xH408e<=5"
+    },
+    {
+      "id": 5,
+      "title": "The Blue Max",
+      "description": "Finish a game with the top rank.",
+      "points": 50,
+      "memaddr": "N:0xH4093=0_N:0xH0f80=70_N:d0xH0f80!=70_N:0xH40be=0_N:0xH40bf=0_N:0xH40c0=0_N:0xH40c1=0_0xH4073=0.1._R:0xH4093=1_0xH5da7=109_0xH5da8=193_0xH4093=0_0xH0f89=67_d0xH0f89!=67_0xH408e=5"
+    },
+    {
+      "id": 6,
+      "title": "Special Delivery",
+      "description": "Bomb a special target.",
+      "points": 10,
+      "memaddr": "N:0xH4093=0_N:0xH0f80=70_N:d0xH0f80!=70_N:0xH40be=0_N:0xH40bf=0_N:0xH40c0=0_N:0xH40c1=0_0xH4073=0.1._R:0xH4093=1_0xH5da7=109_0xH5da8=193_0xH4093=0_0xH0f80=70_0xH4073>=1_d0xH4073=0"
+    },
+    {
+      "id": 7,
+      "title": "Three of a Kind",
+      "description": "Bomb three special targets.",
+      "points": 15,
+      "memaddr": "N:0xH4093=0_N:0xH0f80=70_N:d0xH0f80!=70_N:0xH40be=0_N:0xH40bf=0_N:0xH40c0=0_N:0xH40c1=0_0xH4073=0.1._R:0xH4093=1_0xH5da7=109_0xH5da8=193_0xH4093=0_0xH0f80=70_0xH4073>=3_d0xH4073<3"
+    },
+    {
+      "id": 8,
+      "title": "High Five",
+      "description": "Bomb five special targets.",
+      "points": 25,
+      "memaddr": "N:0xH4093=0_N:0xH0f80=70_N:d0xH0f80!=70_N:0xH40be=0_N:0xH40bf=0_N:0xH40c0=0_N:0xH40c1=0_0xH4073=0.1._R:0xH4093=1_0xH5da7=109_0xH5da8=193_0xH4093=0_0xH0f80=70_0xH4073>=5_d0xH4073<5"
+    },
+    {
+      "id": 9,
+      "title": "Clean Sweep",
+      "description": "Bomb every special target.",
+      "points": 50,
+      "memaddr": "N:0xH4093=0_N:0xH0f80=70_N:d0xH0f80!=70_N:0xH40be=0_N:0xH40bf=0_N:0xH40c0=0_N:0xH40c1=0_0xH4073=0.1._R:0xH4093=1_0xH5da7=109_0xH5da8=193_0xH4093=0_0xH0f80=70_0xH4075=0_d0xH4075>0_0xH4073>=1"
+    },
+    {
+      "id": 10,
+      "title": "Bombs? Who Needs Bombs?",
+      "description": "Score 500 with all 30 bombs on board.",
+      "points": 10,
+      "memaddr": "N:0xH4093=0_N:0xH0f80=70_N:d0xH0f80!=70_N:0xH40be=0_N:0xH40bf=0_N:0xH40c0=0_N:0xH40c1=0_0xH4073=0.1._R:0xH4093=1_0xH5da7=109_0xH5da8=193_0xH4093=0_0xH0f80=70_0xH4060=30_A:0xH40be*1000_A:0xH40bf*100_A:0xH40c0*10_0xH40c1>=50"
+    },
+    {
+      "id": 11,
+      "title": "Contact!",
+      "description": "Put the first points on the board.",
+      "points": 5,
+      "memaddr": "N:0xH4093=0_N:0xH0f80=70_N:d0xH0f80!=70_N:0xH40be=0_N:0xH40bf=0_N:0xH40c0=0_N:0xH40c1=0_0xH4073=0.1._R:0xH4093=1_0xH5da7=109_0xH5da8=193_0xH4093=0_0xH0f80=70_A:0xH40be*1000_A:0xH40bf*100_A:0xH40c0*10_0xH40c1>=1"
+    },
+    {
+      "id": 12,
+      "title": "Marksman",
+      "description": "Score 500 points.",
+      "points": 5,
+      "score": 500,
+      "memaddr": "N:0xH4093=0_N:0xH0f80=70_N:d0xH0f80!=70_N:0xH40be=0_N:0xH40bf=0_N:0xH40c0=0_N:0xH40c1=0_0xH4073=0.1._R:0xH4093=1_0xH5da7=109_0xH5da8=193_0xH4093=0_0xH0f80=70_A:0xH40be*1000_A:0xH40bf*100_A:0xH40c0*10_0xH40c1>=50"
+    },
+    {
+      "id": 13,
+      "title": "Strafing Run",
+      "description": "Score 1,000 points.",
+      "points": 10,
+      "score": 1000,
+      "memaddr": "N:0xH4093=0_N:0xH0f80=70_N:d0xH0f80!=70_N:0xH40be=0_N:0xH40bf=0_N:0xH40c0=0_N:0xH40c1=0_0xH4073=0.1._R:0xH4093=1_0xH5da7=109_0xH5da8=193_0xH4093=0_0xH0f80=70_A:0xH40be*1000_A:0xH40bf*100_A:0xH40c0*10_0xH40c1>=100"
+    },
+    {
+      "id": 14,
+      "title": "Bombardier",
+      "description": "Score 2,500 points.",
+      "points": 10,
+      "score": 2500,
+      "memaddr": "N:0xH4093=0_N:0xH0f80=70_N:d0xH0f80!=70_N:0xH40be=0_N:0xH40bf=0_N:0xH40c0=0_N:0xH40c1=0_0xH4073=0.1._R:0xH4093=1_0xH5da7=109_0xH5da8=193_0xH4093=0_0xH0f80=70_A:0xH40be*1000_A:0xH40bf*100_A:0xH40c0*10_0xH40c1>=250"
+    },
+    {
+      "id": 15,
+      "title": "Air Superiority",
+      "description": "Score 5,000 points.",
+      "points": 25,
+      "score": 5000,
+      "memaddr": "N:0xH4093=0_N:0xH0f80=70_N:d0xH0f80!=70_N:0xH40be=0_N:0xH40bf=0_N:0xH40c0=0_N:0xH40c1=0_0xH4073=0.1._R:0xH4093=1_0xH5da7=109_0xH5da8=193_0xH4093=0_0xH0f80=70_A:0xH40be*1000_A:0xH40bf*100_A:0xH40c0*10_0xH40c1>=500"
+    },
+    {
+      "id": 16,
+      "title": "War Hero",
+      "description": "Score 10,000 points.",
+      "points": 25,
+      "score": 10000,
+      "memaddr": "N:0xH4093=0_N:0xH0f80=70_N:d0xH0f80!=70_N:0xH40be=0_N:0xH40bf=0_N:0xH40c0=0_N:0xH40c1=0_0xH4073=0.1._R:0xH4093=1_0xH5da7=109_0xH5da8=193_0xH4093=0_0xH0f80=70_A:0xH40be*1000_A:0xH40bf*100_A:0xH40c0*10_0xH40c1>=1000"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Hiscores",
+      "description": "Your score when your rank comes up.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH5da7=109_0xH5da8=193_0xH4093=0_0xH0f80=70_d0xH0f80!=70_0xH40be=0_0xH40bf=0_0xH40c0=0_0xH40c1=0::CAN:0xH4093!=0::SUB:0xH0f89=67_d0xH0f89!=67_O:0xH40be>0_O:0xH40bf>0_O:0xH40c0>0_0xH40c1>0::VAL:0xH40be*10000_0xH40bf*1000_0xH40c0*100_0xH40c1*10"
+    }
+  ]
+}

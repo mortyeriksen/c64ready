@@ -132,8 +132,8 @@ try {
   const hash = '4255c6e2bd6ebe048dfef457a920d565';
   const posted = await page.evaluate(async (h) => {
     const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('c64emu.account.token')}` };
-    const u = await fetch(`/api/games/${h}/unlocks`, { method: 'POST', headers, body: JSON.stringify({ achievementId: 1 }) });
-    const s = await fetch(`/api/games/${h}/leaderboards/1/entries`, { method: 'POST', headers, body: JSON.stringify({ value: 12345 }) });
+    const u = await fetch(`/api/games/${h}/unlocks`, { method: 'POST', headers, body: JSON.stringify({ achievementId: 1, hardcore: true }) });
+    const s = await fetch(`/api/games/${h}/leaderboards/1/entries`, { method: 'POST', headers, body: JSON.stringify({ value: 12345, hardcore: true }) });
     return [u.status, s.status];
   }, hash);
   expect(posted.join() === '200,200', `the unlock and the score are accepted (got ${posted})`);
@@ -145,7 +145,7 @@ try {
   const rows = await feed.locator('.achievements-activity-item .achievements-activity-text').allTextContents();
   expect(rows.some((r) => /^Pilot unlocked Zinc in Uridium$/.test(r)), `the feed shows the unlock (got ${JSON.stringify(rows)})`);
   expect(await feed.locator('.ach-event.is-unlock .ach-pts').first().textContent() === '+5', 'with its points');
-  expect(rows.some((r) => /^Pilot scored 012345 on High Score in Uridium$/.test(r)), 'and the new best, in the leaderboard\'s format');
+  expect(rows.some((r) => /^Pilot scored 012345 in Uridium$/.test(r)), 'and the new best, in the leaderboard\'s format');
   await feed.locator('.achievements-scope', { hasText: 'URIDIUM' }).click();
   await page.waitForFunction(() => [...document.querySelectorAll('#achievements-activity .achievements-activity-text')].every((r) => !r.textContent.includes(' in Uridium')), null, { timeout: 10_000 }).catch(() => {});
   const scoped = await feed.locator('.achievements-activity-text').allTextContents();
@@ -159,7 +159,7 @@ try {
   const profile = await detail.textContent();
   expect(/ 5 points\./.test(profile) && /1 of 22 unlocked5 of \d+ points/.test(profile), `the profile counts the points and the game's progress (got "${profile}")`);
   expect(await detail.locator('.ach-meter span.is-lit').count() === 1, 'the meter lights the one unlocked');
-  expect(/High Score012345, 1st/.test(profile), 'and the best score with its rank');
+  expect(/Hiscores012345, 1st/.test(profile), 'and the best score with its rank');
   expect(await detail.locator('.achievements-back').textContent() === '‹ Activity', 'the way back names the tab it returns to');
   await detail.locator('.achievements-back').click();
   expect(await detail.isHidden() && await feed.isVisible(), 'Back returns to the feed');
@@ -255,7 +255,7 @@ try {
   const unlockAll = (list) => page.evaluate(async (items) => {
     const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('c64emu.account.token')}` };
     let okay = 0;
-    for (const [h, id] of items) okay += (await fetch(`/api/games/${h}/unlocks`, { method: 'POST', headers, body: JSON.stringify({ achievementId: id }) })).ok ? 1 : 0;
+    for (const [h, id] of items) okay += (await fetch(`/api/games/${h}/unlocks`, { method: 'POST', headers, body: JSON.stringify({ achievementId: id, hardcore: true }) })).ok ? 1 : 0;
     return okay;
   }, list);
   const wanted = [...Array.from({ length: 21 }, (_, i) => [hash, i + 2]), ...Array.from({ length: 9 }, (_, i) => [bombJack, i + 1])];

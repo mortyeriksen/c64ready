@@ -18,74 +18,156 @@
     {
       "hash": "87ae9de9671916c094ecb7902ad0e2c8",
       "label": "MultiLoad64 EasyFlash cartridge (Out Run (by $olo1870))"
+    },
+    {
+      "hash": "cf7b3cbc83fea9f38f466e04fe624d32",
+      "label": "OneLoad64 v5 cartridge (Out Run (Route D) (J1).crt)"
+    },
+    {
+      "hash": "72b909481a6c20d19af7474b70a20991",
+      "label": "OneLoad64 v5 cartridge (Out Run (Route E) (J1).crt)"
     }
   ],
   "achievements": [
     {
       "id": 1,
-      "title": "Checkpoint",
+      "title": "Checkpoint!",
       "description": "Reach stage 2.",
       "points": 5,
-      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._0xH9144=1_d0xH9144=0"
+      "memaddr": "0xH9144=1_d0xH9144=0SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1.SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1."
     },
     {
       "id": 2,
-      "title": "Halfway Down the Road",
+      "title": "Open Road",
       "description": "Reach stage 3.",
       "points": 10,
-      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._0xH9144=2_d0xH9144=1"
+      "memaddr": "0xH9144=2_d0xH9144=1SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1.SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1."
     },
     {
       "id": 3,
       "title": "Long Drive",
       "description": "Reach stage 4.",
       "points": 10,
-      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._0xH9144=3_d0xH9144=2"
+      "memaddr": "0xH9144=3_d0xH9144=2SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1.SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1."
     },
     {
       "id": 4,
       "title": "Final Stretch",
-      "description": "Reach stage 5, the last.",
+      "description": "Reach stage 5.",
       "points": 25,
-      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._0xH9144=4_d0xH9144=3"
+      "memaddr": "0xH9144=4_d0xH9144=3SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1.SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1."
     },
     {
       "id": 5,
-      "title": "Goal!",
-      "description": "Reach the goal at the end of stage 5.",
+      "title": "Vineyard",
+      "description": "Finish route A at Vineyard.",
       "points": 25,
-      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._0xH80A9=147_d0xH80A9=131"
+      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_N:d0xHAA22=7_0xHA20D=8.1._0xH80A9=147_d0xH80A9=131"
     },
     {
       "id": 6,
-      "title": "Cruising",
-      "description": "Score at least 500,000 points.",
-      "points": 5,
-      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._A:0xHAA56*1000000_A:0xHAA55*100000_A:0xHAA54*10000_A:0xHAA53*1000_A:0xHAA52*100_A:0xHAA51*10_0xHAA50>=500000"
+      "title": "Death Valley",
+      "description": "Finish route B at Death Valley.",
+      "points": 25,
+      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_N:d0xHAA22=7_0xHA20D=13.1._0xH80A9=147_d0xH80A9=131"
     },
     {
       "id": 7,
-      "title": "Fast Lane",
-      "description": "Score at least 1,000,000 points.",
-      "points": 10,
-      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._A:0xHAA56*1000000_A:0xHAA55*100000_A:0xHAA54*10000_A:0xHAA53*1000_A:0xHAA52*100_A:0xHAA51*10_0xHAA50>=1000000"
+      "title": "Desolation Hill",
+      "description": "Finish route C at Desolation Hill.",
+      "points": 25,
+      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_N:d0xHAA22=7_0xHA20D=9.1._0xH80A9=147_d0xH80A9=131"
     },
     {
       "id": 8,
-      "title": "Magical Sound Shower",
-      "description": "Score at least 2,000,000 points.",
+      "title": "Autobahn",
+      "description": "Finish route D at Autobahn.",
       "points": 25,
-      "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._A:0xHAA56*1000000_A:0xHAA55*100000_A:0xHAA54*10000_A:0xHAA53*1000_A:0xHAA52*100_A:0xHAA51*10_0xHAA50>=2000000"
+      "memaddr": "N:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_N:d0xHAA19=7_0xHA20D=4.1._0xH80A9=147_d0xH80A9=131"
+    },
+    {
+      "id": 9,
+      "title": "Lakeside",
+      "description": "Finish route E at Lakeside.",
+      "points": 25,
+      "memaddr": "N:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_N:d0xHAA19=7_0xHA20D=3.1._0xH80A9=147_d0xH80A9=131"
+    },
+    {
+      "id": 10,
+      "title": "Time to Spare",
+      "description": "Reach the goal with at least 10 seconds left.",
+      "points": 10,
+      "memaddr": "0=0SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._0xH80A9=147_d0xH80A9=131_0xHAA22>=1SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1._0xH80A9=147_d0xH80A9=131_0xHAA19>=1"
+    },
+    {
+      "id": 11,
+      "title": "Clock Beater",
+      "description": "Reach the goal with at least 20 seconds left.",
+      "points": 25,
+      "memaddr": "0=0SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._0xH80A9=147_d0xH80A9=131_0xHAA22>=2SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1._0xH80A9=147_d0xH80A9=131_0xHAA19>=2"
+    },
+    {
+      "id": 12,
+      "title": "Cruising",
+      "description": "Score 500,000 points.",
+      "points": 5,
+      "memaddr": "0=0SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._A:0xHAA56*1000000_A:0xHAA55*100000_A:0xHAA54*10000_A:0xHAA53*1000_A:0xHAA52*100_A:0xHAA51*10_0xHAA50>=500000SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1._A:0xHAA4D*1000000_A:0xHAA4C*100000_A:0xHAA4B*10000_A:0xHAA4A*1000_A:0xHAA49*100_A:0xHAA48*10_0xHAA47>=500000"
+    },
+    {
+      "id": 13,
+      "title": "Fast Lane",
+      "description": "Score 1,000,000 points.",
+      "points": 10,
+      "memaddr": "0=0SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._A:0xHAA56*1000000_A:0xHAA55*100000_A:0xHAA54*10000_A:0xHAA53*1000_A:0xHAA52*100_A:0xHAA51*10_0xHAA50>=1000000SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1._A:0xHAA4D*1000000_A:0xHAA4C*100000_A:0xHAA4B*10000_A:0xHAA4A*1000_A:0xHAA49*100_A:0xHAA48*10_0xHAA47>=1000000"
+    },
+    {
+      "id": 14,
+      "title": "Magical Sound Shower",
+      "description": "Score 2,000,000 points.",
+      "points": 25,
+      "memaddr": "0=0SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._A:0xHAA56*1000000_A:0xHAA55*100000_A:0xHAA54*10000_A:0xHAA53*1000_A:0xHAA52*100_A:0xHAA51*10_0xHAA50>=2000000SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1._A:0xHAA4D*1000000_A:0xHAA4C*100000_A:0xHAA4B*10000_A:0xHAA4A*1000_A:0xHAA49*100_A:0xHAA48*10_0xHAA47>=2000000"
     }
   ],
   "leaderboards": [
     {
       "id": 1,
-      "title": "High Score",
-      "description": "Highest score in one game.",
+      "title": "Route A",
+      "description": "Your best score on route A to Vineyard.",
       "format": "SCORE",
       "lowerIsBetter": false,
-      "definition": "STA:0xH9144=0_0xHAA22=7_0xHAA21=4_d0xHAA21=5_d0xHAA22=7::CAN:0=1::SUB:A:0xHAA56_A:0xHAA55_A:0xHAA54_A:0xHAA53_A:0xHAA52_A:0xHAA51_0xHAA50>0S0xHAA22=0_0xHAA21=0_d0xHAA21=1_d0xHAA22=0S0xH80A9=147_d0xH80A9=131::VAL:0xHAA56*1000000_0xHAA55*100000_0xHAA54*10000_0xHAA53*1000_0xHAA52*100_0xHAA51*10_0xHAA50"
+      "definition": "STA:0xH9144=0_0xHAA22=7_0xHAA21=4_d0xHAA21=5_d0xHAA22=7_0xHA20D=8::CAN:0=1::SUB:A:0xHAA56_A:0xHAA55_A:0xHAA54_A:0xHAA53_A:0xHAA52_A:0xHAA51_0xHAA50>0S0xHAA22=0_0xHAA21=0_d0xHAA21=1_d0xHAA22=0S0xH80A9=147_d0xH80A9=131::VAL:0xHAA56*1000000_0xHAA55*100000_0xHAA54*10000_0xHAA53*1000_0xHAA52*100_0xHAA51*10_0xHAA50"
+    },
+    {
+      "id": 2,
+      "title": "Route B",
+      "description": "Your best score on route B to Death Valley.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH9144=0_0xHAA22=7_0xHAA21=4_d0xHAA21=5_d0xHAA22=7_0xHA20D=13::CAN:0=1::SUB:A:0xHAA56_A:0xHAA55_A:0xHAA54_A:0xHAA53_A:0xHAA52_A:0xHAA51_0xHAA50>0S0xHAA22=0_0xHAA21=0_d0xHAA21=1_d0xHAA22=0S0xH80A9=147_d0xH80A9=131::VAL:0xHAA56*1000000_0xHAA55*100000_0xHAA54*10000_0xHAA53*1000_0xHAA52*100_0xHAA51*10_0xHAA50"
+    },
+    {
+      "id": 3,
+      "title": "Route C",
+      "description": "Your best score on route C to Desolation Hill.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH9144=0_0xHAA22=7_0xHAA21=4_d0xHAA21=5_d0xHAA22=7_0xHA20D=9::CAN:0=1::SUB:A:0xHAA56_A:0xHAA55_A:0xHAA54_A:0xHAA53_A:0xHAA52_A:0xHAA51_0xHAA50>0S0xHAA22=0_0xHAA21=0_d0xHAA21=1_d0xHAA22=0S0xH80A9=147_d0xH80A9=131::VAL:0xHAA56*1000000_0xHAA55*100000_0xHAA54*10000_0xHAA53*1000_0xHAA52*100_0xHAA51*10_0xHAA50"
+    },
+    {
+      "id": 4,
+      "title": "Route D",
+      "description": "Your best score on route D to Autobahn.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH9144=0_0xHAA19=7_0xHAA18=4_d0xHAA18=5_d0xHAA19=7_0xHA20D=4::CAN:0=1::SUB:A:0xHAA4D_A:0xHAA4C_A:0xHAA4B_A:0xHAA4A_A:0xHAA49_A:0xHAA48_0xHAA47>0S0xHAA19=0_0xHAA18=0_d0xHAA18=1_d0xHAA19=0S0xH80A9=147_d0xH80A9=131::VAL:0xHAA4D*1000000_0xHAA4C*100000_0xHAA4B*10000_0xHAA4A*1000_0xHAA49*100_0xHAA48*10_0xHAA47"
+    },
+    {
+      "id": 5,
+      "title": "Route E",
+      "description": "Your best score on route E to Lakeside.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH9144=0_0xHAA19=7_0xHAA18=4_d0xHAA18=5_d0xHAA19=7_0xHA20D=3::CAN:0=1::SUB:A:0xHAA4D_A:0xHAA4C_A:0xHAA4B_A:0xHAA4A_A:0xHAA49_A:0xHAA48_0xHAA47>0S0xHAA19=0_0xHAA18=0_d0xHAA18=1_d0xHAA19=0S0xH80A9=147_d0xH80A9=131::VAL:0xHAA4D*1000000_0xHAA4C*100000_0xHAA4B*10000_0xHAA4A*1000_0xHAA49*100_0xHAA48*10_0xHAA47"
     }
   ]
 }

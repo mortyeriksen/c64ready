@@ -161,9 +161,9 @@ function gameOver() { ram[PHASE] = GAME_OVER; frames(30); ram[WHITE_HUMAN] = 0; 
 // 7. Bonus rounds and levels.
 {
   activate(); newGame(); fight(2, 1, 1); next(); fight(2, 1, 1);
-  expect(!has('Bonus Round'), 'no bonus round yet');
+  expect(!has('Have a Ball'), 'no bonus round yet');
   next(BONUS);
-  expect(has('Bonus Round') && !has('Deflector'), 'Bonus Round at level 3');
+  expect(has('Have a Ball') && !has('Deflector'), 'Bonus Round at level 3');
   ram[FIGHT] = 1; frames(2);
   expect(has('Deflector'), 'Deflector for the first bonus points');
   next(); fight(2, 1, 1);

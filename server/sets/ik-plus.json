@@ -11,101 +11,106 @@
   "achievements": [
     {
       "id": 1,
-      "title": "Yellow Belt",
-      "description": "Earn the yellow belt: 8,000 points.",
-      "points": 5,
-      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_A:0xU0113*1000_A:0xL0113*100_A:0xU0114*10_0xL0114>=80"
-    },
-    {
-      "id": 2,
-      "title": "Green Belt",
-      "description": "Earn the green belt: 16,000 points.",
-      "points": 10,
-      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_A:0xU0113*1000_A:0xL0113*100_A:0xU0114*10_0xL0114>=160"
-    },
-    {
-      "id": 3,
-      "title": "Purple Belt",
-      "description": "Earn the purple belt: 25,000 points.",
-      "points": 10,
-      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_A:0xU0113*1000_A:0xL0113*100_A:0xU0114*10_0xL0114>=250"
-    },
-    {
-      "id": 4,
-      "title": "Brown Belt",
-      "description": "Earn the brown belt: 35,000 points.",
-      "points": 25,
-      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_A:0xU0113*1000_A:0xL0113*100_A:0xU0114*10_0xL0114>=350"
-    },
-    {
-      "id": 5,
-      "title": "Black Belt",
-      "description": "Earn the black belt: 50,000 points.",
-      "points": 25,
-      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_A:0xU0113*1000_A:0xL0113*100_A:0xU0114*10_0xL0114>=500"
-    },
-    {
-      "id": 6,
       "title": "Top of the Podium",
-      "description": "Win a fight with more points than both computer fighters.",
+      "description": "Win a fight, outscoring both rivals.",
       "points": 5,
       "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_0xH0066=3_d0xH0066=1_0xH010F>0xH0110_0xH010F>0xH0111"
     },
     {
-      "id": 7,
-      "title": "Six of the Best",
-      "description": "Score six points in one fight.",
-      "points": 10,
-      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_0xH0066=1_0xH010F>=6_d0xH010F<6"
-    },
-    {
-      "id": 8,
-      "title": "Clean Sheet",
-      "description": "Win a fight with six points while neither computer fighter scores.",
-      "points": 25,
-      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_0xH0066=3_d0xH0066=1_0xH010F>=6_0xH0110=0_0xH0111=0"
-    },
-    {
-      "id": 9,
-      "title": "Bonus Round",
-      "description": "Reach a bonus round.",
-      "points": 5,
-      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_0xH0066=5_d0xH0066!=5"
-    },
-    {
-      "id": 10,
-      "title": "Deflector",
-      "description": "Score points in a bonus round.",
-      "points": 5,
-      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_0xH0066=5_0xH0195>d0xH0195"
-    },
-    {
-      "id": 11,
+      "id": 2,
       "title": "Level 5",
       "description": "Reach level 5.",
       "points": 5,
       "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_0xH010C=5_d0xH010C=4"
     },
     {
-      "id": 12,
+      "id": 3,
       "title": "Level 10",
       "description": "Reach level 10.",
       "points": 10,
       "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_0xH010C=16_d0xH010C=9"
     },
     {
-      "id": 13,
+      "id": 4,
       "title": "Level 20",
       "description": "Reach level 20.",
       "points": 25,
       "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_0xH010C=32_d0xH010C=25"
+    },
+    {
+      "id": 5,
+      "title": "Six of the Best",
+      "description": "Score six points in one fight.",
+      "points": 10,
+      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_0xH0066=1_0xH010F>=6_d0xH010F<6"
+    },
+    {
+      "id": 6,
+      "title": "Clean Sheet",
+      "description": "Win with six points to your rivals' none.",
+      "points": 25,
+      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_0xH0066=3_d0xH0066=1_0xH010F>=6_0xH0110=0_0xH0111=0"
+    },
+    {
+      "id": 7,
+      "title": "Have a Ball",
+      "description": "Reach a bonus round.",
+      "points": 5,
+      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_0xH0066=5_d0xH0066!=5"
+    },
+    {
+      "id": 8,
+      "title": "Deflector",
+      "description": "Score points in a bonus round.",
+      "points": 5,
+      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_0xH0066=5_0xH0195>d0xH0195"
+    },
+    {
+      "id": 9,
+      "title": "Yellow Belt",
+      "description": "Earn the yellow belt at 8,000 points.",
+      "points": 5,
+      "score": 8000,
+      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_A:0xU0113*1000_A:0xL0113*100_A:0xU0114*10_0xL0114>=80"
+    },
+    {
+      "id": 10,
+      "title": "Green Belt",
+      "description": "Earn the green belt at 16,000 points.",
+      "points": 10,
+      "score": 16000,
+      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_A:0xU0113*1000_A:0xL0113*100_A:0xU0114*10_0xL0114>=160"
+    },
+    {
+      "id": 11,
+      "title": "Purple Belt",
+      "description": "Earn the purple belt at 25,000 points.",
+      "points": 10,
+      "score": 25000,
+      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_A:0xU0113*1000_A:0xL0113*100_A:0xU0114*10_0xL0114>=250"
+    },
+    {
+      "id": 12,
+      "title": "Brown Belt",
+      "description": "Earn the brown belt at 35,000 points.",
+      "points": 25,
+      "score": 35000,
+      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_A:0xU0113*1000_A:0xL0113*100_A:0xU0114*10_0xL0114>=350"
+    },
+    {
+      "id": 13,
+      "title": "Black Belt",
+      "description": "Earn the black belt at 50,000 points.",
+      "points": 25,
+      "score": 50000,
+      "memaddr": "N:0xH0045=1_N:0xH0046=0_N:0xH0048=1_N:0xH0066=1_N:d0xH0066=0_N:0xH010C=1_N:0xH0113=0_0xH0114=0.1._0xH0045=1_0xH0046=0_0xH0048=1_A:0xU0113*1000_A:0xL0113*100_A:0xU0114*10_0xL0114>=500"
     }
   ],
   "leaderboards": [
     {
       "id": 1,
-      "title": "High Score",
-      "description": "Highest score in one game against the computer.",
+      "title": "Hiscores",
+      "description": "Your best score against the computer.",
       "format": "SCORE",
       "lowerIsBetter": false,
       "definition": "STA:0xH0045=1_0xH0046=0_0xH0048=1_0xH0066=1_d0xH0066=0_0xH010C=1_0xH0113=0_0xH0114=0::CAN:0xH0048!=1::SUB:0xH0045=1_0xH0046=0_0xH0048=1_0xH0066=4_d0xH0066=3S0xH0113>0S0xH0114>0::VAL:0xU0113*100000_0xL0113*10000_0xU0114*1000_0xL0114*100"

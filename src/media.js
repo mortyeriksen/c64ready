@@ -578,6 +578,8 @@ async function _loadState(entry) {
   try {
     c64.restoreState(st);
     syncSidState();
+    // A loaded state is not fair play: achievements count only the player's own until a reset.
+    globalThis.dispatchEvent?.(new CustomEvent('c64-state-loaded'));
   } catch (err) {
     console.error('restore failed:', err);
     setStatus(`Load state failed: ${err.message}`, 'error');
@@ -935,7 +937,7 @@ async function _offerTdeOffForPrg() {
 // loads over the IRQ vector starts itself on the next interrupt; otherwise it
 // starts the way a disk-wrapped .prg does: RUN for BASIC, nothing for machine
 // code, whose entry point the file does not say.
-function _injectPRGImage(data, verb, autorun) {
+function _injectPRGImage(data, verb, autorun, fileName) {
   const alreadyClean = _pristineBoot;   // capture before _hardReset() flips it back on
   if (!alreadyClean && !_hardReset()) return;
   _queueAutoLoad([
@@ -943,6 +945,7 @@ function _injectPRGImage(data, verb, autorun) {
     { run: () => {
         _leavePristineBoot();
         const addr = c64.loadPRG(data);
+        setLoaded('program', { ref: data, kind: 'prg', fileName, bytes: data instanceof Uint8Array ? data : new Uint8Array(data) });
         let started = null;
         if (prgSetsIrqVector(data)) started = 'starts itself';
         else if (autorun && prgAutostart(data)) { c64.injectRun(); started = 'RUN'; }
@@ -963,7 +966,7 @@ function _injectPRGImage(data, verb, autorun) {
 async function _insertPRG(data, verb = 'loaded', fileName = '', { autorun = getAutorunEnabled() } = {}) {
   const sizeError = _prgSizeError(data, fileName);
   if (sizeError) { setStatus(sizeError, 'error'); return; }
-  if (prgCoversIO(data)) { _injectPRGImage(data, verb, autorun); return; }
+  if (prgCoversIO(data)) { _injectPRGImage(data, verb, autorun, fileName); return; }
   // No drive to put a disk in (1541 ROM missing) — fall back to dropping the
   // bytes straight into RAM. That needs a clean machine, so it keeps the reset.
   const disk = c64?.drive(8) ? createPRGDisk(fileName || 'PROGRAM', data) : null;
@@ -974,6 +977,7 @@ async function _insertPRG(data, verb = 'loaded', fileName = '', { autorun = getA
       { ready: true },
       { run: () => {
           const addr = c64.loadPRG(data);
+          setLoaded('program', { ref: data, kind: 'prg', fileName, bytes: data instanceof Uint8Array ? data : new Uint8Array(data) });
           _reportPrgLoaded(addr, autorun ? _startLoadedPRG(addr, autorun) : null, verb);
         } },
     ]);

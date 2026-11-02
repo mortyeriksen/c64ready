@@ -28,19 +28,23 @@
 //                        relay, from the dial to its title screen. Needs the
 //                        'ccgms' asset, img2webp, the network and the BBS's one
 //                        line free. GUIDE_BBS=host:port picks another board.
-//   chat.webp            the CHAT tab of the Achievements window, docked beside Commando running,
+//   achievements-chat.webp the CHAT tab of the Achievements window, docked beside Commando Arcade running,
 //                        two guests talking with the player, who mentions the
 //                        game with @. The three sign up with passkeys on the
 //                        dev server's own chat (/chat, /api) and are deleted
 //                        afterwards; never the production one.
 //   achievements-game.webp / -games.webp / -activity.webp  the Achievements
-//                        window docked beside Uridium running: its GAME tab
+//                        window docked beside Commando Arcade running: its GAME tab
 //                        (progress, the high scores, the Hall of Fame, the
 //                        achievements), then GAMES, then ACTIVITY. Five players
 //                        sign up on the dev server, post unlocks and scores
 //                        through the games API, and are deleted afterwards.
 //                        Run it against a dev server with accounts in memory
 //                        (VITE_ACCOUNTS_IN_MEMORY=1) so no real player shows.
+//   vibes-toast.webp     Retro Vibes' IK+ Sunset with Commando Arcade on the TV and a new first
+//                        place toast at its peak: turned to gold, stamped #1,
+//                        confetti flying. The toast is the app's own
+//                        (src/achievements/toast.js), shown where vibes puts it.
 //
 // Drives the LIVE dev server (start your Vite first). Shots land in public/guide/
 // as 1920-capped WebP (guide-image.mjs).
@@ -57,6 +61,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { assetPath, missingNote } from '../test/external-assets.js';
 import { saveGuideShot, shotLabel } from './guide-image.mjs';
+import { launchShotBrowser, reportRenderer } from './shot-browser.mjs';
 import { buildMixtape } from './mixtape.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -96,6 +101,23 @@ function buildFreezerCRT() {
     off += 16 + 8192;
   }
   return buf;
+}
+
+// Commando Arcade from its loading picture into a game: fire (J, Joy 2's key
+// joystick) past the picture, the menu, the trainer options and the title,
+// until $0410, the men left, goes from the title's 0 to a game's 5.
+async function intoCommandoArcade(page) {
+  const men = () => page.evaluate(() => window.c64.ram()[0x0410]);
+  let title = false;
+  for (let i = 0; i < 8; i++) {
+    const m = await men();
+    if (m === 0) title = true;
+    else if (title && m === 5) break;
+    await page.locator('#screen').focus().catch(() => {});
+    await page.keyboard.down('j'); await sleep(160); await page.keyboard.up('j');
+    await sleep(3000);
+  }
+  await sleep(2500);   // Super Joe out of the truck
 }
 
 async function bootPage(ctx) {
@@ -597,7 +619,7 @@ if (want('user-port-bbs')) {
 const deleteAccounts = (tokens) => deleteAccountsAt(BASE, tokens);
 
 // ── desktop: the chat, docked beside a game, the player mentioning it ───────────────
-if (want('chat')) {
+if (want('achievements-chat')) {
   const guests = [], tokens = [];
   const signUp = (ctx, page, name) => signUpWith(tokens, ctx, page, name);
   try {
@@ -618,11 +640,13 @@ if (want('chat')) {
     await signUp(ctx, page, 'Pixel');
     await page.reload({ waitUntil: 'networkidle' });   // the app picks up the stored session
     await page.waitForSelector('#btn-power:not([disabled])', { timeout: 20000 });
-    if (!(GAME && fs.existsSync(GAME))) throw new Error(`no game to talk about (${GAME || 'commando asset unset'})`);
-    await page.setInputFiles('#prg-input', GAME);
+    const ARCADE = assetPath('commando-arcade-crt') || '';
+    if (!(ARCADE && fs.existsSync(ARCADE))) throw new Error(`no game to talk about (${missingNote('commando-arcade-crt')})`);
+    await page.setInputFiles('#prg-input', ARCADE);
     const offer = page.locator('#confirm-modal:not([hidden])');
     if (await offer.waitFor({ timeout: 3000 }).then(() => true, () => false)) await page.locator('#btn-confirm-ok').click();
-    await sleep(8000);   // load + autorun → the game's title screen
+    await sleep(9000);   // the loading picture
+    await intoCommandoArcade(page);
     if (await page.locator('#online-window').isHidden()) await page.locator('#btn-online').click();
     await page.locator('#online-tab-chat').click();
     await page.locator('.chat-view-channel').waitFor({ state: 'visible', timeout: 10000 });
@@ -649,14 +673,18 @@ if (want('chat')) {
     };
     const zak = await guest('Zak');
     const ruby = await guest('Ruby');
-    // The player's lines are typed, so '@comm' and Enter pick Commando from the list.
+    // The player's lines are typed, so '@comm' and a click pick Commando Arcade from the list.
     const me = async (text) => {
       const input = page.locator('.chat-compose .chat-input');
       await input.click();
       for (const part of text.split(/(@\w+)/)) {
         if (!part) continue;
         await input.pressSequentially(part);
-        if (part.startsWith('@')) { await page.locator('.chat-mentions').waitFor({ timeout: 5000 }); await input.press('Enter'); }
+        if (part.startsWith('@')) {
+          await page.locator('.chat-mentions').waitFor({ timeout: 5000 });
+          const pick = page.locator('.chat-mentions li', { hasText: 'Commando Arcade' });
+          if (await pick.count()) await pick.first().click(); else await input.press('Enter');
+        }
       }
       await input.press('Enter');
     };
@@ -669,21 +697,21 @@ if (want('chat')) {
     ]) { await say(); await sleep(1100); }
     await page.mouse.move(10, 890);   // no hover highlight in the shot
     await sleep(500);
-    const info = saveGuideShot(await page.screenshot(), OUT, 'chat');
-    done.push('chat'); console.log('  ✓', shotLabel('chat', info));
+    const info = saveGuideShot(await page.screenshot(), OUT, 'achievements-chat');
+    done.push('achievements-chat'); console.log('  ✓', shotLabel('achievements-chat', info));
     await ctx.close();
-  } catch (e) { skipped.push('chat'); console.error('  ✗ chat —', e.message.split('\n')[0]); }
+  } catch (e) { skipped.push('achievements-chat'); console.error('  ✗ achievements-chat —', e.message.split('\n')[0]); }
   for (const w of guests) w.close();
   await deleteAccounts(tokens);
 }
 
-// ── desktop: the Achievements window over Uridium, then GAMES docked, then ACTIVITY ──
+// ── desktop: the Achievements window over Commando Arcade, then GAMES docked, then ACTIVITY ──
 if (want('achievements')) {
   const tokens = [];
-  const URIDIUM = assetPath('uridium-crt') || '';
+  const ARCADE = assetPath('commando-arcade-crt') || '';
   try {
-    if (!(URIDIUM && fs.existsSync(URIDIUM))) throw new Error(`no Uridium cartridge (${missingNote('uridium-crt')})`);
-    const set = JSON.parse(fs.readFileSync(path.join(root, 'server/sets/uridium.json'), 'utf8'));
+    if (!(ARCADE && fs.existsSync(ARCADE))) throw new Error(`no Commando Arcade cartridge (${missingNote('commando-arcade-crt')})`);
+    const set = JSON.parse(fs.readFileSync(path.join(root, 'server/sets/commando-arcade.json'), 'utf8'));
     const hash = set.hashes[0].hash;
     const ctx = await createGuideContext(browser, { colorScheme: 'dark',
       viewport: { width: 1460, height: 900 }, deviceScaleFactor: 2, reducedMotion: 'reduce',
@@ -709,14 +737,14 @@ if (want('achievements')) {
       }
     };
     const play = async (token, ids, score) => {
-      for (const id of ids) await post(token, `/games/${hash}/unlocks`, { achievementId: id, hardcore: false });
-      if (score) await post(token, `/games/${hash}/leaderboards/1/entries`, { value: score, hardcore: false });
+      for (const id of ids) await post(token, `/games/${hash}/unlocks`, { achievementId: id, hardcore: true });
+      if (score) await post(token, `/games/${hash}/leaderboards/1/entries`, { value: score, hardcore: true });
     };
     for (const [name, ids, score] of [
-      ['Zak', [1, 2, 3, 16, 17, 21], 64250],
-      ['Ruby', [1, 2, 3, 4, 5, 6, 16, 17, 18, 21, 22], 118700],
-      ['Nova', [1, 16], 21400],
-      ['Hubbard', [1, 2, 3, 4, 16, 17, 21], 87900],
+      ['Zak', [1, 2, 3, 9, 11, 12], 41200],
+      ['Ruby', [1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13], 96350],
+      ['Nova', [1, 9, 11], 18750],
+      ['Hubbard', [1, 2, 3, 4, 9, 11, 12, 13], 63900],
     ]) {
       const gctx = await browser.newContext();
       const gpage = await gctx.newPage();
@@ -725,15 +753,16 @@ if (want('achievements')) {
       await gctx.close();
       await play(token, ids, score);
     }
-    await play(mine, [1, 2, 16, 21], 52300);
+    await play(mine, [1, 2, 9, 11], 34600);
     await page.reload({ waitUntil: 'networkidle' });   // the app picks up the stored session
     await page.waitForSelector('#btn-power:not([disabled])', { timeout: 20000 });
-    await page.setInputFiles('#prg-input', URIDIUM);
+    await page.setInputFiles('#prg-input', ARCADE);
     const offer = page.locator('#confirm-modal:not([hidden])');
     if (await offer.waitFor({ timeout: 3000 }).then(() => true, () => false)) await page.locator('#btn-confirm-ok').click();
     // A game with a set opens the window on its GAME tab.
     await page.locator('#online-window .ach-screen').first().waitFor({ timeout: 20000 });
-    await sleep(16000);   // the cartridge's title screen behind it
+    await sleep(9000);   // the loading picture
+    await intoCommandoArcade(page);
     await page.mouse.move(10, 890);
     await sleep(400);
     let info = saveGuideShot(await page.screenshot(), OUT, 'achievements-game');
@@ -756,6 +785,53 @@ if (want('achievements')) {
     await ctx.close();
   } catch (e) { skipped.push('achievements'); console.error('  ✗ achievements —', e.message.split('\n')[0]); }
   await deleteAccounts(tokens);
+}
+
+// ── Retro Vibes: a new first place toast mid-celebration ──
+if (want('vibes-toast')) {
+  const ARCADE = assetPath('commando-arcade-crt') || '';
+  const gpu = await launchShotBrowser();   // the 3D scene on the GPU when there is one
+  try {
+    if (!(ARCADE && fs.existsSync(ARCADE))) throw new Error(`no Commando Arcade cartridge (${missingNote('commando-arcade-crt')})`);
+    const ctx = await createGuideContext(gpu, { colorScheme: 'dark', viewport: { width: 1600, height: 900 }, deviceScaleFactor: 2 });
+    await ctx.addInitScript(() => {
+      try {
+        localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1');
+        localStorage.setItem('c64emu.vibesModel', 'small'); localStorage.setItem('c64emu.modelViewerScene', 'IK+ Sunset');
+        localStorage.setItem('c64emu.achievements', 'off');   // only the staged toast shows
+        localStorage.removeItem('c64emu.achToastVibesPlace'); localStorage.removeItem('c64emu.achToastVibesSize');
+      } catch {}
+    });
+    const page = await bootPage(ctx);
+    await reportRenderer(page);
+    await page.setInputFiles('#prg-input', ARCADE);
+    const offer = page.locator('#confirm-modal:not([hidden])');
+    if (await offer.waitFor({ timeout: 3000 }).then(() => true, () => false)) await page.locator('#btn-confirm-ok').click();
+    await sleep(9000);   // the loading picture
+    await intoCommandoArcade(page);
+    await page.locator('#btn-vibes').click({ force: true });
+    await page.waitForFunction(() => !document.getElementById('model-viewer-overlay').hidden, null, { timeout: 60000 });
+    await page.waitForFunction(() => { const l = document.querySelector('.model-viewer-loading'); return !l || getComputedStyle(l).display === 'none'; }, null, { timeout: 60000 });
+    await sleep(6000);
+    await page.mouse.move(800, 880);
+    // A new first place on Commando Arcade's board, from rank 3, where vibes shows toasts.
+    await page.evaluate(async () => {
+      const { createAchToasts } = await import('/src/achievements/toast.js');
+      const view = document.getElementById('model-viewer-overlay');
+      createAchToasts({ host: () => view, ms: 60000 }).show({
+        kind: 'score', title: 'High Score', text: '',
+        score: { value: 124550, outcome: 'top', from: 98200, rankFrom: 3, format: (v) => v.toLocaleString('en-US') },
+      });
+    });
+    await page.waitForSelector('.model-viewer-overlay > .ach-toast', { timeout: 5000 });
+    // Timed from the #1 stamp, past the flash, with the confetti at its height.
+    await page.waitForSelector('.model-viewer-overlay > .ach-toast .ach-toast-stamp', { timeout: 60000 });
+    await sleep(Number(process.env.GUIDE_TOAST_AFTER) || 420);
+    const info = saveGuideShot(await page.screenshot(), OUT, 'vibes-toast');
+    done.push('vibes-toast'); console.log('  ✓', shotLabel('vibes-toast', info));
+    await ctx.close();
+  } catch (e) { skipped.push('vibes-toast'); console.error('  ✗ vibes-toast —', e.message.split('\n')[0]); }
+  await gpu.close();
 }
 
 await browser.close();

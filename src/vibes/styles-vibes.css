@@ -179,6 +179,39 @@
 }
 .model-viewer-fullscreen:active { transform: scale(0.92); }
 
+/* Toast placer: below the framer while achievements are on. Pressed, the
+   achievement toast can be dragged anywhere in the view (main.js). */
+.model-viewer-toast {
+  position: absolute;
+  top: 130px;
+  left: 18px;
+  z-index: 3;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(5, 217, 232, 0.5);
+  background: rgba(10, 6, 24, 0.55);
+  color: #7df9ff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.model-viewer-toast[hidden] { display: none; }
+.model-viewer-toast svg { display: block; }
+.model-viewer-toast:hover,
+.model-viewer-toast[aria-pressed="true"] {
+  color: #fff;
+  border-color: #05d9e8;
+  background: rgba(5, 217, 232, 0.20);
+  box-shadow: 0 0 16px rgba(5, 217, 232, 0.5);
+}
+.model-viewer-toast:active { transform: scale(0.92); }
+/* The fog switch moves down a place while the toast placer shows. */
+.model-viewer-toast:not([hidden]) ~ .model-viewer-fog { top: 186px; }
+
 /* Fog switch: below the framer, shown only for a scene with smoke on a device
    that runs it. Dimmed while the fog is off. */
 .model-viewer-fog {
@@ -348,6 +381,7 @@
 .model-viewer-overlay.studio .model-viewer-scene,
 .model-viewer-overlay.studio .model-viewer-fullscreen,
 .model-viewer-overlay.studio .model-viewer-fog,
+.model-viewer-overlay.studio .model-viewer-toast,
 .model-viewer-overlay.studio .model-viewer-vr,
 .model-viewer-overlay.studio .model-viewer-close,
 .model-viewer-overlay.studio .touch-controls {

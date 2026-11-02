@@ -87,11 +87,16 @@ function month() { const m = ram[MONTH] === 12 ? 1 : ram[MONTH] + 1; setDate(m, 
   activate(); characterScreen(); start();
   ram[TERR + 2] = 0x02; frames(5);
   expect(!has('New Lands'), 'another lord taking land is not the player\'s');
+  expect(!has('Claim the Marches') && !has('Turn the Tide'), 'another lord taking land unlocks neither new conquest');
   ram[TERR + 4] = 0x84; frames(1); ram[TERR + 4] = 0x80; frames(1); ram[TERR + 4] = 0x07; frames(5);
   expect(!has('New Lands'), 'the battle marker is not a conquest');
+  expect(!has('Claim the Marches') && !has('Turn the Tide'), 'battle marker changes unlock neither new conquest');
   ram[TERR + 6] = 0x00; frames(3);
   expect(has('New Lands'), 'New Lands when a territory turns 0 from another owner');
+  expect(has('Claim the Marches') && !has('Turn the Tide'), 'neutral land is claimed, not taken from a rival');
   expect(!has('Castle Taker'), 'not a castle');
+  ram[TERR + 2] = 0x00; frames(3);
+  expect(has('Turn the Tide'), 'a rival lord loses territory to the player');
   ram[TERR + 11] = 0xc0; frames(3);
   expect(has('Castle Taker'), 'Castle Taker when a lord\'s castle turns $C0');
   ok('conquests');
@@ -103,9 +108,15 @@ function month() { const m = ram[MONTH] === 12 ? 1 : ram[MONTH] + 1; setDate(m, 
   ram[GOLD] = 49; frames(2);
   expect(!has('Full Coffers'), '49 gold is short');
   ram[GOLD] = 50; frames(2);
-  expect(has('Full Coffers') && !has('Treasure House'), 'Full Coffers at 50');
+  expect(has('Full Coffers') && !has('War Chest') && !has('Treasure House'), 'Full Coffers at 50');
+  ram[GOLD] = 100; frames(2);
+  expect(!has('War Chest') && !has('Treasure House'), '100 gold is short of both later tiers');
   ram[GOLD] = 150; frames(2);
-  expect(has('Treasure House'), 'Treasure House at 150');
+  expect(has('Treasure House') && !has('War Chest'), 'Treasure House at 150');
+  ram[GOLD] = 249; frames(2);
+  expect(!has('War Chest'), '249 gold is short of War Chest');
+  ram[GOLD] = 250; frames(2);
+  expect(has('War Chest'), 'War Chest at 250');
   ok('gold');
 }
 
@@ -133,9 +144,9 @@ function month() { const m = ram[MONTH] === 12 ? 1 : ram[MONTH] + 1; setDate(m, 
   frames(60);
   expect(!has('Unhorsed'), 'a lost joust leaves the count, and unlocks nothing');
   ram[LEFT] = 2; frames(10);
-  expect(has('Unhorsed') && !has('Champion of the Lists'), 'the first joust won unlocks Unhorsed, not the championship');
+  expect(has('Unhorsed') && !has('Two Lances Down') && !has('Champion of the Lists'), 'the first joust won unlocks Unhorsed only');
   ram[LEFT] = 1; frames(10);
-  expect(!has('Champion of the Lists'), 'not after two');
+  expect(has('Two Lances Down') && !has('Champion of the Lists'), 'two jousts won, but not the tournament');
   ram[LEFT] = 0; frames(10);
   expect(has('Champion of the Lists'), 'the third joust won is the tournament');
   ok('jousts and tournaments');

@@ -2,8 +2,9 @@
 // Copyright © 2026 Morten Øien Eriksen
 // server/admin-data.mjs — the admin console's view of the players: an overview,
 // every registered player, one player's details (account, passkeys, progress,
-// activity, login history with addresses), the admin's actions on them, and a
-// copy of the whole database to download.
+// activity, login history with addresses), the admin's actions on them, the
+// results the fair-play checks flagged for review, and a copy of the whole
+// database to download.
 // It reads and writes the accounts and games database; the chat server serves
 // it under /admin/api behind the admin's login (server/chat.mjs).
 
@@ -24,6 +25,21 @@ const SORTS = { name: 'u.name_key', joined: 'u.created_at', seen: 'last_seen', p
  */
 export function createAdminData({ db, accounts, bans = null, now = Date.now }) {
   const q = {
+    // Results flagged by the fair-play checks (server/games.mjs), newest first.
+    flagged: db.prepare(`SELECT * FROM (
+        SELECT 'unlock' AS kind, x.user_id, u.name, x.game_id, g.title AS game, x.achievement_id AS ref, a.title AS item, a.points, NULL AS value, NULL AS format, x.flag, x.unlocked_at AS at
+          FROM unlocks x JOIN users u ON u.id = x.user_id JOIN games g ON g.id = x.game_id LEFT JOIN achievements a ON a.game_id = x.game_id AND a.id = x.achievement_id WHERE x.flag IS NOT NULL
+        UNION ALL
+        SELECT 'score', e.user_id, u.name, e.game_id, g.title, e.leaderboard_id, l.title, NULL, e.value, l.format, e.flag, e.submitted_at
+          FROM lb_entries e JOIN users u ON u.id = e.user_id JOIN games g ON g.id = e.game_id LEFT JOIN leaderboards l ON l.game_id = e.game_id AND l.id = e.leaderboard_id WHERE e.flag IS NOT NULL
+      ) ORDER BY at DESC LIMIT 200`),
+    flaggedCount: db.prepare('SELECT (SELECT COUNT(*) FROM unlocks WHERE flag IS NOT NULL) + (SELECT COUNT(*) FROM lb_entries WHERE flag IS NOT NULL) AS n'),
+    flaggedUnlock: db.prepare('SELECT hardcore, unlocked_at AS at FROM unlocks WHERE user_id = ? AND game_id = ? AND achievement_id = ? AND flag IS NOT NULL'),
+    flaggedScore: db.prepare('SELECT hardcore, value, submitted_at AS at FROM lb_entries WHERE user_id = ? AND game_id = ? AND leaderboard_id = ? AND flag IS NOT NULL'),
+    passUnlock: db.prepare('UPDATE unlocks SET flag = NULL WHERE user_id = ? AND game_id = ? AND achievement_id = ?'),
+    passScore: db.prepare('UPDATE lb_entries SET flag = NULL WHERE user_id = ? AND game_id = ? AND leaderboard_id = ?'),
+    dropUnlock: db.prepare('DELETE FROM unlocks WHERE user_id = ? AND game_id = ? AND achievement_id = ?'),
+    feed: db.prepare('INSERT INTO activity (at, user_id, game_id, kind, ref, value) VALUES (?, ?, ?, ?, ?, ?)'),
     count: db.prepare('SELECT COUNT(*) AS n FROM users'),
     newSince: db.prepare('SELECT COUNT(*) AS n FROM users WHERE created_at >= ?'),
     activeSince: db.prepare('SELECT COUNT(DISTINCT user_id) AS n FROM sessions WHERE last_seen_at >= ?'),
@@ -91,6 +107,7 @@ export function createAdminData({ db, accounts, bans = null, now = Date.now }) {
         active24h: q.activeSince.get(t - DAY).n,
         active7d: q.activeSince.get(t - 7 * DAY).n,
         unlocksToday: events.unlock ?? 0,
+        toReview: q.flaggedCount.get().n,
         bestsToday: events.score ?? 0,
         active,
         topGames: q.topGames.all(t - 7 * DAY).map((r) => ({ id: r.id, title: r.title, players: r.players, unlocks: r.unlocks })),
@@ -147,6 +164,28 @@ export function createAdminData({ db, accounts, bans = null, now = Date.now }) {
     /** A consistent copy of the whole database, written to `file` while the server runs (SQLite's VACUUM INTO). */
     snapshot(file) {
       db.prepare('VACUUM INTO ?').run(file);
+    },
+    /** Results the fair-play checks flagged, waiting for review: who, which game, what, why. */
+    flags() {
+      return { items: q.flagged.all().map((r) => ({ kind: r.kind, user: { id: r.user_id, name: r.name }, game: { id: r.game_id, title: r.game }, ref: r.ref, item: r.item, points: r.points, value: r.value, format: r.format, flag: r.flag, at: r.at })) };
+    },
+    /**
+     * Decides a flagged result: 'approve' lets it count in public (and puts it in the activity, at
+     * when it happened), 'clear' removes it. kind is 'unlock' or 'score', ref its achievement or board.
+     */
+    review({ kind, user, game, ref, decision }) {
+      const bad = (m) => { throw Object.assign(new Error(m), { status: 400 }); };
+      if (!['unlock', 'score'].includes(kind) || !['approve', 'clear'].includes(decision)) bad('which result, and approve or clear?');
+      if (!Number.isSafeInteger(user) || typeof game !== 'string' || !Number.isSafeInteger(ref)) bad('which result?');
+      const row = kind === 'unlock' ? q.flaggedUnlock.get(user, game, ref) : q.flaggedScore.get(user, game, ref);
+      if (!row) throw Object.assign(new Error('nothing flagged there'), { status: 404 });
+      if (decision === 'clear') {
+        (kind === 'unlock' ? q.dropUnlock : q.dropScore).run(user, game, ref);
+        return { did: `flagged ${kind} cleared (${game} ${ref})` };
+      }
+      (kind === 'unlock' ? q.passUnlock : q.passScore).run(user, game, ref);
+      if (row.hardcore) q.feed.run(row.at, user, game, kind, ref, kind === 'score' ? row.value : null);
+      return { did: `flagged ${kind} approved (${game} ${ref})` };
     },
     act(id, action, { game = null, board = null } = {}) {
       const u = user(id);

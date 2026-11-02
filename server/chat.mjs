@@ -602,6 +602,15 @@ export function createChatServer({
     const m = /^\/admin\/api\/players\/(\d{1,12})(?:\/([a-z]+))?$/.exec(path);
     try {
       if (req.method === 'GET' && path === '/admin/api/overview') return apiJson(res, 200, adminData.overview({ online: onlineUids() }));
+      // Results the fair-play checks flagged: the list, and an approve or clear for one.
+      if (req.method === 'GET' && path === '/admin/api/flags') return apiJson(res, 200, adminData.flags());
+      if (req.method === 'POST' && path === '/admin/api/flags') {
+        if (!sameOrigin) return apiJson(res, 403, { error: 'not from the console' });
+        const body = await readAdminJson(req);
+        const out = adminData.review({ kind: body.kind, user: body.user, game: body.game, ref: body.ref, decision: body.decision });
+        record({ ev: 'admin', action: `review-${body.decision}`, uid: body.user, did: out.did });
+        return apiJson(res, 200, { ok: true, did: out.did });
+      }
       // The whole database, as one SQLite file: put it in CHAT_DATA_DIR as c64ready.db to run the same server elsewhere.
       if (req.method === 'GET' && path === '/admin/api/export') {
         const file = nodePath.join(os.tmpdir(), `c64ready-export-${randomId(8)}.db`);

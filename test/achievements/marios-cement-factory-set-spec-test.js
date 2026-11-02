@@ -89,18 +89,18 @@ function freshGame(mode = 0) {
   const started = lbEvents.filter((e) => e.type === EVENT.LBOARD_STARTED).map((e) => e.id);
   expect(started.length === 1 && started[0] === 1, `a Game A start starts the Game A board only (started ${started})`);
   setScore(99); frames(2);
-  expect(!unlocked.has(byTitle['Welcome to your new job']), '99 points is not yet 100');
+  expect(!unlocked.has(byTitle['Welcome to Your New Job']), '99 points is not yet 100');
   setScore(100); frames(2);
-  expect(unlocked.has(byTitle['Welcome to your new job']), '100 points: Welcome to your new job');
-  expect(!unlocked.has(byTitle['Hope you had a wonderful first day']), 'not 200 at 100');
+  expect(unlocked.has(byTitle['Welcome to Your New Job']), '100 points: Welcome to your new job');
+  expect(!unlocked.has(byTitle['First Day Done']), 'not 200 at 100');
   ram[MISSES] = 1; frames(2);
   expect(unlocked.has(byTitle['Verbal Warning']), 'the first miss: Verbal Warning');
   expect(!unlocked.has(byTitle['Final Warning']), 'one miss is not the second');
   ram[MISSES] = 2; frames(2);
   expect(unlocked.has(byTitle['Final Warning']), 'the second miss: Final Warning');
   expect(!unlocked.has(byTitle['Gross Misconduct']), 'two misses are not fired');
-  const tiers = [[200, 'Hope you had a wonderful first day'], [300, 'Bonus Milestone'], [400, 'Promotion'], [500, 'Sucked in to Overtime'],
-    [600, 'Frantic Freddie'], [700, 'Trying to impress the boss'], [800, "There's easier ways to do this"], [900, 'Starting to smell like cement'], [1000, 'Cement King']];
+  const tiers = [[200, 'First Day Done'], [300, 'Bonus Milestone'], [400, 'Promotion'], [500, 'Sucked into Overtime'],
+    [600, 'Frantic Freddie'], [700, 'Impressing the Boss'], [800, 'There Are Easier Jobs'], [900, 'Smells Like Cement'], [1000, 'Cement King']];
   for (const [n, t] of tiers) {
     setScore(n - 1); frames(1);
     expect(!unlocked.has(byTitle[t]), `${t} not at ${n - 1}`);
@@ -131,12 +131,12 @@ function freshGame(mode = 0) {
   freshGame(0);
   setScore(299); frames(2);
   setScore(300); ram[BONUS] = 1; frames(1);
-  expect(unlocked.has(byTitle['Double Score Factory']), '300 points without a miss: Double Score Factory');
+  expect(unlocked.has(byTitle['Double Shift']), '300 points without a miss: Double Score Factory');
 
   freshGame(0);
   setScore(150); ram[MISSES] = 1; frames(2);
   setScore(300); ram[BONUS] = 1; ram[MISSES] = 0; frames(2);
-  expect(!unlocked.has(byTitle['Double Score Factory']), 'not when a miss came before the bonus cleared it');
+  expect(!unlocked.has(byTitle['Double Shift']), 'not when a miss came before the bonus cleared it');
   ok('Double Score Factory needs 300 points with no miss');
 }
 

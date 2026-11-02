@@ -13,8 +13,8 @@
   "leaderboards": [
     {
       "id": 1,
-      "title": "High Score",
-      "description": "Highest score in one game.",
+      "title": "Hiscores",
+      "description": "Your best score in one game.",
       "format": "SCORE",
       "lowerIsBetter": false,
       "definition": "STA:0xH2847=32_d0xH2847!=32::CAN:0=1::SUB:1=1S0xH2847=226_d0xH2847!=226S0xH2847>=36_0xH2847<=49_d0xH2847<36::VAL:b0xH284c*1000000_b0xH284b*10000_b0xH284a*100_b0xH2849"

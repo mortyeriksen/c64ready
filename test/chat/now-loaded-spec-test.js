@@ -2,7 +2,7 @@
 // a room about it takes, best source first, and the slots keeping what was
 // learned about a medium when its load hook fires again.
 
-import { setLoaded, enrichLoaded, loadedItems, titleFromFileName, describe, _resetLoaded } from '../../src/media/now-loaded.js';
+import { setLoaded, enrichLoaded, loadedItems, loadedFiles, titleFromFileName, describe, _resetLoaded } from '../../src/media/now-loaded.js';
 
 let testNo = 0, failing = 0, current = [];
 function expect(cond, msg) { if (!cond) current.push(msg); }
@@ -50,6 +50,19 @@ function ok(label) {
   setLoaded('drive8', null);
   expect(loadedItems().length === 1, 'an eject empties the slot');
   ok('slots keep what they learned about a medium until it changes');
+}
+{
+  _resetLoaded();
+  const bytes = new Uint8Array([1, 8, 0]);
+  setLoaded('program', { ref: bytes, kind: 'prg', fileName: 'Barbarian.prg', bytes });
+  expect(loadedFiles().length === 1 && loadedFiles()[0].slot === 'program' && loadedFiles()[0].bytes === bytes, 'a RAM-loaded program is available for achievement hashing');
+  expect(loadedItems()[0]?.kind === 'program' && loadedItems()[0]?.label === 'program', 'the loaded program has its own slot');
+  setLoaded('cart', { ref: {}, kind: 'crt', fileName: 'Other.crt', bytes: new Uint8Array([0]) });
+  expect(loadedFiles().length === 1 && loadedFiles()[0].slot === 'cart', 'loading another medium replaces the RAM program');
+  setLoaded('program', { ref: bytes, kind: 'prg', fileName: 'Barbarian.prg', bytes });
+  setLoaded('program', null);
+  expect(loadedFiles().length === 1 && loadedFiles()[0].slot === 'cart', 'a reset can clear the RAM program');
+  ok('RAM-loaded programs are tracked until a new medium or reset');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failed`); process.exit(1); }

@@ -172,7 +172,7 @@ function gameOver() { while (ram[P1LIVES] > 0) die(); ram[STAGE] = 1; frames(30)
 {
   activate(); title(); newGame();
   ram[SPEED] = 2; frames(2);
-  expect(has('Speed Up') && !has('Full Throttle'), 'Speed Up at the first speed up');
+  expect(has('Speed Up!') && !has('Full Throttle'), 'Speed Up at the first speed up');
   ram[SPEED] = 3; frames(2); ram[SPEED] = 4; frames(2);
   expect(has('Full Throttle'), 'Full Throttle at speed 4');
   ram[MISSILE] = 1; frames(2);
@@ -182,9 +182,9 @@ function gameOver() { while (ram[P1LIVES] > 0) die(); ram[STAGE] = 1; frames(30)
   ram[DOUBLE] = 0; ram[LASER] = 1; frames(2);
   expect(has('Laser Focus'), 'Laser Focus');
   ram[MULTI] = 2; frames(2);
-  expect(has('Multiple Choice') && !has('Twin Multiples'), 'Multiple Choice at one multiple');
+  expect(has('Multiple Choice') && !has('Plus Two'), 'Multiple Choice at one multiple');
   ram[MULTI] = 3; frames(2);
-  expect(has('Twin Multiples'), 'Twin Multiples at two');
+  expect(has('Plus Two'), 'Twin Multiples at two');
   expect(!has('Fully Loaded'), 'not fully loaded without the shield');
   ram[SHIELD] = 4; frames(2);
   expect(has('Force Field') && has('Fully Loaded'), 'Force Field, and Fully Loaded with all four');

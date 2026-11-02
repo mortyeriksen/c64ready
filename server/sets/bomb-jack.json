@@ -46,108 +46,113 @@
     },
     {
       "id": 6,
-      "title": "Second Tour",
+      "title": "Encore",
       "description": "Clear round 10.",
       "points": 25,
       "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._d0xH150E=16_0xH150E=17"
     },
     {
       "id": 7,
-      "title": "Firebomb Bonus",
-      "description": "Clear a round with at least 20 lit bombs collected.",
-      "points": 10,
-      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH1E94=1_d0xH1E94=0_0xH3C5F>=20"
-    },
-    {
-      "id": 8,
-      "title": "Perfect Sequence",
-      "description": "Clear a round with at least 23 lit bombs collected, for the 50,000 bonus.",
-      "points": 25,
-      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH1E94=1_d0xH1E94=0_0xH3C5F>=23"
-    },
-    {
-      "id": 9,
       "title": "Power Play",
       "description": "Catch a P coin.",
       "points": 5,
       "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH11ED=150_d0xH11ED!=150"
     },
     {
-      "id": 10,
-      "title": "Bonus Multiplier",
+      "id": 8,
+      "title": "Bonus Bump",
       "description": "Catch a B coin to raise the bonus multiplier.",
       "points": 5,
       "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH0315=22_d0xH0315=22_0xH536B>d0xH536B"
     },
     {
-      "id": 11,
-      "title": "Five Times Over",
+      "id": 9,
+      "title": "Extra Life",
+      "description": "Catch an E coin.",
+      "points": 10,
+      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH0315=22_d0xH0315=22S0xH14F7>d0xH14F7_0xH14F7<6S0xH14F7=0_d0xH14F7=255"
+    },
+    {
+      "id": 10,
+      "title": "High Five",
       "description": "Raise the bonus multiplier to x5.",
       "points": 10,
       "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH0315=22_d0xH0315=22_0xH536B=5_d0xH536B=4"
     },
     {
-      "id": 12,
-      "title": "Extra Life",
-      "description": "Catch an E coin for an extra life.",
-      "points": 10,
-      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH0315=22_d0xH0315=22S0xH14F7>d0xH14F7_0xH14F7<6S0xH14F7=0_d0xH14F7=255"
-    },
-    {
-      "id": 13,
+      "id": 11,
       "title": "Unscathed",
       "description": "Clear a round without losing a life.",
       "points": 10,
       "memaddr": "N:0xH0315=22_d0xH0315=9.1._N:d0xH1BE6=0_R:0xH1BE6=1_0xH1E94=1_d0xH1E94=0"
     },
     {
+      "id": 12,
+      "title": "Fuse Box",
+      "description": "Clear a round with 20 or more lit bombs.",
+      "points": 10,
+      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH1E94=1_d0xH1E94=0_0xH3C5F>=20"
+    },
+    {
+      "id": 13,
+      "title": "Perfect Sequence",
+      "description": "Clear a round with 23+ lit bombs for 50,000.",
+      "points": 25,
+      "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH1E94=1_d0xH1E94=0_0xH3C5F>=23"
+    },
+    {
       "id": 14,
       "title": "Flawless Five",
-      "description": "Clear rounds 1 to 5 of a game without losing a life.",
+      "description": "Clear rounds 1 to 5 without losing a life.",
       "points": 25,
       "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._N:d0xH1BE6=0_R:0xH1BE6=1_d0xH150E=5_0xH150E=6"
     },
     {
       "id": 15,
       "title": "Bomb Squad",
-      "description": "Score at least 20,000 points.",
+      "description": "Score 20,000 points.",
       "points": 5,
+      "score": 20000,
       "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH0315=22_A:0xU122F*100000_A:0xL122F*10000_A:0xU1230*1000_A:0xL1230*100_A:0xU1231*10_0xL1231>=20000"
     },
     {
       "id": 16,
       "title": "Demolition Expert",
-      "description": "Score at least 50,000 points.",
+      "description": "Score 50,000 points.",
       "points": 5,
+      "score": 50000,
       "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH0315=22_A:0xU122F*100000_A:0xL122F*10000_A:0xU1230*1000_A:0xL1230*100_A:0xU1231*10_0xL1231>=50000"
     },
     {
       "id": 17,
       "title": "Top Bombjacker",
-      "description": "Score at least 100,000 points.",
+      "description": "Score 100,000 points.",
       "points": 10,
+      "score": 100000,
       "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH0315=22_A:0xU122F*100000_A:0xL122F*10000_A:0xU1230*1000_A:0xL1230*100_A:0xU1231*10_0xL1231>=100000"
     },
     {
       "id": 18,
       "title": "Caped Crusader",
-      "description": "Score at least 250,000 points.",
+      "description": "Score 250,000 points.",
       "points": 25,
+      "score": 250000,
       "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH0315=22_A:0xU122F*100000_A:0xL122F*10000_A:0xU1230*1000_A:0xL1230*100_A:0xU1231*10_0xL1231>=250000"
     },
     {
       "id": 19,
       "title": "Bomb Jack Legend",
-      "description": "Score at least 500,000 points.",
+      "description": "Score 500,000 points.",
       "points": 25,
+      "score": 500000,
       "memaddr": "N:0xH0315=9_N:0xH14F7=1_N:0xH150E=1_N:0xH122F=0_N:0xH1230=0_0xH1231=0.1._0xH0315=22_A:0xU122F*100000_A:0xL122F*10000_A:0xU1230*1000_A:0xL1230*100_A:0xU1231*10_0xL1231>=500000"
     }
   ],
   "leaderboards": [
     {
       "id": 1,
-      "title": "High Score",
-      "description": "Highest score in one game.",
+      "title": "Hiscores",
+      "description": "Your best score in one game.",
       "format": "SCORE",
       "lowerIsBetter": false,
       "definition": "STA:0xH0315=9_0xH14F7=1_0xH150E=1_0xH122F=0_0xH1230=0_0xH1231=0::CAN:0=1::SUB:0xH14F7=255_0xH1BE6=0_d0xH1BE6=1S0xH122F>0S0xH1230>0S0xH1231>0::VAL:0xU122F*100000_0xL122F*10000_0xU1230*1000_0xL1230*100_0xU1231*10_0xL1231"

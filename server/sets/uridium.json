@@ -117,59 +117,64 @@
     },
     {
       "id": 16,
-      "title": "Novice Pilot",
-      "description": "Score at least 10,000 points.",
-      "points": 5,
-      "memaddr": "A:0xL4853*100000_A:0xL4854*10000_A:0xL4855*1000_A:0xL4856*100_A:0xL4857*10_0xL4858>=10000_0xH0025>0"
-    },
-    {
-      "id": 17,
-      "title": "Experienced Pilot",
-      "description": "Score at least 25,000 points.",
-      "points": 10,
-      "memaddr": "A:0xL4853*100000_A:0xL4854*10000_A:0xL4855*1000_A:0xL4856*100_A:0xL4857*10_0xL4858>=25000_0xH0025>0"
-    },
-    {
-      "id": 18,
-      "title": "Veteran Pilot",
-      "description": "Score at least 50,000 points.",
-      "points": 10,
-      "memaddr": "A:0xL4853*100000_A:0xL4854*10000_A:0xL4855*1000_A:0xL4856*100_A:0xL4857*10_0xL4858>=50000_0xH0025>0"
-    },
-    {
-      "id": 19,
-      "title": "Elite Pilot",
-      "description": "Score at least 100,000 points.",
-      "points": 25,
-      "memaddr": "A:0xL4853*100000_A:0xL4854*10000_A:0xL4855*1000_A:0xL4856*100_A:0xL4857*10_0xL4858>=100000_0xH0025>0"
-    },
-    {
-      "id": 20,
-      "title": "Uridium Ace",
-      "description": "Score at least 150,000 points.",
-      "points": 50,
-      "memaddr": "A:0xL4853*100000_A:0xL4854*10000_A:0xL4855*1000_A:0xL4856*100_A:0xL4857*10_0xL4858>=150000_0xH0025>0"
-    },
-    {
-      "id": 21,
       "title": "Meltdown",
-      "description": "Complete a dreadnought destruct sequence.",
+      "description": "Complete a dreadnought's destruct sequence.",
       "points": 5,
       "memaddr": "0xH00a9=0_0xH0096=23_d0xH0096!=23"
     },
     {
-      "id": 22,
+      "id": 17,
       "title": "Cleared Hot",
-      "description": "Destroy all enemy formations on a dreadnought.",
+      "description": "Destroy every enemy formation on a dreadnought.",
       "points": 10,
       "memaddr": "0xH0087=6_d0xH0087!=6_0xH0025>0"
+    },
+    {
+      "id": 18,
+      "title": "Novice Pilot",
+      "description": "Score 10,000 points.",
+      "points": 5,
+      "score": 10000,
+      "memaddr": "A:0xL4853*100000_A:0xL4854*10000_A:0xL4855*1000_A:0xL4856*100_A:0xL4857*10_0xL4858>=10000_0xH0025>0"
+    },
+    {
+      "id": 19,
+      "title": "Experienced Pilot",
+      "description": "Score 25,000 points.",
+      "points": 10,
+      "score": 25000,
+      "memaddr": "A:0xL4853*100000_A:0xL4854*10000_A:0xL4855*1000_A:0xL4856*100_A:0xL4857*10_0xL4858>=25000_0xH0025>0"
+    },
+    {
+      "id": 20,
+      "title": "Veteran Pilot",
+      "description": "Score 50,000 points.",
+      "points": 10,
+      "score": 50000,
+      "memaddr": "A:0xL4853*100000_A:0xL4854*10000_A:0xL4855*1000_A:0xL4856*100_A:0xL4857*10_0xL4858>=50000_0xH0025>0"
+    },
+    {
+      "id": 21,
+      "title": "Elite Pilot",
+      "description": "Score 100,000 points.",
+      "points": 25,
+      "score": 100000,
+      "memaddr": "A:0xL4853*100000_A:0xL4854*10000_A:0xL4855*1000_A:0xL4856*100_A:0xL4857*10_0xL4858>=100000_0xH0025>0"
+    },
+    {
+      "id": 22,
+      "title": "Uridium Ace",
+      "description": "Score 150,000 points.",
+      "points": 50,
+      "score": 150000,
+      "memaddr": "A:0xL4853*100000_A:0xL4854*10000_A:0xL4855*1000_A:0xL4856*100_A:0xL4857*10_0xL4858>=150000_0xH0025>0"
     }
   ],
   "leaderboards": [
     {
       "id": 1,
-      "title": "High Score",
-      "description": "Highest score in one game.",
+      "title": "Hiscores",
+      "description": "Your best score in one game.",
       "format": "SCORE",
       "lowerIsBetter": false,
       "definition": "STA:0xH0025>0_d0xH0025=0::CAN:0=1::SUB:0xH0025=0_d0xH0025>0::VAL:0xL4853*100000_0xL4854*10000_0xL4855*1000_0xL4856*100_0xL4857*10_0xL4858"

@@ -54,37 +54,41 @@
     {
       "id": 7,
       "title": "Knight Errant",
-      "description": "Score at least 10,000 points.",
+      "description": "Score 10,000 points.",
       "points": 5,
+      "score": 10000,
       "memaddr": "N:0xH078D=0_N:d0xH07F3=0_N:0xH07F3>0_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_A:0xU07F0*1000_A:0xL07F0*100_A:0xU07F1*10_0xL07F1>=100"
     },
     {
       "id": 8,
       "title": "Knight of the Realm",
-      "description": "Score at least 25,000 points.",
+      "description": "Score 25,000 points.",
       "points": 10,
+      "score": 25000,
       "memaddr": "N:0xH078D=0_N:d0xH07F3=0_N:0xH07F3>0_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_A:0xU07F0*1000_A:0xL07F0*100_A:0xU07F1*10_0xL07F1>=250"
     },
     {
       "id": 9,
       "title": "Champion Knight",
-      "description": "Score at least 50,000 points.",
+      "description": "Score 50,000 points.",
       "points": 10,
+      "score": 50000,
       "memaddr": "N:0xH078D=0_N:d0xH07F3=0_N:0xH07F3>0_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_A:0xU07F0*1000_A:0xL07F0*100_A:0xU07F1*10_0xL07F1>=500"
     },
     {
       "id": 10,
       "title": "Sir Arthur",
-      "description": "Score at least 100,000 points.",
+      "description": "Score 100,000 points.",
       "points": 25,
+      "score": 100000,
       "memaddr": "N:0xH078D=0_N:d0xH07F3=0_N:0xH07F3>0_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_A:0xU07F0*1000_A:0xL07F0*100_A:0xU07F1*10_0xL07F1>=1000"
     }
   ],
   "leaderboards": [
     {
       "id": 1,
-      "title": "High Score",
-      "description": "Highest score on one credit, without trainers.",
+      "title": "Hiscores",
+      "description": "Your best score on one credit, no trainers.",
       "format": "SCORE",
       "lowerIsBetter": false,
       "definition": "STA:0xH078D=0_d0xH07F3=0_0xH07F3>0_0xH07F2=5_0xH07F0=0_0xH07F1=0_0xH5BA5=205::CAN:0xH5BA5!=205::SUB:0xH07F2=1_0xH07EB=1_d0xH07EB=0::VAL:0xU07F0*100000_0xL07F0*10000_0xU07F1*1000_0xL07F1*100"
@@ -93,7 +97,8 @@
   "notices": [
     {
       "id": 1,
-      "text": "A trainer is on, so this game's achievements and high score are not tracked. Start a game without trainers to play for them.",
+      "title": "Trainer on",
+      "text": "Nothing counts until you play without trainers.",
       "memaddr": "0xH5BA5=76_0xH07F2>0"
     }
   ]

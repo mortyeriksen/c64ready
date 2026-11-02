@@ -119,16 +119,16 @@ function clearWave(extra = 0) {
 // 4. The wave achievements, one per boss, on Trooper.
 {
   newGame(TROOPER);
-  const order = ['Arachnophobia', 'Bee Urself', 'Frogger not like this', 'Dragonbreed', 'Fantômas', 'Why did it have to be Snakes?', 'Demogorgon Party'];
+  const order = ['Arachnophobia', 'Bee Gone', 'Frogger Not Like This', 'Dragonslayer', 'Fantômas', 'Why Did It Have to Be Snakes?', 'Demogorgon Party'];
   order.forEach((t, i) => {
     expect(!unlocked.has(id[t]), `${t} not before its wave ends`);
     clearWave(1);   // one arrow wasted per wave: no Perfect or One Shot
     expect(unlocked.has(id[t]), `${t} when wave ${i + 1} is cleared`);
   });
-  for (const t of ['Perfect Spiders', 'Perfect Bees', 'Perfect Frogs', 'Perfect Dragons', 'One Shot Phantom', 'One Shot Snake', 'One Shot Demogorgon']) {
+  for (const t of ['Waste Not', 'Bee Line', 'Frog March', 'Here Be No Dragons', 'Ghost of a Chance', 'Snake Eyes', 'One and Done']) {
     expect(!unlocked.has(id[t]), `not ${t}: an arrow was wasted`);
   }
-  expect(!unlocked.has(id['Ultimate Master']), 'not Ultimate Master: started on Trooper');
+  expect(!unlocked.has(id['Lord of the Forest']), 'not Ultimate Master: started on Trooper');
   ok('each wave clear on Trooper unlocks its boss achievement');
 }
 
@@ -153,7 +153,7 @@ function clearWave(extra = 0) {
 // 7. Perfect waves: exactly the kill requirement in arrows, on each difficulty.
 for (const diff of [TROOPER, DAREDEVIL, CRAZY]) {
   newGame(diff);
-  const perfect = ['Perfect Spiders', 'Perfect Bees', 'Perfect Frogs', 'Perfect Dragons', 'One Shot Phantom', 'One Shot Snake', 'One Shot Demogorgon'];
+  const perfect = ['Waste Not', 'Bee Line', 'Frog March', 'Here Be No Dragons', 'Ghost of a Chance', 'Snake Eyes', 'One and Done'];
   for (const t of perfect) {
     const before = unlocked.has(id[t]);
     clearWave(0);
@@ -166,9 +166,9 @@ for (const diff of [TROOPER, DAREDEVIL, CRAZY]) {
 {
   newGame(DAREDEVIL);
   clearWave(1);
-  expect(unlocked.has(id.Arachnophobia) && !unlocked.has(id['Perfect Spiders']), 'Perfect Spiders lost to a 13th arrow on Daredevil');
+  expect(unlocked.has(id.Arachnophobia) && !unlocked.has(id['Waste Not']), 'Perfect Spiders lost to a 13th arrow on Daredevil');
   clearWave(0);
-  expect(unlocked.has(id['Perfect Bees']), 'the next wave starts a fresh count: Perfect Bees');
+  expect(unlocked.has(id['Bee Line']), 'the next wave starts a fresh count: Perfect Bees');
   ok('a wasted arrow counts against its own wave');
 }
 
@@ -178,13 +178,13 @@ for (const diff of [TROOPER, DAREDEVIL, CRAZY]) {
   for (const diff of [INNOCENT, TROOPER, DAREDEVIL, CRAZY]) {
     ram[DIFF] = diff; frames(2);
     for (let i = 0; i < 7; i++) {
-      if (diff === CRAZY && i === 6) expect(!unlocked.has(id['Ultimate Master']), 'not Ultimate Master before the Crazy Demogorgon falls');
+      if (diff === CRAZY && i === 6) expect(!unlocked.has(id['Lord of the Forest']), 'not Ultimate Master before the Crazy Demogorgon falls');
       clearWave(1);
     }
     ram[ENEMY] = 1; frames(3);   // the next loop
   }
-  expect(unlocked.has(id['Ultimate Master']), 'Ultimate Master when the Crazy Demogorgon falls in a game started on Innocent');
-  ok('Ultimate Master');
+  expect(unlocked.has(id['Lord of the Forest']), 'Ultimate Master when the Crazy Demogorgon falls in a game started on Innocent');
+  ok('Lord of the Forest');
 }
 
 // 10. Undead Slayer: five skeletons (1000 each) in the phantom wave, five arrows, no life lost.
@@ -193,27 +193,27 @@ for (const diff of [TROOPER, DAREDEVIL, CRAZY]) {
   const skeletons = (n, score) => { for (let i = 0; i < n; i++) { ram[ARROWS]--; frames(2); score += 1000; setScore(score); frames(2); } return score; };
   toPhantom();
   let s = skeletons(4, 30000);
-  expect(!unlocked.has(id['Undead Slayer']), 'not at four skeletons');
+  expect(!unlocked.has(id['Bone Collector']), 'not at four skeletons');
   skeletons(1, s);
-  expect(unlocked.has(id['Undead Slayer']), 'Undead Slayer at the fifth skeleton');
+  expect(unlocked.has(id['Bone Collector']), 'Undead Slayer at the fifth skeleton');
 
   toPhantom();
   s = skeletons(4, 30000); ram[ARROWS]--; frames(2); setScore(s + 6000); frames(2);
-  expect(!unlocked.has(id['Undead Slayer']), 'not for four skeletons and the phantom');
+  expect(!unlocked.has(id['Bone Collector']), 'not for four skeletons and the phantom');
 
   toPhantom(); setScore(37000); frames(2);   // the thousands carry into the ten-thousands
   skeletons(5, 37000);
-  expect(unlocked.has(id['Undead Slayer']), 'Undead Slayer across a ten-thousands carry');
+  expect(unlocked.has(id['Bone Collector']), 'Undead Slayer across a ten-thousands carry');
 
   toPhantom();
   ram[ARROWS]--; frames(2);                    // a miss
   skeletons(5, 30000);
-  expect(!unlocked.has(id['Undead Slayer']), 'not with a sixth arrow spent');
+  expect(!unlocked.has(id['Bone Collector']), 'not with a sixth arrow spent');
 
   toPhantom();
   s = skeletons(2, 30000); ram[LIVES] = 2; frames(2); skeletons(3, s);
-  expect(!unlocked.has(id['Undead Slayer']), 'not after losing a life in the wave');
-  ok('Undead Slayer');
+  expect(!unlocked.has(id['Bone Collector']), 'not after losing a life in the wave');
+  ok('Bone Collector');
 }
 
 // 11. The high score: starts with the game, submits the BCD score when the last life goes.

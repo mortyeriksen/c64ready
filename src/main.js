@@ -47,7 +47,11 @@ import {
 import { initializeAssembly64 } from './assembly64/start.js';
 import { initOnline } from './online/window.js';
 import { createAchievementEngine } from './achievements/engine.js';
+import { createAchToasts } from './achievements/toast.js';
+import { GAME_ICONS } from './achievements/game-icons.js';
+import { readPlace, savePlace, nextPlace, applyPlace, dragPlace, readVibesPlace, saveVibesPlace, VIBES_MARGIN, readVibesSize, saveVibesSize, applySize, dragSize } from './achievements/toast-place.js';
 import { createAccount, apiBase } from './account/account.js';
+import { setLoaded } from './media/now-loaded.js';
 
 // Achievements for the loaded game (src/achievements/engine.js), set up with the
 // panel below; the frame loop and machine resets reach it through this.
@@ -2022,6 +2026,7 @@ if (mobileKbd) {
 // reset clear `_autoSeq` themselves.
 function _hardReset() {
   if (!running) return false;
+  setLoaded('program', null);
   _releaseAllLatched();
   // The machine is about to be replaced: take whatever is on the tape with us,
   // recording included, the way an inserted disk survives by being a live object.
@@ -2445,36 +2450,145 @@ const achievementAccount = createAccount({ onChange: () => { achievementsPanel?.
 // A browser that signed in before checks its session now, so achievements
 // earned before the panel is ever opened go to the account.
 if (achievementAccount.token) achievementAccount.restore();
-// An achievement, notice or score toast: in the C64's top border, over the
-// picture, in its kind's colour (styles-achievements.css). Without the display
-// it stays where every toast goes.
-function _achToast(kind, text, ms, actionLabel = null, onAction = null) {
-  const el = _pwaToast(text, actionLabel, onAction, ms);
-  el.classList.add('ach-toast', `ach-toast-${kind}`);
-  document.querySelector('.crt-bezel')?.append(el);
+// An achievement, notice or score toast (achievements/toast.js): in the vibes
+// view while it is open, else on the C64's screen.
+const _achToasts = createAchToasts({
+  host: () => {
+    const vibes = document.getElementById('model-viewer-overlay');
+    return vibes && !vibes.hidden ? vibes : document.querySelector('.crt-bezel');
+  },
+});
+const _signIn = () => achievementsPanel?.open('account');
+// A score's title: "Your Score" (or "Your Moves" where fewer is better), and only at first
+// place the board's: "Hiscore" for a Hiscores board, with its mode ("Hiscore (Game A)"), else its
+// own title ("Fewest Moves"). A game with more boards names the one at the start of the line.
+function _scoreTitles(board, game, first) {
+  const mine = board.lowerIsBetter ? 'Your Moves' : 'Your Score';
+  const several = (game?.leaderboards?.length ?? 0) > 1;
+  const mode = several ? (/\(([^)]+)\)\s*$/.exec(board.title)?.[1] ?? board.title) : '';
+  const top = board.title.replace(/^Hiscores\b/, 'Hiscore');
+  return { title: first ? top : mine, topTitle: top, mode: first ? '' : mode };
+}
+const _completeToast = ({ id, title, count, points }) => ({ icon: GAME_ICONS[id], title: `${title} complete!`, text: `All ${count} achievements, ${points} points.` });
+// Where toasts show. On the screen, Options ▸ Other ▸ TOAST cycles six places
+// in the borders. In vibes, its toast button lets a sample be dragged to any
+// spot. Both kept in the browser.
+const _toastBezel = document.querySelector('.crt-bezel');
+const _vibesOverlay = document.getElementById('model-viewer-overlay');
+const toastPosBtn = document.getElementById('btn-toast-pos');
+const vibesToastBtn = document.getElementById('btn-model-viewer-toast');
+let _toastPlace = readPlace();
+function _setToastPlace(place, save = true) {
+  _toastPlace = place;
+  if (_toastBezel) applyPlace(_toastBezel, place);
+  if (save) savePlace(place);
+  if (toastPosBtn) toastPosBtn.textContent = `TOAST: ${place.label}`;
+}
+_setToastPlace(_toastPlace, false);
+toastPosBtn?.addEventListener('click', () => _setToastPlace(nextPlace(_toastPlace)));
+let _vibesSize = readVibesSize();
+if (_vibesOverlay) { applyPlace(_vibesOverlay, readVibesPlace()); applySize(_vibesOverlay, _vibesSize); }
+let _placing = null;
+const _placingEscape = { close: () => _endPlacing(), isOpen: () => !!_placing };
+function _startPlacing() {
+  if (_placing || !_vibesOverlay || _vibesOverlay.hidden) return;
+  const el = _achToasts.sample({ kind: 'unlock', title: 'Drag me into place', text: 'The corner sizes me. Esc when done.', points: 10 }, _vibesOverlay, () => _endPlacing());
+  el.classList.add('ach-toast-placing');
+  const stopMove = dragPlace({
+    area: _vibesOverlay, el, margin: VIBES_MARGIN,
+    onMove: (p) => applyPlace(_vibesOverlay, p),
+    onDone: (p) => saveVibesPlace(p),
+  });
+  // The corner grip sizes it.
+  const grip = document.createElement('button');
+  grip.type = 'button';
+  grip.className = 'ach-toast-resize';
+  grip.setAttribute('aria-label', 'Drag to make the toast larger or smaller');
+  el.append(grip);
+  const stopSize = dragSize({
+    el, grip, scale: () => _vibesSize,
+    onMove: (s) => { _vibesSize = s; applySize(_vibesOverlay, s); },
+    onDone: (s) => saveVibesSize(s),
+  });
+  _placing = { el, stop: () => { stopMove(); stopSize(); } };
+  vibesToastBtn?.setAttribute('aria-pressed', 'true');
+  pushEscapeLayer(_placingEscape);
+}
+function _endPlacing() {
+  if (!_placing) return;
+  _placing.stop();
+  _placing.el.remove();
+  _placing = null;
+  vibesToastBtn?.setAttribute('aria-pressed', 'false');
+  popEscapeLayer(_placingEscape);
+}
+vibesToastBtn?.addEventListener('click', () => (_placing ? _endPlacing() : _startPlacing()));
+// Opening or closing vibes takes the toast showing along. Closing ends placing.
+if (_vibesOverlay) {
+  new MutationObserver(() => {
+    if (_vibesOverlay.hidden) _endPlacing();
+    _achToasts.rehome();
+  }).observe(_vibesOverlay, { attributes: true, attributeFilter: ['hidden'] });
 }
 achievements = createAchievementEngine({
   account: achievementAccount,
   base: apiBase(),
   onChange: () => achievementsPanel?.refresh(),
-  onUnlock: ({ achievement, saved, signedIn }) => {
-    const note = !signedIn ? ' Sign in to keep it.' : saved ? '' : ' It is saved once the account server can be reached.';
-    _achToast('unlock', `🏆 ${achievement.title}: ${achievement.description}${note}`, 7000, signedIn ? null : 'SIGN IN', signedIn ? null : () => achievementsPanel?.open('account'));
+  onUnlock: ({ achievement, saved, signedIn, complete, softcore, checking }) => {
+    const text = signedIn && !saved ? 'Saved when the server is back.' : softcore ? `${achievement.description} (softcore)` : checking ? `${achievement.description} Being checked.` : achievement.description;
+    _achToasts.show({
+      kind: 'unlock', title: achievement.title, text, points: achievement.points,
+      // The set's last: the toast turns to the game's gold side.
+      complete: complete && _completeToast(complete),
+      action: signedIn ? null : 'SIGN IN', onAction: _signIn,
+    });
+  },
+  // Play stopped counting in public, as when a save state is loaded: said once, for a game with a set.
+  onSoftcore: ({ reason, quiet }) => {
+    if (!quiet && achievements.game) _achToasts.show({ kind: 'notice', title: 'Softcore', text: `${reason[0].toUpperCase()}${reason.slice(1)}. Nothing counts in public until a reset.` });
   },
   // A set's notice, such as a trainer that keeps the game from counting.
-  onNotice: ({ text }) => _achToast('notice', `⚠ ${text}`, 9000),
+  onNotice: ({ title, text }) => _achToasts.show({ kind: 'notice', title: title || text, text: title ? text : '' }),
   // The server no longer knows the session: checking it signs the page out, so the window and the toasts say so.
   onSessionLost: () => { achievementAccount.restore(); },
   onLeaderboard: (e) => {
     // The window shows the running score, and fetches the standings again once one is posted.
     achievementsPanel?.leaderboardEvent(e);
-    const { type, leaderboard, value, result, signedIn } = e;
+    const { type, leaderboard, value, result, signedIn, softcore } = e;
     if (type !== 'submitted') return;
-    const shown = achievements.format(value, leaderboard.format);
-    const note = !signedIn ? ' Sign in to keep it.' : result ? ` Your best: ${achievements.format(result.best, leaderboard.format)}, rank ${result.rank}.` : ' It is posted once the account server can be reached.';
-    _achToast('score', `${leaderboard.title}: ${shown}.${note}`, 7000, signedIn ? null : 'SIGN IN', signedIn ? null : () => achievementsPanel?.open('account'));
+    // Softcore: the score goes on no board.
+    if (softcore) {
+      _achToasts.show({ kind: 'score', title: leaderboard.lowerIsBetter ? 'Your Moves' : 'Your Score', text: 'Softcore: not posted.', score: { value, format: (v) => achievements.format(v, leaderboard.format), outcome: 'plain' } });
+      return;
+    }
+    const format = (v) => achievements.format(v, leaderboard.format);
+    // A new best, and a new first place on a board with others on it, get their own moment.
+    // A flagged score takes no place yet: it is being checked, so no stamp or gold turn.
+    const outcome = result?.flagged || !result?.improved ? 'plain' : result.rank === 1 && result.players > 1 && result.previousRank !== 1 ? 'top' : 'best';
+    const prev = result?.previous, wasRank = result?.previousRank;
+    const stillTop = outcome === 'best' && result.rank === 1 && wasRank === 1;
+    const { title, topTitle, mode } = _scoreTitles(leaderboard, achievements.game, outcome === 'best' && result.rank === 1);
+    // A new best says what it beat and where it stands: still in its place, or climbing (the toast ticks the rank).
+    const line = !signedIn ? ''
+      : !result ? 'Posted when the server is back.'
+      : result.flagged ? 'Being checked before it goes on the board.'
+      : outcome === 'plain' ? `Your best is ${format(result.best)}, rank ${result.rank}.`
+      : outcome === 'top' ? ''
+      // A server that does not yet say the old best gets the plainer line.
+      : !('previous' in result) ? `New best! Rank ${result.rank}.`
+      : prev == null ? `First score on the board. Rank ${result.rank}.`
+      : stillTop ? `New best! Was ${format(prev)}. Still #1.`
+      : wasRank === result.rank ? `New best! Was ${format(prev)}. Still rank ${result.rank}.`
+      : `New best! Was ${format(prev)}.`;
+    _achToasts.show({
+      kind: 'score', title, text: line && mode ? `${mode}. ${line}` : line,
+      score: { value, format, outcome, from: prev ?? null, rankFrom: wasRank ?? null, rank: result?.rank ?? null, stillTop, topTitle },
+      action: signedIn ? null : 'SIGN IN', onAction: _signIn,
+    });
   },
 });
+// A loaded save state (media.js) is not fair play: until a reset, nothing counts in public.
+globalThis.addEventListener('c64-state-loaded', () => achievements.taint('a save state was loaded'));
 // Options ▸ Other ▸ ACHIEVEMENTS. Off, the engine leaves the machine's path:
 // no hashing of what is loaded, no lookups, nothing read per frame.
 let achievementsOn = (() => {
@@ -2484,6 +2598,8 @@ const achievementsBtn = document.getElementById('btn-achievements-toggle');
 function _applyAchievementsPref() {
   achievements.setEnabled(achievementsOn);
   achievementsLive = achievementsOn ? achievements : null;
+  if (vibesToastBtn) vibesToastBtn.hidden = !achievementsOn;
+  if (!achievementsOn) _endPlacing();
   if (achievementsBtn) achievementsBtn.textContent = `ACHIEVEMENTS: ${achievementsOn ? 'ON' : 'OFF'}`;
 }
 _applyAchievementsPref();
@@ -2498,6 +2614,91 @@ achievementsPanel = initOnline({
   closeBtn: document.getElementById('btn-online-close'),
   account: achievementAccount,
   engine: achievements,
+  // A dev server's toast tests, each on and off, one at a time: TEST TOAST cycles every
+  // kind of toast, TEST GAME every toast of the loaded game.
+  testToasts: (() => {
+    const fmt = (v) => v.toLocaleString('en-US');
+    const every = [
+      { kind: 'unlock', title: 'Grenadier', text: 'Pick up a box of grenades.', points: 5 },
+      { kind: 'unlock', title: 'Area 3 Cleared', text: 'Clear area 3.', points: 10 },
+      { kind: 'unlock', title: 'Babel Fish', text: 'Get the babel fish into your ear.', points: 25 },
+      { kind: 'unlock', title: 'Tea and No Tea', text: 'Hold tea and no tea at once, then drink the tea.', points: 50 },
+      { kind: 'unlock', title: 'War Hero', text: 'Score 100,000 points.', points: 25, complete: _completeToast({ id: 'commando-arcade', title: 'Commando Arcade', count: 14, points: 180 }) },
+      { kind: 'unlock', title: 'Super Joe', text: 'Score 10,000 points.', points: 5, action: 'SIGN IN', onAction: _signIn },
+      { kind: 'score', title: 'Your Score', text: 'Your best is 4,600, rank 3.', score: { value: 3200, format: fmt, outcome: 'plain' } },
+      { kind: 'score', title: 'Your Score', text: 'New best! Was 4,600. Still rank 2.', score: { value: 5850, format: fmt, outcome: 'best', from: 4600, rankFrom: 2, rank: 2 } },
+      { kind: 'score', title: 'Your Score', text: 'New best! Was 4,600.', score: { value: 7300, format: fmt, outcome: 'best', from: 4600, rankFrom: 5, rank: 2 } },
+      { kind: 'score', title: 'Hiscore', text: 'New best! Was 9,120. Still #1.', score: { value: 9900, format: fmt, outcome: 'best', from: 9120, rankFrom: 1, rank: 1, stillTop: true } },
+      { kind: 'score', title: 'Your Moves', text: 'First score on the board. Rank 2.', score: { value: 312, format: fmt, outcome: 'best' } },
+      { kind: 'score', title: 'Your Score', text: 'Game A. Your best is 640, rank 3.', score: { value: 480, format: fmt, outcome: 'plain' } },
+      { kind: 'score', title: 'Your Score', text: '', score: { value: 9120, format: fmt, outcome: 'top', from: 5850, rankFrom: 4, topTitle: 'Hiscore' } },
+      { kind: 'score', title: 'Your Score', text: '', score: { value: 2750, format: fmt, outcome: 'plain' }, action: 'SIGN IN', onAction: _signIn },
+      { kind: 'notice', title: 'Trainer on', text: 'Nothing counts until you play without trainers.' },
+    ];
+    // A board's score toasts against its real standings, with a best picked for the player
+    // fourth on the board, so every case shows: short of the best, a best that keeps its place,
+    // one that climbs, one that takes first, a best while already first, and a first score.
+    const boardToasts = async (l, g) => {
+      const f = (v) => achievements.format(v, l.format);
+      const T = (first) => _scoreTitles(l, g, first);
+      const line = (first, text) => { const m = T(first).mode; return m ? `${m}. ${text}` : text; };
+      let st = null;
+      try { st = await achievements.leaderboard(l.id, 100); } catch { /* offline: made-up standings below */ }
+      const lower = !!l.lowerIsBetter;
+      const better = (a, b) => (lower ? a < b : a > b);
+      const nudge = (v, dir) => { const d = Math.max(1, Math.round(Math.abs(v) * 0.03)); return Math.max(1, v + (lower ? -dir : dir) * d); };
+      // The other players' scores, best first; three made up when the board has fewer.
+      let others = (st?.entries ?? []).filter((e) => e.user?.id !== achievementAccount.user?.id).map((e) => e.value);
+      if (others.length < 3) {
+        const made = lower ? [200, 260, 300] : [9000, 6500, 4800];
+        others = [...others, ...made.filter((v) => !others.some((o) => o === v))].sort((x, y) => (better(x, y) ? -1 : 1)).slice(0, Math.max(3, others.length));
+      }
+      const rankOf = (v) => 1 + others.filter((o) => better(o, v)).length;
+      const between = (x, y) => Math.round((x + y) / 2);
+      const mine = nudge(nudge(others[2], -1), -1);      // fourth, a little behind the third
+      const r = rankOf(mine);
+      const short = lower ? Math.round(mine * 1.25) + 1 : Math.max(0, Math.round(mine * 0.7));
+      const keep = between(mine, others[2]);             // better, still behind the third
+      const climb = others[0] !== others[1] ? between(others[1], others[0]) : nudge(others[1], 1);   // past the second
+      const first = nudge(others[0], 1);                 // past the first
+      const record = nudge(first, 1);                    // first already, and better again
+      const start = lower ? Math.round(others.at(-1) * 1.2) + 1 : Math.max(1, Math.round(others.at(-1) * 0.6));
+      return [
+        { kind: 'score', title: T(false).title, text: line(false, `Your best is ${f(mine)}, rank ${r}.`), score: { value: short, format: f, outcome: 'plain' } },
+        { kind: 'score', title: T(false).title, text: line(false, rankOf(keep) === r ? `New best! Was ${f(mine)}. Still rank ${r}.` : `New best! Was ${f(mine)}.`), score: { value: keep, format: f, outcome: 'best', from: mine, rankFrom: r, rank: rankOf(keep) } },
+        { kind: 'score', title: T(false).title, text: line(false, `New best! Was ${f(mine)}.`), score: { value: climb, format: f, outcome: 'best', from: mine, rankFrom: r, rank: rankOf(climb) } },
+        { kind: 'score', title: T(false).title, text: '', score: { value: first, format: f, outcome: 'top', from: mine, rankFrom: r, topTitle: T(true).topTitle } },
+        { kind: 'score', title: T(true).title, text: `New best! Was ${f(first)}. Still #1.`, score: { value: record, format: f, outcome: 'best', from: first, rankFrom: 1, rank: 1, stillTop: true } },
+        { kind: 'score', title: T(false).title, text: line(false, `First score on the board. Rank ${rankOf(start)}.`), score: { value: start, format: f, outcome: 'best' } },
+      ];
+    };
+    // The loaded game's own: each achievement (the last finishing the set), each board's scores, its notices.
+    const ofGame = async () => {
+      const g = achievements.game;
+      if (!g) return [];
+      const out = g.achievements.map((a, i, all) => ({
+        kind: 'unlock', title: a.title, text: a.description, points: a.points,
+        complete: i === all.length - 1 ? _completeToast({ id: g.id, title: g.title, count: all.length, points: all.reduce((n, x) => n + (x.points ?? 0), 0) }) : null,
+      }));
+      for (const l of g.leaderboards) out.push(...await boardToasts(l, g));
+      for (const n of g.notices ?? []) out.push({ kind: 'notice', title: n.title || n.text, text: n.title ? n.text : '' });
+      return out;
+    };
+    let on = null, list = [], n = 0, timer = null;
+    // The next one goes up once none is showing.
+    const tick = () => { if (list.length && !document.querySelector('.ach-toast:not(.ach-toast-placing)')) _achToasts.show(list[n++ % list.length]); };
+    const stop = () => { clearInterval(timer); timer = null; on = null; };
+    const toggle = async (which) => {
+      if (on === which) { stop(); return; }
+      stop();
+      list = which === 'game' ? await ofGame() : every;
+      if (!list.length) return;
+      on = which; n = 0;
+      tick();
+      timer = setInterval(tick, 400);
+    };
+    return { toggle, state: () => on, hasGame: () => !!achievements.game };
+  })(),
 });
 
 if (creditsBtn)   creditsBtn.addEventListener('click', _openCredits);

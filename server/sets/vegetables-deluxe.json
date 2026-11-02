@@ -13,24 +13,24 @@
   "leaderboards": [
     {
       "id": 1,
-      "title": "High Score (Shopping)",
-      "description": "Highest score in one Shopping game.",
+      "title": "Hiscores (Shopping)",
+      "description": "Your best score in one Shopping game.",
       "format": "SCORE",
       "lowerIsBetter": false,
       "definition": "STA:d0xH0314=140_0xH08c9=1S0xH0314=149S0xH0314=171::CAN:0xH0314=140_d0xH0314!=140_0xH51cb!=255::SUB:0xH51cb=255_d0xH51cb!=255::VAL:b0xH51c6*1000000_b0xH51c5*10000_b0xH51c4*100"
     },
     {
       "id": 2,
-      "title": "High Score (Classic)",
-      "description": "Highest score in one Classic game.",
+      "title": "Hiscores (Classic)",
+      "description": "Your best score in one Classic game.",
       "format": "SCORE",
       "lowerIsBetter": false,
       "definition": "STA:d0xH0314=140_0xH08c9=2S0xH0314=149S0xH0314=171::CAN:0xH0314=140_d0xH0314!=140_0xH51cb!=255::SUB:0xH51cb=255_d0xH51cb!=255::VAL:b0xH51c6*1000000_b0xH51c5*10000_b0xH51c4*100"
     },
     {
       "id": 3,
-      "title": "High Score (Countdown)",
-      "description": "Highest score in one Countdown game.",
+      "title": "Hiscores (Countdown)",
+      "description": "Your best score in one Countdown game.",
       "format": "SCORE",
       "lowerIsBetter": false,
       "definition": "STA:d0xH0314=140_0xH08c9=3S0xH0314=149S0xH0314=171::CAN:0xH0314=140_d0xH0314!=140_0xH51cb!=255::SUB:0xH51cb=255_d0xH51cb!=255::VAL:b0xH51c6*1000000_b0xH51c5*10000_b0xH51c4*100"

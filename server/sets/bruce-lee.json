@@ -1,0 +1,96 @@
+{
+  "id": "bruce-lee",
+  "title": "Bruce Lee",
+  "url": "https://www.lemon64.com/game/bruce-lee",
+  "hashes": [
+    {
+      "hash": "ac19ecbfe808b0291a328f65e56ffbe6",
+      "label": "OneLoad64 v5 cartridge (Bruce Lee (J1).crt)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Light Fingers",
+      "description": "Take a lantern in the first chamber.",
+      "points": 5,
+      "memaddr": "0xH3172=72_0xH8c45=33_0xH8c46=44_0xH8c47=44_0xH8c48=51_0xH0029=0_d0xH002a=6_0xH002a=5"
+    },
+    {
+      "id": 2,
+      "title": "Lights Out",
+      "description": "Take every lantern in the first chamber.",
+      "points": 10,
+      "memaddr": "0xH3172=72_0xH8c45=33_0xH8c46=44_0xH8c47=44_0xH8c48=51_0xH0029=0_d0xH002a=1_0xH002a=0"
+    },
+    {
+      "id": 3,
+      "title": "Onward",
+      "description": "Leave the first chamber.",
+      "points": 10,
+      "memaddr": "0xH3172=72_0xH8c45=33_0xH8c46=44_0xH8c47=44_0xH8c48=51_0xH0029>=1"
+    },
+    {
+      "id": 4,
+      "title": "Deeper In",
+      "description": "Reach a chamber far from the start.",
+      "points": 25,
+      "memaddr": "0xH3172=72_0xH8c45=33_0xH8c46=44_0xH8c47=44_0xH8c48=51_0xH0029>=10"
+    },
+    {
+      "id": 5,
+      "title": "Ninja Down",
+      "description": "Knock out the ninja.",
+      "points": 15,
+      "memaddr": "0xH3172=72_0xH8c45=33_0xH8c46=44_0xH8c47=44_0xH8c48=51_d0xH0097=65_0xH0097=64"
+    },
+    {
+      "id": 6,
+      "title": "Like Water",
+      "description": "Change chambers with four falls or more left.",
+      "points": 10,
+      "memaddr": "0xH3172=72_0xH8c45=33_0xH8c46=44_0xH8c47=44_0xH8c48=51_0xH0029>=1_0xH0028>=4"
+    },
+    {
+      "id": 7,
+      "title": "Enter the Dragon",
+      "description": "Put the first points on the board.",
+      "points": 5,
+      "memaddr": "0xH3172=72_0xH8c45=33_0xH8c46=44_0xH8c47=44_0xH8c48=51_O:0xH4389>0_O:0xH438a>0_0xH438b>0"
+    },
+    {
+      "id": 8,
+      "title": "A Thousand Kicks",
+      "description": "Reach 1,000 points.",
+      "points": 10,
+      "score": 1000,
+      "memaddr": "0xH3172=72_0xH8c45=33_0xH8c46=44_0xH8c47=44_0xH8c48=51_O:0xH4389>0_0xH438a>=16"
+    },
+    {
+      "id": 9,
+      "title": "Ten Thousand",
+      "description": "Reach 10,000 points.",
+      "points": 15,
+      "score": 10000,
+      "memaddr": "0xH3172=72_0xH8c45=33_0xH8c46=44_0xH8c47=44_0xH8c48=51_0xH4389>0"
+    },
+    {
+      "id": 10,
+      "title": "Forty Thousand",
+      "description": "Reach 40,000 points.",
+      "points": 25,
+      "score": 40000,
+      "memaddr": "0xH3172=72_0xH8c45=33_0xH8c46=44_0xH8c47=44_0xH8c48=51_O:0xU4389>0_0xL4389>=4"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Hiscores",
+      "description": "Your score when the last fall is lost.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH3172=72_0xH8c45=33_0xH8c46=44_0xH8c47=44_0xH8c48=51_0xH0028=4_0xH0029=0_0xH4389=0_0xH438a=0_0xH438b=0::CAN:0=1::SUB:0xH3172=72_d0xH8c45=33_d0xH8c46=44_d0xH8c47=44_d0xH8c48=51_d0xH0028=0_0xH0028=255_O:0xH4389>0_O:0xH438a>0_0xH438b>0::VAL:0xU4389*100000_0xL4389*10000_0xU438a*1000_0xL438a*100_0xU438b*10_0xL438b"
+    }
+  ]
+}

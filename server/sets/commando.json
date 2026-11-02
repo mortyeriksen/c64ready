@@ -11,21 +11,21 @@
   "achievements": [
     {
       "id": 1,
-      "title": "At the Gate",
+      "title": "Knock Knock",
       "description": "Reach the gate at the end of the 1st area.",
       "points": 5,
       "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._0xH04f3=0_0xH0403=0_0xHe348=109_0xHe349=93_0xH0500>0"
     },
     {
       "id": 2,
-      "title": "Broke the 1st Area",
+      "title": "Breakthrough",
       "description": "Break through the 1st area.",
       "points": 5,
       "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._0xH04f3=1_0xHe348=109_0xHe349=93_0xH0500>0"
     },
     {
       "id": 3,
-      "title": "Broke the 2nd Area",
+      "title": "Pressing On",
       "description": "Break through the 2nd area.",
       "points": 10,
       "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._0xH04f3=3_0xHe348=109_0xHe349=93_0xH0500>0"
@@ -40,7 +40,7 @@
     {
       "id": 5,
       "title": "Back for More",
-      "description": "Break through the 1st area of the second mission.",
+      "description": "Clear the 1st area of the second mission.",
       "points": 10,
       "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._0xH04f3=5_0xHe348=109_0xHe349=93_0xH0500>0"
     },
@@ -53,37 +53,38 @@
     },
     {
       "id": 7,
-      "title": "Not a Scratch",
-      "description": "Break through the 1st area without losing a man.",
-      "points": 10,
-      "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._R:0xH0503!=0_0xH04f3=1_0xHe348=109_0xHe349=93_0xH0500>0"
-    },
-    {
-      "id": 8,
-      "title": "Flawless Mission",
-      "description": "Complete the mission without losing a man.",
-      "points": 25,
-      "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._R:0xH0503!=0_0xH04f3=4_0xHe348=109_0xHe349=93_0xH0500>0"
-    },
-    {
-      "id": 9,
-      "title": "Guns Only",
-      "description": "Break through the 1st area without throwing a grenade.",
-      "points": 10,
-      "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._N:0xHe348=109_R:0xH04ff<d0xH04ff_0xH04f3=1_0xHe348=109_0xHe349=93_0xH0500>0"
-    },
-    {
-      "id": 10,
       "title": "Supply Drop",
       "description": "Pick up a box of grenades.",
       "points": 5,
       "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._0xH04ff>d0xH04ff_d0xH04ff>=5_0xHe348=109_0xHe349=93_0xH0500>0"
     },
     {
+      "id": 8,
+      "title": "Guns Only",
+      "description": "Clear the 1st area, no grenades thrown.",
+      "points": 10,
+      "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._N:0xHe348=109_R:0xH04ff<d0xH04ff_0xH04f3=1_0xHe348=109_0xHe349=93_0xH0500>0"
+    },
+    {
+      "id": 9,
+      "title": "Not a Scratch",
+      "description": "Clear the 1st area without losing a man.",
+      "points": 10,
+      "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._R:0xH0503!=0_0xH04f3=1_0xHe348=109_0xHe349=93_0xH0500>0"
+    },
+    {
+      "id": 10,
+      "title": "Flawless Mission",
+      "description": "Complete the mission without losing a man.",
+      "points": 25,
+      "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._R:0xH0503!=0_0xH04f3=4_0xHe348=109_0xHe349=93_0xH0500>0"
+    },
+    {
       "id": 11,
       "title": "Private",
       "description": "Score 10,000 points.",
       "points": 5,
+      "score": 10000,
       "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._A:0xU04f9*1000_A:0xL04f9*100_A:0xU04f8*10_0xL04f8>=100_0xHe348=109_0xHe349=93_0xH0500>0"
     },
     {
@@ -91,6 +92,7 @@
       "title": "Sergeant",
       "description": "Score 25,000 points.",
       "points": 5,
+      "score": 25000,
       "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._A:0xU04f9*1000_A:0xL04f9*100_A:0xU04f8*10_0xL04f8>=250_0xHe348=109_0xHe349=93_0xH0500>0"
     },
     {
@@ -98,6 +100,7 @@
       "title": "Lieutenant",
       "description": "Score 50,000 points.",
       "points": 10,
+      "score": 50000,
       "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._A:0xU04f9*1000_A:0xL04f9*100_A:0xU04f8*10_0xL04f8>=500_0xHe348=109_0xHe349=93_0xH0500>0"
     },
     {
@@ -105,14 +108,15 @@
       "title": "Colonel",
       "description": "Score 100,000 points.",
       "points": 25,
+      "score": 100000,
       "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._A:0xU04f9*1000_A:0xL04f9*100_A:0xU04f8*10_0xL04f8>=1000_0xHe348=109_0xHe349=93_0xH0500>0"
     }
   ],
   "leaderboards": [
     {
       "id": 1,
-      "title": "High Score",
-      "description": "Highest score in one game.",
+      "title": "Hiscores",
+      "description": "Your best score in one game.",
       "format": "SCORE",
       "lowerIsBetter": false,
       "definition": "STA:0xHe348=109_d0xHe348!=109_0xH04f3=0_0xH0500=5_0x 04f8=0::CAN:0=1::SUB:0xH0500=0_d0xH0500=1::VAL:0xU04f9*100000_0xL04f9*10000_0xU04f8*1000_0xL04f8*100"

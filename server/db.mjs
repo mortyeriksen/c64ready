@@ -146,6 +146,27 @@ const MIGRATIONS = [
   `CREATE TABLE bans (key TEXT PRIMARY KEY, ip TEXT, until INTEGER NOT NULL, reason TEXT, at INTEGER NOT NULL);`,
   // A page about the game elsewhere, from its set.
   `ALTER TABLE games ADD COLUMN url TEXT;`,
+  // Fair play. A result the server finds odd waits for review, its flag saying why. When each
+  // account opened each game, for those checks. What counts in public: hardcore results with no flag.
+  `ALTER TABLE unlocks ADD COLUMN flag TEXT;
+   ALTER TABLE lb_entries ADD COLUMN flag TEXT;
+   CREATE TABLE plays (
+     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     game_id TEXT NOT NULL,
+     started_at INTEGER NOT NULL,
+     seen_at INTEGER NOT NULL,
+     PRIMARY KEY (user_id, game_id)
+   );
+   CREATE VIEW clean_unlocks AS SELECT * FROM unlocks WHERE hardcore = 1 AND flag IS NULL;
+   CREATE VIEW clean_entries AS SELECT * FROM lb_entries WHERE hardcore = 1 AND flag IS NULL;`,
+  // A board's plausible limits, from its set: a higher (or, where fewer is better, a lower) value is flagged.
+  `ALTER TABLE leaderboards ADD COLUMN max_value INTEGER;
+   ALTER TABLE leaderboards ADD COLUMN min_value INTEGER;`,
+  // Results posted before the app said whether play was hardcore came in as softcore: they count.
+  `UPDATE unlocks SET hardcore = 1;
+   UPDATE lb_entries SET hardcore = 1;`,
+  // A score milestone, from its set: the score an achievement stands for on the game's boards.
+  `ALTER TABLE achievements ADD COLUMN score_at INTEGER;`,
 ];
 
 /** The schema version a fully migrated database records. */

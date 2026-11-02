@@ -34,15 +34,39 @@ function passkeyMessage(e) {
  * @param {object} o
  * @param {HTMLElement[]} o.buttons  open and close the window: ACHIEVEMENTS in the header, and the
  *   fullscreen toolbar's trophy. A button with `data-tab` opens it on that tab.
+ * @param {{ toggle: (which: 'all'|'game') => Promise<void>, state: () => string|null, hasGame: () => boolean }} [o.testToasts]
+ *   on a dev server, TEST TOAST and TEST GAME after its name: each turns a cycle of sample toasts on and off,
+ *   every kind or the loaded game's own, one at a time
  */
-export function initOnline({ buttons, win, closeBtn, account = createAccount(), engine = null }) {
+export function initOnline({ buttons, win, closeBtn, account = createAccount(), engine = null, testToasts = null }) {
   buttons = buttons.filter(Boolean);
   if (!buttons.length || !win) return null;
   // Talking to anything but the production server (the dev server's own, or an override) says so in the
   // title, unless c64emu.hideDevServer is set (the guide's screenshots, taken against a dev server).
   let hideDev = false;
   try { hideDev = localStorage.getItem('c64emu.hideDevServer') === '1'; } catch { /* storage blocked */ }
-  if (chatServerUrl() !== CHAT_SERVER && !hideDev) win.querySelector('.online-title')?.append(h('span', { class: 'online-dev' }, ' (dev server)'));
+  if (chatServerUrl() !== CHAT_SERVER && !hideDev) {
+    const title = win.querySelector('.online-title');
+    title?.append(h('span', { class: 'online-dev' }, ' (dev server)'));
+    if (testToasts) {
+      const all = h('button', { type: 'button', class: 'btn online-dev-test', 'aria-pressed': 'false', title: 'Cycle through every kind of toast in turn, on and off' }, 'TEST TOAST');
+      const game = h('button', { type: 'button', class: 'btn online-dev-test', 'aria-pressed': 'false', title: "Cycle through the loaded game's own toasts: each achievement, its scores and notices, on and off" }, 'TEST GAME');
+      const show = () => {
+        const on = testToasts.state();
+        for (const [b, which, label] of [[all, 'all', 'TEST TOAST'], [game, 'game', 'TEST GAME']]) {
+          b.setAttribute('aria-pressed', String(on === which));
+          b.textContent = on === which ? `${label}: ON` : label;
+        }
+      };
+      all.addEventListener('click', async () => { await testToasts.toggle('all'); show(); });
+      game.addEventListener('click', async () => {
+        if (!testToasts.hasGame() && testToasts.state() !== 'game') { game.textContent = 'NO GAME LOADED'; setTimeout(show, 1500); return; }
+        game.textContent = 'TEST GAME…';
+        await testToasts.toggle('game'); show();
+      });
+      title?.after(all, game);
+    }
+  }
   const gameEl = win.querySelector('#achievements-game');
   const accountEl = win.querySelector('#achievements-account');
   const chatEl = win.querySelector('#online-chat');
@@ -304,13 +328,15 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     // A new unlock moves the player in the Hall of Fame: fetch it again.
     if (standingsOf === game.hash && !loadingStandings && game.achievements.filter(unlocked).length !== topUnlocked) loadStandings();
     gameEl.replaceChildren(...[
-      gameHead(ctx, game, game.achievements, unlocked),
-      game.notice ? h('p', { class: 'ach-notice', role: 'status' }, game.notice) : null,
+      gameHead(ctx, game, game.achievements, unlocked, { refresh: () => Promise.all([loadStandings(), engine.refreshChecks().catch(() => {})]) }),
+      game.notice ? h('p', { class: 'ach-notice', role: 'status' }, game.notice)
+        // Softcore play: what it unlocks stays the player's own, until a reset.
+        : game.softcore ? h('p', { class: 'ach-notice', role: 'status' }, `Softcore: ${game.softcore}. Nothing counts in public until a reset.`) : null,
       account.user ? null : h('p', { class: 'achievements-note ach-signin-note' }, 'Signed out: sign in to keep what you unlock. ',
         h('button', { type: 'button', class: 'achievements-link', on: { click: () => selectTab('account') } }, 'Sign in')),
       ...game.leaderboards.map((l) => highScoreScreen(ctx, game.title, l, standingsOf === game.hash ? standings.get(l.id) : null, live.get(l.id) ?? null)),
       game.achievements.length ? hallOfFame(ctx, game.title, standingsOf === game.hash ? top : null) : null,
-      ...(game.achievements.length ? [h('h4', { class: 'ach-h' }, 'Your achievements'), achievementList(game.achievements, unlocked, (a) => a.unlockedAt)] : []),
+      ...(game.achievements.length ? [h('h4', { class: 'ach-h' }, 'Your achievements'), achievementList(game.achievements, unlocked, (a) => a.unlockedAt, (a) => a.checking)] : []),
     ].filter(Boolean));
   }
 

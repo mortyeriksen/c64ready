@@ -22,14 +22,19 @@ import { createGamesApi } from './api.js';
  * @param {{ token: string|null, user: object|null }} o.account  the signed-in account (src/account/account.js)
  * @param {string} o.base               the API's address (apiBase())
  * @param {(e: object) => void} [o.onChange]       the game, its achievements or unlocks changed
- * @param {(e: object) => void} [o.onUnlock]       { achievement, saved }
+ * @param {(e: object) => void} [o.onUnlock]       { achievement, saved, signedIn, complete }: complete, { id, title, count, points }, when it was the set's last
  * @param {(e: object) => void} [o.onLeaderboard]  { type: 'started'|'updated'|'canceled'|'submitted', leaderboard, value, result? }
- * @param {(e: object) => void} [o.onNotice]       { text }: a set's notice became true, such as a trainer that keeps the game from counting
+ * @param {(e: object) => void} [o.onSoftcore]     { reason, quiet }: play stopped counting in public, until the next reset
+ * @param {(e: object) => void} [o.onNotice]       { title, text }: a set's notice became true, such as a trainer that keeps the game from counting
  * @param {() => void} [o.onSessionLost]           the server no longer knows the session (401): the account should be checked again
  */
-export function createAchievementEngine({ account, base, fetchImpl = (...a) => fetch(...a), loadRc = loadRcheevos, onChange = () => {}, onUnlock = () => {}, onLeaderboard = () => {}, onNotice = () => {}, onSessionLost = () => {}, log = (...a) => console.warn(...a) } = {}) {
+export function createAchievementEngine({ account, base, fetchImpl = (...a) => fetch(...a), loadRc = loadRcheevos, onChange = () => {}, onUnlock = () => {}, onLeaderboard = () => {}, onNotice = () => {}, onSoftcore = () => {}, onSessionLost = () => {}, log = (...a) => console.warn(...a) } = {}) {
   let rc = null, rcLoading = null;
-  let game = null;          // { hash, id, title, files, achievements, leaderboards, notices, notice, unlocked: Map id → when }
+  let game = null;
+  // Why this machine's play no longer counts in public, or null while it is hardcore: a save
+  // state was loaded, or a set's notice saw a trainer. Kept until the machine is reset, so a
+  // state loaded before its game is found still counts against it.
+  let softcore = null;          // { hash, id, title, files, achievements, leaderboards, notices, notice, unlocked: Map id → when }
   // A notice runs in rcheevos as an achievement under an id of its own, far
   // above any set's: it is shown, never unlocked or saved, and armed again.
   const NOTICE_BASE = 1_000_000_000;
@@ -44,6 +49,8 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
 
   // The account's unlocks of a game, id → when (unlocked this session: now).
   const unlockMap = (data) => new Map((data.unlocks ?? data.unlocked.map((id) => ({ id, at: null }))).map((u) => [u.id, u.at]));
+  // The account's unlocks the server flagged: they count once an admin has checked them.
+  const checkingOf = (data) => new Set((data.unlocks ?? []).filter((u) => u.checking).map((u) => u.id));
   const getRc = () => rc ? Promise.resolve(rc) : (rcLoading ||= loadRc().then((r) => (rc = r)));
 
   const api = createGamesApi({ base, account, fetchImpl });
@@ -99,8 +106,8 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
       if (account.user?.id !== uid) { mine.slice(i).forEach(keepUnsaved); return; }
       const e = mine[i];
       try {
-        if (e.kind === 'unlock') await call('POST', `/games/${e.hash}/unlocks`, { achievementId: e.id, hardcore: false });
-        else await call('POST', `/games/${e.hash}/leaderboards/${e.id}/entries`, { value: e.value, hardcore: false });
+        if (e.kind === 'unlock') await call('POST', `/games/${e.hash}/unlocks`, { achievementId: e.id, hardcore: e.hardcore === true });
+        else await call('POST', `/games/${e.hash}/leaderboards/${e.id}/entries`, { value: e.value, hardcore: e.hardcore === true });
       } catch (err) {
         // Kept while the server is out of reach or the session is gone; any other refusal is final.
         if (retryable(err)) keepUnsaved(e);
@@ -141,7 +148,7 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
   }
 
   /**
-   * Finds the game among the loaded files (cartridge, drive 8, drive 9, tape).
+   * Finds the game among the loaded files (cartridge, drives, tape, RAM program).
    * Ejecting everything keeps the game: a program loaded from tape or disk
    * runs on without it. Another file of the same game (a tape's second side,
    * the next disk) keeps rcheevos's state, so a game in progress carries on.
@@ -183,7 +190,7 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
       if (gen !== generation) return;      // the media changed again meanwhile
       if (data === undefined) { retryLater(); return; }
       if (data) {
-        setGame({ hash, slot: f.slot, id: data.game.id, title: data.game.title, files: data.files ?? [], achievements: data.achievements, leaderboards: data.leaderboards, notices: data.notices ?? [], notice: null, unlocked: unlocksOf(data, hash) });
+        setGame({ hash, slot: f.slot, id: data.game.id, title: data.game.title, files: data.files ?? [], achievements: data.achievements, leaderboards: data.leaderboards, notices: data.notices ?? [], notice: null, unlocked: unlocksOf(data, hash), checking: checkingOf(data) });
         return;
       }
     }
@@ -201,18 +208,27 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
     const at = Date.now();
     game.unlocked.set(id, at);
     rc.deactivateAchievement(id);
-    let saved = false, signedIn = !!account.user;
-    const hash = game.hash, uid = account.user?.id ?? null;
+    let saved = false, signedIn = !!account.user, checking = false;
+    const hash = game.hash, uid = account.user?.id ?? null, hardcore = !softcore;
     lookups.delete(hash);   // the cached answer predates this unlock
     if (account.user) {
-      try { await call('POST', `/games/${hash}/unlocks`, { achievementId: id, hardcore: false }); saved = true; if (unsaved.length) postUnsaved(); }
+      try {
+        const res = await call('POST', `/games/${hash}/unlocks`, { achievementId: id, hardcore });
+        saved = true;
+        if (res?.flagged) { checking = true; game?.checking?.add(id); }
+        if (unsaved.length) postUnsaved();
+      }
       catch (e) {
         log(`achievements: unlock not saved: ${e.message}`);
-        if (retryable(e)) keepUnsaved({ hash, kind: 'unlock', id, at, uid });
+        if (retryable(e)) keepUnsaved({ hash, kind: 'unlock', id, at, uid, hardcore });
         if (lost(e)) { signedIn = false; onSessionLost(); }
       }
-    } else keepUnsaved({ hash, kind: 'unlock', id, at, uid });
-    onUnlock({ achievement: a, saved, signedIn });
+    } else keepUnsaved({ hash, kind: 'unlock', id, at, uid, hardcore });
+    // The last of the set: the whole game is done.
+    const complete = game.achievements.every((x) => game.unlocked.has(x.id))
+      ? { id: game.id, title: game.title, count: game.achievements.length, points: game.achievements.reduce((n, x) => n + (x.points ?? 0), 0) }
+      : null;
+    onUnlock({ achievement: a, saved, signedIn, complete, softcore, checking });
     onChange(snapshot());
   }
   async function submitted(id, value) {
@@ -220,14 +236,16 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
     if (!l) return;
     let result = null, signedIn = !!account.user;
     const hash = game.hash, uid = account.user?.id ?? null;
+    // A softcore score goes on no board: it is not posted at all.
+    if (softcore) { onLeaderboard({ type: 'submitted', leaderboard: l, value, result: null, signedIn, softcore }); return; }
     if (account.user) {
-      try { result = await call('POST', `/games/${hash}/leaderboards/${id}/entries`, { value, hardcore: false }); }
+      try { result = await call('POST', `/games/${hash}/leaderboards/${id}/entries`, { value, hardcore: true }); }
       catch (e) {
         log(`achievements: score not saved: ${e.message}`);
-        if (retryable(e)) keepUnsaved({ hash, kind: 'score', id, value, uid });
+        if (retryable(e)) keepUnsaved({ hash, kind: 'score', id, value, uid, hardcore: true });
         if (lost(e)) { signedIn = false; onSessionLost(); }
       }
-    } else keepUnsaved({ hash, kind: 'score', id, value, uid });
+    } else keepUnsaved({ hash, kind: 'score', id, value, uid, hardcore: true });
     onLeaderboard({ type: 'submitted', leaderboard: l, value, result, signedIn });
   }
 
@@ -237,19 +255,31 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
     if (!n) return;
     rc.deactivateAchievement(NOTICE_BASE + id);
     rc.activateAchievement(NOTICE_BASE + id, n.memaddr);
-    if (game.notice === n.text) return;
-    game.notice = n.text;
-    onNotice({ text: n.text });
+    const shown = n.title ? `${n.title}: ${n.text}` : n.text;
+    if (game.notice === shown) return;
+    game.notice = shown;
+    onNotice({ title: n.title ?? '', text: n.text });
+    taint(n.title || n.text, true);
     onChange(snapshot());
+  }
+
+  /** Play stops counting in public until the next reset, saying why; `quiet` when a notice already said so. */
+  function taint(reason, quiet = false) {
+    if (softcore) return;
+    softcore = reason;
+    onSoftcore({ reason, quiet });
+    if (game) onChange(snapshot());
   }
 
   function snapshot() {
     return game ? {
-      title: game.title, hash: game.hash,
+      id: game.id, title: game.title, hash: game.hash,
       files: game.files,
-      achievements: game.achievements.map((a) => ({ id: a.id, title: a.title, description: a.description, points: a.points, unlocked: game.unlocked.has(a.id), unlockedAt: game.unlocked.get(a.id) ?? null })),
+      achievements: game.achievements.map((a) => ({ id: a.id, title: a.title, description: a.description, points: a.points, unlocked: game.unlocked.has(a.id), unlockedAt: game.unlocked.get(a.id) ?? null, checking: game.checking?.has(a.id) ?? false })),
       leaderboards: game.leaderboards.map((l) => ({ id: l.id, title: l.title, description: l.description, format: l.format, lowerIsBetter: l.lowerIsBetter })),
       notice: game.notice,
+      softcore,
+      notices: game.notices.map((n) => ({ title: n.title ?? '', text: n.text })),
     } : null;
   }
 
@@ -288,6 +318,8 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
      * loaded, nothing of it is left to play, and the game ends.
      */
     reset() {
+      // A reset machine plays clean again.
+      softcore = null;
       if (!active) return;
       if (game && !heldBy()) { setGame(null); return; }
       rc.reset();
@@ -307,9 +339,29 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
       if (!data || game !== g || turn !== accountTurn) return;
       // This account's unlocks, with what it unlocked here that is still on its way.
       g.unlocked = unlocksOf(data, g.hash);
+      g.checking = checkingOf(data);
       activate();
       onChange(snapshot());
     },
+    /**
+     * Asks the server again which of the game's unlocks are still being checked, as after an admin
+     * approved them. Only that changes: the set stays armed as it is, so a game in progress carries on.
+     */
+    async refreshChecks() {
+      const g = game;
+      if (!g || !account.user) return;
+      lookups.delete(g.hash);
+      const data = await lookup(g.hash);
+      if (!data || game !== g) return;
+      const next = checkingOf(data);
+      if ([...next].join() === [...(g.checking ?? [])].join()) return;
+      g.checking = next;
+      onChange(snapshot());
+    },
+    /** Something that should not count in public happened, such as a save state loaded: until the next reset. */
+    taint,
+    /** Why play does not count in public now, or null. */
+    get softcore() { return softcore; },
     /** The games API, as the same account. */
     api,
     /** A leaderboard's top entries (`limit`, default 10) and the account's own. */

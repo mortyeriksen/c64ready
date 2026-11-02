@@ -45,7 +45,7 @@ When a game with achievements loads, the window opens on its **GAME** tab. On
 a phone or in fullscreen, the **ACHIEVEMENTS** button flashes three times
 instead.
 
-![The Achievements window docked beside Uridium's title screen, on its GAME tab: the progress meter with 4 of 22 achievements, the high scores and the Hall of Fame with five players and your own row highlighted, and the first achievements, two of them unlocked.](/guide/achievements-game.webp)
+![The Achievements window docked beside Commando Arcade in play, on its GAME tab: the progress meter with 4 of 14 achievements, the high scores and the Hall of Fame with five players and your own row highlighted, and the first achievements, two of them unlocked.](/guide/achievements-game.webp)
 
 The **GAME** tab shows:
 
@@ -62,11 +62,32 @@ they are saved when you sign in on this page.
 Some games notice a trainer or cheat, such as unlimited lives, and C64 READY.
 says so when it is on.
 
+Only hardcore play counts in public. Loading a save state, or a trainer a game
+notices, makes the game softcore until you reset the machine: what you unlock
+stays on your own page, but not in the Hall of Fame or the activity, and scores
+are not posted. Results that look unlikely wait for a check before they show.
+
 A game stays on while you turn its tape over or change its disk. Ejecting its
 cartridge ends it, and so does a reset once none of its files is loaded.
 
 To play without achievements, turn them off in Options ▸ Other ▸
 **ACHIEVEMENTS**. Nothing you load is looked at then.
+
+### Toasts
+
+Unlocks, posted scores and notices show as toasts for five seconds, one at a
+time. The icon tells the kind: a trophy, a podium or a warning sign. Point at
+one to keep it up.
+
+Bigger unlocks get bigger moments, up to a shower of PETSCII characters at 50
+points. A new best is stamped **BEST**. A new first place, or the unlock that
+completes a game, turns the toast to gold.
+
+Options ▸ Other ▸ **TOAST** places them on the screen, top center by default.
+In [Retro Vibes](GUIDE-LOOKS.md#retro-vibes) its toast button lets you drag one
+anywhere and resize it. The browser remembers both.
+
+![Retro Vibes' IK+ Sunset with Commando Arcade in play on the TV, and a new first place toast at the top: turned to gold with a crown, stamped #1, PETSCII hearts, diamonds, spades and stars showering from it.](/guide/vibes-toast.webp)
 
 ## Games with achievements
 
@@ -74,17 +95,25 @@ To play without achievements, turn them off in Options ▸ Other ▸
 | --- | --- | --- | --- |
 | 1943 | 14 | yes | OneLoad64 v5: `1943 - The Battle of Midway (J1).crt` |
 | Action Biker | 41 | yes | OneLoad64 v5: `Action Biker.crt` |
+| Barbarian: The Ultimate Warrior | 10 | yes | OneLoad64 v5: both `Barbarian - The Ultimate Warrior (Side 1)` and `(Side 2)` cartridges, or their crunched and uncrunched programs |
+| Beach-Head | 10 | yes | OneLoad64 v5: `Beach-Head.crt` |
+| Blue Max | 16 | yes | OneLoad64 v5: `Blue Max.crt` |
 | Bomb Jack | 19 | yes | OneLoad64 v5: `Bomb Jack.crt` |
+| Boulder Dash | 11 | yes | OneLoad64 v5: `Boulder Dash (J1).crt` |
+| Bruce Lee | 10 | yes | OneLoad64 v5: `Bruce Lee (J1).crt` |
 | Bubble Bobble | 14 | yes | OneLoad64 v5: `Bubble Bobble.crt` |
 | Buggy Boy | 12 | yes | OneLoad64 v5: `Buggy Boy.crt` |
 | Chuckie Egg | | yes | OneLoad64 v5: `Chuckie Egg.crt` |
 | Commando | 14 | yes | OneLoad64 v5: `Commando.crt` |
 | Commando Arcade | 14 | yes | Nostalgia's EasyFlash `CommandoArcade_N0S_EF.crt`, or OneLoad64 v5 extras: `Commando Arcade - Special Edition [EasyFlash].crt` |
-| Defender of the Crown | 6 |  | OneLoad64 v5 extras: `Defender of the Crown [EasyFlash].crt` |
+| Cybernoid | 13 | yes | OneLoad64 v5: `Cybernoid.crt` |
+| Cybernoid II | 10 | yes | OneLoad64 v5: `Cybernoid II.crt` |
+| Defender of the Crown | 12 |  | OneLoad64 v5 extras: `Defender of the Crown [EasyFlash].crt` |
 | Forbidden Forest | 16 | yes | OneLoad64 v5: `Forbidden Forest.crt`, or c64cade's cartridge |
 | Galaga (Arlasoft) | | yes | OneLoad64 v5: `Galaga (Arlasoft - 2021).crt`, or c64cade's `galagaV106_FH.d64` |
 | Ghosts 'n Goblins | 15 | yes | OneLoad64 v5: `Ghosts'n Goblins.crt` |
 | Ghosts 'n Goblins Arcade | 10 | yes | OneLoad64 v5 extras: `Ghosts'n Goblins Arcade [EasyFlash].crt` |
+| Great Giana Sisters | 10 | yes | OneLoad64 v5: `Great Giana Sisters, The.crt` |
 | Gribbly's Day Out | | yes | OneLoad64 v5: `Gribbly's Day Out.crt` |
 | IK+ | 13 | yes | OneLoad64 v5: `IK+.crt` |
 | Impossible Mission | 10 | yes | OneLoad64 v5: `Impossible Mission.crt` |
@@ -92,22 +121,31 @@ To play without achievements, turn them off in Options ▸ Other ▸
 | Mole Attack | | yes | OneLoad64 v5 extras: `Mole Attack.crt` (the official cartridge), or c64cade's PRG |
 | Munchy Worm | | yes | c64cade's `munchyworm_1_01.d64` |
 | Nemesis | 22 | yes | OneLoad64 v5: `Nemesis.crt` |
-| Out Run | 8 | yes | OneLoad64 v5: `Out Run (Route A) (J1).crt`, Route B or Route C, or MultiLoad64: `Out Run (by $olo1870) [EasyFlash].crt` |
+| Out Run | 14 | five routes | OneLoad64 v5: `Out Run (Route A) (J1).crt` through Route E, or MultiLoad64: `Out Run (by $olo1870) [EasyFlash].crt` (select routes 1 to 5) |
+| Paperboy | 18 | yes | OneLoad64 v5: `Paperboy.crt`, or `AlternativeFormats/PRGs/Crunched/Paperboy.prg` or `AlternativeFormats/PRGs/Uncrunched/Paperboy.prg` |
 | Panther | | yes | OneLoad64 v5: `Panther.crt`, or c64cade's cartridge |
+| Paradroid | 11 | yes | OneLoad64 v5: `Paradroid.crt` |
 | Rainbow Islands | 24 | yes | OneLoad64 v5 MultiLoad64: `Rainbow Islands (by $olo1870) [EasyFlash].crt`, or c64cade's copy |
+| Rambo First Blood Part II | 17 | yes | OneLoad64 v5: `Rambo - First Blood Part II.crt` |
 | Road Runner | | yes | OneLoad64 v5 MultiLoad64: `Road Runner (by $olo1870) [EasyFlash].crt` |
 | Stix | | yes | OneLoad64 v5: `Stix (J1).crt`, the official cartridge `Stix.crt` in the extras, or c64cade's PRG |
 | Super Mario Bros 64 | 17 | yes | OneLoad64 v5: `Super Mario Bros 64 (Zeropaige - 2019).crt` |
-| The Last Ninja | 10 |  | OneLoad64 v5 MultiLoad64: `Last Ninja, The (by $olo1870) [EasyFlash].crt` |
+| The Hitchhiker's Guide to the Galaxy | 22 | Fewest moves to 400 points | Release 47 disk: `hitchhikers_guide[infocom_1984](r47).d64` |
+| The Last Ninja | 20 |  | OneLoad64 v5 MultiLoad64: `Last Ninja, The (by $olo1870) [EasyFlash].crt` |
 | The Way of the Exploding Fist | 10 | yes | OneLoad64 v5: `Way of the Exploding Fist, The.crt` |
 | Thrust | | yes | OneLoad64 v5: `Thrust (J1).crt` |
 | Uridium | 22 | yes | OneLoad64 v5: `Uridium.crt` |
 | Vegetables Deluxe | | Shopping, Classic and Countdown | c64cade's `vegdlxnointro.prg` |
 | Wizball | 9 | yes | OneLoad64 v5: `Wizball.crt` |
+| Yie Ar Kung-Fu | 12 | yes | OneLoad64 v5: `Yie Ar Kung-Fu.crt` |
+| Zork I | 20 | Fewest moves to 350 points | Assembly64's `zorki-1541.d64` (release 30) |
 
-All but 1943, Bomb Jack, Bubble Bobble, Buggy Boy, Commando, Commando Arcade, Defender of the Crown, Ghosts 'n Goblins, Ghosts 'n Goblins Arcade, IK+, Impossible Mission, Nemesis, Out Run, Super Mario Bros 64, The Last Ninja, The Way of the Exploding Fist and Wizball are ported from
-[c64-cheevos](https://github.com/hayesmaker/c64-cheevos) by hayesmaker (MIT),
-the achievements of [C64Cade](https://c64cade.com).
+Action Biker, Chuckie Egg, Forbidden Forest, Galaga (Arlasoft), Gribbly's Day
+Out, Mario's Cement Factory, Mole Attack, Munchy Worm, Panther, Rainbow
+Islands, Road Runner, Stix, Thrust, Uridium and Vegetables Deluxe are ported
+from [c64-cheevos](https://github.com/hayesmaker/c64-cheevos) by hayesmaker
+(MIT), the achievements of [C64Cade](https://c64cade.com). The rest are made
+for C64 READY.
 
 ## Activity, games and profiles
 
@@ -116,7 +154,7 @@ the loaded game's name narrows it to that game, and **LOAD MORE** at the
 bottom brings older entries, a page at a time. A game's own activity, on its
 page, pages the same way. A player keeps the same colour here and in the chat.
 
-![The ACTIVITY tab, docked beside the app with Uridium running: players' unlocks and high scores, newest first, each with its points.](/guide/achievements-activity.webp)
+![The ACTIVITY tab, docked beside the app with Commando Arcade in play: players' unlocks and high scores, newest first, each with its points.](/guide/achievements-activity.webp)
 
 **GAMES** lists every game with your progress: the loaded game first, then the
 games you have played, most complete first, with when you last played them
@@ -136,7 +174,7 @@ each game they have played.
 The chat is one conversation for everyone signed in. It connects only when you
 open the **CHAT** tab.
 
-![The CHAT tab docked beside Commando's title screen: three players talking, each with their badge, the first message mentioning Commando as a link in the game's colour. While the message box has the keyboard, the screen says to click it to give the keyboard back.](/guide/chat.webp)
+![The CHAT tab docked beside Commando Arcade in play: three players talking, each with their badge, the first message mentioning Commando Arcade as a link in the game's colour. While the message box has the keyboard, the screen says to click it to give the keyboard back.](/guide/achievements-chat.webp)
 
 ### Joining
 

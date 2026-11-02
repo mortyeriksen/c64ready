@@ -891,6 +891,8 @@
           <button class="btn" id="btn-achievements-toggle"
             title="Achievements and high scores for games that have them. Off, nothing loaded is looked at and the machine runs without them. The chat stays.">ACHIEVEMENTS:
             ON</button>
+          <button class="btn" id="btn-toast-pos"
+            title="Where achievement and score toasts show on the screen: a corner or the middle of the top or bottom border. In Retro Vibes the toast button under the framer drags one anywhere.">TOAST: TOP CENTER</button>
         </div>
       </div>
 
@@ -1299,6 +1301,14 @@
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
         stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+      </svg>
+    </button>
+    <button class="model-viewer-toast" id="btn-model-viewer-toast" type="button" hidden aria-pressed="false"
+      title="Place the achievement toast: drag it where you want it, then click here again or press Esc" aria-label="Place the achievement toast">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="5" y="9" width="14" height="6" rx="1.5" />
+        <path d="M12 2v4M10 4l2-2 2 2M12 22v-4M10 20l2 2 2-2" />
       </svg>
     </button>
     <button class="model-viewer-fog" id="btn-model-viewer-fog" type="button" hidden aria-pressed="true"

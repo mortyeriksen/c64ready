@@ -59,7 +59,8 @@ async function renderOverview() {
   const card = (n, label) => { const c = el('div', null, 'card'); c.append(el('b', String(n)), el('span', label, 'meta')); return c; };
   const cards = el('div', null, 'cards');
   cards.append(card(o.players, 'players'), card(o.newToday, 'new today'), card(o.newWeek, 'new this week'), card(o.onlineNow, 'in the chat now'),
-    card(o.activeNow, 'active now (5 min)'), card(o.active24h, 'active today'), card(o.active7d, 'active this week'), card(o.unlocksToday, 'unlocks today'), card(o.bestsToday, 'new bests today'));
+    card(o.activeNow, 'active now (5 min)'), card(o.active24h, 'active today'), card(o.active7d, 'active this week'), card(o.unlocksToday, 'unlocks today'), card(o.bestsToday, 'new bests today'),
+    card(o.toReview, 'to review'));
   const active = el('section');
   active.append(el('h2', 'Active now'));
   const list = el('ul', null, 'list');
@@ -84,7 +85,28 @@ async function renderOverview() {
   latest.append(ll);
   const split = el('div', null, 'split');
   split.append(active, games, latest);
-  box.replaceChildren(cards, split);
+  box.replaceChildren(cards, await reviewSection(), split);
+}
+
+// Results the fair-play checks flagged: hidden from the public until approved, or cleared.
+async function reviewSection() {
+  const sec = el('section');
+  sec.append(el('h2', 'To review'));
+  let r;
+  try { r = await api('/admin/api/flags'); } catch (e) { sec.append(el('p', e.message, 'bad')); return sec; }
+  const ul = el('ul', null, 'list');
+  for (const f of r.items) {
+    const li = el('li');
+    const what = f.kind === 'unlock' ? `unlocked ${f.item ?? `#${f.ref}`}${f.points != null ? ` (${f.points} points)` : ''}` : `scored ${f.value} on ${f.item ?? `board ${f.ref}`}`;
+    const decide = (decision) => btn(decision === 'approve' ? 'Approve' : 'Clear', async () => {
+      try { await api('/admin/api/flags', { kind: f.kind, user: f.user.id, game: f.game.id, ref: f.ref, decision }); renderOverview(); } catch (e) { alert(e.message); }
+    }, decision === 'clear' ? 'danger' : '');
+    li.append(playerLink(f.user), el('span', ` ${what} in ${f.game.title}, ${ago(f.at)}: ${f.flag}. `, 'meta'), decide('approve'), ' ', decide('clear'));
+    ul.append(li);
+  }
+  if (!r.items.length) ul.append(el('li', 'Nothing flagged.', 'meta'));
+  sec.append(ul);
+  return sec;
 }
 function playerLink(p) {
   return btn(p.name, () => { showTab('players'); openPlayer(p.id); }, 'link');

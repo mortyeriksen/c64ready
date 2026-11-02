@@ -49,8 +49,8 @@ export async function postApi(base, token, url, body) {
 
 /** Posts a player's unlocks and best score on leaderboard 1 of the game with `hash`. */
 export async function play(base, token, hash, ids, score) {
-  for (const id of ids) await postApi(base, token, `/games/${hash}/unlocks`, { achievementId: id, hardcore: false });
-  if (score) await postApi(base, token, `/games/${hash}/leaderboards/1/entries`, { value: score, hardcore: false });
+  for (const id of ids) await postApi(base, token, `/games/${hash}/unlocks`, { achievementId: id, hardcore: true });
+  if (score) await postApi(base, token, `/games/${hash}/leaderboards/1/entries`, { value: score, hardcore: true });
 }
 
 /**

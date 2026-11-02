@@ -160,7 +160,7 @@ function gameOver() { ram[LIVES] = 0xff; ram[DYING] = 1; frames(140); ram[DYING]
 // (without it, the round number moves on on the same frame as the clear).
 for (const [lit, how] of [[0, 'a plain clear'], [23, 'a firebomb clear']]) {
   activate(); title(); newGame();
-  const rounds = { 1: 'Riddle of the Sphinx', 2: 'Acropolis Now', 3: 'King of the Castle', 4: 'City Slicker', 5: 'Grand Tour', 10: 'Second Tour' };
+  const rounds = { 1: 'Riddle of the Sphinx', 2: 'Acropolis Now', 3: 'King of the Castle', 4: 'City Slicker', 5: 'Grand Tour', 10: 'Encore' };
   for (let r = 1; r <= 10; r++) {
     const t = rounds[r];
     if (t) expect(!has(t), `${t} not before round ${r} is cleared (${how})`);
@@ -177,9 +177,9 @@ for (const [lit, how] of [[0, 'a plain clear'], [23, 'a firebomb clear']]) {
 {
   activate(); title(); newGame();
   clearRound(19);
-  expect(!has('Firebomb Bonus'), '19 lit bombs earn no bonus');
+  expect(!has('Fuse Box'), '19 lit bombs earn no bonus');
   clearRound(20, 20000);
-  expect(has('Firebomb Bonus'), 'Firebomb Bonus at 20 lit bombs');
+  expect(has('Fuse Box'), 'Firebomb Bonus at 20 lit bombs');
   clearRound(22, 20000);
   expect(!has('Perfect Sequence'), '22 lit bombs are not the 50,000 bonus');
   clearRound(23, 50000);
@@ -194,13 +194,13 @@ for (const [lit, how] of [[0, 'a plain clear'], [23, 'a firebomb clear']]) {
   expect(has('Power Play'), 'Power Play when the power timer is set');
   for (let t = 0x95; t > 0; t--) { ram[POWER] = t; frame(); }
   ram[MULT] = 2; frames(2);
-  expect(has('Bonus Multiplier'), 'Bonus Multiplier when the multiplier goes 1 to 2');
+  expect(has('Bonus Bump'), 'Bonus Multiplier when the multiplier goes 1 to 2');
   ram[MULT] = 3; frames(2); ram[MULT] = 4; frames(2);
-  expect(!has('Five Times Over'), 'x4 is not x5');
+  expect(!has('High Five'), 'x4 is not x5');
   clearRound();
-  expect(!has('Five Times Over') && ram[MULT] === 1, 'the next round starts back at x1');
+  expect(!has('High Five') && ram[MULT] === 1, 'the next round starts back at x1');
   ram[MULT] = 4; frames(2); ram[MULT] = 5; frames(2);
-  expect(has('Five Times Over'), 'Five Times Over at x5');
+  expect(has('High Five'), 'Five Times Over at x5');
   ok('P and B coins');
 }
 
@@ -209,7 +209,7 @@ for (const [lit, how] of [[0, 'a plain clear'], [23, 'a firebomb clear']]) {
   activate(); title(); newGame(); ram[MULT] = 3; frames(2); unlocked.clear();
   activate(); title(); newGame();
   ram[IRQ] = BETWEEN; ram[MULT] = 4; frames(2); ram[MULT] = 5; frames(2);
-  expect(!has('Bonus Multiplier') && !has('Five Times Over'), 'no multiplier achievement between screens');
+  expect(!has('Bonus Bump') && !has('High Five'), 'no multiplier achievement between screens');
   ok('the multiplier only counts in play');
 }
 

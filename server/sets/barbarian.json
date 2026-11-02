@@ -1,0 +1,124 @@
+{
+  "id": "barbarian",
+  "title": "Barbarian: The Ultimate Warrior",
+  "url": "https://www.lemon64.com/game/barbarian-the-ultimate-warrior",
+  "hashes": [
+    {
+      "hash": "039806153c01bfc2f4e52cd9dbe6105c",
+      "label": "OneLoad64 v5 cartridge (Barbarian - The Ultimate Warrior (Side 1).crt)"
+    },
+    {
+      "hash": "fe73fb7d7b0454648de2d8e32199f205",
+      "label": "OneLoad64 v5 cartridge (Barbarian - The Ultimate Warrior (Side 2).crt)"
+    },
+    {
+      "hash": "1203baf8cd07417be8f54c593facdf53",
+      "label": "OneLoad64 v5 crunched program (Barbarian - The Ultimate Warrior (Side 1).prg)"
+    },
+    {
+      "hash": "2ead313b7d5d55b523b179e7d6bb80f4",
+      "label": "OneLoad64 v5 crunched program (Barbarian - The Ultimate Warrior (Side 2).prg)"
+    },
+    {
+      "hash": "e66670d04b12db967967254b860fdc66",
+      "label": "OneLoad64 v5 uncrunched program (Barbarian - The Ultimate Warrior (Side 1).prg)"
+    },
+    {
+      "hash": "3095e8b3043121071cf79a60285ebc4e",
+      "label": "OneLoad64 v5 uncrunched program (Barbarian - The Ultimate Warrior (Side 2).prg)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "First Blood",
+      "description": "Land a blow.",
+      "points": 5,
+      "memaddr": "0xHb9=128_d0xH94>0_0xH94<d0xH94"
+    },
+    {
+      "id": 2,
+      "title": "Victor",
+      "description": "Win a fight.",
+      "points": 10,
+      "memaddr": "0xHb9=128_0xHbd=0_d0xHbe=0_0xHbe=1"
+    },
+    {
+      "id": 3,
+      "title": "Four in a Row",
+      "description": "Win four fights.",
+      "points": 15,
+      "memaddr": "0xHb9=128_0xHbd=0_d0xHbe<4_0xHbe=4"
+    },
+    {
+      "id": 4,
+      "title": "Last Man Standing",
+      "description": "Reach the final opponent.",
+      "points": 25,
+      "memaddr": "0xHb9=128_0xHbd=0_d0xHbe<7_0xHbe=7"
+    },
+    {
+      "id": 5,
+      "title": "Down with Drax",
+      "description": "Defeat the sorcerer Drax.",
+      "points": 50,
+      "memaddr": "0xHb9=128_0xH8899=214_d0xHbb<128_0xHbb=128"
+    },
+    {
+      "id": 6,
+      "title": "Heads Will Roll",
+      "description": "Take an opponent's head clean off.",
+      "points": 15,
+      "memaddr": "0xHb9=128_0xHaf=129_d0xH025c!=128_0xH025c=128"
+    },
+    {
+      "id": 7,
+      "title": "Untouchable",
+      "description": "Win a fight without taking a hit.",
+      "points": 10,
+      "memaddr": "0xHb9=128_0xHbd=0_d0xH93=12_0xHbe>d0xHbe"
+    },
+    {
+      "id": 8,
+      "title": "Warming Up",
+      "description": "Score 500 points.",
+      "points": 10,
+      "score": 500,
+      "memaddr": "0xHb9=128S0xH872d=214_0xHb9b8>48S0xH872d=214_0xHb9b9>48S0xH872d=214_0xHb9ba>=53S0xH8899=214_0xHbb22>48S0xH8899=214_0xHbb23>48S0xH8899=214_0xHbb24>=53"
+    },
+    {
+      "id": 9,
+      "title": "Sword for Hire",
+      "description": "Score 2,000 points.",
+      "points": 15,
+      "score": 2000,
+      "memaddr": "0xHb9=128S0xH872d=214_0xHb9b8>48S0xH872d=214_0xHb9b9>=50S0xH8899=214_0xHbb22>48S0xH8899=214_0xHbb23>=50"
+    },
+    {
+      "id": 10,
+      "title": "The Ultimate Warrior",
+      "description": "Score 5,000 points.",
+      "points": 25,
+      "score": 5000,
+      "memaddr": "0xHb9=128S0xH872d=214_0xHb9b8>48S0xH872d=214_0xHb9b9>=53S0xH8899=214_0xHbb22>48S0xH8899=214_0xHbb23>=53"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Hiscores (Practice)",
+      "description": "Your one-player score when you fall.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH872d=214_0xHb9=128_0xHbd=0_0xHbe=0_0xH93=12_0xH94=12_0xHb9b8=48_0xHb9b9=48_0xHb9ba=48_0xHb9bb=48_0xHb9bc=48::CAN:0xH872d=214S0xHbd=1S0xHb9=0S0xHb9=128_0xHbd=0_0xHb9b8=48_0xHb9b9=48_0xHb9ba=48_0xHb9bb=48_0xHb9bc=48_d0xHaf<128_0xHaf=128::SUB:0xH872d=214_0xHb9=128_0xHbd=0_d0xHaf<128_0xHaf=128::VAL:A:0xHb9b8*10000_B:v48*10000_A:0xHb9b9*1000_B:v48*1000_A:0xHb9ba*100_B:v48*100_A:0xHb9bb*10_B:v48*10_A:0xHb9bc_B:v48_M:v0"
+    },
+    {
+      "id": 2,
+      "title": "Hiscores (The Duel)",
+      "description": "Your one-player score when the duel ends.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH8899=214_0xHb9=128_0xHbd=0_0xHbe=0_0xH93=12_0xH94=12_0xHbb22=48_0xHbb23=48_0xHbb24=48_0xHbb25=48_0xHbb26=48::CAN:0xH8899=214S0xHbd=1S0xHb9=0S0xHb9=128_0xHbd=0_0xHbb22=48_0xHbb23=48_0xHbb24=48_0xHbb25=48_0xHbb26=48_d0xHaf<128_0xHaf=128S0xHb9=128_0xHbd=0_0xHbb22=48_0xHbb23=48_0xHbb24=48_0xHbb25=48_0xHbb26=48_d0xHbb<128_0xHbb=128::SUB:0xH8899=214_0xHb9=128_0xHbd=0Sd0xHaf<128_0xHaf=128Sd0xHbb<128_0xHbb=128::VAL:A:0xHbb22*10000_B:v48*10000_A:0xHbb23*1000_B:v48*1000_A:0xHbb24*100_B:v48*100_A:0xHbb25*10_B:v48*10_A:0xHbb26_B:v48_M:v0"
+    }
+  ]
+}

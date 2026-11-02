@@ -1,0 +1,99 @@
+{
+  "id": "paradroid",
+  "title": "Paradroid",
+  "url": "https://www.lemon64.com/game/paradroid",
+  "hashes": [
+    { "hash": "6f183b6e268ae5c69d5ded042bb00fd9", "label": "OneLoad64 v5 cartridge (Paradroid.crt)" }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Body Snatcher",
+      "description": "Take over a droid other than the 001.",
+      "points": 10,
+      "memaddr": "0xH0067>=1_0xH0025=0_0xH006b=0_0xH0340>=1"
+    },
+    {
+      "id": 2,
+      "title": "Servant",
+      "description": "Control a servant droid (247) or stronger.",
+      "points": 10,
+      "memaddr": "0xH0067>=1_0xH0025=0_0xH006b=0_0xH0340>=3"
+    },
+    {
+      "id": 3,
+      "title": "Messenger",
+      "description": "Control a messenger droid (302) or stronger.",
+      "points": 15,
+      "memaddr": "0xH0067>=1_0xH0025=0_0xH006b=0_0xH0340>=6"
+    },
+    {
+      "id": 4,
+      "title": "Maintenance",
+      "description": "Control a maintenance droid (420) or stronger.",
+      "points": 20,
+      "memaddr": "0xH0067>=1_0xH0025=0_0xH006b=0_0xH0340>=8"
+    },
+    {
+      "id": 5,
+      "title": "Crew",
+      "description": "Control a crew droid (516) or stronger.",
+      "points": 25,
+      "memaddr": "0xH0067>=1_0xH0025=0_0xH006b=0_0xH0340>=11"
+    },
+    {
+      "id": 6,
+      "title": "Deck Clear",
+      "description": "Clear a deck so only you are left.",
+      "points": 25,
+      "memaddr": "0xH0067>=1_0xH0025=0_0xH006b=0_d0xH0059>1_0xH0059=1"
+    },
+    {
+      "id": 7,
+      "title": "Lift Off",
+      "description": "Reach a deck no new game starts on.",
+      "points": 15,
+      "memaddr": "0xH0067>=1_0xH0025=0_0xH006b=0_O:0xH0033<4_0xH0033>=8"
+    },
+    {
+      "id": 8,
+      "title": "Far Deck",
+      "description": "Reach a deck past any a new game starts on.",
+      "points": 25,
+      "memaddr": "0xH0067>=1_0xH0025=0_0xH006b=0_0xH0033>=8"
+    },
+    {
+      "id": 9,
+      "title": "Boot Sequence",
+      "description": "Put the first points on the board.",
+      "points": 5,
+      "memaddr": "0xH0067>=1_0xH0025=0_0xH006b=0_O:0xH0021>0_O:0xH0022>0_O:0xH0023>0_0xH0024>0"
+    },
+    {
+      "id": 10,
+      "title": "One Thousand",
+      "description": "Score 1,000 points.",
+      "points": 10,
+      "score": 1000,
+      "memaddr": "0xH0067>=1_0xH0025=0_0xH006b=0_O:0xH0021>0_O:0xH0022>0_0xU0023>=1"
+    },
+    {
+      "id": 11,
+      "title": "Ten Thousand",
+      "description": "Score 10,000 points.",
+      "points": 25,
+      "score": 10000,
+      "memaddr": "0xH0067>=1_0xH0025=0_0xH006b=0_O:0xH0021>0_O:0xU0022>0_0xL0022>=1"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Hiscores",
+      "description": "Your score when the 001 is destroyed.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH0067>=1_0xH0025=0_0xH006b=0_0xH0021=0_0xH0022=0_0xH0023=0_0xH0024=0::CAN:0=1::SUB:0xH0067>=1_0xH0340=0_d0xH0360>0_0xH0360=0_O:0xH0021>0_O:0xH0022>0_O:0xH0023>0_0xH0024>0::VAL:0xU0021*10000000_0xL0021*1000000_0xU0022*100000_0xL0022*10000_0xU0023*1000_0xL0023*100_0xU0024*10_0xL0024"
+    }
+  ]
+}

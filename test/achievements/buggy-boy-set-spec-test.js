@@ -35,7 +35,7 @@ const ram = new Uint8Array(0x10000);
 const id = Object.fromEntries(set.achievements.map((a) => [a.title, a.id]));
 const HASH = 'c44a8c4d2bd634ece5fba68f56626150';
 const COURSE = 0x033a, PROG = 0x0350, LEG = 0x44db, SCORE = 0x44de, TIME = 0x9c4e;
-const COURSES = ['Offroad', 'North', 'East', 'West', 'South'];
+const COURSES = ['Off the Beaten Track', 'Due North', 'East Bound', 'Go West', 'Southern Comfort'];
 
 const unlocked = new Set();
 const boards = [];
@@ -162,7 +162,7 @@ function finish(course) {
   ram[PROG] = 8; frames(2);
   expect(names().length === 0, `reaching the last leg is not a finish (got ${names().join(', ')})`);
   ram[PROG] = 10; frames(2);
-  expectNames('offroad', ['Offroad']);
+  expectNames('offroad', ['Off the Beaten Track']);
 
   for (const [course, title] of COURSES.map((t, i) => [i, t])) {
     begin();
@@ -176,7 +176,7 @@ function finish(course) {
   ram[COURSE] = 4;
   ram[PROG] = 8; frames(2);
   ram[PROG] = 10; frames(2);
-  expectNames('a second course', ['Offroad', 'South']);
+  expectNames('a second course', ['Off the Beaten Track', 'Southern Comfort']);
 
   fresh();
   finish(0);

@@ -73,6 +73,12 @@ another device, good for 10 minutes. If every device is lost, set a new hash.
   it can still read what is public, but cannot chat, sign in, sign up,
   recover or post results, and a session from it is signed out. Bans are kept
   in the database, so they outlast a restart, and the Live tab lists them.
+- **To review** (on the Overview): results the fair-play checks flagged, kept
+  out of public view: posted without the game open, many unlocks at once, a
+  score seconds after the game was opened, over a board's `max` (`min` where
+  fewer is better) from its set, or past `score` milestones not unlocked. The
+  last clears by itself when those milestones arrive. **Approve** lets one count, **Clear** removes
+  it, and both go in the chat log. The dev server skips these checks.
 - **Live:** the channel, under the name C64 READY, with **Online users**.
   Select a name for the channel's members and moderation controls. The list
   updates live and leaves out disconnected members during their reconnect

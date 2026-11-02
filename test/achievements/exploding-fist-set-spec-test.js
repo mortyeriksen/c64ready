@@ -129,7 +129,7 @@ function loseContest() { ram[CPU_HALF] = 4; frames(20); ram[DEMO] = 1; setScore(
 // 5. Dans 1, 3, 5, 7 and 10, two contests each.
 {
   activate(); newGame();
-  const at = { 1: 'First Dan', 3: 'Third Dan', 5: 'Fifth Dan', 7: 'Seventh Dan', 10: 'Tenth Dan' };
+  const at = { 1: 'White Belt No More', 3: 'Third Dan', 5: 'Fifth Dan', 7: 'Seventh Dan', 10: 'Tenth Dan' };
   for (let d = 1; d <= 10; d++) {
     winContest(1, 100);
     if (at[d]) expect(!has(at[d]), `${at[d]} not after one contest`);
@@ -145,17 +145,17 @@ function loseContest() { ram[CPU_HALF] = 4; frames(20); ram[DEMO] = 1; setScore(
   activate(); newGame(); winContest(2); winContest(0);
   expect(has('Unblemished'), 'Unblemished on the contest that brings 1st dan');
   activate(); newGame(); winContest(0);
-  expect(has('Unblemished') && !has('First Dan'), 'Unblemished on the first contest');
+  expect(has('Unblemished') && !has('White Belt No More'), 'Unblemished on the first contest');
   ok('Unblemished');
 }
 
 // 7. The bull: beaten is $C2 = $80; hit by it is $C2 = 1.
 {
   activate(); newGame(); ram[BULL] = 1; frames(3); ram[BULL] = 0; frames(3);
-  expect(!has('Bull Fighter'), 'being hit by the bull is no win');
+  expect(!has('Matador'), 'being hit by the bull is no win');
   ram[BULL] = 0x80; frames(2);
-  expect(has('Bull Fighter'), 'Bull Fighter when the bull is beaten');
-  ok('Bull Fighter');
+  expect(has('Matador'), 'Bull Fighter when the bull is beaten');
+  ok('Matador');
 }
 
 // 8. Score tiers on the screen digits, and the rank text drawn over them is not a score.

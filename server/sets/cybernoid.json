@@ -1,0 +1,116 @@
+{
+  "id": "cybernoid",
+  "title": "Cybernoid",
+  "url": "https://www.lemon64.com/game/cybernoid",
+  "hashes": [
+    {
+      "hash": "a511a0b9beb9af0631e49019f509d866",
+      "label": "OneLoad64 v5 cartridge (Cybernoid.crt)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Moving Out",
+      "description": "Leave the first screen.",
+      "points": 10,
+      "memaddr": "0xH0014>0_d0xH3f4a=0_0xH3f4a=1"
+    },
+    {
+      "id": 2,
+      "title": "Level Two",
+      "description": "Reach level two.",
+      "points": 15,
+      "memaddr": "0xH0014>0_0xH2e92=1"
+    },
+    {
+      "id": 3,
+      "title": "Level Three",
+      "description": "Reach level three.",
+      "points": 25,
+      "memaddr": "0xH0014>0_0xH2e92=2"
+    },
+    {
+      "id": 4,
+      "title": "Salvage",
+      "description": "Collect some cargo.",
+      "points": 10,
+      "memaddr": "0xH0014>0_O:0xH2e97>0_0xH2e98>0"
+    },
+    {
+      "id": 5,
+      "title": "Full Hold",
+      "description": "Fill the cargo hold.",
+      "points": 25,
+      "memaddr": "0xH0014>0_N:0xH2e98=5_O:0xH2e97>=220_0xH2e98>5"
+    },
+    {
+      "id": 6,
+      "title": "Bombs Away",
+      "description": "Drop a bomb.",
+      "points": 5,
+      "memaddr": "d0xH5b79=20_0xH5b79=19"
+    },
+    {
+      "id": 7,
+      "title": "Mind the Gap",
+      "description": "Lay a mine.",
+      "points": 5,
+      "memaddr": "d0xH5b89=20_0xH5b89=19"
+    },
+    {
+      "id": 8,
+      "title": "Shields Up",
+      "description": "Raise the shield.",
+      "points": 10,
+      "memaddr": "d0xH5b99=1_0xH5b99=0"
+    },
+    {
+      "id": 9,
+      "title": "Bouncy Castle",
+      "description": "Fire a bouncer.",
+      "points": 5,
+      "memaddr": "d0xH5ba9=5_0xH5ba9=4"
+    },
+    {
+      "id": 10,
+      "title": "Heat Seeker",
+      "description": "Fire a seeker.",
+      "points": 10,
+      "memaddr": "d0xH5bb9=5_0xH5bb9=4"
+    },
+    {
+      "id": 11,
+      "title": "Cutting It Fine",
+      "description": "Let the clock run low.",
+      "points": 10,
+      "memaddr": "0xH0014>0_0xH3a1c=1"
+    },
+    {
+      "id": 12,
+      "title": "Five Hundred",
+      "description": "Reach 500 points.",
+      "points": 10,
+      "score": 500,
+      "memaddr": "0xH0014>0_O:0xH588f>0_O:0xH5890>0_O:0xH5891>0_0xH5892>=5"
+    },
+    {
+      "id": 13,
+      "title": "Ten Thousand",
+      "description": "Reach 10,000 points.",
+      "points": 25,
+      "score": 10000,
+      "memaddr": "0xH0014>0_O:0xH588f>0_0xH5890>0"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Hiscores",
+      "description": "Your score when the last ship is lost.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH0014=4_0xH588f=0_0xH5890=0_0xH5891=0_0xH5892=0_0xH5893=0_0xH5894=0::CAN:d0xH0014=1_0xH0014=0_0xH588f=0_0xH5890=0_0xH5891=0_0xH5892=0_0xH5893=0_0xH5894=0::SUB:d0xH0014=1_0xH0014=0::VAL:0xH588f*100000_0xH5890*10000_0xH5891*1000_0xH5892*100_0xH5893*10_0xH5894"
+    }
+  ]
+}

@@ -39,7 +39,7 @@
 // Shared guide contexts use Phosphor dark. Theme galleries use their named themes.
 //   node tools/guide-shots.mjs                     21 shots (above)
 //   node tools/guide-monitor-shots.mjs             All Monitor sections and Video TL;DR
-//   node tools/guide-extra-shots.mjs               16 shots needing their own setup
+//   node tools/guide-extra-shots.mjs               17 shots needing their own setup
 //   node tools/guide-mobile-shots.mjs              portrait and landscape phone mockups
 //   node tools/guide-assembly64-shots.mjs          Assembly64 card and browser
 //   node tools/guide-setup-shot.mjs                ROM setup and theme picker

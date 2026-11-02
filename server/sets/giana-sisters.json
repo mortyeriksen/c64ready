@@ -1,0 +1,96 @@
+{
+  "id": "giana-sisters",
+  "title": "Great Giana Sisters",
+  "url": "https://www.lemon64.com/game/great-giana-sisters",
+  "hashes": [
+    {
+      "hash": "0a833f8c48f1646bc1bf3ac2c249f9f0",
+      "label": "OneLoad64 v5 cartridge (Great Giana Sisters, The.crt)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Sparkle",
+      "description": "Collect a dream crystal.",
+      "points": 5,
+      "memaddr": "0xH1544=1_0xH0434=1_d0xH0434=0"
+    },
+    {
+      "id": 2,
+      "title": "Sweet Dreams",
+      "description": "Clear stage 1.",
+      "points": 5,
+      "memaddr": "0xH1544=1_0xH0020=2_d0xH0020=1_0xH043c<128"
+    },
+    {
+      "id": 3,
+      "title": "Stage Five",
+      "description": "Clear stage 5.",
+      "points": 10,
+      "memaddr": "0xH1544=1_0xH0020=6_d0xH0020=5_0xH043c<128"
+    },
+    {
+      "id": 4,
+      "title": "Stage Ten",
+      "description": "Clear stage 10.",
+      "points": 25,
+      "memaddr": "0xH1544=1_0xH0020=11_d0xH0020=10_0xH043c<128"
+    },
+    {
+      "id": 5,
+      "title": "Stage Twenty",
+      "description": "Clear stage 20.",
+      "points": 25,
+      "memaddr": "0xH1544=1_0xH0020=21_d0xH0020=20_0xH043c<128"
+    },
+    {
+      "id": 6,
+      "title": "Magic Diamond",
+      "description": "Clear stage 32 and wake up.",
+      "points": 50,
+      "memaddr": "0xH1544=1_0xH0020=33_d0xH0020=32_0xH043c<128"
+    },
+    {
+      "id": 7,
+      "title": "Crystal Clear",
+      "description": "Collect 100 dream crystals in one life.",
+      "points": 10,
+      "memaddr": "0xH1544=1_0xH0434=0_d0xH0434=153_0xH043c>d0xH043c"
+    },
+    {
+      "id": 8,
+      "title": "Pocket Money",
+      "description": "Score 1,000 points.",
+      "points": 5,
+      "score": 1000,
+      "memaddr": "0xH1544=1_A:b0xH0437*10000_A:b0xH0436*100_b0xH0435>=1000"
+    },
+    {
+      "id": 9,
+      "title": "Ten Grand",
+      "description": "Score 10,000 points.",
+      "points": 10,
+      "score": 10000,
+      "memaddr": "0xH1544=1_A:b0xH0437*10000_A:b0xH0436*100_b0xH0435>=10000"
+    },
+    {
+      "id": 10,
+      "title": "Dream Big",
+      "description": "Score 50,000 points.",
+      "points": 25,
+      "score": 50000,
+      "memaddr": "0xH1544=1_A:b0xH0437*10000_A:b0xH0436*100_b0xH0435>=50000"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Hiscores",
+      "description": "Your score when the game ends.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH1544=1_d0xH1544=0_0xH043c=3_0xH0020=1_0xH0435=0_0xH0436=0_0xH0437=0::CAN:0=1::SUB:0xH1544=1_0xH043c=255_d0xH043c=0_O:0xH0435!=0_O:0xH0436!=0_0xH0437!=0::VAL:b0xH0437*10000_b0xH0436*100_b0xH0435"
+    }
+  ]
+}

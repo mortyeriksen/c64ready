@@ -12,36 +12,36 @@
   "achievements": [
     {
       "id": 1,
-      "title": "Don't ride without one",
-      "description": "Collect your first item: The Crash Helmet.",
+      "title": "Don't Ride Without One",
+      "description": "Start sensibly: pick up the crash helmet.",
       "points": 5,
       "memaddr": "0xH4621=1_d0xH4621=0_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 2,
-      "title": "Hell For Leathers",
-      "description": "Collect the Riding Leathers.",
+      "title": "Hell for Leathers",
+      "description": "Collect the riding leathers.",
       "points": 5,
       "memaddr": "0xH4621=2_d0xH4621=1_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 3,
       "title": "Passed Your Theory",
-      "description": "Collect the Highway Code Book.",
+      "description": "Collect the Highway Code book.",
       "points": 5,
       "memaddr": "0xH4621=3_d0xH4621=2_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 4,
       "title": "Metal Gear",
-      "description": "Collected the Gearbox enabling Low Gear.",
+      "description": "Collect the gearbox and gain a low gear.",
       "points": 5,
       "memaddr": "0xH4621=4_d0xH4621=3_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 5,
       "title": "Kid Gloves",
-      "description": "Collect the Gloves.",
+      "description": "Collect the gloves.",
       "points": 5,
       "memaddr": "0xH4621=5_d0xH4621=4_0xH076b>=48_0xH076b<=57"
     },
@@ -54,29 +54,29 @@
     },
     {
       "id": 7,
-      "title": "Petrol Gauge",
-      "description": "Get the Petrol Gauge.",
+      "title": "Running on Empty",
+      "description": "Get the petrol gauge.",
       "points": 5,
       "memaddr": "0xH4621=7_d0xH4621=6_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 8,
       "title": "Gas Guzzler",
-      "description": "Collect the large fuel tank and fill the tank to maximum.",
+      "description": "Get the big fuel tank and fill it up.",
       "points": 10,
       "memaddr": "0xH4621=8_0xH4619=87_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 9,
       "title": "All Tooled Up",
-      "description": "Collect the Tool Box.",
+      "description": "Collect the tool box.",
       "points": 5,
       "memaddr": "0xH4621=9_d0xH4621=8_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 10,
-      "title": "Puddle of Mud",
-      "description": "Equip the mudguards.",
+      "title": "Mud in Your Eye",
+      "description": "Fit the mudguards.",
       "points": 5,
       "memaddr": "0xH4621=10_d0xH4621=9_0xH076b>=48_0xH076b<=57"
     },
@@ -89,15 +89,15 @@
     },
     {
       "id": 12,
-      "title": "Need For Speed",
-      "description": "Unlock the engine's full potential by collecting the Fairing and ride at full speed.",
+      "title": "Need for Speed",
+      "description": "Collect the fairing and hit top speed.",
       "points": 10,
       "memaddr": "0xH4621>=12_0xH00fb=11_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 13,
       "title": "Thirsty Work",
-      "description": "Collect a can of pop.",
+      "description": "Grab a can of pop.",
       "points": 5,
       "memaddr": "0xH4621=13_d0xH4621=12_0xH076b>=48_0xH076b<=57"
     },
@@ -111,28 +111,28 @@
     {
       "id": 15,
       "title": "High Emission Zone",
-      "description": "Find and fit the Exhaust Pipe.",
+      "description": "Find and fit the exhaust pipe.",
       "points": 5,
       "memaddr": "0xH4621=15_d0xH4621=14_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 16,
-      "title": "Where are the brakes?",
-      "description": "Find the power brakes and unlock improved braking performance.",
+      "title": "Where Are the Brakes?",
+      "description": "Find the power brakes. Stopping is underrated.",
       "points": 5,
       "memaddr": "0xH4621=16_d0xH4621=15_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 17,
       "title": "Speedos",
-      "description": "Collect the Speedometer.",
+      "description": "Collect the speedometer.",
       "points": 5,
       "memaddr": "0xH4621=17_d0xH4621=16_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 18,
-      "title": "Master of the lamps",
-      "description": "Find the Brake Lamp.",
+      "title": "Master of the Lamps",
+      "description": "Find the brake lamp.",
       "points": 5,
       "memaddr": "0xH4621=18_d0xH4621=17_0xH076b>=48_0xH076b<=57"
     },
@@ -146,27 +146,27 @@
     {
       "id": 20,
       "title": "Turbo Charged!",
-      "description": "Fit the Turbo Charger and unlock improved acceleration.",
+      "description": "Fit the turbocharger for a faster getaway.",
       "points": 5,
       "memaddr": "0xH4621=20_d0xH4621=19_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 21,
       "title": "Only Fins",
-      "description": "Find the Cooling Fins.",
+      "description": "Find the cooling fins.",
       "points": 5,
       "memaddr": "0xH4621=21_d0xH4621=20_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 22,
-      "title": "You've got them, use them!",
+      "title": "You've Got Them, Use Them!",
       "description": "Collect the indicators.",
       "points": 5,
       "memaddr": "0xH4621=22_d0xH4621=21_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 23,
-      "title": "Mirror, signal manoevre",
+      "title": "Mirror, Signal, Manoeuvre",
       "description": "Collect the mirror.",
       "points": 5,
       "memaddr": "0xH4621=23_d0xH4621=22_0xH076b>=48_0xH076b<=57"
@@ -174,135 +174,135 @@
     {
       "id": 24,
       "title": "Tommy Tutone",
-      "description": "Fit the two tone horn.",
+      "description": "Fit the two-tone horn.",
       "points": 5,
       "memaddr": "0xH4621=24_d0xH4621=23_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 25,
       "title": "Raise Reflectors!",
-      "description": "Collect the Reflectors.",
+      "description": "Collect the reflectors.",
       "points": 5,
       "memaddr": "0xH4621=25_d0xH4621=24_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 26,
       "title": "A to Z",
-      "description": "Collect the Road Map.",
+      "description": "Collect the road map.",
       "points": 5,
       "memaddr": "0xH4621=26_d0xH4621=25_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 27,
       "title": "Twisted Electric Starter",
-      "description": "Collect the Electric Starter.",
+      "description": "Collect the electric starter.",
       "points": 5,
       "memaddr": "0xH4621=27_d0xH4621=26_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 28,
       "title": "Packed the Skips!",
-      "description": "Collect the Lunch Box and enjoy some melt on your tongue, prawn cocktail K.P. Skips.",
+      "description": "Grab the lunch box. Prawn cocktail Skips!",
       "points": 5,
       "memaddr": "0xH4621=28_d0xH4621=27_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 29,
-      "title": "10-4 Good Buddy",
-      "description": "Collect the C.B Radio.",
+      "title": "10-4, Good Buddy",
+      "description": "Collect the CB radio.",
       "points": 5,
       "memaddr": "0xH4621=29_d0xH4621=28_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 30,
       "title": "Ski Sunday",
-      "description": "Collect the Water Skis and unlock water traversal.",
+      "description": "Collect the water skis and take to the water.",
       "points": 5,
       "memaddr": "0xH4621=31_d0xH4621=30_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 31,
       "title": "Safety First",
-      "description": "Find the Fire Extinguisher.",
+      "description": "Find the fire extinguisher.",
       "points": 5,
       "memaddr": "0xH4621=32_d0xH4621=31_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 32,
       "title": "Light Fog",
-      "description": "Collect the Fog Lamps.",
+      "description": "Collect the fog lamps.",
       "points": 5,
       "memaddr": "0xH4621=33_d0xH4621=32_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 33,
-      "title": "Go for a Speed Run",
-      "description": "Collect the Stop Watch.",
+      "title": "Speedrunner",
+      "description": "Collect the stopwatch.",
       "points": 5,
       "memaddr": "0xH4621=34_d0xH4621=33_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 34,
       "title": "Kickstart",
-      "description": "Collect the Moto-Cross Tyres.",
+      "description": "Collect the moto-cross tyres.",
       "points": 5,
       "memaddr": "0xH4621=35_d0xH4621=34_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 35,
-      "title": "Guns n Roses",
-      "description": "Collect the Personal Hi-Fi.",
+      "title": "Guns n' Roses",
+      "description": "Collect the personal hi-fi.",
       "points": 5,
       "memaddr": "0xH4621=36_d0xH4621=35_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 36,
       "title": "Gin and Tonic",
-      "description": "Collect the Electronic Ignition.",
+      "description": "Collect the electronic ignition.",
       "points": 5,
       "memaddr": "0xH4621=37_d0xH4621=36_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 37,
       "title": "Revs",
-      "description": "Find the Rev. Counter.",
+      "description": "Find the rev counter.",
       "points": 5,
       "memaddr": "0xH4621=38_d0xH4621=37_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 38,
-      "title": "Didn't we have one already?",
-      "description": "Collect the Wind Shield.",
+      "title": "Didn't We Have One Already?",
+      "description": "Collect the windshield.",
       "points": 5,
       "memaddr": "0xH4621=39_d0xH4621=38_0xH076b>=48_0xH076b<=57"
     },
     {
       "id": 39,
-      "title": "No Tickets",
-      "description": "Obtain the Entry Ticket for the Drag Race.",
+      "title": "White Stripes",
+      "description": "Get the go-faster stripes. They do work.",
+      "points": 5,
+      "memaddr": "0xH4621=30_d0xH4621=29_0xH076b>=48_0xH076b<=57"
+    },
+    {
+      "id": 40,
+      "title": "No Ticket, No Race",
+      "description": "Get the entry ticket for the drag race.",
       "points": 5,
       "memaddr": "0xH4621=40_d0xH4621=39_0xH076b>=48_0xH076b<=57"
     },
     {
-      "id": 40,
+      "id": 41,
       "title": "No Second Prize",
-      "description": "Win the Drag Race and beat the game!",
+      "description": "Win the drag race and beat the game.",
       "points": 50,
       "memaddr": "0xH4621=40_0xH01fe=55"
-    },
-    {
-      "id": 41,
-      "title": "White Stripes",
-      "description": "Get the Go Faster Stripes!",
-      "points": 5,
-      "memaddr": "0xH4621=30_d0xH4621=29_0xH076b>=48_0xH076b<=57"
     }
   ],
   "leaderboards": [
     {
       "id": 1,
-      "title": "High Score",
-      "description": "Highest score in one game.",
+      "title": "Hiscores",
+      "description": "Your best score in one game.",
       "format": "SCORE",
       "lowerIsBetter": false,
       "definition": "STA:0xH001d>=6_d0xH001d=0_0xH076b=53_0xH4621=0::CAN:0=1::SUB:1=1S0xH076b=48_0xH001d=0S0xH4621=40_0xH01fe=55::VAL:b0xH4ab3*10000_b0xH4ab2*100_b0xH4ab1"

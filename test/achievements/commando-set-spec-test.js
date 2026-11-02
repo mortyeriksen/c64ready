@@ -136,20 +136,20 @@ function loseMan() {
   setScore(10000); ram[MEN] = 6; frames(2);
   expect(has('Private'), 'Private at 10,000 points');
   ram[ROWS] = 1; frames(2);
-  expect(!has('At the Gate'), 'one row short of the gate');
+  expect(!has('Knock Knock'), 'one row short of the gate');
   ram[ROWS] = 0; frames(2);
-  expect(has('At the Gate'), 'At the Gate when the 1st area\'s map has scrolled to its end');
+  expect(has('Knock Knock'), 'At the Gate when the 1st area\'s map has scrolled to its end');
   ram[GRENADES] = 8; frames(2);
   expect(has('Supply Drop'), 'Supply Drop when a box takes grenades from 5 to 8');
   breakArea(AREA_2);
-  for (const t of ['Broke the 1st Area', 'Not a Scratch', 'Guns Only']) expect(has(t), `${t} in the 2nd area, no man lost and no grenade thrown`);
-  expect(!has('Broke the 2nd Area'), 'not Broke the 2nd Area yet');
+  for (const t of ['Breakthrough', 'Not a Scratch', 'Guns Only']) expect(has(t), `${t} in the 2nd area, no man lost and no grenade thrown`);
+  expect(!has('Pressing On'), 'not Broke the 2nd Area yet');
   setScore(24900); frames(2);
   expect(!has('Sergeant'), '24,900 is not yet 25,000');
   setScore(25000); frames(2);
   expect(has('Sergeant'), 'Sergeant at 25,000 points');
   breakArea(AREA_3);
-  expect(has('Broke the 2nd Area'), 'Broke the 2nd Area in the 3rd area');
+  expect(has('Pressing On'), 'Broke the 2nd Area in the 3rd area');
   expect(!has('Mission Complete'), 'not Mission Complete yet');
   breakArea(MISSION);
   expect(has('Mission Complete') && has('Flawless Mission'), 'Mission Complete and Flawless Mission in the next mission, no man lost');
@@ -181,7 +181,7 @@ function loseMan() {
   startGame();
   loseMan();
   breakArea(AREA_2);
-  expect(has('Broke the 1st Area'), 'Broke the 1st Area with a man lost');
+  expect(has('Breakthrough'), 'Broke the 1st Area with a man lost');
   expect(!has('Not a Scratch'), 'no Not a Scratch after a man was lost');
   expect(has('Guns Only'), 'Guns Only still counts: no grenade was thrown');
   breakArea(AREA_3); breakArea(MISSION);
@@ -195,7 +195,7 @@ function loseMan() {
   startGame();
   ram[GRENADES] = 4; frames(2);
   breakArea(AREA_2);
-  expect(has('Broke the 1st Area') && has('Not a Scratch'), 'the area and Not a Scratch still count');
+  expect(has('Breakthrough') && has('Not a Scratch'), 'the area and Not a Scratch still count');
   expect(!has('Guns Only'), 'no Guns Only after a grenade was thrown');
   // Game over, the title, a new game.
   ram[MEN] = 1; frames(2); ram[MEN] = 0; frames(2);

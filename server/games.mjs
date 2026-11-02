@@ -7,8 +7,8 @@
 // the app.
 //
 //   GET  /api/games/:hash                             → { game, files, achievements, leaderboards, unlocked, unlocks, notices }
-//   POST /api/games/:hash/unlocks                     { achievementId, hardcore } → { ok, new }
-//   POST /api/games/:hash/leaderboards/:id/entries    { value, hardcore }         → { best, rank, improved }
+//   POST /api/games/:hash/unlocks                     { achievementId, hardcore } → { ok, new, flagged? }
+//   POST /api/games/:hash/leaderboards/:id/entries    { value, hardcore }         → { best, rank, improved, previous, previousRank, players, flagged? } or { softcore }
 //   GET  /api/games/:hash/leaderboards/:id[?limit=N]  → { leaderboard, entries, players, me }
 //   GET  /api/games                                   → { games }  every game with a set, its file hashes, how far players got,
 //                                                        and with a session the account's own progress and last play (`mine`)
@@ -40,6 +40,14 @@ const POST_RATE = 0.5, POST_BURST = 10;
 // the activity (its value raised, its time kept), so a run of bests does not
 // fill the feed. The next best after that is a new entry.
 const SCORE_QUIET_MS = 5 * 60_000;
+// Fair play: a play is the account's use of a game, a new one after this long away. Results
+// posted with no play, many unlocks at once, or a score just after the game was opened are flagged.
+const PLAY_GAP_MS = 6 * 3600_000;
+const BURST = 5, BURST_MS = 3000;
+const EARLY_SCORE_MS = 20_000;
+// A best past score milestones the account has not unlocked. Cleared by itself when the last of
+// them arrives, as when its post comes after the score's: a score waits on unlocks, never the other way.
+const MILESTONES_FLAG = 'past milestones not unlocked';
 /** A whole-number query parameter within [min, max], else `fallback`. */
 function queryInt(req, name, fallback, min, max) {
   const v = new URLSearchParams(String(req.url || '').split('?')[1] || '').get(name);
@@ -63,7 +71,10 @@ export function checkSet(set, where = 'set') {
     if (!text(a.title, 64) || !text(a.description, 200)) fail(`achievement ${a.id} needs a title and a description`);
     if (!text(a.memaddr, 4096)) fail(`achievement ${a.id} needs a memaddr`);
     if (!Number.isInteger(a.points ?? 0) || (a.points ?? 0) < 0 || a.points > 100) fail(`achievement ${a.id} points out of range`);
+    if (a.score !== undefined && !(Number.isSafeInteger(a.score) && a.score > 0)) fail(`achievement ${a.id} score must be a whole number above 0`);
   }
+  // A milestone's score is on the set's boards, where a higher score is better.
+  if ((set.achievements ?? []).some((a) => a.score !== undefined) && !(set.leaderboards ?? []).some((l) => !l.lowerIsBetter)) fail('score milestones need a board where higher is better');
   const lbSeen = new Set();
   for (const l of set.leaderboards ?? []) {
     if (!isId(l.id) || lbSeen.has(l.id)) fail(`leaderboard id ${l.id} is missing, repeated or out of range`);
@@ -71,14 +82,16 @@ export function checkSet(set, where = 'set') {
     if (!text(l.title, 64) || !text(l.description, 200)) fail(`leaderboard ${l.id} needs a title and a description`);
     if (!LB_FORMATS.includes(l.format)) fail(`leaderboard ${l.id} format ${l.format} is not an rcheevos format`);
     if (!text(l.definition, 4096) || !/STA:.*::CAN:.*::SUB:.*::VAL:/.test(l.definition)) fail(`leaderboard ${l.id} definition needs STA, CAN, SUB and VAL`);
+    for (const k of ['max', 'min']) if (l[k] !== undefined && !Number.isSafeInteger(l[k])) fail(`leaderboard ${l.id} ${k} must be a whole number`);
   }
   // Notices: a state the player should know about, such as a trainer that
-  // keeps the game from counting. Shown when the condition becomes true.
+  // keeps the game from counting. Shown when the condition becomes true, the
+  // short title over the text.
   const nSeen = new Set();
   for (const n of set.notices ?? []) {
     if (!isId(n.id) || nSeen.has(n.id)) fail(`notice id ${n.id} is missing, repeated or out of range`);
     nSeen.add(n.id);
-    if (!text(n.text, 200) || !text(n.memaddr, 4096)) fail(`notice ${n.id} needs a text and a memaddr`);
+    if (!text(n.title, 40) || !text(n.text, 200) || !text(n.memaddr, 4096)) fail(`notice ${n.id} needs a title, a text and a memaddr`);
   }
   // A page about the game elsewhere, linked from its page in the app.
   if (set.url !== undefined && !/^https:\/\/[^\s]{1,200}$/.test(set.url)) fail('url must be an https address');
@@ -105,16 +118,16 @@ export function loadSets(db, dir, log = () => {}) {
     const set = checkSet(JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8')), file);
     db.exec('BEGIN');
     try {
-      const notices = set.notices?.length ? JSON.stringify(set.notices.map((n) => ({ id: n.id, text: n.text, memaddr: n.memaddr }))) : null;
+      const notices = set.notices?.length ? JSON.stringify(set.notices.map((n) => ({ id: n.id, title: n.title, text: n.text, memaddr: n.memaddr }))) : null;
       db.prepare('INSERT INTO games (id, title, source, notices, url) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET title = excluded.title, source = excluded.source, notices = excluded.notices, url = excluded.url')
         .run(set.id, set.title, set.source ?? null, notices, set.url ?? null);
       for (const t of ['game_hashes', 'achievements', 'leaderboards']) db.prepare(`DELETE FROM ${t} WHERE game_id = ?`).run(set.id);
       const addHash = db.prepare('INSERT INTO game_hashes (hash, game_id, label) VALUES (?, ?, ?)');
       for (const h of set.hashes) addHash.run(h.hash, set.id, h.label ?? null);
-      const addAch = db.prepare('INSERT INTO achievements (game_id, id, title, description, points, memaddr, sort) VALUES (?, ?, ?, ?, ?, ?, ?)');
-      (set.achievements ?? []).forEach((a, i) => addAch.run(set.id, a.id, a.title, a.description, a.points ?? 0, a.memaddr, i));
-      const addLb = db.prepare('INSERT INTO leaderboards (game_id, id, title, description, format, lower_is_better, definition, sort) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-      (set.leaderboards ?? []).forEach((l, i) => addLb.run(set.id, l.id, l.title, l.description, l.format, l.lowerIsBetter ? 1 : 0, l.definition, i));
+      const addAch = db.prepare('INSERT INTO achievements (game_id, id, title, description, points, memaddr, sort, score_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+      (set.achievements ?? []).forEach((a, i) => addAch.run(set.id, a.id, a.title, a.description, a.points ?? 0, a.memaddr, i, a.score ?? null));
+      const addLb = db.prepare('INSERT INTO leaderboards (game_id, id, title, description, format, lower_is_better, definition, sort, max_value, min_value) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+      (set.leaderboards ?? []).forEach((l, i) => addLb.run(set.id, l.id, l.title, l.description, l.format, l.lowerIsBetter ? 1 : 0, l.definition, i, l.max ?? null, l.min ?? null));
       db.exec('COMMIT');
     } catch (e) { db.exec('ROLLBACK'); throw e; }
     loaded.push(set.id);
@@ -126,13 +139,14 @@ export function loadSets(db, dir, log = () => {}) {
 }
 
 /**
- * The game routes, for createAccounts({ extend }).
+ * The game routes, for createAccounts({ extend }). `fairPlay: false` (the dev server) skips the
+ * checks that flag odd results; hardcore still decides what counts in public.
  */
-export function gameRoutes({ db, now, HttpError, requireUser, optionalUser }) {
+export function gameRoutes({ db, now, HttpError, requireUser, optionalUser, fairPlay = true }) {
   const postBuckets = new Map();   // user id → Bucket
   // A game's players by achievement points: [{ user, name, avatar, unlocked, points, last }].
   const POINTS = `SELECT x.user_id, COUNT(*) AS unlocked, SUM(a.points) AS points, MAX(x.unlocked_at) AS last
-    FROM unlocks x JOIN achievements a ON a.game_id = x.game_id AND a.id = x.achievement_id WHERE x.game_id = ? GROUP BY x.user_id`;
+    FROM clean_unlocks x JOIN achievements a ON a.game_id = x.game_id AND a.id = x.achievement_id WHERE x.game_id = ? GROUP BY x.user_id`;
   function allowPost(user) {
     if (postBuckets.size > 10_000) postBuckets.clear();
     let bucket = postBuckets.get(user.id);
@@ -150,24 +164,36 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser }) {
     raiseScore: db.prepare('UPDATE activity SET value = ? WHERE id = ?'),
     gameByHash: db.prepare('SELECT g.id, g.title, g.notices, g.url FROM game_hashes h JOIN games g ON g.id = h.game_id WHERE h.hash = ?'),
     achievements: db.prepare('SELECT id, title, description, points, memaddr FROM achievements WHERE game_id = ? ORDER BY sort'),
-    achievement: db.prepare('SELECT id, title, points FROM achievements WHERE game_id = ? AND id = ?'),
+    achievement: db.prepare('SELECT id, title, points, score_at FROM achievements WHERE game_id = ? AND id = ?'),
+    // Score milestones at or under a value that the account has not unlocked (any unlock counts, flagged or not).
+    missed: db.prepare(`SELECT COUNT(*) AS n FROM achievements a WHERE a.game_id = ? AND a.score_at IS NOT NULL AND a.score_at <= ?
+      AND NOT EXISTS (SELECT 1 FROM unlocks x WHERE x.user_id = ? AND x.game_id = a.game_id AND x.achievement_id = a.id)`),
+    waiting: db.prepare('SELECT leaderboard_id, value, hardcore, submitted_at FROM lb_entries WHERE user_id = ? AND game_id = ? AND flag = ?'),
+    pass: db.prepare('UPDATE lb_entries SET flag = NULL WHERE user_id = ? AND game_id = ? AND leaderboard_id = ?'),
     leaderboards: db.prepare('SELECT id, title, description, format, lower_is_better, definition FROM leaderboards WHERE game_id = ? ORDER BY sort'),
-    leaderboard: db.prepare('SELECT id, title, description, format, lower_is_better FROM leaderboards WHERE game_id = ? AND id = ?'),
-    unlocked: db.prepare('SELECT achievement_id, unlocked_at FROM unlocks WHERE user_id = ? AND game_id = ?'),
+    leaderboard: db.prepare('SELECT id, title, description, format, lower_is_better, max_value, min_value FROM leaderboards WHERE game_id = ? AND id = ?'),
+    unlocked: db.prepare('SELECT achievement_id, unlocked_at, flag FROM unlocks WHERE user_id = ? AND game_id = ?'),
     files: db.prepare('SELECT hash, label FROM game_hashes WHERE game_id = ? ORDER BY rowid'),
-    players: db.prepare('SELECT COUNT(*) AS n FROM lb_entries WHERE game_id = ? AND leaderboard_id = ?'),
-    unlock: db.prepare('INSERT OR IGNORE INTO unlocks (user_id, game_id, achievement_id, hardcore, unlocked_at) VALUES (?, ?, ?, ?, ?)'),
-    entry: db.prepare('SELECT value FROM lb_entries WHERE user_id = ? AND game_id = ? AND leaderboard_id = ?'),
-    putEntry: db.prepare('INSERT INTO lb_entries (user_id, game_id, leaderboard_id, value, hardcore, submitted_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(user_id, game_id, leaderboard_id) DO UPDATE SET value = excluded.value, hardcore = excluded.hardcore, submitted_at = excluded.submitted_at'),
+    players: db.prepare('SELECT COUNT(*) AS n FROM clean_entries WHERE game_id = ? AND leaderboard_id = ?'),
+    // A new unlock, or a hardcore one where only a softcore unlock was: then it counts as new.
+    unlock: db.prepare(`INSERT INTO unlocks (user_id, game_id, achievement_id, hardcore, unlocked_at, flag) VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(user_id, game_id, achievement_id) DO UPDATE SET hardcore = 1, unlocked_at = excluded.unlocked_at, flag = excluded.flag
+      WHERE unlocks.hardcore = 0 AND excluded.hardcore = 1`),
+    recentUnlocks: db.prepare('SELECT COUNT(*) AS n FROM unlocks WHERE user_id = ? AND game_id = ? AND unlocked_at >= ?'),
+    entry: db.prepare('SELECT value, flag FROM lb_entries WHERE user_id = ? AND game_id = ? AND leaderboard_id = ?'),
+    putEntry: db.prepare('INSERT INTO lb_entries (user_id, game_id, leaderboard_id, value, hardcore, submitted_at, flag) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(user_id, game_id, leaderboard_id) DO UPDATE SET value = excluded.value, hardcore = excluded.hardcore, submitted_at = excluded.submitted_at, flag = excluded.flag'),
+    play: db.prepare('SELECT started_at, seen_at FROM plays WHERE user_id = ? AND game_id = ?'),
+    putPlay: db.prepare(`INSERT INTO plays (user_id, game_id, started_at, seen_at) VALUES (?, ?, ?, ?)
+      ON CONFLICT(user_id, game_id) DO UPDATE SET started_at = CASE WHEN plays.seen_at < ? THEN excluded.started_at ELSE plays.started_at END, seen_at = excluded.seen_at`),
     activity: db.prepare('INSERT INTO activity (at, user_id, game_id, kind, ref, value) VALUES (?, ?, ?, ?, ?, ?)'),
   };
   const rankStmt = {
-    high: db.prepare('SELECT COUNT(*) AS n FROM lb_entries WHERE game_id = ? AND leaderboard_id = ? AND value > ?'),
-    low: db.prepare('SELECT COUNT(*) AS n FROM lb_entries WHERE game_id = ? AND leaderboard_id = ? AND value < ?'),
+    high: db.prepare('SELECT COUNT(*) AS n FROM clean_entries WHERE game_id = ? AND leaderboard_id = ? AND value > ?'),
+    low: db.prepare('SELECT COUNT(*) AS n FROM clean_entries WHERE game_id = ? AND leaderboard_id = ? AND value < ?'),
   };
   const topStmt = {
-    high: db.prepare('SELECT u.id AS user_id, u.name, u.avatar_at, e.value, e.submitted_at FROM lb_entries e JOIN users u ON u.id = e.user_id WHERE e.game_id = ? AND e.leaderboard_id = ? ORDER BY e.value DESC, e.submitted_at ASC, e.rowid ASC LIMIT ?'),
-    low: db.prepare('SELECT u.id AS user_id, u.name, u.avatar_at, e.value, e.submitted_at FROM lb_entries e JOIN users u ON u.id = e.user_id WHERE e.game_id = ? AND e.leaderboard_id = ? ORDER BY e.value ASC, e.submitted_at ASC, e.rowid ASC LIMIT ?'),
+    high: db.prepare('SELECT u.id AS user_id, u.name, u.avatar_at, e.value, e.submitted_at FROM clean_entries e JOIN users u ON u.id = e.user_id WHERE e.game_id = ? AND e.leaderboard_id = ? ORDER BY e.value DESC, e.submitted_at ASC, e.user_id ASC LIMIT ?'),
+    low: db.prepare('SELECT u.id AS user_id, u.name, u.avatar_at, e.value, e.submitted_at FROM clean_entries e JOIN users u ON u.id = e.user_id WHERE e.game_id = ? AND e.leaderboard_id = ? ORDER BY e.value ASC, e.submitted_at ASC, e.user_id ASC LIMIT ?'),
   };
 
   function game(hash) {
@@ -182,6 +208,8 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser }) {
     return lb;
   }
   const order = (lb) => (lb.lower_is_better ? 'low' : 'high');
+  // The account has the game open: it looked the game up within the last play's gap.
+  const playing = (user, g, t, play = q.play.get(user.id, g.id)) => !!play && t - play.seen_at < PLAY_GAP_MS;
   // Best first; a tie shares the rank, and the next value skips past the tied ones.
   const rankEntries = (rows) => rows.map((e, i) => ({ rank: i && rows[i - 1].value === e.value ? 0 : i + 1, user: { id: e.user_id, name: e.name, avatar: e.avatar_at || 0 }, name: e.name, value: e.value, at: e.submitted_at }))
     .map((e, i, all) => { if (!e.rank) e.rank = all[i - 1].rank; return e; });
@@ -235,15 +263,15 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser }) {
         (SELECT COALESCE(SUM(points), 0) FROM achievements WHERE game_id = g.id) AS total_points,
         COUNT(ach.id) AS unlocked, COALESCE(SUM(ach.points), 0) AS points, MAX(un.unlocked_at) AS last
       FROM games g
-      LEFT JOIN unlocks un ON un.game_id = g.id AND un.user_id = ?
+      LEFT JOIN clean_unlocks un ON un.game_id = g.id AND un.user_id = ?
       LEFT JOIN achievements ach ON ach.game_id = un.game_id AND ach.id = un.achievement_id
-      WHERE un.user_id IS NOT NULL OR g.id IN (SELECT game_id FROM lb_entries WHERE user_id = ?)
+      WHERE un.user_id IS NOT NULL OR g.id IN (SELECT game_id FROM clean_entries WHERE user_id = ?)
       GROUP BY g.id ORDER BY last DESC NULLS LAST, g.title COLLATE NOCASE`),
     ids: db.prepare('SELECT id FROM achievements WHERE game_id = ? ORDER BY sort'),
-    unlocks: db.prepare(`SELECT ach.id, ach.title, ach.description, ach.points, un.unlocked_at FROM unlocks un
+    unlocks: db.prepare(`SELECT ach.id, ach.title, ach.description, ach.points, un.unlocked_at FROM clean_unlocks un
       JOIN achievements ach ON ach.game_id = un.game_id AND ach.id = un.achievement_id
       WHERE un.user_id = ? AND un.game_id = ? ORDER BY un.unlocked_at DESC`),
-    scores: db.prepare(`SELECT lb.id, lb.title, lb.format, lb.lower_is_better, e.value FROM lb_entries e
+    scores: db.prepare(`SELECT lb.id, lb.title, lb.format, lb.lower_is_better, e.value FROM clean_entries e
       JOIN leaderboards lb ON lb.game_id = e.game_id AND lb.id = e.leaderboard_id
       WHERE e.user_id = ? AND e.game_id = ? ORDER BY lb.sort`),
   };
@@ -252,6 +280,8 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser }) {
     'GET /api/games/:hash'(body, req, { hash }) {
       const g = game(hash);
       const user = optionalUser(req);
+      // The account opened the game: a play, a new one after a long time away.
+      if (user) { const t = now(); q.putPlay.run(user.id, g.id, t, t, t - PLAY_GAP_MS); }
       const mine = user ? q.unlocked.all(user.id, g.id) : [];
       return {
         game: { id: g.id, title: g.title, ...(g.url ? { url: g.url } : {}) },
@@ -259,7 +289,8 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser }) {
         achievements: q.achievements.all(g.id),
         leaderboards: q.leaderboards.all(g.id).map((l) => ({ id: l.id, title: l.title, description: l.description, format: l.format, lowerIsBetter: !!l.lower_is_better, definition: l.definition })),
         unlocked: mine.map((r) => r.achievement_id),
-        unlocks: mine.map((r) => ({ id: r.achievement_id, at: r.unlocked_at })),
+        // The account's own, with a flagged one marked as being checked (and not why).
+        unlocks: mine.map((r) => ({ id: r.achievement_id, at: r.unlocked_at, ...(r.flag ? { checking: true } : {}) })),
         notices: g.notices ? JSON.parse(g.notices) : [],
       };
     },
@@ -271,11 +302,24 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser }) {
       const a = isId(id) ? q.achievement.get(g.id, id) : undefined;
       if (!a) throw new HttpError(404, 'no such achievement');
       const t = now();
-      const added = q.unlock.run(user.id, g.id, id, body.hardcore ? 1 : 0, t).changes > 0;
-      if (added) {
-        q.activity.run(t, user.id, g.id, 'unlock', id, null);
+      const hardcore = body.hardcore === true;
+      // Odd, not refused: kept for the player, out of public view until an admin approves it.
+      const flag = !fairPlay ? null
+        : !playing(user, g, t) ? 'posted without the game open'
+        : q.recentUnlocks.get(user.id, g.id, t - BURST_MS).n >= BURST - 1 ? 'many unlocks at once'
+        : null;
+      const added = q.unlock.run(user.id, g.id, id, hardcore ? 1 : 0, t, flag).changes > 0;
+      // Only what counts in public goes in the activity feed.
+      if (added && hardcore && !flag) q.activity.run(t, user.id, g.id, 'unlock', id, null);
+      // A milestone arriving after its score: the scores it held back count now, at when they were posted.
+      if (a.score_at != null) {
+        for (const e of q.waiting.all(user.id, g.id, MILESTONES_FLAG)) {
+          if (q.missed.get(g.id, e.value, user.id).n) continue;
+          q.pass.run(user.id, g.id, e.leaderboard_id);
+          if (e.hardcore) q.activity.run(e.submitted_at, user.id, g.id, 'score', e.leaderboard_id, e.value);
+        }
       }
-      return { ok: true, new: added };
+      return { ok: true, new: added, ...(added && flag ? { flagged: true } : {}) };
     },
     'POST /api/games/:hash/leaderboards/:id/entries'(body, req, { hash, id }) {
       const user = requireUser(req);
@@ -284,17 +328,32 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser }) {
       const lb = board(g, id);
       const value = body.value;
       if (!Number.isInteger(value) || value < -(2 ** 31) || value >= 2 ** 31) throw new HttpError(400, 'a value is a 32-bit integer');
+      // A softcore score (a save state, a trainer) goes on no board.
+      if (body.hardcore !== true) return { softcore: true };
       const prev = q.entry.get(user.id, g.id, lb.id);
+      const previousRank = prev ? rankOf(g, lb, prev.value) : null;
       const better = !prev || (lb.lower_is_better ? value < prev.value : value > prev.value);
       const t = now();
+      let flag = null;
       if (better) {
-        q.putEntry.run(user.id, g.id, lb.id, value, body.hardcore ? 1 : 0, t);
-        const last = q.lastScore.get(user.id, g.id, lb.id);
-        if (last && t - last.at < SCORE_QUIET_MS) q.raiseScore.run(value, last.id);
-        else q.activity.run(t, user.id, g.id, 'score', lb.id, value);
+        const play = q.play.get(user.id, g.id);
+        flag = !fairPlay ? null
+          : !playing(user, g, t, play) ? 'posted without the game open'
+          : value !== 0 && t - play.started_at < EARLY_SCORE_MS ? 'a score just after the game was opened'
+          : lb.max_value != null && value > lb.max_value ? "over the board's limit"
+          : lb.min_value != null && value < lb.min_value ? "under the board's limit"
+          : !lb.lower_is_better && q.missed.get(g.id, value, user.id).n ? MILESTONES_FLAG
+          : null;
+        q.putEntry.run(user.id, g.id, lb.id, value, 1, t, flag);
+        if (!flag) {
+          const last = q.lastScore.get(user.id, g.id, lb.id);
+          if (last && t - last.at < SCORE_QUIET_MS) q.raiseScore.run(value, last.id);
+          else q.activity.run(t, user.id, g.id, 'score', lb.id, value);
+        }
       }
       const best = better ? value : prev.value;
-      return { best, rank: rankOf(g, lb, best), improved: better };
+      // What the toast needs to tell a new best or a new first place: the old best and rank, and how many are on the board.
+      return { best, rank: rankOf(g, lb, best), improved: better, previous: prev?.value ?? null, previousRank, players: q.players.get(g.id, lb.id).n, ...(flag ? { flagged: true } : {}) };
     },
     // The Hall of Fame: who has the most of a game's achievement points, earlier first on a tie
     // (equal points share a place), how many have played, and how many finished the set.
@@ -327,7 +386,8 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser }) {
         leaderboard: { id: lb.id, title: lb.title, description: lb.description, format: lb.format, lowerIsBetter: !!lb.lower_is_better },
         entries: rankEntries(topStmt[order(lb)].all(g.id, lb.id, queryInt(req, 'limit', 10, 1, 100))),
         players: q.players.get(g.id, lb.id).n,
-        me: mine ? { value: mine.value, rank: rankOf(g, lb, mine.value) } : null,
+        // A flagged best has no place on the board yet: it is being checked.
+        me: mine ? (mine.flag ? { value: mine.value, rank: null, checking: true } : { value: mine.value, rank: rankOf(g, lb, mine.value) }) : null,
       };
     },
     'GET /api/games'(body, req) {

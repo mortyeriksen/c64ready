@@ -120,7 +120,7 @@ const has = (t) => unlocked.has(id[t]);
 // 5. Islands: clearing island N moves the island index from N-1 to N.
 {
   fresh();
-  const titles = ['Bug Spray', 'Helikopter Helikopter', 'Do the Mash', 'Toy Story', 'Revenge on DOH!', "The Droids You're Looking For?"];
+  const titles = ['Bug Spray', 'Helikopter Helikopter', 'Do the Mash', 'Toy Story', 'Revenge on DOH!', 'The Droids You\'re Looking For'];
   for (let n = 1; n <= 6; n++) {
     expect(!has(titles[n - 1]), `${titles[n - 1]} not before island ${n} is cleared`);
     ram[ISLAND] = n; ram[ROUND] = 0; frames(2);
@@ -140,7 +140,7 @@ const has = (t) => unlocked.has(id[t]);
   ram[ROUND] = 19; ram[DOOR] = 5; frames(2);
   expect(has('Shilver Door'), 'Shilver Door at round 19 with $A8 = 5');
   ram[ISLAND] = 6; ram[ROUND] = 24; frames(2);
-  expect(!has("The Droids You're Looking For?"), 'warping to Dragon Island does not clear Robot Island');
+  expect(!has('The Droids You\'re Looking For'), 'warping to Dragon Island does not clear Robot Island');
   ok('the shilver door');
 }
 
@@ -167,7 +167,7 @@ const has = (t) => unlocked.has(id[t]);
 // 8. Permanent upgrades, one bit each of $4F.
 {
   fresh();
-  const bits = [['Need For Speed', 0x40], ['Red Potion Mastery', 0x01], ['Yellow Potion Mastery', 0x04], ['Redbull', 0x80], ['Birds of a Feather', 0x10]];
+  const bits = [['Need for Speed', 0x40], ['Seeing Double', 0x01], ['Yellow Potion Mastery', 0x04], ['Gives You Wings', 0x80], ['Birds of a Feather', 0x10]];
   for (const [t, bit] of bits) {
     expect(!has(t), `${t} not before its bit`);
     ram[PERM] |= bit; frames(2);
@@ -180,7 +180,7 @@ const has = (t) => unlocked.has(id[t]);
 {
   fresh();
   ram[PERM] = 0x02; frames(3);
-  expect(!has('Red Potion Mastery'), 'not at $4F = $02');
+  expect(!has('Seeing Double'), 'not at $4F = $02');
   ok('Red Potion Mastery is the double-rainbows bit');
 }
 
@@ -239,15 +239,15 @@ const has = (t) => unlocked.has(id[t]);
 {
   fresh();
   ram[LIVES] = 1; frames(2);
-  expect(!has('Wings of Death'), 'losing a life without wings is not it');
+  expect(!has('Icarus'), 'losing a life without wings is not it');
   ram[ACTIVE] = 0x80; frames(2);
   ram[LIVES] = 0; ram[ACTIVE] = 0; frames(2);
-  expect(has('Wings of Death'), 'Wings of Death when a life goes with wings held the frame before');
+  expect(has('Icarus'), 'Wings of Death when a life goes with wings held the frame before');
   fresh();
   ram[LIVES] = 0; ram[PERM] = 0x80; frames(2);
   ram[LIVES] = 0xff; frames(2);
-  expect(has('Wings of Death'), 'and for the last life, with permanent wings');
-  ok('Wings of Death');
+  expect(has('Icarus'), 'and for the last life, with permanent wings');
+  ok('Icarus');
 }
 
 // 15. Leaderboard: starts on a new game, submits at game over, restarts on fire.

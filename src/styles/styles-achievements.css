@@ -15,6 +15,14 @@
   color: var(--dim);
   text-transform: none;
 }
+/* On a dev server, after the window's name: shows a sample toast. */
+.online-dev-test {
+  flex: none;
+  margin: 0 8px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+}
+.online-dev-test[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-bright); }
 .online-title {
   flex: 1;
   min-width: 0;
@@ -250,6 +258,18 @@
   height: 1em;
 }
 
+.ach-refresh-btn.is-busy svg {
+  animation: ach-spin 0.8s linear infinite;
+}
+
+@keyframes ach-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ach-refresh-btn.is-busy svg { animation: none; }
+}
+
 /* The versions the set is for, under the title when the button opens them. */
 .ach-versions {
   margin: 0 0 10px;
@@ -397,6 +417,11 @@
 }
 
 /* The reader's own row, in reverse video as the C64 highlights a character. */
+/* The player's own best, being checked: no rank, so the name starts at the left with room for "(check)". */
+.ach-screen li.is-checking .ach-rank { display: none; }
+.ach-screen li.is-checking .ach-screen-name { grid-column: 1 / 3; }
+/* On the player's own highlighted row, in the row's own ink, not the highlight's colour. */
+.ach-screen li.is-me .ach-checking { color: inherit; }
 .ach-screen li.is-me {
   background: var(--accent);
   color: var(--on-accent);
@@ -847,57 +872,368 @@
 }
 
 /* ── Toasts: an unlock, a set's notice, a posted score ─────────────────
-   Bottom left when the display is missing, each filled with a tint of its
-   own colour. */
-.pwa-toast.ach-toast {
-  left: max(16px, env(safe-area-inset-left));
-  transform: none;
-  max-width: min(460px, calc(100vw - 32px));
-  text-align: left;
-  padding: 12px 14px;
-  border: 2px solid var(--toast-ink);
-  border-left-width: 6px;
-  background: color-mix(in srgb, var(--toast-ink) 20%, var(--panel-bg));
-  color: var(--text-bright);
-  font-size: 0.9rem;
-  box-shadow: 0 0 18px color-mix(in srgb, var(--toast-ink) 35%, transparent),
-              0 8px 28px color-mix(in srgb, var(--shadow) 55%, transparent);
-  animation: ach-toast-in 180ms ease-out;
-}
-.ach-toast-unlock { --toast-ink: var(--amber); }
-.ach-toast-notice { --toast-ink: var(--red); }
-.ach-toast-score { --toast-ink: var(--green); }
-.ach-toast .pwa-toast-action { flex: none; white-space: nowrap; border-color: var(--toast-ink); color: var(--toast-ink); font-weight: bold; }
-.ach-toast .pwa-toast-action:hover { background: var(--toast-ink); color: var(--button-ink); }
-.ach-toast .pwa-toast-x { color: var(--text); }
-@keyframes ach-toast-in { from { opacity: 0; translate: -24px 0; } }
-
-/* On the display: in the C64's top border, from the border's left edge, sized
-   with the picture so it fits the border (36 of 272 lines) at every size. It
-   slides down from the top edge. */
+   achievements/toast.js. On the C64's screen at the player's place
+   (toast-place.js): --ach-x and --ach-y on the bezel, 0 to 1 across the room
+   a toast has, so 0 is the top border and 1 the bottom one, top center
+   until changed. Its height fits a
+   border (36 of the 272 lines, 9.375cqw of the bezel's width), and it grows
+   with the picture up to fullscreen. The kind is told by the icon and the
+   colour. It lands from the nearer edge, its title's letters flip in, the
+   points roll up to a payoff (achievements/toast.js), and it slides back out
+   when its time is over. Every effect is in the theme's colours, on the toast
+   or thrown off it, never on the screen behind. */
 .crt-bezel {
   container-type: inline-size;
 }
-.crt-bezel > .pwa-toast.ach-toast {
+.ach-toast {
+  --ach-ink: var(--amber);
+  --ach-m: 1.2cqw;
+  --ach-gap: 1.3cqw;
   position: absolute;
-  top: 1.2cqw;
-  bottom: auto;
-  left: 1.2cqw;
-  max-width: calc(100% - 2.4cqw);
+  top: calc(var(--ach-gap) + var(--ach-y, 0) * (100% - 2 * var(--ach-gap)));
+  left: calc(var(--ach-m) + var(--ach-x, 0.5) * (100% - 2 * var(--ach-m)));
+  translate: calc(var(--ach-x, 0.5) * -100%) calc(var(--ach-y, 0) * -100%);
   z-index: 20;
-  gap: 1.2cqw;
-  padding: 0.7cqw 1.2cqw;
-  border-width: max(1px, 0.25cqw);
-  border-left-width: max(3px, 0.8cqw);
-  border-radius: 0.6cqw;
-  font-size: clamp(0.6rem, 1.75cqw, 1.1rem);
-  line-height: 1.3;
-  box-shadow: 0 0 1.6cqw color-mix(in srgb, var(--toast-ink) 40%, transparent);
-  animation-name: ach-toast-drop;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  max-width: min(62cqw, calc(100% - 2 * var(--ach-m)));
+  max-height: calc(9.375cqw - 2 * var(--ach-gap));
+  padding: 0.3em 0.55em 0.35em 0.35em;
+  overflow: hidden;
+  border: max(1px, 0.13em) solid color-mix(in srgb, var(--ach-ink) 70%, transparent);
+  border-radius: 0.4em;
+  /* The theme's page pattern, faintly behind the words: twice over, as one layer is too faint at this size. */
+  background-color: color-mix(in srgb, var(--ach-ink) 10%, var(--panel-bg));
+  background-image: var(--page-pattern), var(--page-pattern);
+  background-size: var(--page-pattern-size), var(--page-pattern-size);
+  box-shadow:
+    0 0 0 max(1px, 0.1em) color-mix(in srgb, var(--shadow) 40%, transparent),
+    0 0.4em 1.3em color-mix(in srgb, var(--shadow) 55%, transparent),
+    0 0 1.2em color-mix(in srgb, var(--ach-ink) 30%, transparent);
+  color: var(--text-bright);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: max(1.55cqw, 9px);
+  line-height: 1.2;
+  animation: ach-toast-land 340ms cubic-bezier(.3, .7, .4, 1) both;
 }
-@keyframes ach-toast-drop { from { opacity: 0; translate: 0 -100%; } }
+/* A light from the top, in the kind's colour. */
+.ach-toast::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--ach-ink);
+  opacity: 0.16;
+  mask-image: linear-gradient(180deg, currentColor, transparent 70%);
+}
+.ach-toast-unlock { --ach-ink: var(--amber); }
+.ach-toast-score { --ach-ink: var(--green); }
+.ach-toast-notice {
+  --ach-ink: var(--red);
+  animation: ach-toast-land 340ms cubic-bezier(.3, .7, .4, 1) both, ach-toast-glow 1.1s ease-in-out 600ms 2;
+}
+.ach-toast.ach-toast-out { animation: ach-toast-up 260ms ease-in forwards; }
+/* It lands with a little weight: past its place, back, and still. */
+@keyframes ach-toast-land {
+  0% { opacity: 0; transform: translateY(calc(var(--ach-from, -1) * 110%)); }
+  65% { opacity: 1; transform: translateY(calc(var(--ach-from, -1) * -7%)); }
+  85% { transform: translateY(calc(var(--ach-from, -1) * 2%)); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes ach-toast-up { to { opacity: 0; transform: translateY(calc(var(--ach-from, -1) * 110%)); } }
+@keyframes ach-toast-glow {
+  50% { box-shadow: 0 0 0 max(1px, 0.1em) color-mix(in srgb, var(--shadow) 40%, transparent), 0 0 2em color-mix(in srgb, var(--ach-ink) 65%, transparent); }
+}
+
+/* The kind's 10x10 pixel icon: one element, its pixels a mask (toast.js drawIcon) over the kind's colour. */
+.ach-toast-icon {
+  --ach-icon-pad: 0.25em;
+  position: relative;
+  flex: none;
+  width: 2.9em;
+  height: 2.9em;
+  border-radius: 0.25em;
+  background: color-mix(in srgb, var(--ach-ink) 18%, color-mix(in srgb, var(--shadow) 30%, transparent));
+  box-shadow: inset 0 0 0 max(1px, 0.08em) color-mix(in srgb, var(--ach-ink) 45%, transparent);
+}
+.ach-toast-icon { animation: ach-toast-clack 260ms cubic-bezier(.3, 1.6, .5, 1) 220ms both; }
+@keyframes ach-toast-clack { from { transform: scale(1.18); } }
+.ach-toast-icon::before {
+  content: "";
+  position: absolute;
+  inset: var(--ach-icon-pad);
+  background: var(--ach-ink);
+  mask: var(--ach-icon, none) center / 100% 100% no-repeat;
+}
+
+.ach-toast-words {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05em;
+  min-width: 0;
+}
+.ach-toast-title,
+.ach-toast-text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ach-toast-title { font-weight: bold; }
+.ach-toast-text {
+  color: var(--text);
+  animation: ach-toast-fade 300ms ease-out 350ms both;
+}
+@keyframes ach-toast-fade { from { opacity: 0; } }
+/* A split-flap board: each letter flips down in turn. */
+.ach-toast-ch {
+  display: inline-block;
+  white-space: pre;
+  transform-origin: 50% 0;
+  animation: ach-toast-flap 260ms ease-out both;
+  animation-delay: calc(200ms + var(--i, 0) * 32ms);
+}
+@keyframes ach-toast-flap { from { opacity: 0; transform: perspective(5em) rotateX(-90deg); } }
+
+.ach-toast-points {
+  flex: none;
+  text-align: center;
+  padding: 0.05em 0.45em;
+  border-radius: 1em;
+  background: var(--ach-ink);
+  color: var(--button-ink);
+  font-size: 0.85em;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+.ach-toast-action {
+  flex: none;
+  cursor: pointer;
+  padding: 0.15em 0.6em;
+  border: 1px solid var(--ach-ink);
+  border-radius: 0.35em;
+  background: transparent;
+  color: var(--ach-ink);
+  font: inherit;
+  font-size: 0.85em;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.ach-toast-action:hover { background: var(--ach-ink); color: var(--button-ink); }
+.ach-toast-x {
+  flex: none;
+  position: relative;
+  z-index: 3;   /* over the resize grip when a small toast is being placed */
+  cursor: pointer;
+  padding: 0 0.15em;
+  border: 0;
+  background: none;
+  color: var(--dim);
+  font: inherit;
+  line-height: 1;
+}
+.ach-toast-x:hover { color: var(--text-bright); }
+
+/* The time left drains along the bottom. Pointing at the toast holds it. */
+.ach-toast-time {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: max(1px, 0.14em);
+  background: color-mix(in srgb, var(--ach-ink) 75%, transparent);
+  transform-origin: 0 50%;
+  will-change: transform;   /* its own layer: draining does not repaint the toast */
+  animation: ach-toast-drain var(--ach-toast-ms, 5s) linear forwards;
+}
+@keyframes ach-toast-drain { to { transform: scaleX(0); } }
+.ach-toast:hover .ach-toast-time { animation-play-state: paused; }
+.ach-toast-more {
+  position: absolute;
+  top: 0.15em;
+  right: 0.35em;
+  color: var(--dim);
+  font-size: 0.65em;
+}
+
+/* The payoff (toast.js): the chip pops, and one light sweep crosses the toast. */
+.ach-toast-points.ach-toast-pop { animation: ach-toast-pop 320ms cubic-bezier(.3, 1.8, .5, 1); }
+@keyframes ach-toast-pop {
+  35% { transform: scale(1.35); box-shadow: 0 0 1.2em 0.2em var(--ach-ink); }
+}
+.ach-toast::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--ach-ink);
+  opacity: 0.35;
+  mask-image: linear-gradient(105deg, transparent 35%, currentColor 50%, transparent 65%);
+  translate: -100% 0;
+}
+.ach-toast.ach-toast-sweep::after { animation: ach-toast-sweep 700ms ease-in-out forwards; }
+@keyframes ach-toast-sweep { to { translate: 100% 0; } }
+
+/* A score: the number, the rank as it ticks, and the BEST or #1 stamp. */
+.ach-toast-num,
+.ach-toast-rank { color: var(--ach-ink); font-variant-numeric: tabular-nums; }
+/* A counting number keeps its final width (toast.js count): right-aligned, as digits come in. */
+.ach-toast-num { display: inline-block; text-align: right; }
+.ach-toast-rank { display: inline-block; font-weight: bold; }
+.ach-toast-rank.ach-toast-bump { animation: ach-toast-bump 220ms ease-out; }
+@keyframes ach-toast-bump { 40% { transform: scale(1.35); } }
+.ach-toast-stamp {
+  flex: none;
+  position: relative;
+  z-index: 2;
+  padding: 0.05em 0.35em;
+  border: max(1px, 0.14em) solid var(--ach-ink);
+  border-radius: 0.2em;
+  color: var(--ach-ink);
+  font-weight: bold;
+  font-size: 0.9em;
+  letter-spacing: 0.08em;
+  rotate: -10deg;
+  animation: ach-toast-stamp 420ms cubic-bezier(.2, 1.5, .4, 1) both;
+}
+@keyframes ach-toast-stamp { 0% { opacity: 0; transform: scale(2.6); } 60% { opacity: 1; transform: scale(0.92); } }
+
+/* First place: the card's gold side, with a foil that shimmers while it shows. */
+.ach-toast.ach-toast-gold { --ach-ink: var(--medal-gold); }
+.ach-toast.ach-toast-foil::before {
+  opacity: 0.3;
+  background: linear-gradient(110deg, transparent 20%, var(--medal-gold) 40%, var(--highlight) 50%, var(--medal-gold) 60%, transparent 80%);
+  background-size: 250% 100%;
+  mask-image: none;
+  animation: ach-toast-foil 2.2s linear infinite;
+}
+@keyframes ach-toast-foil { from { background-position: 150% 0; } to { background-position: -100% 0; } }
+/* A coin spin's gold back, while the card faces away. */
+.ach-toast.ach-toast-back > * { visibility: hidden; }
+.ach-toast.ach-toast-back {
+  background: linear-gradient(135deg, var(--medal-bronze), var(--medal-gold) 30%, var(--highlight) 50%, var(--medal-gold) 70%, var(--medal-bronze));
+}
+
+/* The full celebration's pieces, thrown off the toast: its flash, shockwave rings, PETSCII confetti and glints. */
+.ach-toast-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: inherit;
+  background: var(--highlight);
+  opacity: 0;
+}
+.ach-toast-ring,
+.ach-toast-shower,
+.ach-toast-glint { position: absolute; z-index: 22; pointer-events: none; }
+/* Rings and confetti burst out from behind the toast, so its words stay clear. */
+.ach-toast-ring,
+.ach-toast-shower { z-index: 19; }
+.ach-toast-ring { border: max(2px, 0.35cqw) solid; border-radius: 0.6cqw; }
+.ach-toast-shower { left: 0; top: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+.ach-toast-glint {
+  width: 1.6cqw;
+  height: 1.6cqw;
+  min-width: 8px;
+  min-height: 8px;
+  opacity: 0;
+  background:
+    linear-gradient(var(--highlight), var(--highlight)) center / 100% 16% no-repeat,
+    linear-gradient(var(--highlight), var(--highlight)) center / 16% 100% no-repeat;
+  filter: drop-shadow(0 0 4px var(--glow, var(--amber)));
+}
+
+/* A big unlock's sparkles: pixels thrown off the icon. */
+.ach-toast-spark {
+  position: absolute;
+  z-index: 21;
+  width: max(2px, 0.45cqw);
+  height: max(2px, 0.45cqw);
+  pointer-events: none;
+  background: var(--ink, var(--amber));
+  animation: ach-toast-spark 700ms cubic-bezier(.2, .7, .4, 1) both;
+}
+.ach-toast-spark.white { background: var(--highlight); }
+@keyframes ach-toast-spark {
+  from { transform: translate(0, 0); opacity: 1; }
+  to { transform: translate(var(--x, 0), var(--y, 0)); opacity: 0; }
+}
+
+/* A small picture's border holds one readable line: the title alone. */
+@container (max-width: 520px) {
+  .ach-toast .ach-toast-text { display: none; }
+  .ach-toast .ach-toast-icon { width: 1.9em; height: 1.9em; --ach-icon-pad: 0.15em; }
+}
+
+/* Being dragged into place in the vibes view: a sample that stays, outlined. */
+.ach-toast.ach-toast-placing {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  outline: max(1px, 0.15em) dashed var(--ach-ink);
+  outline-offset: 0.25em;
+  animation: none;
+}
+.ach-toast.ach-toast-placing:active { cursor: grabbing; }
+.ach-toast-placing .ach-toast-time { display: none; }
+/* Its corner grip: dragged, it makes the toast larger or smaller. */
+.ach-toast-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 1.1em;
+  height: 1.1em;
+  padding: 0;
+  border: 0;
+  cursor: nwse-resize;
+  touch-action: none;
+  background: linear-gradient(135deg, transparent 50%, var(--ach-ink) 50%);
+  opacity: 0.8;
+}
+.ach-toast-resize:hover { opacity: 1; }
+
+/* In the vibes view, sized with the screen, where the player dragged it with
+   the view's toast button (--ach-x and --ach-y on the overlay), top center
+   until then. 18px from the edges, as the view's buttons. */
+.model-viewer-overlay > .ach-toast {
+  position: absolute;
+  top: calc(18px + var(--ach-y, 0) * (100% - 36px));
+  left: calc(18px + var(--ach-x, 0.5) * (100% - 36px));
+  translate: calc(var(--ach-x, 0.5) * -100%) calc(var(--ach-y, 0) * -100%);
+  max-width: min(calc(640px * var(--ach-scale, 1)), calc(100vw - 36px), calc(60vw * var(--ach-scale, 1)));
+  max-height: none;
+  font-size: calc(clamp(12px, 1.2vw, 26px) * var(--ach-scale, 1));
+}
+.model-viewer-overlay > .ach-toast-spark { width: max(3px, 0.35vw); height: max(3px, 0.35vw); }
+
+/* Without the display: at the foot of the page. */
+.ach-toast.ach-toast-page {
+  position: fixed;
+  top: auto;
+  bottom: 16px;
+  left: max(16px, env(safe-area-inset-left));
+  translate: none;
+  z-index: 2000;
+  max-width: min(460px, calc(100vw - 32px));
+  max-height: none;
+  font-size: 0.9rem;
+}
+.ach-toast-spark.ach-toast-page,
+.ach-toast-glint.ach-toast-page { position: fixed; z-index: 2001; }
+.ach-toast-ring.ach-toast-page,
+.ach-toast-shower.ach-toast-page { position: fixed; z-index: 1999; }
+
 @media (prefers-reduced-motion: reduce) {
-  .pwa-toast.ach-toast { animation: none; }
+  .ach-toast,
+  .ach-toast-notice,
+  .ach-toast.ach-toast-out,
+  .ach-toast-icon,
+  .ach-toast-text,
+  .ach-toast-stamp,
+  .ach-toast::after { animation: none; }
+  .ach-toast::after { display: none; }
 }
 
 /* LOAD MORE under an activity feed: across the list, so the next page is easy to reach. */
@@ -1023,3 +1359,7 @@
 .ach-fame li.is-me .ach-fame-star {
   color: inherit;
 }
+
+/* The player's own result the server flagged: it counts in public once checked. */
+.ach-checking { color: var(--amber); }
+.ach-what .ach-checking { display: block; font-size: 0.85em; }

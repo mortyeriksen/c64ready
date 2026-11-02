@@ -9,26 +9,37 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
-## Next release
+## 2026.11.2 — November 3, 2026
 
-- **New games with achievements and high scores:**
-  - **1943** on the OneLoad64 cartridge. Arm the plane, reach the later
-    missions, and your score goes on the board when the plane goes down.
-  - **Bubble Bobble** on the OneLoad64 cartridge. Clear rounds, collect EXTEND,
-    and your best game goes on the board.
-  - **Buggy Boy** on the OneLoad64 cartridge. Reach the later legs, finish a
-    course, and your best race goes on the board.
-  - **Ghosts 'n Goblins Arcade**, the arcade conversion on its EasyFlash
-    cartridge. Clear the levels, rack up points and get through the first level
-    without losing a life.
-  - **Impossible Mission** on the OneLoad64 cartridge. Find the pieces, solve
-    the puzzles and open the control room, and your score goes on the board.
-  - **Wizball** on the OneLoad64 cartridge. Collect the colours, finish them,
-    and your score goes on the board when the game ends.
+Achievements grows to 46 games, with Infocom's adventures among them, and gets
+new toasts that make every unlock and new best feel like one. Only hardcore
+play counts in public now.
+
+- **New games with achievements and high scores:** 1943, Barbarian: The
+  Ultimate Warrior, Beach-Head, Blue Max, Boulder Dash, Bruce Lee, Bubble
+  Bobble, Buggy Boy, Cybernoid, Cybernoid II, Defender of the Crown, Ghosts 'n
+  Goblins Arcade, Great Giana Sisters, Impossible Mission, Paperboy, Paradroid,
+  Rambo First Blood Part II, Wizball and Yie Ar Kung-Fu. Infocom's The
+  Hitchhiker's Guide to the Galaxy and Zork I join too, with a board for the
+  fewest moves to a full score.
+- **Fair play.** Only hardcore play counts in public. A loaded save state or a
+  trainer makes the game softcore until a reset: unlocks stay yours, and scores
+  are not posted. Results that look unlikely wait for a check before they show.
+- **New achievement toasts.** Unlocks, scores and notices land with a pixel
+  icon over a hint of the theme's pattern, one at a time for five seconds.
+  Bigger unlocks get bigger moments, up to a shower of PETSCII characters. A
+  new best is stamped BEST, and a new first place or a completed game turns the
+  toast to gold. Options ▸ Other ▸ **TOAST** places them, and in the vibes view
+  you can drag and resize them.
 - **Lemon64 links.** A game's page in the achievements window links to the
   game on Lemon64, for its story, reviews and manual.
-- **The Last Ninja.** Crossing the river, and picking up each weapon, now count.
+- **The Last Ninja.** Crossing the river and picking up each weapon now count,
+  and new challenges follow the story from the Wastelands to the sacred
+  scrolls. A full run without losing a life is the last of them.
 - **Bomb Jack.** Clearing a round counts for the round you finished.
+- **Out Run.** Each of the five routes now has its own finish achievement and
+  high-score board. Two new challenges reward reaching the goal with time left.
+  The Route D and E cartridges join the supported versions.
 
 ---
 

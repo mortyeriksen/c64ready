@@ -109,7 +109,7 @@ function die() { ram[MEN] = ram[MEN] === 0x10 ? 0x09 : ram[MEN] - 1; frames(10);
   expect(unlocked.size === 0 && started() === 0 && !submitted().length, `a trainer game counts for nothing (got ${[...unlocked]})`);
   activate(); title(); start(); setScore(1000); frames(2); ram[MEN] = 0; frames(5);
   title(); start({ trainer: true }); clearArea(); frames(2);
-  expect(!has('Area 1 Cleared'), 'an earlier plain game does not open a later trainer game');
+  expect(!has('Off the Truck'), 'an earlier plain game does not open a later trainer game');
   activate(); title(); start({ trainer: true, area: 3 }); clearArea();
   expect(!has('Area 4 Cleared'), 'a starting level is a trainer too');
   ok('trainers are kept out');
@@ -118,10 +118,11 @@ function die() { ram[MEN] = ram[MEN] === 0x10 ? 0x09 : ram[MEN] - 1; frames(10);
 // 5. Areas 1 to 8.
 {
   activate(); title(); start();
+  const area = (n) => (n === 1 ? 'Off the Truck' : n === 8 ? 'Full Circle' : `Area ${n} Cleared`);
   for (let n = 1; n <= 8; n++) {
-    expect(!has(`Area ${n} Cleared`), `Area ${n} not yet`);
+    expect(!has(area(n)), `area ${n} not yet`);
     clearArea();
-    expect(has(`Area ${n} Cleared`), `Area ${n} Cleared`);
+    expect(has(area(n)), `area ${n} cleared`);
   }
   expect(has('Untouchable'), 'no man lost in area 1');
   ok('areas');
@@ -130,7 +131,7 @@ function die() { ram[MEN] = ram[MEN] === 0x10 ? 0x09 : ram[MEN] - 1; frames(10);
 // 6. Untouchable needs area 1 without a death.
 {
   activate(); title(); start(); die(); clearArea();
-  expect(has('Area 1 Cleared') && !has('Untouchable'), 'a death in area 1 rules it out');
+  expect(has('Off the Truck') && !has('Untouchable'), 'a death in area 1 rules it out');
   ok('Untouchable');
 }
 

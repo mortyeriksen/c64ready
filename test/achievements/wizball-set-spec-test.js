@@ -174,30 +174,30 @@ function begin() {
   begin();
   score(10);
   frames(2);
-  expectNames('10 points', ['First Points']);
+  expectNames('10 points', ['Bounce']);
   score(999);
   frames(2);
-  expectNames('999 points', ['First Points']);
+  expectNames('999 points', ['Bounce']);
   score(1000);
   frames(2);
-  expectNames('1000 points', ['First Points', 'One Thousand']);
+  expectNames('1000 points', ['Bounce', 'One Thousand']);
   score(9990);
   frames(2);
-  expectNames('9990 points', ['First Points', 'One Thousand']);
+  expectNames('9990 points', ['Bounce', 'One Thousand']);
   score(10000);
   frames(2);
-  expectNames('10000 points', ['First Points', 'One Thousand', 'Ten Thousand']);
+  expectNames('10000 points', ['Bounce', 'One Thousand', 'Ten Thousand']);
   score(49990);
   frames(2);
-  expectNames('49990 points', ['First Points', 'One Thousand', 'Ten Thousand']);
+  expectNames('49990 points', ['Bounce', 'One Thousand', 'Ten Thousand']);
   score(50000);
   frames(2);
-  expectNames('50000 points', ['First Points', 'One Thousand', 'Ten Thousand', 'Top Score']);
+  expectNames('50000 points', ['Bounce', 'One Thousand', 'Ten Thousand', 'Top Score']);
 
   begin();
   score(50000);
   frames(2);
-  expectNames('jump to 50000', ['First Points', 'One Thousand', 'Ten Thousand', 'Top Score']);
+  expectNames('jump to 50000', ['Bounce', 'One Thousand', 'Ten Thousand', 'Top Score']);
   ok('the score milestones follow the digits');
 }
 
@@ -206,13 +206,13 @@ function begin() {
   begin();
   ram[POTS[0]] = 1;
   frames(2);
-  expectNames('one cauldron', ['A Droplet']);
+  expectNames('one cauldron', ['Drip Feed']);
   ram[POTS[1]] = 1;
   frames(2);
-  expectNames('two cauldrons', ['A Droplet']);
+  expectNames('two cauldrons', ['Drip Feed']);
   ram[POTS[2]] = 1;
   frames(2);
-  expectNames('three cauldrons', ['A Droplet', 'Three Cauldrons']);
+  expectNames('three cauldrons', ['Drip Feed', 'Three Cauldrons']);
 
   begin();
   ram[COLOURS[0]] = 2;
@@ -220,13 +220,13 @@ function begin() {
   expectNames('a colour at 2', []);
   ram[COLOURS[0]] = 3;
   frames(2);
-  expectNames('one colour', ['Colour Complete']);
+  expectNames('one colour', ['A Splash of Colour']);
   ram[COLOURS[1]] = 3;
   frames(2);
-  expectNames('two colours', ['Colour Complete']);
+  expectNames('two colours', ['A Splash of Colour']);
   ram[COLOURS[2]] = 3;
   frames(2);
-  expectNames('three colours', ['Colour Complete', 'Every Colour']);
+  expectNames('three colours', ['A Splash of Colour', 'Every Colour']);
   ok('cauldrons and colours count on their own');
 }
 

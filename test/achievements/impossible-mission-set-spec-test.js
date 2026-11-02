@@ -150,13 +150,13 @@ function begin() {
   begin();
   ram[PIECES] = 1;
   frames(2);
-  expectNames('first piece', ['Puzzle Piece']);
+  expectNames('first piece', ['Another Visitor']);
   ram[PIECES] = 9;
   frames(2);
-  expectNames('nine pieces', ['Puzzle Piece']);
+  expectNames('nine pieces', ['Another Visitor']);
   ram[PIECES] = 10;
   frames(2);
-  expectNames('tenth piece', ['Puzzle Piece', 'Ten Pieces']);
+  expectNames('tenth piece', ['Another Visitor', 'Ten Pieces']);
 
   begin();
   ram[PIECES] = 10;
@@ -170,10 +170,10 @@ function begin() {
   begin();
   ram[CODES] = 1;
   frames(2);
-  expectNames('one code', ['Snooze or Lift']);
+  expectNames('one code', ['Searching...']);
   ram[PIECES] = 1;
   frames(2);
-  expectNames('a piece does not replace the code', ['Snooze or Lift', 'Puzzle Piece']);
+  expectNames('a piece does not replace the code', ['Searching...', 'Another Visitor']);
   ok('a snooze or a lift reset counts on its own');
 }
 
@@ -208,15 +208,15 @@ function begin() {
   begin();
   ram[SOLVED] = 9;
   frames(2);
-  expect(!names().includes('Control Room'), 'nine puzzles are not the door');
+  expect(!names().includes('Stay a While'), 'nine puzzles are not the door');
   ram[DOOR] = 1;
   frames(2);
-  expect(names().includes('Control Room'), 'the door opens when $DC becomes 1');
+  expect(names().includes('Stay a While'), 'the door opens when $DC becomes 1');
 
   begin();
   ram[DOOR] = 1;
   frames(2);
-  expectNames('door alone', ['Control Room']);
+  expectNames('door alone', ['Stay a While']);
   ok('the control room opens when the door flag increments');
 }
 
@@ -272,7 +272,7 @@ function begin() {
   frames(2);
   ram[DOOR] = 1;
   frames(2);
-  expectNames('door after it was false', ['Control Room']);
+  expectNames('door after it was false', ['Stay a While']);
   ok('a condition already true on the first look waits until it has been false');
 }
 

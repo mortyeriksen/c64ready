@@ -46,7 +46,7 @@ fs.writeFileSync(path.join(sets, 'demo.json'), JSON.stringify({
     { id: 2, title: 'Big Score', description: 'Score 100.', points: 10, memaddr: '0xH0011>=100' },
     { id: 3, title: 'Next Step', description: 'Step from 1 to 2.', points: 5, memaddr: '0xH0013=2_d0xH0013=1' },
   ],
-  notices: [{ id: 1, text: 'A cheat is on.', memaddr: '0xH0014=1' }],
+  notices: [{ id: 1, title: 'Cheat on', text: 'Nothing counts.', memaddr: '0xH0014=1' }],
   leaderboards: [{ id: 1, title: 'High Score', description: 'Most points.', format: 'VALUE', lowerIsBetter: false,
     definition: 'STA:0xH0012=1_d0xH0012=0::CAN:0=1::SUB:0xH0012=0_d0xH0012=1::VAL:0xH0011' }],
 }));
@@ -71,9 +71,9 @@ db.prepare('INSERT INTO sessions (token_hash, user_id, created_at, expires_at, l
   .run(crypto.createHash('sha256').update(token).digest('hex'), userId, Date.now(), Date.now() + 1e9, Date.now());
 
 const account = { token, user: { id: userId, name: 'Ann' } };
-const unlocks = [], boards = [], notices = [];
+const unlocks = [], boards = [], notices = [], softs = [];
 const asked = [];   // every URL the engine fetched
-const engine = createAchievementEngine({ account, base, fetchImpl: (url, o) => { asked.push(String(url)); return fetch(url, o); }, onUnlock: (e) => unlocks.push(e), onLeaderboard: (e) => boards.push(e), onNotice: (e) => notices.push(e), log: () => {} });
+const engine = createAchievementEngine({ account, base, fetchImpl: (url, o) => { asked.push(String(url)); return fetch(url, o); }, onUnlock: (e) => unlocks.push(e), onLeaderboard: (e) => boards.push(e), onNotice: (e) => notices.push(e), onSoftcore: (e) => softs.push(e.reason), log: () => {} });
 const ram = new Uint8Array(0x10000);
 const frames = (n) => { for (let i = 0; i < n; i++) engine.frame(ram); };
 const settle = () => new Promise((r) => setTimeout(r, 50));
@@ -101,6 +101,7 @@ const settle = () => new Promise((r) => setTimeout(r, 50));
   ram[0x10] = 2; frames(1);
   await settle();
   expect(unlocks.length === 1 && unlocks[0].achievement.title === 'Level Two' && unlocks[0].saved, 'reaching level 2 unlocks Level Two and saves it');
+  expect(unlocks[0].complete === null, 'one of three is not the whole set');
   const row = db.prepare('SELECT achievement_id FROM unlocks WHERE user_id = ?').all(userId).map((r) => r.achievement_id);
   expect(JSON.stringify(row) === '[1]', 'the server has the unlock');
   ram[0x12] = 1; ram[0x11] = 40; frames(2);
@@ -141,7 +142,7 @@ const settle = () => new Promise((r) => setTimeout(r, 50));
 {
   unlocks.length = 0;
   ram[0x14] = 1; frames(3);
-  expect(notices.length === 1 && notices[0].text === 'A cheat is on.' && engine.game.notice === 'A cheat is on.', 'a notice that comes true is told, and shown on the game');
+  expect(notices.length === 1 && notices[0].title === 'Cheat on' && notices[0].text === 'Nothing counts.' && engine.game.notice === 'Cheat on: Nothing counts.', 'a notice that comes true is told with its title, and shown on the game');
   frames(5);
   expect(notices.length === 1, 'once, while it stays true');
   expect(!unlocks.length, 'and it is no achievement');
@@ -151,6 +152,23 @@ const settle = () => new Promise((r) => setTimeout(r, 50));
   expect(notices.length === 2, 'and it is told again the next time it comes true');
   ram[0x14] = 0; frames(1);
   ok('notices');
+}
+
+// 4c. Hardcore: a notice or a loaded save state makes play softcore, said once, until a reset.
+{
+  engine.reset();
+  softs.length = 0;
+  expect(engine.softcore === null, 'a reset machine plays hardcore');
+  engine.taint('a save state was loaded');
+  engine.taint('a save state was loaded');
+  expect(engine.softcore === 'a save state was loaded' && softs.length === 1 && engine.game.softcore === 'a save state was loaded', 'a loaded save state makes play softcore, said once, and the game shows why');
+  engine.reset();
+  expect(engine.softcore === null, 'a reset makes it hardcore again');
+  frames(1);   // after a reset, a condition must be seen false before it can come true
+  ram[0x14] = 1; frames(3);
+  expect(engine.softcore === 'Cheat on', 'a notice that sees a trainer makes play softcore too');
+  engine.reset(); ram[0x14] = 0; frames(1);
+  ok('hardcore: softcore until a reset');
 }
 
 // 5. Another file of the same game carries it on; ejecting keeps it; a different file ends it.
@@ -164,6 +182,12 @@ const settle = () => new Promise((r) => setTimeout(r, 50));
   ram[0x13] = 2; frames(1);
   await settle();
   expect(unlocks.some((u) => u.achievement.title === 'Next Step'), 'and the game carries on: a step begun on side 1 completes on side 2');
+  expect(unlocks.find((u) => u.achievement.title === 'Next Step')?.complete === null, 'two of three is not the whole set');
+  ram[0x10] = 1; frames(2); ram[0x10] = 2; frames(1);
+  await settle();
+  const last = unlocks.find((u) => u.achievement.title === 'Level Two');
+  expect(last?.complete?.id === 'demo' && last.complete.title === 'Demo Game' && last.complete.count === 3 && last.complete.points === 20,
+    `the set's last unlock says the whole game is done, with its count and points (got ${JSON.stringify(last?.complete)})`);
   _resetLoaded();
   await engine.mediaChanged();
   expect(engine.game?.title === 'Demo Game', 'ejecting keeps the game: the program runs on in memory');
@@ -361,6 +385,27 @@ const settle = () => new Promise((r) => setTimeout(r, 50));
   expect(e5.game?.achievements.find((a) => a.id === 1)?.title === 'Level Two, corrected', 'loading the game again fetches the set as the server has it now');
   db.prepare("UPDATE achievements SET title = 'Level Two' WHERE game_id = 'demo' AND id = 1").run();
   ok('a corrected set reaches the next load of its game');
+}
+
+// 12. A result an admin has checked loses its mark when the player refreshes, without a reload of the page.
+{
+  const id = Number(db.prepare('INSERT INTO users (name, name_key, handle, created_at) VALUES (?, ?, ?, ?)').run('Gil', 'gil', crypto.randomBytes(16), Date.now()).lastInsertRowid);
+  const t = crypto.randomBytes(32).toString('base64url');
+  db.prepare('INSERT INTO sessions (token_hash, user_id, created_at, expires_at, last_seen_at) VALUES (?, ?, ?, ?, ?)').run(crypto.createHash('sha256').update(t).digest('hex'), id, Date.now(), Date.now() + 1e9, Date.now());
+  db.prepare("INSERT INTO unlocks (user_id, game_id, achievement_id, hardcore, unlocked_at, flag) VALUES (?, 'demo', 1, 1, ?, 'burst')").run(id, Date.now());
+  let changes = 0;
+  const e6 = createAchievementEngine({ account: { token: t, user: { id, name: 'Gil' } }, base, log: () => {}, onChange: () => changes++ });
+  _resetLoaded();
+  setLoaded('cart', { ref: file, kind: 'crt', bytes: file });
+  await e6.mediaChanged();
+  expect(e6.game?.achievements.find((a) => a.id === 1)?.checking === true, 'a flagged unlock shows as being checked');
+  db.prepare("UPDATE unlocks SET flag = NULL WHERE user_id = ? AND game_id = 'demo'").run(id);
+  changes = 0;
+  await e6.refreshChecks();
+  expect(!e6.game?.achievements.find((a) => a.id === 1)?.checking && changes === 1, 'a refresh after the admin approved clears the mark');
+  await e6.refreshChecks();
+  expect(changes === 1, 'a refresh that changes nothing draws nothing');
+  ok('a refresh picks up what an admin checked');
 }
 
 accounts.close();

@@ -18,7 +18,7 @@
     },
     {
       "id": 2,
-      "title": "World 1 Cleared",
+      "title": "Wrong Castle",
       "description": "Clear the castle of World 1.",
       "points": 5,
       "memaddr": "N:0xH0770=1_N:d0xH0770=0_N:0xH077A=0_N:0xH07DD=0_N:0xH07DE=0_N:0xH07DF=0_N:0xH07E0=0_N:0xH07E1=0_0xH07E2=0.1._0xH077A=0_0xH0770=1_d0xH0770=1_0xH075F=1_d0xH075F=0_0xH075C=0_d0xH075C>=3"
@@ -67,31 +67,31 @@
     },
     {
       "id": 9,
-      "title": "Princess Rescued",
+      "title": "Right Castle",
       "description": "Clear World 8-4 and rescue the princess.",
       "points": 25,
       "memaddr": "N:0xH0770=1_N:d0xH0770=0_N:0xH077A=0_N:0xH07DD=0_N:0xH07DE=0_N:0xH07DF=0_N:0xH07E0=0_N:0xH07E1=0_0xH07E2=0.1._0xH077A=0_0xH075F=7_0xH0770=2_d0xH0770=1"
     },
     {
       "id": 10,
-      "title": "Warp Pipe",
-      "description": "Take a warp zone pipe to a later world.",
-      "points": 10,
-      "memaddr": "N:0xH0770=1_N:d0xH0770=0_N:0xH077A=0_N:0xH07DD=0_N:0xH07DE=0_N:0xH07DF=0_N:0xH07E0=0_N:0xH07E1=0_0xH07E2=0.1._0xH077A=0_0xH0770=1_d0xH0770=1_0xH075F>d0xH075F_0xH075C=0_d0xH075C<3"
-    },
-    {
-      "id": 11,
-      "title": "One Up",
+      "title": "1-Up",
       "description": "Gain an extra life.",
       "points": 5,
       "memaddr": "N:0xH0770=1_N:d0xH0770=0_N:0xH077A=0_N:0xH07DD=0_N:0xH07DE=0_N:0xH07DF=0_N:0xH07E0=0_N:0xH07E1=0_0xH07E2=0.1._0xH077A=0_0xH0770=1_d0xH0770=1_0xH075A>d0xH075A"
     },
     {
-      "id": 12,
+      "id": 11,
       "title": "Coin Collector",
       "description": "Collect 100 coins.",
       "points": 10,
       "memaddr": "N:0xH0770=1_N:d0xH0770=0_N:0xH077A=0_N:0xH07DD=0_N:0xH07DE=0_N:0xH07DF=0_N:0xH07E0=0_N:0xH07E1=0_0xH07E2=0.1._0xH077A=0_0xH0770=1_d0xH0770=1_0xH075E=0_d0xH075E=99"
+    },
+    {
+      "id": 12,
+      "title": "Fire Power",
+      "description": "Get a fire flower.",
+      "points": 5,
+      "memaddr": "N:0xH0770=1_N:d0xH0770=0_N:0xH077A=0_N:0xH07DD=0_N:0xH07DE=0_N:0xH07DF=0_N:0xH07E0=0_N:0xH07E1=0_0xH07E2=0.1._0xH077A=0_0xH0770=1_d0xH0770=1_0xH0756=2_d0xH0756!=2"
     },
     {
       "id": 13,
@@ -102,38 +102,41 @@
     },
     {
       "id": 14,
-      "title": "Fire Power",
-      "description": "Get a fire flower.",
-      "points": 5,
-      "memaddr": "N:0xH0770=1_N:d0xH0770=0_N:0xH077A=0_N:0xH07DD=0_N:0xH07DE=0_N:0xH07DF=0_N:0xH07E0=0_N:0xH07E1=0_0xH07E2=0.1._0xH077A=0_0xH0770=1_d0xH0770=1_0xH0756=2_d0xH0756!=2"
+      "title": "Shortcut",
+      "description": "Take a warp zone pipe to a later world.",
+      "points": 10,
+      "memaddr": "N:0xH0770=1_N:d0xH0770=0_N:0xH077A=0_N:0xH07DD=0_N:0xH07DE=0_N:0xH07DF=0_N:0xH07E0=0_N:0xH07E1=0_0xH07E2=0.1._0xH077A=0_0xH0770=1_d0xH0770=1_0xH075F>d0xH075F_0xH075C=0_d0xH075C<3"
     },
     {
       "id": 15,
-      "title": "Score 50,000",
-      "description": "Score at least 50,000 points.",
+      "title": "Fifty Grand",
+      "description": "Score 50,000 points.",
       "points": 5,
+      "score": 50000,
       "memaddr": "N:0xH0770=1_N:d0xH0770=0_N:0xH077A=0_N:0xH07DD=0_N:0xH07DE=0_N:0xH07DF=0_N:0xH07E0=0_N:0xH07E1=0_0xH07E2=0.1._0xH077A=0_0xH0770=1_d0xH0770=1_A:0xH07DD*100000_A:0xH07DE*10000_A:0xH07DF*1000_A:0xH07E0*100_A:0xH07E1*10_0xH07E2>=5000"
     },
     {
       "id": 16,
-      "title": "Score 100,000",
-      "description": "Score at least 100,000 points.",
+      "title": "Six Figures",
+      "description": "Score 100,000 points.",
       "points": 10,
+      "score": 100000,
       "memaddr": "N:0xH0770=1_N:d0xH0770=0_N:0xH077A=0_N:0xH07DD=0_N:0xH07DE=0_N:0xH07DF=0_N:0xH07E0=0_N:0xH07E1=0_0xH07E2=0.1._0xH077A=0_0xH0770=1_d0xH0770=1_A:0xH07DD*100000_A:0xH07DE*10000_A:0xH07DF*1000_A:0xH07E0*100_A:0xH07E1*10_0xH07E2>=10000"
     },
     {
       "id": 17,
-      "title": "Score 250,000",
-      "description": "Score at least 250,000 points.",
+      "title": "Super Score",
+      "description": "Score 250,000 points.",
       "points": 25,
+      "score": 250000,
       "memaddr": "N:0xH0770=1_N:d0xH0770=0_N:0xH077A=0_N:0xH07DD=0_N:0xH07DE=0_N:0xH07DF=0_N:0xH07E0=0_N:0xH07E1=0_0xH07E2=0.1._0xH077A=0_0xH0770=1_d0xH0770=1_A:0xH07DD*100000_A:0xH07DE*10000_A:0xH07DF*1000_A:0xH07E0*100_A:0xH07E1*10_0xH07E2>=25000"
     }
   ],
   "leaderboards": [
     {
       "id": 1,
-      "title": "High Score",
-      "description": "Highest score in one one-player game.",
+      "title": "Hiscores",
+      "description": "Your best score in one one-player game.",
       "format": "SCORE",
       "lowerIsBetter": false,
       "definition": "STA:0xH0770=1_d0xH0770=0_0xH077A=0_0xH07DD=0_0xH07DE=0_0xH07DF=0_0xH07E0=0_0xH07E1=0_0xH07E2=0::CAN:0xH077A!=0::SUB:0xH077A=0_0xH0770=3_d0xH0770=1S0xH07DD>0S0xH07DE>0S0xH07DF>0S0xH07E0>0S0xH07E1>0S0xH07E2>0::VAL:0xH07DD*1000000_0xH07DE*100000_0xH07DF*10000_0xH07E0*1000_0xH07E1*100_0xH07E2*10"

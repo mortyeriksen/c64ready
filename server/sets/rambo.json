@@ -1,0 +1,145 @@
+{
+  "id": "rambo",
+  "title": "Rambo First Blood Part II",
+  "url": "https://www.lemon64.com/game/rambo-first-blood-part-ii",
+  "hashes": [
+    {
+      "hash": "75e3322eff562e80296d45397072fd00",
+      "label": "OneLoad64 v5 cartridge (Rambo - First Blood Part II.crt)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Prisoner Found",
+      "description": "Free the first P.O.W.",
+      "points": 10,
+      "memaddr": "N:0xH0cc3=48_N:d0xH0cc3!=48_N:0xH19ed=7_N:0xH0aff=0_N:0xH2483=0_N:0xH2484=0_N:0xH2485=0_N:0xH2486=0_N:0xH2487=0_0xH2488=0.1._0xH2462=162_0xH0c89=165_0xH0aff>=1_d0xH0aff=0"
+    },
+    {
+      "id": 2,
+      "title": "Task One",
+      "description": "Complete task one.",
+      "points": 25,
+      "memaddr": "N:0xH0cc3=48_N:d0xH0cc3!=48_N:0xH19ed=7_N:0xH0aff=0_N:0xH2483=0_N:0xH2484=0_N:0xH2485=0_N:0xH2486=0_N:0xH2487=0_0xH2488=0.1._0xH2462=162_0xH0c89=165_0xH0537=1_d0xH0537!=1"
+    },
+    {
+      "id": 3,
+      "title": "Get to the Chopper",
+      "description": "Take off in the enemy helicopter.",
+      "points": 10,
+      "memaddr": "N:0xH0cc3=48_N:d0xH0cc3!=48_N:0xH19ed=7_N:0xH0aff=0_N:0xH2483=0_N:0xH2484=0_N:0xH2485=0_N:0xH2486=0_N:0xH2487=0_0xH2488=0.1._0xH2462=162_0xH0c89=165_0xH22c2=1_d0xH22c2=0"
+    },
+    {
+      "id": 4,
+      "title": "Touchdown",
+      "description": "Land the helicopter at the camp.",
+      "points": 25,
+      "memaddr": "N:0xH0cc3=48_N:d0xH0cc3!=48_N:0xH19ed=7_N:0xH0aff=0_N:0xH2483=0_N:0xH2484=0_N:0xH2485=0_N:0xH2486=0_N:0xH2487=0_0xH2488=0.1._0xH2462=162_0xH0c89=165_0xHe6=1_d0xHe6=0"
+    },
+    {
+      "id": 5,
+      "title": "Camp Raid",
+      "description": "Get the prisoners back to the helicopter.",
+      "points": 25,
+      "memaddr": "N:0xH0cc3=48_N:d0xH0cc3!=48_N:0xH19ed=7_N:0xH0aff=0_N:0xH2483=0_N:0xH2484=0_N:0xH2485=0_N:0xH2486=0_N:0xH2487=0_0xH2488=0.1._0xH2462=162_0xH0c89=165_0xH08eb=1_d0xH08eb=0"
+    },
+    {
+      "id": 6,
+      "title": "Unwanted Escort",
+      "description": "Leave the camp with the gunship on your tail.",
+      "points": 10,
+      "memaddr": "N:0xH0cc3=48_N:d0xH0cc3!=48_N:0xH19ed=7_N:0xH0aff=0_N:0xH2483=0_N:0xH2484=0_N:0xH2485=0_N:0xH2486=0_N:0xH2487=0_0xH2488=0.1._0xH2462=162_0xH0c89=165_0xH0537=2_d0xH0537!=2"
+    },
+    {
+      "id": 7,
+      "title": "Mission Accomplished",
+      "description": "Fly the P.O.W.s home.",
+      "points": 50,
+      "memaddr": "N:0xH0cc3=48_N:d0xH0cc3!=48_N:0xH19ed=7_N:0xH0aff=0_N:0xH2483=0_N:0xH2484=0_N:0xH2485=0_N:0xH2486=0_N:0xH2487=0_0xH2488=0.1._0xH2462=162_0xH0c89=165_0xH0537=4_d0xH0537!=4"
+    },
+    {
+      "id": 8,
+      "title": "Pineapple Express",
+      "description": "Pick up the grenades.",
+      "points": 10,
+      "memaddr": "N:0xH0cc3=48_N:d0xH0cc3!=48_N:0xH19ed=7_N:0xH0aff=0_N:0xH2483=0_N:0xH2484=0_N:0xH2485=0_N:0xH2486=0_N:0xH2487=0_0xH2488=0.1._0xH2462=162_0xH0c89=165_0xP19ed=1_d0xP19ed=0"
+    },
+    {
+      "id": 9,
+      "title": "Say Hello",
+      "description": "Pick up the machine gun.",
+      "points": 10,
+      "memaddr": "N:0xH0cc3=48_N:d0xH0cc3!=48_N:0xH19ed=7_N:0xH0aff=0_N:0xH2483=0_N:0xH2484=0_N:0xH2485=0_N:0xH2486=0_N:0xH2487=0_0xH2488=0.1._0xH2462=162_0xH0c89=165_0xQ19ed=1_d0xQ19ed=0"
+    },
+    {
+      "id": 10,
+      "title": "Armed to the Teeth",
+      "description": "Carry the grenades and the machine gun at once.",
+      "points": 10,
+      "memaddr": "N:0xH0cc3=48_N:d0xH0cc3!=48_N:0xH19ed=7_N:0xH0aff=0_N:0xH2483=0_N:0xH2484=0_N:0xH2485=0_N:0xH2486=0_N:0xH2487=0_0xH2488=0.1._0xH2462=162_0xH0c89=165_0xP19ed=1_0xQ19ed=1"
+    },
+    {
+      "id": 11,
+      "title": "Untouchable",
+      "description": "Complete task one without taking a hit.",
+      "points": 25,
+      "memaddr": "N:0xH0cc3=48_N:d0xH0cc3!=48_N:0xH19ed=7_N:0xH0aff=0_N:0xH2483=0_N:0xH2484=0_N:0xH2485=0_N:0xH2486=0_N:0xH2487=0_0xH2488=0.1._0xH2462=162_0xH0c89=165_0xH0537=1_d0xH0537!=1_0xH0cc3=48"
+    },
+    {
+      "id": 12,
+      "title": "By a Thread",
+      "description": "Complete task one with one hit to spare.",
+      "points": 10,
+      "memaddr": "N:0xH0cc3=48_N:d0xH0cc3!=48_N:0xH19ed=7_N:0xH0aff=0_N:0xH2483=0_N:0xH2484=0_N:0xH2485=0_N:0xH2486=0_N:0xH2487=0_0xH2488=0.1._0xH2462=162_0xH0c89=165_0xH0537=1_d0xH0537!=1_0xH0cc3<=6"
+    },
+    {
+      "id": 13,
+      "title": "Clean Hands",
+      "description": "Score 5,000 points without taking a hit.",
+      "points": 10,
+      "memaddr": "N:0xH0cc3=48_N:d0xH0cc3!=48_N:0xH19ed=7_N:0xH0aff=0_N:0xH2483=0_N:0xH2484=0_N:0xH2485=0_N:0xH2486=0_N:0xH2487=0_0xH2488=0.1._0xH2462=162_0xH0c89=165_0xH0cc3=48_A:0xH2483*100000_A:0xH2484*10000_A:0xH2485*1000_A:0xH2486*100_A:0xH2487*10_0xH2488>=5000"
+    },
+    {
+      "id": 14,
+      "title": "First Blood",
+      "description": "Put the first points on the board.",
+      "points": 5,
+      "memaddr": "N:0xH0cc3=48_N:d0xH0cc3!=48_N:0xH19ed=7_N:0xH0aff=0_N:0xH2483=0_N:0xH2484=0_N:0xH2485=0_N:0xH2486=0_N:0xH2487=0_0xH2488=0.1._0xH2462=162_0xH0c89=165_A:0xH2483*100000_A:0xH2484*10000_A:0xH2485*1000_A:0xH2486*100_A:0xH2487*10_0xH2488>=100"
+    },
+    {
+      "id": 15,
+      "title": "Jungle Fighter",
+      "description": "Score 10,000 points.",
+      "points": 5,
+      "score": 10000,
+      "memaddr": "N:0xH0cc3=48_N:d0xH0cc3!=48_N:0xH19ed=7_N:0xH0aff=0_N:0xH2483=0_N:0xH2484=0_N:0xH2485=0_N:0xH2486=0_N:0xH2487=0_0xH2488=0.1._0xH2462=162_0xH0c89=165_A:0xH2483*100000_A:0xH2484*10000_A:0xH2485*1000_A:0xH2486*100_A:0xH2487*10_0xH2488>=10000"
+    },
+    {
+      "id": 16,
+      "title": "One-Man Army",
+      "description": "Score 25,000 points.",
+      "points": 10,
+      "score": 25000,
+      "memaddr": "N:0xH0cc3=48_N:d0xH0cc3!=48_N:0xH19ed=7_N:0xH0aff=0_N:0xH2483=0_N:0xH2484=0_N:0xH2485=0_N:0xH2486=0_N:0xH2487=0_0xH2488=0.1._0xH2462=162_0xH0c89=165_A:0xH2483*100000_A:0xH2484*10000_A:0xH2485*1000_A:0xH2486*100_A:0xH2487*10_0xH2488>=25000"
+    },
+    {
+      "id": 17,
+      "title": "Legend",
+      "description": "Score 50,000 points.",
+      "points": 25,
+      "score": 50000,
+      "memaddr": "N:0xH0cc3=48_N:d0xH0cc3!=48_N:0xH19ed=7_N:0xH0aff=0_N:0xH2483=0_N:0xH2484=0_N:0xH2485=0_N:0xH2486=0_N:0xH2487=0_0xH2488=0.1._0xH2462=162_0xH0c89=165_A:0xH2483*100000_A:0xH2484*10000_A:0xH2485*1000_A:0xH2486*100_A:0xH2487*10_0xH2488>=50000"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Hiscores",
+      "description": "Your score when the game ends.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH2462=162_0xH0cc3=48_d0xH0cc3!=48_0xH19ed=7_0xH0aff=0_0xH2483=0_0xH2484=0_0xH2485=0_0xH2486=0_0xH2487=0_0xH2488=0::CAN:0xH2462!=162::SUB:0xH0f!=0_d0xH0f=0_0xH0537!=4::VAL:0xH2483*100000_0xH2484*10000_0xH2485*1000_0xH2486*100_0xH2487*10_0xH2488"
+    }
+  ]
+}

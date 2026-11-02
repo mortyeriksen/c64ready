@@ -8,107 +8,109 @@
   "achievements": [
     {
       "id": 1,
-      "title": "First Strike",
-      "description": "Score some points.",
-      "points": 5,
-      "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_d0xHa023=48_d0xHa024=48_d0xHa025=48_d0xHa026=48_d0xHa027=48_d0xHa028=48_O:0xHa023>48_O:0xHa024>48_O:0xHa025>48_O:0xHa026>48_O:0xHa027>48_0xHa028>48"
-    },
-    {
-      "id": 2,
-      "title": "Special Bonus",
-      "description": "Score 5,000 points.",
-      "points": 10,
-      "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_O:0xHa023>48_O:0xHa024>48_0xHa025>=53"
-    },
-    {
-      "id": 3,
-      "title": "Ace Pilot",
-      "description": "Score 50,000 points.",
-      "points": 25,
-      "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_O:0xHa023>48_0xHa024>=53"
-    },
-    {
-      "id": 4,
-      "title": "New Gun",
-      "description": "Collect a special weapon.",
-      "points": 10,
-      "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_0xHa165>=1"
-    },
-    {
-      "id": 5,
-      "title": "Spread Shot",
-      "description": "Collect a multi-shot weapon.",
-      "points": 15,
-      "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_0xHa165>=3"
-    },
-    {
-      "id": 6,
-      "title": "Full Energy",
-      "description": "Fill the energy bar.",
-      "points": 15,
-      "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_d0xH9f20>=32_d0xH9f20<36_0xH9f20>=36_0xHa161=4"
-    },
-    {
-      "id": 7,
-      "title": "Last Target",
-      "description": "Destroy the last target.",
+      "title": "Big Game",
+      "description": "Sink the last target of a mission.",
       "points": 25,
       "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_0xH9b90=1_d0xH9b6b>0_0xH9b6b=0"
     },
     {
-      "id": 8,
-      "title": "Mission Clear",
+      "id": 2,
+      "title": "Mission Accomplished",
       "description": "Clear a mission.",
       "points": 25,
       "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_0xH9b6a>=2"
     },
     {
-      "id": 9,
-      "title": "Clean Run",
-      "description": "Score 10,000 points without losing a life.",
-      "points": 20,
-      "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_0xHa161=4_O:0xHa023>48_0xHa024>48"
-    },
-    {
-      "id": 10,
-      "title": "Second Mission",
+      "id": 3,
+      "title": "Second Sortie",
       "description": "Clear the second mission.",
       "points": 10,
       "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_0xH9b6a>=4"
     },
     {
-      "id": 11,
-      "title": "Four Missions",
+      "id": 4,
+      "title": "Frequent Flyer",
       "description": "Clear four missions.",
       "points": 15,
       "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_0xH9b6a>=8"
     },
     {
-      "id": 12,
-      "title": "Eight Missions",
+      "id": 5,
+      "title": "Eight Down",
       "description": "Clear eight missions.",
       "points": 25,
       "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_0xH9b6a>=16"
     },
     {
-      "id": 13,
-      "title": "Twelve Missions",
+      "id": 6,
+      "title": "A Dozen Sorties",
       "description": "Clear twelve missions.",
       "points": 25,
       "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_0xH9b6a>=24"
     },
     {
-      "id": 14,
-      "title": "Last Mission",
+      "id": 7,
+      "title": "Midway There",
       "description": "Reach the last mission.",
       "points": 50,
       "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_0xH9b6a>=30"
+    },
+    {
+      "id": 8,
+      "title": "New Toy",
+      "description": "Pick up a special weapon.",
+      "points": 10,
+      "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_0xHa165>=1"
+    },
+    {
+      "id": 9,
+      "title": "Spray and Pray",
+      "description": "Grab a multi-shot weapon.",
+      "points": 15,
+      "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_0xHa165>=3"
+    },
+    {
+      "id": 10,
+      "title": "Topped Up",
+      "description": "Fill the energy bar to the brim.",
+      "points": 15,
+      "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_d0xH9f20>=32_d0xH9f20<36_0xH9f20>=36_0xHa161=4"
+    },
+    {
+      "id": 11,
+      "title": "Not a Scratch",
+      "description": "Score 10,000 points without losing a life.",
+      "points": 20,
+      "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_0xHa161=4_O:0xHa023>48_0xHa024>48"
+    },
+    {
+      "id": 12,
+      "title": "Wheels Up",
+      "description": "Put the first points on the board.",
+      "points": 5,
+      "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_d0xHa023=48_d0xHa024=48_d0xHa025=48_d0xHa026=48_d0xHa027=48_d0xHa028=48_O:0xHa023>48_O:0xHa024>48_O:0xHa025>48_O:0xHa026>48_O:0xHa027>48_0xHa028>48"
+    },
+    {
+      "id": 13,
+      "title": "Bonus Round",
+      "description": "Score 5,000 points.",
+      "points": 10,
+      "score": 5000,
+      "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_O:0xHa023>48_O:0xHa024>48_0xHa025>=53"
+    },
+    {
+      "id": 14,
+      "title": "Ace of the Pacific",
+      "description": "Score 50,000 points.",
+      "points": 25,
+      "score": 50000,
+      "memaddr": "0xHa862=133_0xHa8ba=160_0xH9bf7=1_0xHa163=0_O:0xHa023>48_0xHa024>=53"
     }
   ],
   "leaderboards": [
     {
       "id": 1,
-      "title": "Score",
+      "title": "Hiscores",
       "description": "Your score when the plane goes down.",
       "format": "SCORE",
       "lowerIsBetter": false,

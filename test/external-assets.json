@@ -91,6 +91,7 @@
    "description": "C64 Preservation Project nibbler dumps (.nbz), the real inputs for the nbz2g64 conversion tests",
    "env": "C64PP_DIR",
    "paths": [
+    "~/projects/c64ready-workspace/c64media/c64pp",
     "~/Downloads/c64pp"
    ],
    "link": "https://rittwage.com/c64pp/",
@@ -197,11 +198,155 @@
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
+  "bruce-lee-crt": {
+   "description": "Bruce Lee (Datasoft 1984), the OneLoad64 v5 cartridge, MD5 ac19ecbfe808b0291a328f65e56ffbe6: the release its own-design achievement set targets",
+   "env": "C64_BRUCE_LEE_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Bruce Lee (J1).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "giana-sisters-crt": {
+   "description": "Great Giana Sisters (Time Warp 1987), the OneLoad64 v5 cartridge, MD5 0a833f8c48f1646bc1bf3ac2c249f9f0: the release its own-design achievement set targets",
+   "env": "C64_GIANA_SISTERS_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Great Giana Sisters, The.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "paradroid-crt": {
+   "description": "Paradroid (Hewson 1985), the OneLoad64 v5 cartridge, MD5 6f183b6e268ae5c69d5ded042bb00fd9: the release its own-design achievement set targets",
+   "env": "C64_PARADROID_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Paradroid.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "boulder-dash-crt": {
+   "description": "Boulder Dash (First Star 1984), the OneLoad64 v5 cartridge, MD5 eac1087608ec1efef947e054d8968328: the release its own-design achievement set targets",
+   "env": "C64_BOULDER_DASH_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Boulder Dash (J1).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
   "1943-crt": {
    "description": "1943 (Capcom 1988), the OneLoad64 v5 cartridge, MD5 1d5551b18ccd5add43bc8415193d4fdb: the release its own-design achievement set targets",
    "env": "C64_1943_CRT",
    "paths": [
     "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/1943 - The Battle of Midway (J1).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "cybernoid-crt": {
+   "description": "Cybernoid (Hewson 1988), the OneLoad64 v5 cartridge, MD5 a511a0b9beb9af0631e49019f509d866: the release its own-design achievement set targets",
+   "env": "C64_CYBERNOID_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Cybernoid.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "yie-ar-kung-fu-crt": {
+   "description": "Yie Ar Kung-Fu (Imagine 1985), the OneLoad64 v5 cartridge, MD5 eab8e5d1e9791b6778372e29683d3a01: the release its own-design achievement set targets",
+   "env": "C64_YIE_AR_KUNG_FU_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Yie Ar Kung-Fu.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "cybernoid-ii-crt": {
+   "description": "Cybernoid II (Hewson 1988), the OneLoad64 v5 cartridge, MD5 2d8145ab07c4f45110a69428eab0e91a: the release its own-design achievement set targets",
+   "env": "C64_CYBERNOID_II_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Cybernoid II.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "beach-head-crt": {
+   "description": "Beach-Head (Access 1983), the OneLoad64 v5 cartridge, MD5 af25726356f2063052dec7007039cad7: the release its own-design achievement set targets",
+   "env": "C64_BEACH_HEAD_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Beach-Head.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "barbarian-side1-crt": {
+   "description": "Barbarian (Palace 1987), the OneLoad64 v5 cartridge side 1, MD5 039806153c01bfc2f4e52cd9dbe6105c: the release its own-design achievement set targets",
+   "env": "C64_BARBARIAN_SIDE1_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Barbarian - The Ultimate Warrior (Side 1).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "barbarian-side2-crt": {
+   "description": "Barbarian (Palace 1987), the OneLoad64 v5 cartridge side 2, MD5 fe73fb7d7b0454648de2d8e32199f205: the release its own-design achievement set targets",
+   "env": "C64_BARBARIAN_SIDE2_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Barbarian - The Ultimate Warrior (Side 2).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "barbarian-side1-crunched-prg": {
+   "description": "Barbarian (Palace 1987), OneLoad64 v5 crunched program side 1, MD5 1203baf8cd07417be8f54c593facdf53",
+   "env": "C64_BARBARIAN_SIDE1_CRUNCHED_PRG",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Crunched/Barbarian - The Ultimate Warrior (Side 1).prg"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "barbarian-side2-crunched-prg": {
+   "description": "Barbarian (Palace 1987), OneLoad64 v5 crunched program side 2, MD5 2ead313b7d5d55b523b179e7d6bb80f4",
+   "env": "C64_BARBARIAN_SIDE2_CRUNCHED_PRG",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Crunched/Barbarian - The Ultimate Warrior (Side 2).prg"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "barbarian-side1-uncrunched-prg": {
+   "description": "Barbarian (Palace 1987), OneLoad64 v5 uncrunched program side 1, MD5 e66670d04b12db967967254b860fdc66",
+   "env": "C64_BARBARIAN_SIDE1_UNCRUNCHED_PRG",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Uncrunched/Barbarian - The Ultimate Warrior (Side 1).prg"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "barbarian-side2-uncrunched-prg": {
+   "description": "Barbarian (Palace 1987), OneLoad64 v5 uncrunched program side 2, MD5 3095e8b3043121071cf79a60285ebc4e",
+   "env": "C64_BARBARIAN_SIDE2_UNCRUNCHED_PRG",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Uncrunched/Barbarian - The Ultimate Warrior (Side 2).prg"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "rambo-crt": {
+   "description": "Rambo First Blood Part II (Ocean 1985), the OneLoad64 v5 cartridge, MD5 75e3322eff562e80296d45397072fd00: the release its own-design achievement set targets",
+   "env": "C64_RAMBO_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Rambo - First Blood Part II.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "blue-max-crt": {
+   "description": "Blue Max (Synapse 1983), the OneLoad64 v5 cartridge, MD5 c42cd2ab88300117ea2c4e307c6e3be3: the release its own-design achievement set targets",
+   "env": "C64_BLUE_MAX_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Blue Max.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "hitchhikers-guide-d64": {
+   "description": "The Hitchhiker's Guide to the Galaxy (Infocom 1984), release 47 on disk, MD5 a0c7dedd339ddca37ab122b0265e950d: the release its own-design achievement set targets",
+   "env": "C64_HITCHHIKERS_D64",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/c64pp/hitchhikers_guide[infocom_1984](r47).d64"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "zork-i-d64": {
+   "description": "Zork I (Infocom), release 30 on disk, Assembly64's zorki-1541.d64, MD5 066845adee747394e0395ddc613d4372: the release its own-design achievement set targets",
+   "env": "C64_ZORK_I_D64",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/d64/zorki-1541.d64"
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
@@ -373,6 +518,14 @@
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
+  "ghosts-n-goblins-arcade-crt": {
+   "description": "Ghosts 'n Goblins Arcade, the OneLoad64 v5 EasyFlash cartridge targeted by its achievement set",
+   "env": "C64_GNG_ARCADE_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Extras/OtherCRTs/Ghosts'n Goblins Arcade [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
   "last-ninja-crt": {
    "description": "The Last Ninja (System 3 1987), the MultiLoad64 EasyFlash cartridge by $olo1870, MD5 504708239b910d8dd5c75e29e3dc346f: the release its own-design achievement set targets",
    "env": "C64_LAST_NINJA_CRT",
@@ -537,6 +690,22 @@
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
+  "out-run-d-crt": {
+   "description": "Out Run (Route D) OneLoad64 cartridge",
+   "env": "C64_OUT_RUN_D_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Out Run (Route D) (J1).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "out-run-e-crt": {
+   "description": "Out Run (Route E) OneLoad64 cartridge",
+   "env": "C64_OUT_RUN_E_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Out Run (Route E) (J1).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
   "out-run-multiload-crt": {
    "description": "Out Run MultiLoad64 EasyFlash cartridge",
    "env": "C64_OUT_RUN_MULTILOAD_CRT",
@@ -550,6 +719,30 @@
    "env": "C64_DEFENDER_OF_THE_CROWN_CRT",
    "paths": [
     "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Extras/OtherCRTs/Defender of the Crown [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "paperboy-crt": {
+   "description": "Paperboy (Elite 1986), the OneLoad64 v5 cartridge, MD5 ff7e7212443d9b28215df5777b05fc09: the release its achievement set targets",
+   "env": "C64_PAPERBOY_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Paperboy.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "paperboy-crunched-prg": {
+   "description": "Paperboy (Elite 1986), the OneLoad64 v5 crunched PRG, MD5 3c5c6c6a901f174069fb2fe16dca3f45",
+   "env": "C64_PAPERBOY_CRUNCHED_PRG",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Crunched/Paperboy.prg"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "paperboy-uncrunched-prg": {
+   "description": "Paperboy (Elite 1986), the OneLoad64 v5 uncrunched PRG, MD5 2451dfe3396a28125307d4d1d0878008",
+   "env": "C64_PAPERBOY_UNCRUNCHED_PRG",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Uncrunched/Paperboy.prg"
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   }

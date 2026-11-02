@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 // src/media/now-loaded.js — what is in each slot right now (drive 8, drive 9,
-// the cartridge port and the datasette) and the best title for it, for
+// the cartridge port, the datasette and a program loaded into RAM) and the best title for it, for
 // anything that names what is running, such as the chat's rooms. Each change
 // is announced as a `c64-media` window event.
 //
@@ -11,14 +11,14 @@
 // same ref again keeps what was learned about it, so a power cycle that re-fires
 // the load hooks does not forget where a disk came from.
 
-const SLOTS = ['drive8', 'drive9', 'cart', 'tape'];
+const SLOTS = ['drive8', 'drive9', 'cart', 'tape', 'program'];
 const slots = new Map();
 
 const KIND = {
   d64: 'disk', d71: 'disk', d81: 'disk', g64: 'disk', nbz: 'disk',
   prg: 'program', crt: 'cart', sid: 'tune', tap: 'tape', t64: 'tape', wav: 'tape', dmp: 'tape',
 };
-const SLOT_LABEL = { drive8: 'drive 8', drive9: 'drive 9', cart: 'cartridge', tape: 'tape' };
+const SLOT_LABEL = { drive8: 'drive 8', drive9: 'drive 9', cart: 'cartridge', tape: 'tape', program: 'program' };
 // Disk header names that say nothing about what is on the disk.
 const GENERIC = /^(?:disk|disc|side ?[ab12]|disk ?[12ab]|empty|blank|untitled|new ?disk|default|prg|program|\s*)$/i;
 
@@ -28,6 +28,7 @@ function announce() {
 
 /** Put a medium in a slot, or empty it with null. */
 export function setLoaded(slot, info) {
+  if (info && slot !== 'program') slots.delete('program');
   const cur = slots.get(slot);
   if (!info) { if (!cur) return; slots.delete(slot); }
   else slots.set(slot, cur && info.ref != null && cur.ref === info.ref ? { ...cur, ...info } : { ...info });

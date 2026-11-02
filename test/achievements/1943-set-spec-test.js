@@ -181,27 +181,27 @@ function begin() {
 {
   begin();
   score(10); frames(2);
-  expectNames('10', ['First Strike']);
+  expectNames('10', ['Wheels Up']);
   score(4990); frames(2);
-  expectNames('4990', ['First Strike']);
+  expectNames('4990', ['Wheels Up']);
   score(5000); frames(2);
-  expectNames('5000', ['First Strike', 'Special Bonus']);
+  expectNames('5000', ['Wheels Up', 'Bonus Round']);
   score(9990); frames(2);
-  expectNames('9990', ['First Strike', 'Special Bonus']);
+  expectNames('9990', ['Wheels Up', 'Bonus Round']);
   score(10000); frames(2);
-  expectNames('10000', ['First Strike', 'Special Bonus', 'Clean Run']);
+  expectNames('10000', ['Wheels Up', 'Bonus Round', 'Not a Scratch']);
   score(49990); frames(2);
-  expectNames('49990', ['First Strike', 'Special Bonus', 'Clean Run']);
+  expectNames('49990', ['Wheels Up', 'Bonus Round', 'Not a Scratch']);
   score(50000); frames(2);
-  expectNames('50000', ['First Strike', 'Special Bonus', 'Clean Run', 'Ace Pilot']);
+  expectNames('50000', ['Wheels Up', 'Bonus Round', 'Not a Scratch', 'Ace of the Pacific']);
 
   begin();
   score(50000); frames(2);
-  expectNames('jump', ['First Strike', 'Special Bonus', 'Clean Run', 'Ace Pilot']);
+  expectNames('jump', ['Wheels Up', 'Bonus Round', 'Not a Scratch', 'Ace of the Pacific']);
   ram[LIVES] = 3; score(10000); frames(2);
   begin();
   score(10000); ram[LIVES] = 3; frames(2);
-  expectNames('10,000 after a life was lost', ['First Strike', 'Special Bonus']);
+  expectNames('10,000 after a life was lost', ['Wheels Up', 'Bonus Round']);
   ok('score edges, including a clean 10,000 and a jump to 50,000');
 }
 
@@ -209,13 +209,13 @@ function begin() {
 {
   begin();
   ram[GUN] = 1; frames(2);
-  expectNames('weapon 1', ['New Gun']);
+  expectNames('weapon 1', ['New Toy']);
   ram[GUN] = 2; frames(2);
-  expectNames('weapon 2', ['New Gun']);
+  expectNames('weapon 2', ['New Toy']);
   ram[GUN] = 3; frames(2);
-  expectNames('weapon 3', ['New Gun', 'Spread Shot']);
+  expectNames('weapon 3', ['New Toy', 'Spray and Pray']);
   ram[GUN] = 0x0a; frames(2);
-  expectNames('weapon 10', ['New Gun', 'Spread Shot']);
+  expectNames('weapon 10', ['New Toy', 'Spray and Pray']);
   ok('a special weapon, and a multi-shot one');
 }
 
@@ -234,11 +234,11 @@ function begin() {
   begin();
   ram[ENERGY] = 32; frames(1);
   ram[ENERGY] = 36; frames(2);
-  expectNames('last chunk from 32', ['Full Energy']);
+  expectNames('last chunk from 32', ['Topped Up']);
   begin();
   ram[ENERGY] = 35; frames(1);
   ram[ENERGY] = 36; frames(2);
-  expectNames('last chunk from 35', ['Full Energy']);
+  expectNames('last chunk from 35', ['Topped Up']);
   begin();
   ram[ENERGY] = 35; frames(1);
   ram[LIVES] = 3;
@@ -259,32 +259,32 @@ function begin() {
   ram[TARGETS] = 4; frames(2);
   expectNames('targets left', []);
   ram[TARGETS] = 0; frames(2);
-  expectNames('targets gone', ['Last Target']);
+  expectNames('targets gone', ['Big Game']);
   ram[TARGETS] = 3; frames(1);
   ram[TARGETS] = 0; frames(2);
-  expectNames('a later wave', ['Last Target']);
+  expectNames('a later wave', ['Big Game']);
   begin();
   ram[SECTION] = 1; frames(2);
   expectNames('section 1', []);
   ram[SECTION] = 2; frames(2);
-  expectNames('section 2', ['Mission Clear']);
+  expectNames('section 2', ['Mission Accomplished']);
   ram[SECTION] = 3; frames(2);
-  expectNames('section 3', ['Mission Clear']);
+  expectNames('section 3', ['Mission Accomplished']);
   ram[SECTION] = 4; frames(2);
-  expectNames('section 4', ['Mission Clear', 'Second Mission']);
+  expectNames('section 4', ['Mission Accomplished', 'Second Sortie']);
   ram[SECTION] = 8; frames(2);
-  expectNames('section 8', ['Four Missions', 'Mission Clear', 'Second Mission']);
+  expectNames('section 8', ['Frequent Flyer', 'Mission Accomplished', 'Second Sortie']);
   ram[SECTION] = 16; frames(2);
-  expectNames('section 16', ['Eight Missions', 'Four Missions', 'Mission Clear', 'Second Mission']);
+  expectNames('section 16', ['Eight Down', 'Frequent Flyer', 'Mission Accomplished', 'Second Sortie']);
   ram[SECTION] = 24; frames(2);
-  expectNames('section 24', ['Eight Missions', 'Four Missions', 'Mission Clear', 'Second Mission', 'Twelve Missions']);
+  expectNames('section 24', ['Eight Down', 'Frequent Flyer', 'Mission Accomplished', 'Second Sortie', 'A Dozen Sorties']);
   ram[SECTION] = 29; frames(2);
-  expectNames('section 29', ['Eight Missions', 'Four Missions', 'Mission Clear', 'Second Mission', 'Twelve Missions']);
+  expectNames('section 29', ['Eight Down', 'Frequent Flyer', 'Mission Accomplished', 'Second Sortie', 'A Dozen Sorties']);
   ram[SECTION] = 30; frames(2);
-  expectNames('section 30', ['Eight Missions', 'Four Missions', 'Last Mission', 'Mission Clear', 'Second Mission', 'Twelve Missions']);
+  expectNames('section 30', ['Eight Down', 'Frequent Flyer', 'Midway There', 'Mission Accomplished', 'Second Sortie', 'A Dozen Sorties']);
   begin();
   ram[SECTION] = 30; frames(2);
-  expectNames('jump to the last mission', ['Eight Missions', 'Four Missions', 'Last Mission', 'Mission Clear', 'Second Mission', 'Twelve Missions']);
+  expectNames('jump to the last mission', ['Eight Down', 'Frequent Flyer', 'Midway There', 'Mission Accomplished', 'Second Sortie', 'A Dozen Sorties']);
   ok('the last target, and the cleared missions');
 }
 

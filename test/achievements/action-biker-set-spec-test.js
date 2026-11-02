@@ -87,14 +87,14 @@ const collect = (n) => { ram[ITEMS] = n; frames(2); };
 // achievement and no other. Gas Guzzler (8), Need For Speed (12) and the
 // drag race (40) have extra rules, tested below.
 const ITEM_ORDER = [
-  "Don't ride without one", 'Hell For Leathers', 'Passed Your Theory', 'Metal Gear', 'Kid Gloves',
-  'Night Rider', 'Petrol Gauge', null, 'All Tooled Up', 'Puddle of Mud', "I'll Be Back", null,
-  'Thirsty Work', 'Hyper Visor', 'High Emission Zone', 'Where are the brakes?', 'Speedos',
-  'Master of the lamps', 'Jamie Olive Oil', 'Turbo Charged!', 'Only Fins', "You've got them, use them!",
-  'Mirror, signal manoevre', 'Tommy Tutone', 'Raise Reflectors!', 'A to Z', 'Twisted Electric Starter',
-  'Packed the Skips!', '10-4 Good Buddy', 'White Stripes', 'Ski Sunday', 'Safety First', 'Light Fog',
-  'Go for a Speed Run', 'Kickstart', 'Guns n Roses', 'Gin and Tonic', 'Revs', "Didn't we have one already?",
-  'No Tickets',
+  'Don\'t Ride Without One', 'Hell for Leathers', 'Passed Your Theory', 'Metal Gear', 'Kid Gloves',
+  'Night Rider', 'Running on Empty', null, 'All Tooled Up', 'Mud in Your Eye', "I'll Be Back", null,
+  'Thirsty Work', 'Hyper Visor', 'High Emission Zone', 'Where Are the Brakes?', 'Speedos',
+  'Master of the Lamps', 'Jamie Olive Oil', 'Turbo Charged!', 'Only Fins', 'You\'ve Got Them, Use Them!',
+  'Mirror, Signal, Manoeuvre', 'Tommy Tutone', 'Raise Reflectors!', 'A to Z', 'Twisted Electric Starter',
+  'Packed the Skips!', '10-4, Good Buddy', 'White Stripes', 'Ski Sunday', 'Safety First', 'Light Fog',
+  'Speedrunner', 'Kickstart', 'Guns n\' Roses', 'Gin and Tonic', 'Revs', 'Didn\'t We Have One Already?',
+  'No Ticket, No Race',
 ];
 {
   fresh();
@@ -124,10 +124,10 @@ const ITEM_ORDER = [
 {
   fresh();
   collect(11); ram[SPEED] = 0x0b; frames(2);
-  expect(!has('Need For Speed'), 'full speed before the fairing is not it');
+  expect(!has('Need for Speed'), 'full speed before the fairing is not it');
   collect(12); frames(2);
-  expect(has('Need For Speed'), 'Need For Speed at full speed with the fairing');
-  ok('Need For Speed');
+  expect(has('Need for Speed'), 'Need For Speed at full speed with the fairing');
+  ok('Need for Speed');
 }
 
 // 6. No Second Prize: all 40 items and the completion byte $37.

@@ -17,121 +17,121 @@
     {
       "id": 1,
       "title": "Arachnophobia",
-      "description": "Survive the giant spiders on Trooper or higher",
+      "description": "Survive the giant spiders (Trooper+).",
       "points": 5,
       "memaddr": "N:0xH005f>0_0xH0055=1.1._R:0xH005f=0_0xH0069>=8_0xH0069<=16_0xH004e=2_d0xH004e=1"
     },
     {
       "id": 2,
-      "title": "Bee Urself",
-      "description": "Kill the killer bees on Trooper or higher",
+      "title": "Bee Gone",
+      "description": "Kill the killer bees (Trooper+).",
       "points": 5,
       "memaddr": "N:0xH005f>0_0xH0055=1.1._R:0xH005f=0_0xH0069>=8_0xH0069<=16_0xH004e=4_d0xH004e=2"
     },
     {
       "id": 3,
-      "title": "Frogger not like this",
-      "description": "Kill enough frogs to pass level 3 on Trooper or higher",
+      "title": "Frogger Not Like This",
+      "description": "Kill enough frogs to pass level 3 (Trooper+).",
       "points": 5,
       "memaddr": "N:0xH005f>0_0xH0055=1.1._R:0xH005f=0_0xH0069>=8_0xH0069<=16_0xH004e=8_d0xH004e=4"
     },
     {
       "id": 4,
-      "title": "Dragonbreed",
-      "description": "Kill the dragon on Trooper or higher",
+      "title": "Dragonslayer",
+      "description": "Kill the dragon (Trooper+).",
       "points": 10,
       "memaddr": "N:0xH005f>0_0xH0055=1.1._R:0xH005f=0_0xH0069>=8_0xH0069<=16_0xH004e=16_d0xH004e=8"
     },
     {
       "id": 5,
       "title": "Fantômas",
-      "description": "Kill the phantom on Trooper or higher",
+      "description": "Kill the phantom (Trooper+).",
       "points": 10,
       "memaddr": "N:0xH005f>0_0xH0055=1.1._R:0xH005f=0_0xH0069>=8_0xH0069<=16_0xH004e=32_d0xH004e=16"
     },
     {
       "id": 6,
-      "title": "Why did it have to be Snakes?",
-      "description": "Kill the Snake on Trooper or higher",
+      "title": "Why Did It Have to Be Snakes?",
+      "description": "Kill the snake (Trooper+).",
       "points": 10,
       "memaddr": "N:0xH005f>0_0xH0055=1.1._R:0xH005f=0_0xH0069>=8_0xH0069<=16_0xH004e=64_d0xH004e=32"
     },
     {
       "id": 7,
       "title": "Demogorgon Party",
-      "description": "Kill the Demogorgon on Trooper or higher",
+      "description": "Kill the Demogorgon (Trooper+).",
       "points": 25,
       "memaddr": "N:0xH005f>0_0xH0055=1.1._R:0xH005f=0_0xH0069>=8_0xH0069<=16_0xH004e=128_d0xH004e=64"
     },
     {
       "id": 8,
-      "title": "Ultimate Master",
-      "description": "Defeat all bosses on all difficulties in a single playthrough",
-      "points": 50,
-      "memaddr": "N:0xH005f>0_N:0xH0055=1_0xH0069=4.1._R:0xH005f=0_0xH0069=16_0xH004e=128_d0xH004e=64"
-    },
-    {
-      "id": 9,
-      "title": "Perfect Spiders",
-      "description": "Kill all spiders without wasting any arrows on Trooper or higher",
+      "title": "Waste Not",
+      "description": "Kill every spider, no arrow wasted (Trooper+).",
       "points": 10,
       "memaddr": "N:0xH005f>0_0xH0055=1.1._R:0xH005f=0_0xH0069>=8_0xH0069<=16_0xH004e=2_d0xH004e=1S0xH0069=8_Z:d0xH004e!=1_P:0xH0027<d0xH0027.9.S0xH0069=12_Z:d0xH004e!=1_P:0xH0027<d0xH0027.13.S0xH0069=16_Z:d0xH004e!=1_P:0xH0027<d0xH0027.17."
     },
     {
-      "id": 10,
-      "title": "Perfect Bees",
-      "description": "Kill all Bees without wasting any arrows on Trooper or higher",
+      "id": 9,
+      "title": "Bee Line",
+      "description": "Kill every bee, no arrow wasted (Trooper+).",
       "points": 10,
       "memaddr": "N:0xH005f>0_0xH0055=1.1._R:0xH005f=0_0xH0069>=8_0xH0069<=16_0xH004e=4_d0xH004e=2S0xH0069=8_Z:d0xH004e!=2_P:0xH0027<d0xH0027.3.S0xH0069=12_Z:d0xH004e!=2_P:0xH0027<d0xH0027.4.S0xH0069=16_Z:d0xH004e!=2_P:0xH0027<d0xH0027.5."
     },
     {
-      "id": 11,
-      "title": "Perfect Frogs",
-      "description": "Kill enough Frogs to complete level 3 without wasting an arrow on Trooper or higher",
+      "id": 10,
+      "title": "Frog March",
+      "description": "Pass level 3's frogs, no arrow wasted (Trooper+).",
       "points": 25,
       "memaddr": "N:0xH005f>0_0xH0055=1.1._R:0xH005f=0_0xH0069>=8_0xH0069<=16_0xH004e=8_d0xH004e=4S0xH0069=8_Z:d0xH004e!=4_P:0xH0027<d0xH0027.13.S0xH0069=12_Z:d0xH004e!=4_P:0xH0027<d0xH0027.17.S0xH0069=16_Z:d0xH004e!=4_P:0xH0027<d0xH0027.21."
     },
     {
-      "id": 12,
-      "title": "Perfect Dragons",
-      "description": "Kill all Dragons without wasting any arrows on Trooper or higher",
+      "id": 11,
+      "title": "Here Be No Dragons",
+      "description": "Kill every dragon, no arrow wasted (Trooper+).",
       "points": 10,
       "memaddr": "N:0xH005f>0_0xH0055=1.1._R:0xH005f=0_0xH0069>=8_0xH0069<=16_0xH004e=16_d0xH004e=8S0xH0069=8_Z:d0xH004e!=8_P:0xH0027<d0xH0027.2.S0xH0069=12_Z:d0xH004e!=8_P:0xH0027<d0xH0027.3.S0xH0069=16_Z:d0xH004e!=8_P:0xH0027<d0xH0027.4."
     },
     {
+      "id": 12,
+      "title": "Bone Collector",
+      "description": "Kill 5 skeletons in a row (Trooper+).",
+      "points": 10,
+      "memaddr": "N:0xH005f>0_0xH0055=1.1._R:0xH005f=0_0xH0069>=8_0xH0069<=16_0xH004e=16SZ:d0xH004e!=16_B:d0xX002a_C:0xX002a=4096_Z:d0xH004e!=16_B:d0xX002a_0xX002a=28672.5._Z:d0xH004e!=16_P:0xH0027<d0xH0027.6._Z:d0xH004e!=16_P:0xH005f<d0xH005f.1."
+    },
+    {
       "id": 13,
-      "title": "One Shot Phantom",
-      "description": "One shot kill the Phantom without missing on Trooper or higher",
+      "title": "Ghost of a Chance",
+      "description": "Kill the phantom with one arrow (Trooper+).",
       "points": 10,
       "memaddr": "N:0xH005f>0_0xH0055=1.1._R:0xH005f=0_0xH0069>=8_0xH0069<=16_0xH004e=32_d0xH004e=16S0xH0069>=8_0xH0069<=12_Z:d0xH004e!=16_P:0xH0027<d0xH0027.2.S0xH0069=16_Z:d0xH004e!=16_P:0xH0027<d0xH0027.3."
     },
     {
       "id": 14,
-      "title": "One Shot Snake",
-      "description": "Kill the snake with a single arrow on Trooper or higher",
+      "title": "Snake Eyes",
+      "description": "Kill the snake with one arrow (Trooper+).",
       "points": 10,
       "memaddr": "N:0xH005f>0_0xH0055=1.1._R:0xH005f=0_0xH0069>=8_0xH0069<=16_0xH004e=64_d0xH004e=32S0xH0069=8_Z:d0xH004e!=32_P:0xH0027<d0xH0027.2.S0xH0069=12_Z:d0xH004e!=32_P:0xH0027<d0xH0027.3.S0xH0069=16_Z:d0xH004e!=32_P:0xH0027<d0xH0027.4."
     },
     {
       "id": 15,
-      "title": "One Shot Demogorgon",
-      "description": "One shot kill final boss Demogorgon on Trooper or higher",
+      "title": "One and Done",
+      "description": "Kill the Demogorgon with one arrow (Trooper+).",
       "points": 25,
       "memaddr": "N:0xH005f>0_0xH0055=1.1._R:0xH005f=0_0xH0069>=8_0xH0069<=16_0xH004e=128_d0xH004e=64S0xH0069>=8_0xH0069<=16_Z:d0xH004e!=64_P:0xH0027<d0xH0027.2."
     },
     {
       "id": 16,
-      "title": "Undead Slayer",
-      "description": "Kill 5 Skeletons in a row on Trooper or higher",
-      "points": 10,
-      "memaddr": "N:0xH005f>0_0xH0055=1.1._R:0xH005f=0_0xH0069>=8_0xH0069<=16_0xH004e=16SZ:d0xH004e!=16_B:d0xX002a_C:0xX002a=4096_Z:d0xH004e!=16_B:d0xX002a_0xX002a=28672.5._Z:d0xH004e!=16_P:0xH0027<d0xH0027.6._Z:d0xH004e!=16_P:0xH005f<d0xH005f.1."
+      "title": "Lord of the Forest",
+      "description": "Beat every boss on every difficulty in one go.",
+      "points": 50,
+      "memaddr": "N:0xH005f>0_N:0xH0055=1_0xH0069=4.1._R:0xH005f=0_0xH0069=16_0xH004e=128_d0xH004e=64"
     }
   ],
   "leaderboards": [
     {
       "id": 1,
-      "title": "High Score",
-      "description": "Highest score in one game.",
+      "title": "Hiscores",
+      "description": "Your best score in one game.",
       "format": "SCORE",
       "lowerIsBetter": false,
       "definition": "STA:0xH005f>0_0xH0055=1::CAN:0=1::SUB:0xH005f=0_d0xH005f>0::VAL:b0xH002d*1000000_b0xH002c*10000_b0xH002b*100_b0xH002a"
