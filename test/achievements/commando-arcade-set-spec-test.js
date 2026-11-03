@@ -1,5 +1,5 @@
 // Spec tests for the Commando Arcade achievement set (server/sets/commando-arcade.json, Nostalgia's
-// arcade-faithful Commando on its EasyFlash cartridge) under rcheevos, on synthesized RAM laid out
+// arcade-faithful Commando on its EasyFlash cartridge and universal disk) under rcheevos, on synthesized RAM laid out
 // as the game keeps it:
 //   $0410 men (lives), BCD: 5 when a game starts; one less per death, and the game is over at 0.
 //         The title shows none.
@@ -35,6 +35,7 @@ const rc = await loadRcheevos();
 const ram = new Uint8Array(0x10000);
 const id = Object.fromEntries(set.achievements.map((a) => [a.title, a.id]));
 const HASH = '1227141266752c0c04608fac355c7a4e';
+const DISK_HASH = '647a1b60d3024575ae23f342be37637e';
 const MEN = 0x410, GRENADES = 0x4ff, AREA = 0x4f3, SCORE = 0x4f8, TRAINER = 0xe48;
 
 /** The score: shown / 100 in six BCD digits, low byte first. */
@@ -73,17 +74,25 @@ function start({ trainer = false, area = 0 } = {}) {
 function clearArea() { ram[AREA]++; frames(10); }
 function die() { ram[MEN] = ram[MEN] === 0x10 ? 0x09 : ram[MEN] - 1; frames(10); }
 
-// 1. Every condition and the leaderboard parse, and the set names the cartridge.
+// 1. Every condition and the leaderboard parse, and the set names both formats.
 {
   const { codes, boards } = activate();
   codes.forEach((c, i) => expect(c === 0, `"${set.achievements[i].title}" parses (code ${c})`));
   expect(boards.length === 1 && boards[0] === 0, 'the high-score leaderboard parses');
   expect(set.hashes.some((h) => h.hash === HASH), 'the set names CommandoArcade_N0S_EF.crt');
+  expect(set.hashes.some((h) => h.hash === DISK_HASH), 'the set names CommandoArcade_N0S_FL_Universal.d64');
   expect(set.leaderboards[0].format === 'SCORE' && !set.leaderboards[0].lowerIsBetter, 'High Score is a SCORE board, higher is better');
   ok(`all ${codes.length} achievements and ${boards.length} leaderboard parse`);
 }
 
-// 2. The listed hash is the cartridge file's rcheevos hash.
+// 2. The universal disk's listed hash is the hash of its file bytes.
+{
+  const file = assetPath('commando-arcade-d64');
+  if (!file) console.log(`ok  - test ${++testNo}: the universal disk hashes to the listed hash # SKIP ${missingNote('commando-arcade-d64')}`);
+  else { expect(rc.hash(fs.readFileSync(file)) === DISK_HASH, `${path.basename(file)} hashes to ${DISK_HASH}`); ok('the universal disk hashes to the listed hash'); }
+}
+
+// 3. The listed hash is the cartridge file's rcheevos hash.
 {
   let file = null;
   try { file = assetPath('commando-arcade-crt'); } catch { /* not registered yet */ }
@@ -94,7 +103,7 @@ function die() { ram[MEN] = ram[MEN] === 0x10 ? 0x09 : ram[MEN] - 1; frames(10);
   } else { expect(rc.hash(fs.readFileSync(file)) === HASH, `${path.basename(file)} hashes to ${HASH}`); ok('the EasyFlash cartridge hashes to the listed hash'); }
 }
 
-// 3. The title and a game's own start (grenades and men set) unlock nothing.
+// 4. The title and a game's own start (grenades and men set) unlock nothing.
 {
   activate(); title(); ram[GRENADES] = 9; ram[AREA] = 5; setScore(200000); frames(10); setScore(0); ram[AREA] = 0;
   start();
@@ -103,7 +112,7 @@ function die() { ram[MEN] = ram[MEN] === 0x10 ? 0x09 : ram[MEN] - 1; frames(10);
   ok('title and start');
 }
 
-// 4. A game with a trainer counts for nothing, nor does one from a later starting level.
+// 5. A game with a trainer counts for nothing, nor does one from a later starting level.
 {
   activate(); title(); start({ trainer: true }); clearArea(); ram[GRENADES] = 9; frames(2); setScore(150000); frames(2); ram[MEN] = 0; frames(5);
   expect(unlocked.size === 0 && started() === 0 && !submitted().length, `a trainer game counts for nothing (got ${[...unlocked]})`);
@@ -115,7 +124,7 @@ function die() { ram[MEN] = ram[MEN] === 0x10 ? 0x09 : ram[MEN] - 1; frames(10);
   ok('trainers are kept out');
 }
 
-// 5. Areas 1 to 8.
+// 6. Areas 1 to 8.
 {
   activate(); title(); start();
   const area = (n) => (n === 1 ? 'Off the Truck' : n === 8 ? 'Full Circle' : `Area ${n} Cleared`);
@@ -128,14 +137,14 @@ function die() { ram[MEN] = ram[MEN] === 0x10 ? 0x09 : ram[MEN] - 1; frames(10);
   ok('areas');
 }
 
-// 6. Untouchable needs area 1 without a death.
+// 7. Untouchable needs area 1 without a death.
 {
   activate(); title(); start(); die(); clearArea();
   expect(has('Off the Truck') && !has('Untouchable'), 'a death in area 1 rules it out');
   ok('Untouchable');
 }
 
-// 7. Grenades: a box adds some, a throw takes one.
+// 8. Grenades: a box adds some, a throw takes one.
 {
   activate(); title(); start();
   ram[GRENADES] = 4; frames(2);
@@ -145,7 +154,7 @@ function die() { ram[MEN] = ram[MEN] === 0x10 ? 0x09 : ram[MEN] - 1; frames(10);
   ok('Grenadier');
 }
 
-// 8. Score tiers, in hundreds.
+// 9. Score tiers, in hundreds.
 {
   activate(); title(); start();
   for (const [t, pts] of [['Super Joe', 10000], ['Front Line', 25000], ['Field Marshal', 50000], ['War Hero', 100000]]) {
@@ -157,7 +166,7 @@ function die() { ram[MEN] = ram[MEN] === 0x10 ? 0x09 : ram[MEN] - 1; frames(10);
   ok('score tiers');
 }
 
-// 9. High Score: submitted when the last man goes.
+// 10. High Score: submitted when the last man goes.
 {
   activate(); title(); start();
   setScore(4500); frames(2); die(); die();

@@ -518,6 +518,14 @@
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
+  "commando-arcade-d64": {
+   "description": "Commando Arcade (Nostalgia), the universal D64, MD5 647a1b60d3024575ae23f342be37637e",
+   "env": "C64_COMMANDO_ARCADE_D64",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/d64/CommandoArcade_Nostalgia/CommandoArcade_N0S_FL_Universal.d64"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
   "ghosts-n-goblins-arcade-crt": {
    "description": "Ghosts 'n Goblins Arcade, the OneLoad64 v5 EasyFlash cartridge targeted by its achievement set",
    "env": "C64_GNG_ARCADE_CRT",
