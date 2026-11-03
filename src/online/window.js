@@ -37,8 +37,9 @@ function passkeyMessage(e) {
  * @param {{ toggle: (which: 'all'|'game') => Promise<void>, state: () => string|null, hasGame: () => boolean }} [o.testToasts]
  *   on a dev server, TEST TOAST and TEST GAME after its name: each turns a cycle of sample toasts on and off,
  *   every kind or the loaded game's own, one at a time
+ * @param {() => void} [o.attract]  shows the loaded game's high-score screen (achievements/attract.js), from GAME
  */
-export function initOnline({ buttons, win, closeBtn, account = createAccount(), engine = null, testToasts = null }) {
+export function initOnline({ buttons, win, closeBtn, account = createAccount(), engine = null, testToasts = null, attract = null }) {
   buttons = buttons.filter(Boolean);
   if (!buttons.length || !win) return null;
   // Talking to anything but the production server (the dev server's own, or an override) says so in the
@@ -328,7 +329,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     // A new unlock moves the player in the Hall of Fame: fetch it again.
     if (standingsOf === game.hash && !loadingStandings && game.achievements.filter(unlocked).length !== topUnlocked) loadStandings();
     gameEl.replaceChildren(...[
-      gameHead(ctx, game, game.achievements, unlocked, { refresh: () => Promise.all([loadStandings(), engine.refreshChecks().catch(() => {})]) }),
+      gameHead(ctx, game, game.achievements, unlocked, { attract, refresh: () => Promise.all([loadStandings(), engine.refreshChecks().catch(() => {})]) }),
       game.notice ? h('p', { class: 'ach-notice', role: 'status' }, game.notice)
         // Softcore play: what it unlocks stays the player's own, until a reset.
         : game.softcore ? h('p', { class: 'ach-notice', role: 'status' }, `Softcore: ${game.softcore}. Nothing counts in public until a reset.`) : null,

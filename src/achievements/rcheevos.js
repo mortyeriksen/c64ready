@@ -43,7 +43,9 @@ export async function loadRcheevos(bytes) {
   const { instance } = await WebAssembly.instantiate(bytes, wasiStubs());
   const x = instance.exports;
   x._initialize();
-  const mem = () => new Uint8Array(x.memory.buffer);
+  // One view of module memory, made again only when the memory grows: a frame allocates none.
+  let heap = new Uint8Array(x.memory.buffer);
+  const mem = () => (heap.buffer === x.memory.buffer ? heap : (heap = new Uint8Array(x.memory.buffer)));
   const enc = new TextEncoder(), dec = new TextDecoder();
   const ramPtr = x.cc_ram();
 
@@ -98,11 +100,21 @@ export async function loadRcheevos(bytes) {
         return events;
       };
     })(),
-    /** A value as text in an rcheevos format (a name such as "SCORE" or "TIME"). */
-    formatValue(value, format = 'VALUE') {
-      const code = withString(format, (p) => x.cc_parse_format(p));
-      const out = x.cc_alloc(64);
-      try { x.cc_format_value(out, 64, value | 0, code); return readString(out, 63); } finally { x.cc_free(out); }
-    },
+    /**
+     * A value as text in an rcheevos format (a name such as "SCORE" or "TIME").
+     * Each format is parsed once and the text buffer kept, so a running score
+     * shown every frame allocates only its text.
+     */
+    formatValue: (() => {
+      const codes = new Map();
+      let out = 0;
+      return (value, format = 'VALUE') => {
+        let code = codes.get(format);
+        if (code === undefined) { code = withString(format, (p) => x.cc_parse_format(p)); codes.set(format, code); }
+        if (!out) out = x.cc_alloc(64);
+        x.cc_format_value(out, 64, value | 0, code);
+        return readString(out, 63);
+      };
+    })(),
   };
 }

@@ -48,6 +48,8 @@ import { initializeAssembly64 } from './assembly64/start.js';
 import { initOnline } from './online/window.js';
 import { createAchievementEngine } from './achievements/engine.js';
 import { createAchToasts } from './achievements/toast.js';
+import { createTrophyHud } from './achievements/hud.js';
+import { createAttract } from './achievements/attract.js';
 import { GAME_ICONS } from './achievements/game-icons.js';
 import { readPlace, savePlace, nextPlace, applyPlace, dragPlace, readVibesPlace, saveVibesPlace, VIBES_MARGIN, readVibesSize, saveVibesSize, applySize, dragSize } from './achievements/toast-place.js';
 import { createAccount, apiBase } from './account/account.js';
@@ -2530,10 +2532,13 @@ if (_vibesOverlay) {
     _achToasts.rehome();
   }).observe(_vibesOverlay, { attributes: true, attributeFilter: ['hidden'] });
 }
+// The trophy HUD in the vibes view, shown and hidden by its button there, and
+// attract mode, the high-score screen that cycles after a posted score.
+let _trophyHud = null, _attract = null;
 achievements = createAchievementEngine({
   account: achievementAccount,
   base: apiBase(),
-  onChange: () => achievementsPanel?.refresh(),
+  onChange: () => { achievementsPanel?.refresh(); _trophyHud?.refresh(); },
   onUnlock: ({ achievement, saved, signedIn, complete, softcore, checking }) => {
     const text = signedIn && !saved ? 'Saved when the server is back.' : softcore ? `${achievement.description} (softcore)` : checking ? `${achievement.description} Being checked.` : achievement.description;
     _achToasts.show({
@@ -2542,6 +2547,8 @@ achievements = createAchievementEngine({
       complete: complete && _completeToast(complete),
       action: signedIn ? null : 'SIGN IN', onAction: _signIn,
     });
+    // Its trophy flies from the toast into the HUD.
+    _trophyHud?.unlocked(achievement);
   },
   // Play stopped counting in public, as when a save state is loaded: said once, for a game with a set.
   onSoftcore: ({ reason, quiet }) => {
@@ -2554,6 +2561,8 @@ achievements = createAchievementEngine({
   onLeaderboard: (e) => {
     // The window shows the running score, and fetches the standings again once one is posted.
     achievementsPanel?.leaderboardEvent(e);
+    _trophyHud?.leaderboardEvent(e);
+    _attract?.leaderboardEvent(e);
     const { type, leaderboard, value, result, signedIn, softcore } = e;
     if (type !== 'submitted') return;
     // Softcore: the score goes on no board.
@@ -2587,6 +2596,15 @@ achievements = createAchievementEngine({
     });
   },
 });
+const _hudBtn = document.getElementById('btn-model-viewer-hud');
+if (_vibesOverlay && _hudBtn) {
+  _trophyHud = createTrophyHud({ area: _vibesOverlay, button: _hudBtn, engine: () => achievements, me: () => achievementAccount.user });
+}
+// Over the whole window: the vibes view while it is open, else the page.
+_attract = createAttract({
+  host: () => (_vibesOverlay && !_vibesOverlay.hidden ? _vibesOverlay : document.body),
+  watch: _vibesOverlay, engine: () => achievements, me: () => achievementAccount.user,
+});
 // A loaded save state (media.js) is not fair play: until a reset, nothing counts in public.
 globalThis.addEventListener('c64-state-loaded', () => achievements.taint('a save state was loaded'));
 // Options ▸ Other ▸ ACHIEVEMENTS. Off, the engine leaves the machine's path:
@@ -2614,6 +2632,7 @@ achievementsPanel = initOnline({
   closeBtn: document.getElementById('btn-online-close'),
   account: achievementAccount,
   engine: achievements,
+  attract: () => _attract?.open(),
   // A dev server's toast tests, each on and off, one at a time: TEST TOAST cycles every
   // kind of toast, TEST GAME every toast of the loaded game.
   testToasts: (() => {

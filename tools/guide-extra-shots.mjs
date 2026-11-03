@@ -45,6 +45,11 @@
 //                        place toast at its peak: turned to gold, stamped #1,
 //                        confetti flying. The toast is the app's own
 //                        (src/achievements/toast.js), shown where vibes puts it.
+//   vibes-hud.webp       Retro Vibes with Commando Arcade in play, the trophy HUD
+//                        as its full bar (src/achievements/hud.js) and an unlock
+//                        toast landing. The guide's Commando Arcade players sign up
+//                        and post results, so run it against a dev server with
+//                        accounts in memory (VITE_ACCOUNTS_IN_MEMORY=1).
 //
 // Drives the LIVE dev server (start your Vite first). Shots land in public/guide/
 // as 1920-capped WebP (guide-image.mjs).
@@ -52,7 +57,7 @@
 // drive8D64 defaults to the 'raster-time-demo' asset (test/external-assets.json).
 // Set GUIDE_ONLY=update-toast (comma-separated) to regenerate only some shots.
 import { chromium } from 'playwright';
-import { deleteAccounts as deleteAccountsAt, signUpWith } from './guide-achievements.mjs';
+import { deleteAccounts as deleteAccountsAt, signUpWith, seedPlayers, signedIn, applySignIn, COMMANDO_ARCADE_PLAYERS, COMMANDO_ARCADE_ME } from './guide-achievements.mjs';
 import { createGuideContext } from './guide-context.mjs';
 import { execFileSync } from 'child_process';
 import fs from 'fs';
@@ -832,6 +837,56 @@ if (want('vibes-toast')) {
     await ctx.close();
   } catch (e) { skipped.push('vibes-toast'); console.error('  ✗ vibes-toast —', e.message.split('\n')[0]); }
   await gpu.close();
+}
+
+// ── Retro Vibes: the trophy HUD as its full bar, with an unlock toast landing ──
+if (want('vibes-hud')) {
+  const tokens = [];
+  const ARCADE = assetPath('commando-arcade-crt') || '';
+  const gpu = await launchShotBrowser();
+  try {
+    if (!(ARCADE && fs.existsSync(ARCADE))) throw new Error(`no Commando Arcade cartridge (${missingNote('commando-arcade-crt')})`);
+    const set = JSON.parse(fs.readFileSync(path.join(root, 'server/sets/commando-arcade.json'), 'utf8'));
+    const me = await seedPlayers(browser, BASE, set.hashes[0].hash, COMMANDO_ARCADE_PLAYERS, COMMANDO_ARCADE_ME, tokens);
+    const ctx = await createGuideContext(gpu, { colorScheme: 'dark', viewport: { width: 1600, height: 900 }, deviceScaleFactor: 2 });
+    await ctx.addInitScript(() => {
+      try {
+        localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1');
+        localStorage.setItem('c64emu.vibesModel', 'small'); localStorage.setItem('c64emu.modelViewerScene', 'IK+ Sunset');
+        localStorage.removeItem('c64emu.achievements');   // on, so the HUD has its game
+        localStorage.removeItem('c64emu.achHud');          // the HUD where it starts: the full bar at the foot
+        localStorage.removeItem('c64emu.achToastVibesPlace'); localStorage.removeItem('c64emu.achToastVibesSize');
+      } catch {}
+    });
+    await ctx.addInitScript(applySignIn, signedIn(me));
+    const page = await bootPage(ctx);
+    await reportRenderer(page);
+    await page.setInputFiles('#prg-input', ARCADE);
+    const offer = page.locator('#confirm-modal:not([hidden])');
+    if (await offer.waitFor({ timeout: 3000 }).then(() => true, () => false)) await page.locator('#btn-confirm-ok').click();
+    await sleep(9000);   // the loading picture
+    await intoCommandoArcade(page);
+    await page.locator('#btn-vibes').click({ force: true });
+    await page.waitForFunction(() => !document.getElementById('model-viewer-overlay').hidden, null, { timeout: 60000 });
+    await page.waitForFunction(() => { const l = document.querySelector('.model-viewer-loading'); return !l || getComputedStyle(l).display === 'none'; }, null, { timeout: 60000 });
+    await page.waitForSelector('.model-viewer-overlay > .ach-hud:not([hidden])', { timeout: 20000 });
+    await sleep(6000);
+    await page.mouse.move(800, 60);
+    // An unlock the player has yet to make, landing where vibes shows toasts.
+    const next = set.achievements.find((a) => a.id === 3);
+    await page.evaluate(async (a) => {
+      const { createAchToasts } = await import('/src/achievements/toast.js');
+      const view = document.getElementById('model-viewer-overlay');
+      createAchToasts({ host: () => view, ms: 60000 }).show({ kind: 'unlock', title: a.title, text: a.description, points: a.points });
+    }, { title: next.title, description: next.description, points: next.points });
+    await page.waitForSelector('.model-viewer-overlay > .ach-toast .ach-toast-points.ach-toast-pop', { timeout: 10000 });
+    await sleep(Number(process.env.GUIDE_TOAST_AFTER) || 300);
+    const info = saveGuideShot(await page.screenshot(), OUT, 'vibes-hud');
+    done.push('vibes-hud'); console.log('  ✓', shotLabel('vibes-hud', info));
+    await ctx.close();
+  } catch (e) { skipped.push('vibes-hud'); console.error('  ✗ vibes-hud —', e.message.split('\n')[0]); }
+  await gpu.close();
+  await deleteAccounts(tokens);
 }
 
 await browser.close();

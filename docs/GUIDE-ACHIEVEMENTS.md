@@ -67,8 +67,10 @@ notices, makes the game softcore until you reset the machine: what you unlock
 stays on your own page, but not in the Hall of Fame or the activity, and scores
 are not posted. Results that look unlikely wait for a check before they show.
 
-A game stays on while you turn its tape over or change its disk. Ejecting its
-cartridge ends it, and so does a reset once none of its files is loaded.
+With more than one game loaded, the one you are playing counts: a cartridge,
+else the last one you put in. A game stays on while you turn its tape over or
+change its disk. Ejecting its cartridge ends it, and so does a reset once none
+of its files is loaded.
 
 To play without achievements, turn them off in Options ▸ Other ▸
 **ACHIEVEMENTS**. Nothing you load is looked at then.
@@ -89,6 +91,31 @@ anywhere and resize it. The browser remembers both.
 
 ![Retro Vibes' IK+ Sunset with Commando Arcade in play on the TV, and a new first place toast at the top: turned to gold with a crown, stamped #1, PETSCII hearts, diamonds, spades and stars showering from it.](/guide/vibes-toast.webp)
 
+### Trophies in Retro Vibes
+
+While a game with achievements is loaded, [Retro Vibes](GUIDE-LOOKS.md#retro-vibes)
+shows a trophy HUD: a slot per achievement and the next player to pass. Its
+trophy button shows and hides it.
+
+- **Drag** it anywhere. It snaps to the edges and the center.
+- **Drag its corner** to reshape it: a bar, a box or a column, down to a pill.
+  Phones and tablets get the bar, the slim column and the pill, with the HUD
+  off at first.
+- **⟲** turns it, **◐** fades it while you play, **✕** hides it.
+
+An unlock's trophy flies into its slot. With the HUD hidden, the button's ring
+shows your progress.
+
+![Retro Vibes' IK+ Sunset with Commando Arcade in play on the TV. The trophy HUD runs along the foot: the game's icon and points, a slot per achievement with five lit and the next one marked, and the chase with the best score, fourth place and the next player to pass. An unlock toast lands at the top.](/guide/vibes-hud.webp)
+
+### Attract mode
+
+When a game ends, its high-score screen fills the window and cycles the game's
+boards, the Hall of Fame and your trophies, as an arcade does between games.
+Click the bars under it to pick a page. Press **Space** to continue, or play
+again or click beside it.
+The screen button on the **GAME** tab, left of refresh, shows it any time.
+
 ## Games with achievements
 
 | Game | Achievements | High scores | The file it needs |
@@ -105,7 +132,7 @@ anywhere and resize it. The browser remembers both.
 | Buggy Boy | 12 | yes | OneLoad64 v5: `Buggy Boy.crt` |
 | Chuckie Egg | | yes | OneLoad64 v5: `Chuckie Egg.crt` |
 | Commando | 14 | yes | OneLoad64 v5: `Commando.crt` |
-| Commando Arcade | 14 | yes | Nostalgia's EasyFlash `CommandoArcade_N0S_EF.crt`, or OneLoad64 v5 extras: `Commando Arcade - Special Edition [EasyFlash].crt` |
+| Commando Arcade | 14 | yes | Nostalgia's `CommandoArcade_N0S_EF.crt` or `CommandoArcade_N0S_FL_Universal.d64`, or OneLoad64 v5 extras: `Commando Arcade - Special Edition [EasyFlash].crt` |
 | Cybernoid | 13 | yes | OneLoad64 v5: `Cybernoid.crt` |
 | Cybernoid II | 10 | yes | OneLoad64 v5: `Cybernoid II.crt` |
 | Defender of the Crown | 12 |  | OneLoad64 v5 extras: `Defender of the Crown [EasyFlash].crt` |

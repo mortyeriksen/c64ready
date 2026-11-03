@@ -148,16 +148,21 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
   }
 
   /**
-   * Finds the game among the loaded files (cartridge, drives, tape, RAM program).
-   * Ejecting everything keeps the game: a program loaded from tape or disk
-   * runs on without it. Another file of the same game (a tape's second side,
-   * the next disk) keeps rcheevos's state, so a game in progress carries on.
-   * A different file without a set ends the game.
+   * Finds the game among the loaded files (cartridge, drives, tape, RAM program):
+   * the one being played. A cartridge with a set while it is in the port, as
+   * the machine runs it; else the medium put in last. So a cartridge inserted
+   * with a disk game in the drive takes over, and a disk put in under a
+   * cartridge does not. Ejecting everything keeps the game: a program loaded
+   * from tape or disk runs on without it. Another file of the same game (a
+   * tape's second side, the next disk) keeps rcheevos's state, so a game in
+   * progress carries on. A different file without a set ends the game.
    */
   // Whether a hash is one of the game's files (a tape's other side, a disk's).
   const isGameFile = (hash) => !!game && (hash === game.hash || !!game.files?.some((x) => x.hash === hash));
   // The loaded file that holds the game, if one does (hashes as computed by mediaChanged).
   const heldBy = () => loadedFiles().find((f) => isGameFile(hashes.get(f.bytes)));
+  // How surely a file is the one being played: a cartridge first, then the last put in.
+  const playRank = (f) => (f.slot === 'cart' ? 1e9 : 0) + f.loadedAt;
 
   async function mediaChanged() {
     const gen = ++generation;
@@ -169,18 +174,21 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
       for (const f of files) if (!hashes.has(f.bytes)) { const hash = r.hash(f.bytes); if (hash) hashes.set(f.bytes, hash); }
     }
     const held = heldBy();
-    if (held) {   // still the game, perhaps from another of its files
+    // Files more surely being played than the game's own, and not of it: another game, perhaps.
+    const rivals = files.filter((f) => !isGameFile(hashes.get(f.bytes)) && (!held || playRank(f) > playRank(held))).sort((a, b) => playRank(b) - playRank(a));
+    // Still the game, perhaps from another of its files.
+    const keep = () => {
       if (held.slot !== game.slot || hashes.get(held.bytes) !== game.hash) { game.slot = held.slot; game.hash = hashes.get(held.bytes); onChange(snapshot()); }
-      return;
-    }
+    };
+    if (held && !rivals.length) { keep(); return; }
     // A cartridge's game ends when it leaves the port: the machine resets with it.
     // A disk's or tape's game runs on from memory when it is ejected.
-    if (game?.slot === 'cart') setGame(null);
+    if (!held && game?.slot === 'cart') setGame(null);
     if (!files.length) return;
     const sets = await knownHashes();
     if (gen !== generation) return;
-    if (!sets) { retryLater(); return; }   // no answer: the game in hand stays
-    for (const f of files) {
+    if (!sets) { if (held) keep(); retryLater(); return; }   // no answer: the game in hand stays
+    for (const f of rivals) {
       const hash = hashes.get(f.bytes);
       if (!hash || !sets.has(hash)) continue;   // no set: the hash stays here
       // A game loaded anew gets its set as the server has it now (a corrected set
@@ -194,7 +202,9 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
         return;
       }
     }
-    if (gen === generation) setGame(null);
+    // None of them has a set: the game in hand stays while its file is in, else it ends.
+    if (gen !== generation) return;
+    if (held) keep(); else setGame(null);
   }
   function setGame(g) {
     game = g;

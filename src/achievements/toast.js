@@ -21,7 +21,7 @@ export const COMPLETE_EXTRA_MS = 2500;
 export const SWEEP_POINTS = 10, SPARKLE_POINTS = 25, CELEBRATE_POINTS = 50;
 
 // 10x10, drawn like the game icons: '#' lit, '+' half-tone, '.' none.
-const KIND_ICONS = {
+export const KIND_ICONS = {
   // A trophy.
   unlock: ['##########', '#+######+#', '#+######+#', '.+######+.', '..######..', '...####...', '....##....', '....##....', '..######..', '..######..'],
   // A podium with a medal over it.
@@ -73,7 +73,8 @@ const replay = (el, cls) => { el.classList.remove(cls); void el.offsetWidth; el.
 // An icon is one element: its pixels a mask over the kind's colour (styles-achievements.css),
 // so the toast stays a dozen elements to restyle, and a change of colour needs no redraw.
 const iconMasks = new Map();
-function drawIcon(icon, rows) {
+/** A 10x10 bitmap as a CSS mask image, made once. */
+export function iconMask(rows) {
   const key = rows.join('');
   let mask = iconMasks.get(key);
   if (!mask) {
@@ -84,8 +85,11 @@ function drawIcon(icon, rows) {
     mask = `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10' shape-rendering='crispEdges'>${rects}</svg>`)}")`;
     iconMasks.set(key, mask);
   }
-  icon.style.setProperty('--ach-icon', mask);
-  icon.dataset.rows = key;
+  return mask;
+}
+function drawIcon(icon, rows) {
+  icon.style.setProperty('--ach-icon', iconMask(rows));
+  icon.dataset.rows = rows.join('');
 }
 
 /** The unlock's tier by its points: 0 calm, 1 the sweep, 2 sparkles, 3 the full celebration. */
@@ -279,8 +283,8 @@ export function createAchToasts({ host, ms = ACH_TOAST_MS }) {
   return { show, rehome, sample };
 }
 
-// Each letter flips down in turn.
-function flap(title, heading) {
+/** Each letter flips down in turn. */
+export function flap(title, heading) {
   title.textContent = '';
   [...heading].forEach((c, i) => {
     const ch = document.createElement('span');
@@ -320,8 +324,8 @@ function completeSet(el, icon, words, chip, c, live) {
   }));
 }
 
-// Counts a number from one value to another, easing out, after the landing.
-function count(node, from, to, format, dur, done) {
+/** Counts a number from one value to another, easing out, after the landing. */
+export function count(node, from, to, format, dur, done) {
   const start = performance.now() + 450;
   // Room for the widest value from the start, so the toast does not grow as a digit is added.
   const cs = getComputedStyle(node);
@@ -423,8 +427,8 @@ function stamp(el, label) {
   return st;
 }
 
-// A short, tightening tremble.
-function tremble(el, done) {
+/** A short, tightening tremble. */
+export function tremble(el, done) {
   el.animate([
     { transform: 'none' }, { transform: 'translateX(-1px) rotate(-0.8deg)' }, { transform: 'translateX(1px) rotate(0.8deg)' },
     { transform: 'translateX(-1px) rotate(-0.5deg)' }, { transform: 'translateX(1px) rotate(0.3deg)' }, { transform: 'none' },
@@ -451,8 +455,8 @@ function layer(el) {
   return { box: rect, width: rect.width, height: rect.height, add };
 }
 
-// A few pixels thrown off one part of the toast, in its colour and white, once.
-function sparkle(el, from) {
+/** A few pixels thrown off `from`, a part of `el`, in `el`'s colour and white, once. */
+export function sparkle(el, from) {
   const at = layer(el);
   if (!at) return;
   const r = from.getBoundingClientRect();
@@ -551,8 +555,7 @@ function shower(el, at, r, x0, y0, count) {
 }
 
 // The full celebration: an optional coin spin, then a punch that holds a beat
-// at its peak with a flash, shockwave rings, a PETSCII shower flung up and falling,
-// and glints around the card.
+// at its peak with a flash, and the burst.
 function celebrate(el, { spin = false, rings = 1, pieces = 32 } = {}) {
   const hit = () => {
     if (!el.isConnected) return;
@@ -562,33 +565,42 @@ function celebrate(el, { spin = false, rings = 1, pieces = 32 } = {}) {
     flash.className = 'ach-toast-flash';
     el.append(flash);
     flash.animate([{ opacity: 0.9 }, { opacity: 0 }], { duration: 380, easing: 'ease-out' }).onfinish = () => flash.remove();
-    const at = layer(el);
-    if (!at) return;
-    const r = el.getBoundingClientRect();
-    const ink = getComputedStyle(el).getPropertyValue('--ach-ink');
-    const x0 = r.left - at.box.left, y0 = r.top - at.box.top;
-    for (let k = 0; k < rings; k++) {
-      const ring = at.add(document.createElement('i'));
-      ring.className += ' ach-toast-ring';
-      Object.assign(ring.style, { left: `${x0}px`, top: `${y0}px`, width: `${r.width}px`, height: `${r.height}px`, borderColor: ink });
-      ring.animate([{ transform: 'none', opacity: 0.9 }, { transform: 'scale(1.45, 2.2)', opacity: 0 }],
-        { duration: 650, delay: k * 140, easing: 'cubic-bezier(.1,.7,.3,1)', fill: 'backwards' }).onfinish = () => ring.remove();
-    }
-    shower(el, at, r, x0, y0, pieces);
-    for (let k = 0; k < 7; k++) {
-      const g = at.add(document.createElement('i'));
-      g.className += ' ach-toast-glint';
-      g.style.setProperty('--glow', ink);
-      const edge = Math.random() < 0.5;
-      g.style.left = `${x0 + (edge ? (Math.random() < 0.5 ? -0.03 : 0.97) : Math.random()) * r.width}px`;
-      g.style.top = `${y0 + (edge ? Math.random() : (Math.random() < 0.5 ? -0.15 : 0.9)) * r.height}px`;
-      g.animate([{ opacity: 0, transform: 'scale(0)' }, { opacity: 1, transform: 'scale(1) rotate(45deg)', offset: 0.4 }, { opacity: 0, transform: 'scale(0.2) rotate(90deg)' }],
-        { duration: 700, delay: 250 + k * 170, easing: 'ease-out', fill: 'backwards' }).onfinish = () => g.remove();
-    }
+    burst(el, { rings, pieces });
   };
   if (!spin) return hit();
   // A coin spin: one full turn showing a gold back while it faces away, then the hit.
   el.animate([{ transform: 'perspective(30em) rotateY(0deg)' }, { transform: 'perspective(30em) rotateY(360deg)' }], { duration: 560 }).onfinish = hit;
   later(140, () => el.classList.add('ach-toast-back'));
   later(420, () => el.classList.remove('ach-toast-back'));
+}
+
+/**
+ * Thrown off `el` in its colour, or off `from`, a part of it: shockwave rings,
+ * a PETSCII shower flung up and falling, and glints around it. The pieces are
+ * sized by what they are thrown from.
+ */
+export function burst(el, { rings = 1, pieces = 32, from = el } = {}) {
+  const at = layer(el);
+  if (!at) return;
+  const r = from.getBoundingClientRect();
+  const ink = getComputedStyle(el).getPropertyValue('--ach-ink');
+  const x0 = r.left - at.box.left, y0 = r.top - at.box.top;
+  for (let k = 0; k < rings; k++) {
+    const ring = at.add(document.createElement('i'));
+    ring.className += ' ach-toast-ring';
+    Object.assign(ring.style, { left: `${x0}px`, top: `${y0}px`, width: `${r.width}px`, height: `${r.height}px`, borderColor: ink });
+    ring.animate([{ transform: 'none', opacity: 0.9 }, { transform: 'scale(1.45, 2.2)', opacity: 0 }],
+      { duration: 650, delay: k * 140, easing: 'cubic-bezier(.1,.7,.3,1)', fill: 'backwards' }).onfinish = () => ring.remove();
+  }
+  shower(el, at, r, x0, y0, pieces);
+  for (let k = 0; k < 7; k++) {
+    const g = at.add(document.createElement('i'));
+    g.className += ' ach-toast-glint';
+    g.style.setProperty('--glow', ink);
+    const edge = Math.random() < 0.5;
+    g.style.left = `${x0 + (edge ? (Math.random() < 0.5 ? -0.03 : 0.97) : Math.random()) * r.width}px`;
+    g.style.top = `${y0 + (edge ? Math.random() : (Math.random() < 0.5 ? -0.15 : 0.9)) * r.height}px`;
+    g.animate([{ opacity: 0, transform: 'scale(0)' }, { opacity: 1, transform: 'scale(1) rotate(45deg)', offset: 0.4 }, { opacity: 0, transform: 'scale(0.2) rotate(90deg)' }],
+      { duration: 700, delay: 250 + k * 170, easing: 'ease-out', fill: 'backwards' }).onfinish = () => g.remove();
+  }
 }

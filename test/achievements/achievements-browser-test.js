@@ -102,6 +102,15 @@ try {
   const head = await game.locator('.ach-screen:not(.ach-fame) .ach-screen-head span').allTextContents();
   expect(head.length === 1 && head[0] === 'Hiscores', `and its high-score screen, headed HISCORES alone, since the game is named above it (got ${JSON.stringify(head)})`);
   await game.locator('.ach-screen-foot', { hasText: /NO SCORES YET|PLAYER/ }).first().waitFor({ timeout: 10_000 });
+  // The title line's high-score screen button, left of refresh, shows attract mode over the window. Space continues.
+  const titleButtons = await game.locator('.ach-game-top button').evaluateAll((bs) => bs.map((b) => (b.classList.contains('ach-attract-btn') ? 'attract' : b.classList.contains('ach-refresh-btn') ? 'refresh' : 'other')));
+  expect(titleButtons.join() === 'attract,refresh', `the high-score screen's button sits left of refresh (got ${titleButtons})`);
+  await game.locator('.ach-attract-btn').click();
+  const shown = await page.locator('body > .ach-attract .ach-attract-title').waitFor({ timeout: 10_000 }).then(() => true, () => false);
+  expect(shown && (await page.locator('.ach-attract-title').getAttribute('aria-label')) === 'Hiscores', 'it shows the game\'s high-score screen over the window, its board first');
+  await page.keyboard.press('Space');
+  await page.waitForTimeout(400);
+  expect(await page.locator('.ach-attract').count() === 0, 'Space continues');
   await page.click('#btn-online-close');
   fs.rmSync(tmp, { recursive: true, force: true });
   ok('loading the cartridge finds its set, and the window opens on it');

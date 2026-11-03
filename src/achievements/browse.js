@@ -151,11 +151,12 @@ export function progress(got, total, points, totalPoints) {
 }
 /**
  * A game's head: its title (a link, or plain for the loaded game), meter and
- * progress. A game with high scores and no achievements says so instead.
+ * progress, and on the title line the versions, attract mode and refresh
+ * buttons it is given. A game with high scores and no achievements says so instead.
  */
-export function gameHead(ctx, game, achievements, isUnlocked, { link = false, versions = [], url = null, refresh = null } = {}) {
+export function gameHead(ctx, game, achievements, isUnlocked, { link = false, versions = [], url = null, attract = null, refresh = null } = {}) {
   const title = h('h3', { class: 'ach-game-title' }, link ? gameLink(ctx, game) : game.title);
-  const buttons = [versions.length ? versionButton() : null, refresh ? refreshButton(refresh) : null].filter(Boolean);
+  const buttons = [versions.length ? versionButton() : null, attract ? attractButton(attract) : null, refresh ? refreshButton(refresh) : null].filter(Boolean);
   const top = buttons.length ? [h('div', { class: 'ach-game-top' }, title, ...buttons), ...(versions.length ? [versionCard(versions, game.title, url)] : [])] : [title];
   if (!achievements.length) return h('div', { class: 'ach-game' }, ...top, h('p', { class: 'achievements-note' }, 'This game has high scores, and no achievements yet.'));
   const got = achievements.filter(isUnlocked);
@@ -163,6 +164,14 @@ export function gameHead(ctx, game, achievements, isUnlocked, { link = false, ve
   return h('div', { class: 'ach-game' }, ...top,
     meter(achievements.map(isUnlocked)),
     progress(got.length, achievements.length, pts(got), pts(achievements)));
+}
+
+// Shows the game's high-score screen as attract mode cycles it after a game (attract.js).
+function attractButton(show) {
+  return h('button', {
+    type: 'button', class: 'ach-info-btn ach-attract-btn', 'aria-label': 'Show the high-score screen', title: 'Show the high-score screen',
+    on: { click: () => show() },
+  }, icon(['M3 4h18v12H3z', 'M8 20h8M12 16v4', 'M7 8h6M7 11h10'], 18));
 }
 
 // Fetches the game's standings and checks again, spinning until they are in.

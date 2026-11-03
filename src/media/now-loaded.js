@@ -13,6 +13,7 @@
 
 const SLOTS = ['drive8', 'drive9', 'cart', 'tape', 'program'];
 const slots = new Map();
+let order = 0;   // load order: each new medium is numbered after the ones before it
 
 const KIND = {
   d64: 'disk', d71: 'disk', d81: 'disk', g64: 'disk', nbz: 'disk',
@@ -31,7 +32,7 @@ export function setLoaded(slot, info) {
   if (info && slot !== 'program') slots.delete('program');
   const cur = slots.get(slot);
   if (!info) { if (!cur) return; slots.delete(slot); }
-  else slots.set(slot, cur && info.ref != null && cur.ref === info.ref ? { ...cur, ...info } : { ...info });
+  else slots.set(slot, cur && info.ref != null && cur.ref === info.ref ? { ...cur, ...info } : { ...info, loadedAt: ++order });
   announce();
 }
 
@@ -77,9 +78,12 @@ export function loadedItems() {
   return SLOTS.filter((s) => slots.has(s)).map((s) => ({ slot: s, label: SLOT_LABEL[s], ...describe(slots.get(s)) }));
 }
 
-/** The loaded files whose bytes are known, in slot order: [{ slot, title, ref, bytes }]. */
+/**
+ * The loaded files whose bytes are known, in slot order: [{ slot, title, ref, bytes, loadedAt }],
+ * `loadedAt` counting up as media are put in, so the last one put in has the highest.
+ */
 export function loadedFiles() {
-  return SLOTS.filter((s) => slots.get(s)?.bytes).map((s) => ({ slot: s, title: describe(slots.get(s)).title, ref: slots.get(s).ref, bytes: slots.get(s).bytes }));
+  return SLOTS.filter((s) => slots.get(s)?.bytes).map((s) => ({ slot: s, title: describe(slots.get(s)).title, ref: slots.get(s).ref, bytes: slots.get(s).bytes, loadedAt: slots.get(s).loadedAt ?? 0 }));
 }
 
 /** Test seam. */

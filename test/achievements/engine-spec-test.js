@@ -4,8 +4,9 @@
 // values reach the signed-in account, a signed-out player is told and nothing
 // is saved, an unlocked achievement is not armed again, another file of the
 // same game (a tape's second side) carries the game on, ejecting a disk or tape
-// keeps it, ejecting its cartridge or a reset without its files ends it, and a
-// different file without a set ends it. A file without a set never leaves the browser: only the list
+// keeps it, ejecting its cartridge or a reset without its files ends it, a
+// different file without a set ends it, and the game is the one being played:
+// a cartridge with a set, else the medium put in last. A file without a set never leaves the browser: only the list
 // of games is fetched, and matched here. Results not saved yet belong to the
 // account that earned them. RAM is synthesized frame by frame.
 
@@ -406,6 +407,41 @@ const settle = () => new Promise((r) => setTimeout(r, 50));
   await e6.refreshChecks();
   expect(changes === 1, 'a refresh that changes nothing draws nothing');
   ok('a refresh picks up what an admin checked');
+}
+
+// 13. The game is the one being played: a cartridge with a set while it is in
+// the port, else the medium put in last. Its own other files carry it on, and
+// a newer file without a set leaves it be.
+{
+  const e7 = createAchievementEngine({ account: { token: null, user: null }, base, log: () => {} });
+  const at = async () => { await e7.mediaChanged(); return e7.game?.title ?? null; };
+  _resetLoaded();
+  setLoaded('drive8', { ref: 'other-disk', kind: 'd64', bytes: otherFile });
+  expect(await at() === 'Other Game', 'a disk with a set is the game');
+  setLoaded('cart', { ref: 'demo-cart', kind: 'crt', bytes: file });
+  expect(await at() === 'Demo Game', 'a cartridge inserted with the disk still in takes over: the machine runs it');
+  setLoaded('cart', null);
+  expect(await at() === 'Other Game', 'ejecting it ends its game, and the disk in the drive is the game again');
+
+  _resetLoaded(); await e7.mediaChanged();
+  setLoaded('cart', { ref: 'demo-cart', kind: 'crt', bytes: file });
+  expect(await at() === 'Demo Game', 'a cartridge is the game');
+  setLoaded('drive8', { ref: 'other-disk', kind: 'd64', bytes: otherFile });
+  expect(await at() === 'Demo Game', 'a disk put in under it does not take over: the cartridge is what runs');
+
+  _resetLoaded(); await e7.mediaChanged();
+  setLoaded('tape', { ref: 'demo-tape', kind: 'tap', bytes: side2 });
+  expect(await at() === 'Demo Game', 'a tape is the game');
+  setLoaded('drive8', { ref: 'other-disk', kind: 'd64', bytes: otherFile });
+  expect(await at() === 'Other Game', 'a disk put in after it, with a set of its own, is the game now');
+  setLoaded('drive9', { ref: 'blank', kind: 'd64', bytes: crypto.randomBytes(300) });
+  expect(await at() === 'Other Game', 'a newer disk without a set leaves the game be');
+
+  _resetLoaded(); await e7.mediaChanged();
+  setLoaded('drive8', { ref: 'other-disk', kind: 'd64', bytes: otherFile });
+  setLoaded('tape', { ref: 'demo-tape', kind: 'tap', bytes: side2 });
+  expect(await at() === 'Demo Game', 'of two put in at once, the last is the game, whatever its slot');
+  ok('the game is the one being played: a cartridge, else the last put in');
 }
 
 accounts.close();

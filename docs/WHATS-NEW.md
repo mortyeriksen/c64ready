@@ -9,6 +9,16 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
+## Next release
+
+- **Trophies in Retro Vibes.** A HUD with the game's trophies and the next
+  player to pass, to keep up while you play. Drag it anywhere and shape it into
+  a bar, a column or a pill.
+- **Attract mode.** When a game ends, its high scores, Hall of Fame and trophies
+  cycle across the window, as on an arcade cabinet.
+- **Commando Arcade.** Nostalgia's universal disk now shares the cartridge's
+  achievements and high scores.
+
 ## 2026.11.2 — November 3, 2026
 
 Achievements grows to 46 games, with Infocom's adventures among them, and gets

@@ -180,8 +180,11 @@
 .model-viewer-fullscreen:active { transform: scale(0.92); }
 
 /* Toast placer: below the framer while achievements are on. Pressed, the
-   achievement toast can be dragged anywhere in the view (main.js). */
-.model-viewer-toast {
+   achievement toast can be dragged anywhere in the view (main.js). Under it,
+   while a game with achievements is loaded, the trophy HUD's switch
+   (achievements/hud.js). */
+.model-viewer-toast,
+.model-viewer-hud {
   position: absolute;
   top: 130px;
   left: 18px;
@@ -199,18 +202,65 @@
   backdrop-filter: blur(4px);
   transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.15s;
 }
-.model-viewer-toast[hidden] { display: none; }
-.model-viewer-toast svg { display: block; }
+.model-viewer-hud { top: 186px; }
+.model-viewer-toast[hidden],
+.model-viewer-hud[hidden] { display: none; }
+.model-viewer-toast svg,
+.model-viewer-hud svg { display: block; }
 .model-viewer-toast:hover,
-.model-viewer-toast[aria-pressed="true"] {
+.model-viewer-toast[aria-pressed="true"],
+.model-viewer-hud:hover,
+.model-viewer-hud[aria-pressed="true"] {
   color: #fff;
   border-color: #05d9e8;
   background: rgba(5, 217, 232, 0.20);
   box-shadow: 0 0 16px rgba(5, 217, 232, 0.5);
 }
-.model-viewer-toast:active { transform: scale(0.92); }
-/* The fog switch moves down a place while the toast placer shows. */
+.model-viewer-toast:active,
+.model-viewer-hud:active { transform: scale(0.92); }
+/* The fog switch moves down a place for each of them that shows. */
 .model-viewer-toast:not([hidden]) ~ .model-viewer-fog { top: 186px; }
+.model-viewer-hud:not([hidden]) ~ .model-viewer-fog { top: 242px; }
+
+/* The HUD switch's ring: the set's progress, bright while the HUD is hidden. */
+.model-viewer-hud-ring {
+  position: absolute;
+  inset: -5px;
+  width: calc(100% + 10px);
+  height: calc(100% + 10px);
+  pointer-events: none;
+  rotate: -90deg;
+}
+.model-viewer-hud-ring circle { fill: none; stroke-width: 2.5; }
+.model-viewer-hud-ring .bg { stroke: color-mix(in srgb, var(--amber) 18%, transparent); }
+.model-viewer-hud-ring .fg {
+  stroke: var(--amber);
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.7s cubic-bezier(.2, .8, .3, 1);
+  filter: drop-shadow(0 0 3px var(--amber));
+}
+.model-viewer-hud[aria-pressed="true"] .model-viewer-hud-ring { opacity: 0.35; }
+/* What happened while it was hidden: +1 for an unlock, the new rank after a climb. */
+.model-viewer-hud-badge {
+  position: absolute;
+  top: -8px;
+  left: 30px;
+  padding: 0 5px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--amber);
+  color: var(--button-ink);
+  font: bold 10px/16px 'Share Tech Mono', monospace;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: model-viewer-hud-badge 380ms cubic-bezier(.3, 1.6, .5, 1) both;
+}
+.model-viewer-hud-badge.is-rank { background: var(--medal-bronze); }
+@keyframes model-viewer-hud-badge { from { transform: scale(0); } }
+.model-viewer-hud.is-ping { animation: model-viewer-hud-ping 520ms cubic-bezier(.2, .8, .3, 1); }
+@keyframes model-viewer-hud-ping {
+  30% { transform: scale(1.3); box-shadow: 0 0 0 6px color-mix(in srgb, var(--amber) 40%, transparent), 0 0 24px var(--amber); }
+}
 
 /* Fog switch: below the framer, shown only for a scene with smoke on a device
    that runs it. Dimmed while the fog is off. */
@@ -382,6 +432,11 @@
 .model-viewer-overlay.studio .model-viewer-fullscreen,
 .model-viewer-overlay.studio .model-viewer-fog,
 .model-viewer-overlay.studio .model-viewer-toast,
+.model-viewer-overlay.studio .model-viewer-hud,
+.model-viewer-overlay.studio .ach-hud-tools,
+.model-viewer-overlay.studio .ach-hud-resize,
+.model-viewer-overlay.studio .ach-hud-tip,
+.model-viewer-overlay.studio .ach-attract-x,
 .model-viewer-overlay.studio .model-viewer-vr,
 .model-viewer-overlay.studio .model-viewer-close,
 .model-viewer-overlay.studio .touch-controls {
