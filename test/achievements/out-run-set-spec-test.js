@@ -123,6 +123,31 @@ for (const [label] of ROUTES) {
   ok(`${label}: a start with the accelerator down`);
 }
 
+// The first score award belongs to stage 1 and does not carry over from the title screen.
+for (const label of ['A', 'D']) {
+  activate(); title(label); setScore(10000); frames(5);
+  expect(!has('First Gear'), `${label}: title-screen score earns no first-stage trophy`);
+  start(); setScore(9999); frames(2);
+  expect(!has('First Gear'), `${label}: 9,999 points is short of First Gear`);
+  setScore(10000); frames(2);
+  expect(has('First Gear'), `${label}: 10,000 points in stage 1 earns First Gear`);
+  ok(`${label}: first-stage score`);
+
+  activate(); title(label); start(); setScore(9999); frames(2); checkpoint();
+  setScore(10000); frames(2);
+  expect(!has('First Gear'), `${label}: 10,000 points first reached in stage 2 is too late`);
+  ok(`${label}: first-stage cutoff`);
+}
+
+// The stage 2 timer includes the checkpoint bonus and must meet the exact cutoff.
+for (const label of ['A', 'D']) {
+  for (const [before, award] of [[4, false], [5, true]]) {
+    activate(); title(label); start(); setTime(before); frames(2); checkpoint();
+    expect(has('Quick Start') === award, `${label}: ${before + 50} seconds at stage 2 ${award ? 'earns' : 'does not earn'} Quick Start`);
+    ok(`${label}: stage 2 with ${before + 50} seconds`);
+  }
+}
+
 // All five courses have four checkpoints, a separate goal, and the same stage index.
 for (const [label, destination] of ROUTES) {
   activate(); title(label); start();
@@ -147,6 +172,15 @@ for (const label of ['A', 'D']) {
   }
 }
 
+// A close finish is distinct from a timeout and from the generous-time awards.
+for (const label of ['A', 'D']) {
+  for (const [left, award] of [[0, false], [1, true], [5, true], [6, false]]) {
+    activate(); title(label); start(); setTime(left); frames(2); ram[GOAL] = 0x93; frames(2);
+    expect(has('Close Call') === award, `${label}: ${left} seconds at the goal ${award ? 'earns' : 'does not earn'} Close Call`);
+    ok(`${label}: close finish with ${left} seconds`);
+  }
+}
+
 // Score tiers must read the chosen route's digits, including D/E's relocated score.
 for (const label of ['A', 'D']) {
   activate(); title(label); start();
@@ -155,6 +189,21 @@ for (const label of ['A', 'D']) {
     setScore(points); frames(2); expect(has(name), `${label}: ${name} awards at ${points}`);
   }
   ok(`${label}: score tiers`);
+}
+
+// The million-point pace award must be reached before stage 5.
+for (const label of ['A', 'D']) {
+  activate(); title(label); start(); ram[STAGE] = 3; frames(2);
+  setScore(999999); frames(2);
+  expect(!has('Million Mile Smile'), `${label}: 999,999 points is short of the pace award`);
+  setScore(1000000); frames(2);
+  expect(has('Million Mile Smile'), `${label}: a million points in stage 4 earns the pace award`);
+  ok(`${label}: million before stage 5`);
+
+  activate(); title(label); start(); ram[STAGE] = 4; frames(2);
+  setScore(1000000); frames(2);
+  expect(!has('Million Mile Smile'), `${label}: a million points first reached in stage 5 is too late`);
+  ok(`${label}: million-point cutoff`);
 }
 
 // Each route has its own leaderboard; timeout and goal submit the active score.

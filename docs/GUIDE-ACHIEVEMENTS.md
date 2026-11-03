@@ -155,7 +155,7 @@ every board.
 | Mole Attack | | yes | OneLoad64 v5 extras: `Mole Attack.crt` (the official cartridge), or c64cade's PRG |
 | Munchy Worm | | yes | c64cade's `munchyworm_1_01.d64` |
 | Nemesis | 22 | yes | OneLoad64 v5: `Nemesis.crt` |
-| Out Run | 14 | five routes | OneLoad64 v5: `Out Run (Route A) (J1).crt` through Route E, or MultiLoad64: `Out Run (by $olo1870) [EasyFlash].crt` (select routes 1 to 5) |
+| Out Run | 18 | five routes | OneLoad64 v5: `Out Run (Route A) (J1).crt` through Route E, or MultiLoad64: `Out Run (by $olo1870) [EasyFlash].crt` (select routes 1 to 5) |
 | Paperboy | 18 | yes | OneLoad64 v5: `Paperboy.crt`, or `AlternativeFormats/PRGs/Crunched/Paperboy.prg` or `AlternativeFormats/PRGs/Uncrunched/Paperboy.prg` |
 | Panther | | yes | OneLoad64 v5: `Panther.crt`, or c64cade's cartridge |
 | Paradroid | 11 | yes | OneLoad64 v5: `Paradroid.crt` |

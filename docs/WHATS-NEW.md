@@ -23,6 +23,8 @@ The version you are running is shown at the bottom of the About dialog.
   and Dragon's Breath now unlock as they should.
 - **Commando Arcade.** Nostalgia's universal disk now shares the cartridge's
   achievements and high scores.
+- **Out Run.** Four more trophies reward an early score, a fast first checkpoint,
+  a close finish and a million points before the final stage.
 
 ## 2026.11.2 — November 3, 2026
 

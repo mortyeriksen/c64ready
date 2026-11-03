@@ -31,97 +31,125 @@
   "achievements": [
     {
       "id": 1,
+      "title": "First Gear",
+      "description": "Score 10,000 points in stage 1.",
+      "points": 5,
+      "memaddr": "0=0SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._0xH9144=0_A:0xHAA56*1000000_A:0xHAA55*100000_A:0xHAA54*10000_A:0xHAA53*1000_A:0xHAA52*100_A:0xHAA51*10_0xHAA50>=10000SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1._0xH9144=0_A:0xHAA4D*1000000_A:0xHAA4C*100000_A:0xHAA4B*10000_A:0xHAA4A*1000_A:0xHAA49*100_A:0xHAA48*10_0xHAA47>=10000"
+    },
+    {
+      "id": 2,
       "title": "Checkpoint!",
       "description": "Reach stage 2.",
       "points": 5,
       "memaddr": "0xH9144=1_d0xH9144=0SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1.SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1."
     },
     {
-      "id": 2,
+      "id": 3,
+      "title": "Quick Start",
+      "description": "Reach stage 2 with at least 55 seconds left.",
+      "points": 10,
+      "memaddr": "0xH9144=1SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._A:0xHAA22*10_0xHAA21>=55SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1._A:0xHAA19*10_0xHAA18>=55"
+    },
+    {
+      "id": 4,
       "title": "Open Road",
       "description": "Reach stage 3.",
       "points": 10,
       "memaddr": "0xH9144=2_d0xH9144=1SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1.SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1."
     },
     {
-      "id": 3,
+      "id": 5,
       "title": "Long Drive",
       "description": "Reach stage 4.",
       "points": 10,
       "memaddr": "0xH9144=3_d0xH9144=2SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1.SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1."
     },
     {
-      "id": 4,
+      "id": 6,
       "title": "Final Stretch",
       "description": "Reach stage 5.",
       "points": 25,
       "memaddr": "0xH9144=4_d0xH9144=3SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1.SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1."
     },
     {
-      "id": 5,
+      "id": 7,
       "title": "Vineyard",
       "description": "Finish route A at Vineyard.",
       "points": 25,
       "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_N:d0xHAA22=7_0xHA20D=8.1._0xH80A9=147_d0xH80A9=131"
     },
     {
-      "id": 6,
+      "id": 8,
       "title": "Death Valley",
       "description": "Finish route B at Death Valley.",
       "points": 25,
       "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_N:d0xHAA22=7_0xHA20D=13.1._0xH80A9=147_d0xH80A9=131"
     },
     {
-      "id": 7,
+      "id": 9,
       "title": "Desolation Hill",
       "description": "Finish route C at Desolation Hill.",
       "points": 25,
       "memaddr": "N:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_N:d0xHAA22=7_0xHA20D=9.1._0xH80A9=147_d0xH80A9=131"
     },
     {
-      "id": 8,
+      "id": 10,
       "title": "Autobahn",
       "description": "Finish route D at Autobahn.",
       "points": 25,
       "memaddr": "N:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_N:d0xHAA19=7_0xHA20D=4.1._0xH80A9=147_d0xH80A9=131"
     },
     {
-      "id": 9,
+      "id": 11,
       "title": "Lakeside",
       "description": "Finish route E at Lakeside.",
       "points": 25,
       "memaddr": "N:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_N:d0xHAA19=7_0xHA20D=3.1._0xH80A9=147_d0xH80A9=131"
     },
     {
-      "id": 10,
+      "id": 12,
+      "title": "Close Call",
+      "description": "Reach the goal with 1 to 5 seconds left.",
+      "points": 25,
+      "memaddr": "0=0SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._0xH80A9=147_d0xH80A9=131_0xHAA22=0_0xHAA21>=1_0xHAA21<=5SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1._0xH80A9=147_d0xH80A9=131_0xHAA19=0_0xHAA18>=1_0xHAA18<=5"
+    },
+    {
+      "id": 13,
       "title": "Time to Spare",
       "description": "Reach the goal with at least 10 seconds left.",
       "points": 10,
       "memaddr": "0=0SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._0xH80A9=147_d0xH80A9=131_0xHAA22>=1SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1._0xH80A9=147_d0xH80A9=131_0xHAA19>=1"
     },
     {
-      "id": 11,
+      "id": 14,
       "title": "Clock Beater",
       "description": "Reach the goal with at least 20 seconds left.",
       "points": 25,
       "memaddr": "0=0SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._0xH80A9=147_d0xH80A9=131_0xHAA22>=2SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1._0xH80A9=147_d0xH80A9=131_0xHAA19>=2"
     },
     {
-      "id": 12,
+      "id": 15,
       "title": "Cruising",
       "description": "Score 500,000 points.",
       "points": 5,
       "memaddr": "0=0SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._A:0xHAA56*1000000_A:0xHAA55*100000_A:0xHAA54*10000_A:0xHAA53*1000_A:0xHAA52*100_A:0xHAA51*10_0xHAA50>=500000SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1._A:0xHAA4D*1000000_A:0xHAA4C*100000_A:0xHAA4B*10000_A:0xHAA4A*1000_A:0xHAA49*100_A:0xHAA48*10_0xHAA47>=500000"
     },
     {
-      "id": 13,
+      "id": 16,
       "title": "Fast Lane",
       "description": "Score 1,000,000 points.",
       "points": 10,
       "memaddr": "0=0SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._A:0xHAA56*1000000_A:0xHAA55*100000_A:0xHAA54*10000_A:0xHAA53*1000_A:0xHAA52*100_A:0xHAA51*10_0xHAA50>=1000000SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1._A:0xHAA4D*1000000_A:0xHAA4C*100000_A:0xHAA4B*10000_A:0xHAA4A*1000_A:0xHAA49*100_A:0xHAA48*10_0xHAA47>=1000000"
     },
     {
-      "id": 14,
+      "id": 17,
+      "title": "Million Mile Smile",
+      "description": "Score 1,000,000 points before stage 5.",
+      "points": 25,
+      "memaddr": "0=0SN:0xH9144=0_N:0xHAA22=7_N:0xHAA21=4_N:d0xHAA21=5_d0xHAA22=7.1._0xH9144<4_A:0xHAA56*1000000_A:0xHAA55*100000_A:0xHAA54*10000_A:0xHAA53*1000_A:0xHAA52*100_A:0xHAA51*10_0xHAA50>=1000000SN:0xH9144=0_N:0xHAA19=7_N:0xHAA18=4_N:d0xHAA18=5_d0xHAA19=7.1._0xH9144<4_A:0xHAA4D*1000000_A:0xHAA4C*100000_A:0xHAA4B*10000_A:0xHAA4A*1000_A:0xHAA49*100_A:0xHAA48*10_0xHAA47>=1000000"
+    },
+    {
+      "id": 18,
       "title": "Magical Sound Shower",
       "description": "Score 2,000,000 points.",
       "points": 25,
