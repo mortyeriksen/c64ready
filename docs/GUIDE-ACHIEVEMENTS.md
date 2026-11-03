@@ -49,11 +49,14 @@ instead.
 
 The **GAME** tab shows:
 
-- **Progress**: a cell per achievement, lit for the ones you have, and your
-  points.
-- **The high-score screen**, in the game's own style, with your row
-  highlighted. Equal scores share a place.
-- **The achievements**: what each takes, its points, and when you unlocked it.
+- **The trophy HUD**, as in [Retro Vibes](#trophies-in-retro-vibes): a slot per
+  achievement with the next one marked, your points, and the chase of the next
+  player to pass.
+- **The high-score screens**, in the game's own style, with your row
+  highlighted. Equal scores share a place. While you play a board, only that
+  board shows, such as OutRun's route A.
+- **The trophies**: every one, what it takes, its points, and when you
+  unlocked it.
 
 A notification tells you when you unlock one. When a game ends, your score is
 posted and the leaderboard keeps your best. Signed out, you see unlocks, and
@@ -110,11 +113,15 @@ shows your progress.
 
 ### Attract mode
 
-When a game ends, its high-score screen fills the window and cycles the game's
-boards, the Hall of Fame and your trophies, as an arcade does between games.
-Click the bars under it to pick a page. Press **Space** to continue, or play
-again or click beside it.
-The screen button on the **GAME** tab, left of refresh, shows it any time.
+When a game ends, its high-score screen fills the window and cycles the board
+you played, the Hall of Fame and your trophies, as an arcade does between
+games. OutRun on route A shows route A, not the other routes. A game without a
+score, such as The Last Ninja, shows it at its GAME OVER. Click the bars
+under it to pick a page. Press **Space** to continue, or play again or click
+beside it.
+
+The screen button on the **GAME** tab, left of refresh, shows it any time, with
+every board.
 
 ## Games with achievements
 
@@ -158,7 +165,7 @@ The screen button on the **GAME** tab, left of refresh, shows it any time.
 | Stix | | yes | OneLoad64 v5: `Stix (J1).crt`, the official cartridge `Stix.crt` in the extras, or c64cade's PRG |
 | Super Mario Bros 64 | 17 | yes | OneLoad64 v5: `Super Mario Bros 64 (Zeropaige - 2019).crt` |
 | The Hitchhiker's Guide to the Galaxy | 22 | Fewest moves to 400 points | Release 47 disk: `hitchhikers_guide[infocom_1984](r47).d64` |
-| The Last Ninja | 20 |  | OneLoad64 v5 MultiLoad64: `Last Ninja, The (by $olo1870) [EasyFlash].crt` |
+| The Last Ninja | 22 | fastest level 1 | OneLoad64 v5 MultiLoad64: `Last Ninja, The (by $olo1870) [EasyFlash].crt` |
 | The Way of the Exploding Fist | 10 | yes | OneLoad64 v5: `Way of the Exploding Fist, The.crt` |
 | Thrust | | yes | OneLoad64 v5: `Thrust (J1).crt` |
 | Uridium | 22 | yes | OneLoad64 v5: `Uridium.crt` |

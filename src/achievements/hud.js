@@ -93,6 +93,13 @@ export function boardLabel(title) {
   return (/\(([^)]+)\)\s*$/.exec(title)?.[1] ?? title).toUpperCase();
 }
 
+/** The rcheevos formats that are a time. */
+export const TIME_FORMATS = new Set(['TIME', 'FRAMES', 'TIMESECS', 'MILLISECS', 'SECS', 'MINUTES', 'SECS_AS_MINS']);
+/** The gap to the next player: a time in its board's format, else the points grouped. */
+export function gapText(n, board, format) {
+  return TIME_FORMATS.has(board.format) ? format(Math.abs(n)) : grouped(n);
+}
+
 /** 21130 as "21,130". */
 export function grouped(n) {
   let s = String(Math.round(Math.abs(n)));
@@ -209,7 +216,7 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
   let userId = null;
   let lastRank = 0, lastClimb = -Infinity, pending = 0, counting = 0;
   // What the chase shows, so only a change is written.
-  let shownLabel = 'NOW ', shownValue = '', shownRank = -1, shownWho = null, shownFill = -1, shownGap = '';
+  let shownLabel = 'NOW ', shownValue = '', shownRank = -1, shownWho = null, shownFill = -1, shownGap = '', shownDiff = NaN;
   const result = { rank: 1, next: null, passed: null };
 
   const isGot = (a) => a.unlocked && !arriving.has(a.id);
@@ -265,6 +272,7 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
     board = l;
     lastRank = 0;
     shownWho = null;
+    shownDiff = NaN;
     hud.dataset.chase = l ? 'on' : 'off';
     const name = l && game?.leaderboards.length > 1 ? boardLabel(l.title) : '';
     boardName.textContent = name;
@@ -296,8 +304,8 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
       const from = c.passed ? c.passed.value : board.lowerIsBetter ? null : 0;
       showFill(from == null || c.next.value === from ? 0 : clamp((v - from) / (c.next.value - from), 0, 1));
       showWho(c.next, null);
-      const g = grouped(c.next.value - v);
-      if (g !== shownGap) { shownGap = g; write(gap, g); }
+      const d = c.next.value - v;
+      if (d !== shownDiff) { shownDiff = d; const g = gapText(d, board, formatted); if (g !== shownGap) { shownGap = g; write(gap, g); } }
     } else {
       showFill(1);
       showWho(null, 'TOP OF THE BOARD');
@@ -704,6 +712,7 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
       shownValue = '';
       shownRank = -1;
       shownGap = '';
+      shownDiff = NaN;
       setBoard(game?.leaderboards[0] ?? null);
       if (game) {
         title.textContent = game.title;

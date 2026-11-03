@@ -16,7 +16,8 @@ import { pushEscapeLayer, popEscapeLayer } from '../ui/escape-stack.js';
 import { confirmDialog } from '../ui/dialogs.js';
 import { floatingWindow, resizeHandles, fillsScreen } from '../ui/floating-window.js';
 import { LIMITS } from '../../server/protocol.mjs';
-import { h, renderActivity, renderGames, renderGamePage, renderProfile, gameHead, highScoreScreen, achievementList, playerChip, hallOfFame } from '../achievements/browse.js';
+import { h, renderActivity, renderGames, renderGamePage, renderProfile, highScoreScreen, playerChip, hallOfFame, attractButton, refreshButton } from '../achievements/browse.js';
+import { hudCard, trophyCards, boardsShown, boardChased } from '../achievements/hud-card.js';
 
 const TABS = ['game', 'activity', 'chat', 'games', 'account'];
 const POLL_MS = 30_000;
@@ -86,7 +87,9 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
   let top = null;              // the loaded game's Hall of Fame
   let topUnlocked = -1;        // how many achievements were unlocked when it was fetched
   let loadingStandings = false;
-  const live = new Map();      // leaderboard id → the running score while a game is on
+  const live = new Map();      // leaderboard id → the running score while a game is on, the latest started last
+  // GAME's live parts, found once as it draws: the HUD card, the board it chases, the board in play and its NOW cell.
+  let card = null, chasedId = null, playingId = null, liveCell = null;
   let tab = null;              // the tab chosen in this session; until then, by what is loaded
   let detail = [];             // profiles and game pages opened over the tab, newest last
   let activityScope = 'all';   // 'all' or 'game'
@@ -303,7 +306,8 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     let nextTop = null;
     await Promise.all([
       ...game.leaderboards.map(async (l) => {
-        try { next.set(l.id, await engine.leaderboard(l.id, 5)); } catch { next.set(l.id, { entries: [], players: 0 }); }
+        // All of a board, for the chase to find the next player up; its screen shows the top five.
+        try { next.set(l.id, await engine.leaderboard(l.id, 100)); } catch { next.set(l.id, { entries: [], players: 0 }); }
       }),
       game.achievements.length ? engine.api.top(game.hash, 10).then((t) => { nextTop = t; }, () => { nextTop = { total: game.achievements.length, players: 0, complete: 0, entries: [] }; }) : null,
     ]);
@@ -328,17 +332,32 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     const unlocked = (a) => a.unlocked;
     // A new unlock moves the player in the Hall of Fame: fetch it again.
     if (standingsOf === game.hash && !loadingStandings && game.achievements.filter(unlocked).length !== topUnlocked) loadStandings();
+    // While a board is played only it shows, the latest started of those running; else all of them.
+    playingId = null;
+    for (const id of live.keys()) playingId = id;
+    const shown = boardsShown(game.leaderboards, playingId);
+    const st = (id) => (standingsOf === game.hash ? standings.get(id) ?? null : null);
+    const topFive = (s) => (s ? { ...s, entries: s.entries.slice(0, 5) } : null);
+    // The HUD on top chases the board in play, else one the player has a score on, else the first.
+    const chased = boardChased(game.leaderboards, playingId, (id) => !!st(id)?.me);
+    chasedId = chased?.id ?? null;
+    card = hudCard({
+      game, board: chased, standings: chased ? st(chased.id) : null, live: chased ? live.get(chased.id) ?? null : null,
+      meId: account.user?.id ?? null, format: ctx.format,
+      buttons: [attract ? attractButton(attract) : null, refreshButton(() => Promise.all([loadStandings(), engine.refreshChecks().catch(() => {})]))].filter(Boolean),
+    });
     gameEl.replaceChildren(...[
-      gameHead(ctx, game, game.achievements, unlocked, { attract, refresh: () => Promise.all([loadStandings(), engine.refreshChecks().catch(() => {})]) }),
+      card.el,
       game.notice ? h('p', { class: 'ach-notice', role: 'status' }, game.notice)
         // Softcore play: what it unlocks stays the player's own, until a reset.
         : game.softcore ? h('p', { class: 'ach-notice', role: 'status' }, `Softcore: ${game.softcore}. Nothing counts in public until a reset.`) : null,
       account.user ? null : h('p', { class: 'achievements-note ach-signin-note' }, 'Signed out: sign in to keep what you unlock. ',
         h('button', { type: 'button', class: 'achievements-link', on: { click: () => selectTab('account') } }, 'Sign in')),
-      ...game.leaderboards.map((l) => highScoreScreen(ctx, game.title, l, standingsOf === game.hash ? standings.get(l.id) : null, live.get(l.id) ?? null)),
+      ...shown.map((l) => highScoreScreen(ctx, game.title, l, topFive(st(l.id)), live.get(l.id) ?? null)),
       game.achievements.length ? hallOfFame(ctx, game.title, standingsOf === game.hash ? top : null) : null,
-      ...(game.achievements.length ? [h('h4', { class: 'ach-h' }, 'Your achievements'), achievementList(game.achievements, unlocked, (a) => a.unlockedAt, (a) => a.checking)] : []),
+      ...(game.achievements.length ? [h('h4', { class: 'ach-h' }, 'Trophies'), trophyCards(game.achievements, (a) => a.unlockedAt, (a) => a.checking)] : []),
     ].filter(Boolean));
+    liveCell = playingId != null ? gameEl.querySelector('.ach-screen-live-value') : null;
   }
 
   // ── ACCOUNT ─────────────────────────────────────────────────────────────
@@ -531,12 +550,16 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
      */
     leaderboardEvent({ type, leaderboard, value }) {
       if (type === 'started' || type === 'updated') {
-        const had = live.has(leaderboard.id);
-        live.set(leaderboard.id, value);
+        const id = leaderboard.id, had = live.has(id);
+        if (type === 'started') live.delete(id);   // the latest started goes last
+        live.set(id, value);
         if (win.hidden || currentTab() !== 'game' || detail.length) return;
-        const cell = gameEl.querySelector(`.ach-screen-live[data-board="${leaderboard.id}"] .ach-screen-live-value`);
-        if (had && cell) cell.textContent = ctx.format(value, leaderboard.format);   // the hot path: one text node
-        else renderGame();
+        // A board starting is drawn as the one in play; another running board's score is not shown.
+        if (type === 'started' || !had || !liveCell) { renderGame(); return; }
+        if (id !== playingId) return;
+        // The hot path: the NOW cell's text and the card's chase, written in place.
+        liveCell.firstChild.data = ctx.format(value, leaderboard.format);
+        if (id === chasedId) card.live(value);
         return;
       }
       live.delete(leaderboard.id);

@@ -26,18 +26,21 @@ import { createGamesApi } from './api.js';
  * @param {(e: object) => void} [o.onLeaderboard]  { type: 'started'|'updated'|'canceled'|'submitted', leaderboard, value, result? }
  * @param {(e: object) => void} [o.onSoftcore]     { reason, quiet }: play stopped counting in public, until the next reset
  * @param {(e: object) => void} [o.onNotice]       { title, text }: a set's notice became true, such as a trainer that keeps the game from counting
+ * @param {() => void} [o.onGameOver]              the set's game over became true: a game ended
  * @param {() => void} [o.onSessionLost]           the server no longer knows the session (401): the account should be checked again
  */
-export function createAchievementEngine({ account, base, fetchImpl = (...a) => fetch(...a), loadRc = loadRcheevos, onChange = () => {}, onUnlock = () => {}, onLeaderboard = () => {}, onNotice = () => {}, onSoftcore = () => {}, onSessionLost = () => {}, log = (...a) => console.warn(...a) } = {}) {
+export function createAchievementEngine({ account, base, fetchImpl = (...a) => fetch(...a), loadRc = loadRcheevos, onChange = () => {}, onUnlock = () => {}, onLeaderboard = () => {}, onNotice = () => {}, onGameOver = () => {}, onSoftcore = () => {}, onSessionLost = () => {}, log = (...a) => console.warn(...a) } = {}) {
   let rc = null, rcLoading = null;
-  let game = null;
+  let game = null;               // { hash, id, title, files, achievements, leaderboards, notices, gameOver, notice, unlocked: Map id → when }
   // Why this machine's play no longer counts in public, or null while it is hardcore: a save
   // state was loaded, or a set's notice saw a trainer. Kept until the machine is reset, so a
   // state loaded before its game is found still counts against it.
-  let softcore = null;          // { hash, id, title, files, achievements, leaderboards, notices, notice, unlocked: Map id → when }
+  let softcore = null;
   // A notice runs in rcheevos as an achievement under an id of its own, far
   // above any set's: it is shown, never unlocked or saved, and armed again.
   const NOTICE_BASE = 1_000_000_000;
+  // A set's game over runs the same way, under the one id no notice takes.
+  const GAME_OVER_ID = NOTICE_BASE;
   let active = false;       // rcheevos holds this game's conditions
   const hashes = new WeakMap();   // file bytes → hash, so a medium is hashed once
   const lookups = new Map();      // hash → Promise<game JSON | null>
@@ -140,6 +143,7 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
       const code = rc.activateAchievement(NOTICE_BASE + n.id, n.memaddr);
       if (code !== 0) log(`achievements: a notice does not parse (rcheevos ${code})`);
     }
+    if (game.gameOver && rc.activateAchievement(GAME_OVER_ID, game.gameOver) !== 0) log('achievements: the game over does not parse');
     for (const l of game.leaderboards) {
       const code = rc.activateLeaderboard(l.id, l.definition);
       if (code !== 0) log(`achievements: leaderboard "${l.title}" does not parse (rcheevos ${code})`);
@@ -198,7 +202,7 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
       if (gen !== generation) return;      // the media changed again meanwhile
       if (data === undefined) { retryLater(); return; }
       if (data) {
-        setGame({ hash, slot: f.slot, id: data.game.id, title: data.game.title, files: data.files ?? [], achievements: data.achievements, leaderboards: data.leaderboards, notices: data.notices ?? [], notice: null, unlocked: unlocksOf(data, hash), checking: checkingOf(data) });
+        setGame({ hash, slot: f.slot, id: data.game.id, title: data.game.title, files: data.files ?? [], achievements: data.achievements, leaderboards: data.leaderboards, notices: data.notices ?? [], gameOver: data.gameOver ?? null, notice: null, unlocked: unlocksOf(data, hash), checking: checkingOf(data) });
         return;
       }
     }
@@ -273,6 +277,13 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
     onChange(snapshot());
   }
 
+  /** The game ended: told, and armed again for the next game. */
+  function gameOver() {
+    rc.deactivateAchievement(GAME_OVER_ID);
+    rc.activateAchievement(GAME_OVER_ID, game.gameOver);
+    onGameOver();
+  }
+
   /** Play stops counting in public until the next reset, saying why; `quiet` when a notice already said so. */
   function taint(reason, quiet = false) {
     if (softcore) return;
@@ -290,6 +301,7 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
       notice: game.notice,
       softcore,
       notices: game.notices.map((n) => ({ title: n.title ?? '', text: n.text })),
+      gameOver: !!game.gameOver,
     } : null;
   }
 
@@ -313,7 +325,8 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
       const events = rc.doFrame(ram);
       for (let i = 0; i < events.length; i++) {
         const e = events[i];
-        if (e.type === EVENT.ACHIEVEMENT_TRIGGERED && e.id >= NOTICE_BASE) noticed(e.id - NOTICE_BASE);
+        if (e.type === EVENT.ACHIEVEMENT_TRIGGERED && e.id === GAME_OVER_ID) gameOver();
+        else if (e.type === EVENT.ACHIEVEMENT_TRIGGERED && e.id >= NOTICE_BASE) noticed(e.id - NOTICE_BASE);
         else if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) unlocked(e.id);
         else if (e.type === EVENT.LBOARD_TRIGGERED) submitted(e.id, e.value);
         else if (e.type === EVENT.LBOARD_STARTED || e.type === EVENT.LBOARD_UPDATED || e.type === EVENT.LBOARD_CANCELED) {

@@ -50,14 +50,18 @@ function load(letter, junk = [0x9e, 0xdf, 0xff]) {
   ram[HERE] = letter.charCodeAt(0); ram[NEXT] = LEVELS.charCodeAt((i + 1) % 6); frames(20);
 }
 
-// 1. Every condition parses, the set names the cartridge, and there is no leaderboard (no score).
+// 1. Every condition parses, the set names the cartridge, its one board is a level 1 time (the game keeps
+// no score), and its trophies run in route order.
 {
   const codes = activate();
   codes.forEach((c, i) => expect(c === 0, `"${set.achievements[i].title}" parses (code ${c})`));
   expect(set.hashes.some((h) => h.hash === HASH), 'the set names the MultiLoad64 cartridge');
-  expect(!(set.leaderboards ?? []).length, 'no leaderboard: the game keeps no score');
+  const boards = set.leaderboards ?? [];
+  expect(boards.length === 1 && boards[0].format === 'MILLISECS' && boards[0].lowerIsBetter === true, 'one board: the fastest level 1, lower is better');
+  expect(rc.activateLeaderboard(boards[0].id, boards[0].definition) === 0, 'the board parses');
+  expect(typeof set.gameOver === 'string' && rc.activateAchievement(999, set.gameOver) === 0, 'the game over parses');
   const order = [
-    'The Sword', 'Nunchaku', 'Stepping Stones', 'Now You See Me', 'Throwing Stars',
+    'First Blood', 'The Sword', 'Nunchaku', 'Stepping Stones', 'Marsh Walker', 'Now You See Me', 'Throwing Stars',
     "Dragon's Breath", 'Into the Wilderness', 'Wastelands Survivor', 'Wastelands Sprint',
     'Cliffhanger', 'The Staff', 'Palace Gardens', 'Into the Dungeons', 'The Palace',
     'Inner Sanctum', 'Secret Passage', 'Hound Handler', 'The Final Duel',
@@ -112,8 +116,9 @@ function load(letter, junk = [0x9e, 0xdf, 0xff]) {
   ok('loading junk');
 }
 
-// 6. Stepping Stones: in the Wastelands the river is screen 11 ($A2), between screen 10 and screen 12 on
-// the far bank; the lives are at $9B. Crossing from 10 over 11 to 12 without a life lost unlocks it.
+// 6. Stepping Stones: in the Wastelands the river is screen 11 ($A2), between screen 10 on one bank and
+// screen 12 on the other (as the real game's exits run); the lives are at $9B. Crossing from either bank
+// over 11 to the other without a life lost unlocks it.
 {
   const SCREEN = 0xa2, LIVES = 0x9b;
   const to = (n, f = 10) => { ram[SCREEN] = n; frames(f); };
@@ -125,8 +130,14 @@ function load(letter, junk = [0x9e, 0xdf, 0xff]) {
   fresh(); to(10); to(11); ram[LIVES] = 2; frames(10); to(12);
   expect(!has('Stepping Stones'), 'not when a life is lost on the river, even after reaching the far bank');
 
-  fresh(); to(10); to(11); to(10); to(9); to(12, 2); to(11); to(12);
-  expect(!has('Stepping Stones'), 'not when coming back to the river from the far bank');
+  fresh(); to(12); to(11); to(10);
+  expect(has('Stepping Stones'), 'crossing the other way, from screen 12 over the river to screen 10, unlocks it too');
+
+  fresh(); to(12); to(11); ram[LIVES] = 2; frames(10); to(10);
+  expect(!has('Stepping Stones'), 'not the other way either when a life is lost on the river');
+
+  fresh(); to(12); to(11); to(12);
+  expect(!has('Stepping Stones'), 'not when stepping into the river and back to the same bank');
 
   fresh(); to(10); to(11); to(10); to(11); to(12);
   expect(has('Stepping Stones'), 'turning back and trying again still counts');
@@ -290,20 +301,24 @@ function load(letter, junk = [0x9e, 0xdf, 0xff]) {
   ok('Cliffhanger needs the claw and Wilderness climb');
 }
 
-// 15. The dragon guards Wastelands screen 20. A smoke bomb has a three-use inventory counter at $03FB.
+// 15. The dragon guards Wastelands screen 20. A smoke bomb that reaches it puts it to sleep: the game
+// sets $77 to 5 (its code at $525E), and from then on its fire is held ($5290 skips the breath while
+// $77 is 5). Dragon's Breath unlocks the moment it falls asleep.
 {
-  activate(); load('A'); ram[0x9b] = 3; ram[0x3fb] = 3; ram[0xa2] = 20; frames(5);
-  ram[0x3fb] = 2; frames(5); load('B');
-  expect(has("Dragon's Breath"), 'smoking the dragon then leaving the Wastelands unlocks');
+  activate(); load('A'); ram[0xa2] = 20; frames(5);
+  ram[0x77] = 5; frames(5);
+  expect(has("Dragon's Breath"), 'the dragon falling asleep in screen 20 unlocks it');
 
-  activate(); load('A'); ram[0x3fb] = 3; ram[0xa2] = 19; frames(5);
-  ram[0x3fb] = 2; frames(5); load('B');
-  expect(!has("Dragon's Breath"), 'using a smoke bomb before the dragon does not unlock');
+  activate(); load('A'); ram[0xa2] = 19; frames(5);
+  ram[0x77] = 5; frames(5);
+  expect(!has("Dragon's Breath"), 'the same state in another screen does not');
 
-  activate(); load('A'); ram[0x9b] = 3; ram[0x3fb] = 3; ram[0xa2] = 20; frames(5);
-  ram[0x3fb] = 2; frames(5); ram[0x9b] = 2; frames(5); load('B');
-  expect(!has("Dragon's Breath"), 'losing a life after smoking the dragon cancels the attempt');
-  ok("Dragon's Breath needs the dragon room and completed escape");
+  activate(); load('A'); ram[0x77] = 5; frames(5); ram[0xa2] = 20; frames(5);
+  expect(!has("Dragon's Breath"), 'entering screen 20 with the state already set does not: the dragon has to fall asleep');
+
+  activate(); load('B'); ram[0xa2] = 20; frames(5); ram[0x77] = 5; frames(5);
+  expect(!has("Dragon's Breath"), 'nor on another level');
+  ok("Dragon's Breath: the dragon put to sleep");
 }
 
 // 16. Iron Will starts with the Wastelands and ends with the scroll pickup, with no lost life at any level.
@@ -319,6 +334,85 @@ function load(letter, junk = [0x9e, 0xdf, 0xff]) {
   ram[0xa2] = 15; frames(5); ram[0x77] = 9; ram[0x3f5] = 1; frames(5);
   expect(!has('Iron Will'), 'an extra life does not hide a life lost earlier');
   ok('Iron Will needs a life without loss through the whole game');
+}
+
+// 17. First Blood: $02B9 is the enemy's damage, which the enemy bar is drawn from. It counts up by
+// each blow that lands and the enemy falls at 32. It starts at 0 in each screen.
+{
+  const HURT = 0x2b9;
+  activate(); load('A'); ram[0x9b] = 3; frames(5);
+  for (let d = 2; d < 32; d += 2) { ram[HURT] = d; frames(5); }
+  expect(!has('First Blood'), 'not while the enemy still stands');
+  ram[HURT] = 32; frames(5);
+  expect(has('First Blood'), 'the enemy falling unlocks it');
+
+  activate(); ram[HERE] = 0x85; frames(5); ram[HURT] = 30; frames(5); ram[HURT] = 32; frames(5);
+  expect(!has('First Blood'), 'nor anything at the title');
+  ok('First Blood: an enemy falls');
+}
+
+// 18. Marsh Walker: the Wastelands marsh is screens 15 and 16, between screen 3 and screen 17 (as the
+// game's exit table at $AF00 runs). Crossing from either side to the other without a life lost.
+{
+  const to = (n, f = 10) => { ram[0xa2] = n; frames(f); };
+  const fresh = () => { activate(); load('A'); ram[0x9b] = 3; to(2); };
+  fresh(); to(3); to(15); to(16); to(17);
+  expect(has('Marsh Walker'), 'screen 3 over the marsh to screen 17 unlocks it');
+  fresh(); to(17); to(16); to(15); to(3);
+  expect(has('Marsh Walker'), 'and the other way, screen 17 to screen 3');
+  fresh(); to(3); to(15); to(16); ram[0x9b] = 2; frames(10); to(17);
+  expect(!has('Marsh Walker'), 'not when a life is lost in the marsh');
+  fresh(); to(3); to(15); to(3); to(15, 1); ram[0xa2] = 16; frames(10); to(17);
+  expect(has('Marsh Walker'), 'a step back to screen 3 starts the crossing again');
+  fresh(); to(17); to(16); to(17);
+  expect(!has('Marsh Walker'), 'into the marsh and back is no crossing');
+  activate(); load('B'); ram[0x9b] = 3; to(3); to(15); to(16); to(17);
+  expect(!has('Marsh Walker'), 'nor on another level');
+  ok('Marsh Walker: the marsh crossed');
+}
+
+// 19. Game over: the last life lost ($9B from 1 to 0) puts up GAME OVER. A life lost with more left is no game
+// over, and the title (lives 0) is none.
+{
+  let overs = 0;
+  const run = (n) => { for (let i = 0; i < n; i++) for (const e of rc.doFrame(ram)) if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) overs++; };
+  rc.clear(); ram.fill(0); rc.activateAchievement(1, set.gameOver);
+  ram[HERE] = 0x85; run(20);
+  expect(overs === 0, 'not at the title');
+  ram[HERE] = 0x41; ram[NEXT] = 0x42; ram[0x9b] = 3; run(10); ram[0x9b] = 2; run(10); ram[0x9b] = 1; run(10);
+  expect(overs === 0, 'not while lives are left');
+  ram[0x9b] = 0; run(10);
+  expect(overs === 1, 'the last life lost is game over');
+  ok('game over');
+}
+
+// 20. The speedrun board: from a new game (A loads after the title, or GAME OVER's fire refills the lives
+// from 0) to B loading. Its time is in hundredths (2 a PAL frame). A lost life goes on, game over cancels.
+{
+  const board = set.leaderboards[0];
+  let posted = [], cancels = 0;
+  const run = (n) => { for (let i = 0; i < n; i++) for (const e of rc.doFrame(ram)) { if (e.type === EVENT.LBOARD_TRIGGERED) posted.push(e.value); if (e.type === EVENT.LBOARD_CANCELED) cancels++; } };
+  const fresh = () => { rc.clear(); ram.fill(0); posted = []; cancels = 0; rc.activateLeaderboard(board.id, board.definition); ram[HERE] = 0x85; run(20); };
+  const loadIn = (letter) => { for (const j of [0x9e, 0xdf, 0xff]) { ram[HERE] = j; run(3); } ram[HERE] = letter.charCodeAt(0); ram[NEXT] = LEVELS.charCodeAt((LEVELS.indexOf(letter) + 1) % 6); run(5); };
+  fresh(); loadIn('A'); ram[0x9b] = 3; run(2991); loadIn('B');
+  expect(posted.length === 1 && Math.abs(posted[0] - 6000) <= 40, `a minute in level 1 posts about 1:00.00 (${posted})`);
+  fresh(); loadIn('A'); ram[0x9b] = 3; run(500); ram[0x9b] = 2; run(500); loadIn('B');
+  expect(posted.length === 1, 'a lost life does not stop the run');
+  fresh(); loadIn('A'); ram[0x9b] = 3; run(500); ram[0x9b] = 0; run(20);
+  expect(cancels === 1 && !posted.length, 'game over cancels it');
+  ram[0x9b] = 3; run(991); loadIn('B');
+  expect(posted.length === 1 && Math.abs(posted[0] - 2000) <= 40, `a new game from GAME OVER runs again from its start (${posted})`);
+  ok('the level 1 speedrun board');
+}
+
+// 21. GAME OVER's fire starts a new game in A without A loading again: the lives go from 0 to 3. The runs
+// that start with A start again then.
+{
+  activate(); ram[HERE] = 0x85; frames(5); load('A'); ram[0x9b] = 3; frames(15010);
+  ram[0x9b] = 2; frames(10); ram[0x9b] = 1; frames(10); ram[0x9b] = 0; frames(100);
+  ram[0x9b] = 3; frames(1000); load('B');
+  expect(has('Wastelands Sprint') && has('Wastelands Survivor'), 'a clean, fast game after a GAME OVER in level 1 unlocks Survivor and Sprint');
+  ok('a new game after GAME OVER starts the runs again');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }

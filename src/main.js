@@ -48,7 +48,7 @@ import { initializeAssembly64 } from './assembly64/start.js';
 import { initOnline } from './online/window.js';
 import { createAchievementEngine } from './achievements/engine.js';
 import { createAchToasts } from './achievements/toast.js';
-import { createTrophyHud } from './achievements/hud.js';
+import { createTrophyHud, TIME_FORMATS } from './achievements/hud.js';
 import { createAttract } from './achievements/attract.js';
 import { GAME_ICONS } from './achievements/game-icons.js';
 import { readPlace, savePlace, nextPlace, applyPlace, dragPlace, readVibesPlace, saveVibesPlace, VIBES_MARGIN, readVibesSize, saveVibesSize, applySize, dragSize } from './achievements/toast-place.js';
@@ -2461,11 +2461,12 @@ const _achToasts = createAchToasts({
   },
 });
 const _signIn = () => achievementsPanel?.open('account');
-// A score's title: "Your Score" (or "Your Moves" where fewer is better), and only at first
+// A score's title: "Your Score" (or "Your Time" on a board of times, "Your Moves" where fewer is better), and only at first
 // place the board's: "Hiscore" for a Hiscores board, with its mode ("Hiscore (Game A)"), else its
 // own title ("Fewest Moves"). A game with more boards names the one at the start of the line.
+const _mineTitle = (board) => (TIME_FORMATS.has(board.format) ? 'Your Time' : board.lowerIsBetter ? 'Your Moves' : 'Your Score');
 function _scoreTitles(board, game, first) {
-  const mine = board.lowerIsBetter ? 'Your Moves' : 'Your Score';
+  const mine = _mineTitle(board);
   const several = (game?.leaderboards?.length ?? 0) > 1;
   const mode = several ? (/\(([^)]+)\)\s*$/.exec(board.title)?.[1] ?? board.title) : '';
   const top = board.title.replace(/^Hiscores\b/, 'Hiscore');
@@ -2556,6 +2557,8 @@ achievements = createAchievementEngine({
   },
   // A set's notice, such as a trainer that keeps the game from counting.
   onNotice: ({ title, text }) => _achToasts.show({ kind: 'notice', title: title || text, text: title ? text : '' }),
+  // The set's game over: attract mode shows the boards and trophies.
+  onGameOver: () => { _attract?.gameOver(); },
   // The server no longer knows the session: checking it signs the page out, so the window and the toasts say so.
   onSessionLost: () => { achievementAccount.restore(); },
   onLeaderboard: (e) => {
@@ -2567,7 +2570,7 @@ achievements = createAchievementEngine({
     if (type !== 'submitted') return;
     // Softcore: the score goes on no board.
     if (softcore) {
-      _achToasts.show({ kind: 'score', title: leaderboard.lowerIsBetter ? 'Your Moves' : 'Your Score', text: 'Softcore: not posted.', score: { value, format: (v) => achievements.format(v, leaderboard.format), outcome: 'plain' } });
+      _achToasts.show({ kind: 'score', title: _mineTitle(leaderboard), text: 'Softcore: not posted.', score: { value, format: (v) => achievements.format(v, leaderboard.format), outcome: 'plain' } });
       return;
     }
     const format = (v) => achievements.format(v, leaderboard.format);

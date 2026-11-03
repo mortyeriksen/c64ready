@@ -1607,6 +1607,135 @@
   .model-viewer-hud-ring .fg { transition: none; }
 }
 
+/* ── The trophy HUD at the head of the GAME tab (achievements/hud-card.js) ─
+   The vibes HUD in its box shape, in the window: the same game block, slots
+   and chase, so a player knows it from the 3D view. In the page's theme, so
+   the next slot blinks in the theme's info colour rather than the view's cyan. */
+.ach-hud.ach-hud-card {
+  --ach-hud-cyan: var(--info);
+  position: relative;
+  z-index: auto;
+  width: auto;
+  margin: 0 0 12px;
+  font-size: 12px;
+  cursor: default;
+  touch-action: auto;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.ach-hud-card .ach-hud-in { justify-items: stretch; padding: 0.55em 0.65em 0.65em; }
+.ach-hud-card .ach-hud-words { flex: 1; min-width: 0; }
+.ach-hud-card .ach-hud-title {
+  margin: 0;
+  overflow: hidden;
+  font-size: 1.15em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The slots across the card's width (over the box shape's centring). */
+.ach-hud.ach-hud-card[data-layout] .ach-hud-slots { justify-self: stretch; grid-template-columns: repeat(var(--ach-hud-cols, 7), minmax(0, 1fr)); }
+.ach-hud-card .ach-hud-slot { width: auto; height: auto; aspect-ratio: 1; }
+.ach-hud-card .ach-hud-slot:hover { transform: none; }
+.ach-hud-card .ach-hud-chase { width: auto; }
+/* In the window the next one is marked, and holds still. */
+.ach-hud-card .ach-hud-slot.is-next::after { animation: none; }
+.ach-hud-card .ach-info-btn { font-size: 1rem; }
+
+/* Every trophy, a toast in miniature: unlocked in amber, locked dashed, the next in the info colour. */
+.ach-trophies {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ach-trophy {
+  --ach-ink: var(--amber);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  padding: 0.3em 0.55em 0.35em 0.35em;
+  border: max(1px, 0.13em) solid color-mix(in srgb, var(--ach-ink) 70%, transparent);
+  border-radius: 0.4em;
+  background-color: color-mix(in srgb, var(--ach-ink) 10%, var(--panel-bg));
+  background-image: var(--page-pattern), var(--page-pattern);
+  background-size: var(--page-pattern-size), var(--page-pattern-size);
+  color: var(--text-bright);
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+.ach-trophy::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: var(--ach-ink);
+  opacity: 0.12;
+  mask-image: linear-gradient(180deg, currentColor, transparent 70%);
+}
+.ach-trophy.is-locked {
+  --ach-ink: var(--dim);
+  border-style: dashed;
+  background-color: transparent;
+  background-image: none;
+}
+.ach-trophy.is-locked::before { display: none; }
+.ach-trophy.is-next { --ach-ink: var(--info); }
+.ach-trophy-icon {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.3em;
+  height: 2.3em;
+  border-radius: 0.25em;
+  color: var(--dim);
+  font-size: 0.9em;
+  background: color-mix(in srgb, var(--ach-ink) 18%, color-mix(in srgb, var(--shadow) 30%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ach-ink) 45%, transparent);
+}
+.ach-trophy.is-locked .ach-trophy-icon { background: transparent; }
+.ach-trophy.is-got .ach-trophy-icon::before {
+  content: "";
+  position: absolute;
+  inset: 0.25em;
+  background: var(--ach-ink);
+  mask: var(--ach-hud-trophy, none) center / 100% 100% no-repeat;
+}
+/* The next one's frame, in the info colour. */
+.ach-trophy.is-next .ach-trophy-icon { color: var(--info); box-shadow: inset 0 0 0 1px var(--info); }
+.ach-trophy-words { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ach-trophy-words b { font-weight: normal; }
+.ach-trophy-words > span:not(.sr-only):not(.ach-checking) { color: var(--text); font-size: 0.92em; }
+.ach-trophy.is-locked .ach-trophy-words b { color: var(--text); }
+.ach-trophy.is-locked .ach-trophy-words > span:not(.sr-only) { color: var(--dim); }
+.ach-trophy-words em { color: var(--ach-ink); font-size: 0.85em; }
+.ach-trophy-pts {
+  flex: none;
+  padding: 0.05em 0.45em;
+  border-radius: 1em;
+  background: var(--ach-ink);
+  color: var(--button-ink);
+  font-size: 0.85em;
+  font-weight: bold;
+}
+.ach-trophy.is-locked .ach-trophy-pts { background: transparent; color: var(--dim); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dim) 60%, transparent); }
+.ach-trophy.is-next .ach-trophy-pts { background: transparent; color: var(--info); box-shadow: inset 0 0 0 1px var(--info); }
+.ach-trophy-tag {
+  position: absolute;
+  top: -0.65em;
+  right: 3.2em;
+  padding: 0.1em 0.4em;
+  border-radius: 0.2em;
+  background: var(--info);
+  color: var(--button-ink);
+  font-size: 0.6em;
+  letter-spacing: 0.08em;
+}
+
 /* ── Attract mode (achievements/attract.js) ────────────────────────────────
    After a posted score, the game's high-score screen cycles as an arcade's
    does between games, centered over the whole window, the page or the vibes

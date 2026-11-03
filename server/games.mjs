@@ -6,7 +6,7 @@
 // server/sets/, loaded at start; conditions are rcheevos strings, evaluated by
 // the app.
 //
-//   GET  /api/games/:hash                             → { game, files, achievements, leaderboards, unlocked, unlocks, notices }
+//   GET  /api/games/:hash                             → { game, files, achievements, leaderboards, unlocked, unlocks, notices, gameOver? }
 //   POST /api/games/:hash/unlocks                     { achievementId, hardcore } → { ok, new, flagged? }
 //   POST /api/games/:hash/leaderboards/:id/entries    { value, hardcore }         → { best, rank, improved, previous, previousRank, players, flagged? } or { softcore }
 //   GET  /api/games/:hash/leaderboards/:id[?limit=N]  → { leaderboard, entries, players, me }
@@ -93,6 +93,8 @@ export function checkSet(set, where = 'set') {
     nSeen.add(n.id);
     if (!text(n.title, 40) || !text(n.text, 200) || !text(n.memaddr, 4096)) fail(`notice ${n.id} needs a title, a text and a memaddr`);
   }
+  // Game over: true when a game ends, scored or not, so the app can show the boards and trophies.
+  if (set.gameOver !== undefined && !text(set.gameOver, 4096)) fail('gameOver must be a memaddr');
   // A page about the game elsewhere, linked from its page in the app.
   if (set.url !== undefined && !/^https:\/\/[^\s]{1,200}$/.test(set.url)) fail('url must be an https address');
   return set;
@@ -119,8 +121,8 @@ export function loadSets(db, dir, log = () => {}) {
     db.exec('BEGIN');
     try {
       const notices = set.notices?.length ? JSON.stringify(set.notices.map((n) => ({ id: n.id, title: n.title, text: n.text, memaddr: n.memaddr }))) : null;
-      db.prepare('INSERT INTO games (id, title, source, notices, url) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET title = excluded.title, source = excluded.source, notices = excluded.notices, url = excluded.url')
-        .run(set.id, set.title, set.source ?? null, notices, set.url ?? null);
+      db.prepare('INSERT INTO games (id, title, source, notices, url, game_over) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET title = excluded.title, source = excluded.source, notices = excluded.notices, url = excluded.url, game_over = excluded.game_over')
+        .run(set.id, set.title, set.source ?? null, notices, set.url ?? null, set.gameOver ?? null);
       for (const t of ['game_hashes', 'achievements', 'leaderboards']) db.prepare(`DELETE FROM ${t} WHERE game_id = ?`).run(set.id);
       const addHash = db.prepare('INSERT INTO game_hashes (hash, game_id, label) VALUES (?, ?, ?)');
       for (const h of set.hashes) addHash.run(h.hash, set.id, h.label ?? null);
@@ -162,7 +164,7 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser, fair
     topComplete: db.prepare(`SELECT COUNT(*) AS n FROM (${POINTS}) WHERE unlocked = ?`),
     lastScore: db.prepare("SELECT id, at FROM activity WHERE user_id = ? AND game_id = ? AND kind = 'score' AND ref = ? ORDER BY id DESC LIMIT 1"),
     raiseScore: db.prepare('UPDATE activity SET value = ? WHERE id = ?'),
-    gameByHash: db.prepare('SELECT g.id, g.title, g.notices, g.url FROM game_hashes h JOIN games g ON g.id = h.game_id WHERE h.hash = ?'),
+    gameByHash: db.prepare('SELECT g.id, g.title, g.notices, g.url, g.game_over FROM game_hashes h JOIN games g ON g.id = h.game_id WHERE h.hash = ?'),
     achievements: db.prepare('SELECT id, title, description, points, memaddr FROM achievements WHERE game_id = ? ORDER BY sort'),
     achievement: db.prepare('SELECT id, title, points, score_at FROM achievements WHERE game_id = ? AND id = ?'),
     // Score milestones at or under a value that the account has not unlocked (any unlock counts, flagged or not).
@@ -292,6 +294,7 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser, fair
         // The account's own, with a flagged one marked as being checked (and not why).
         unlocks: mine.map((r) => ({ id: r.achievement_id, at: r.unlocked_at, ...(r.flag ? { checking: true } : {}) })),
         notices: g.notices ? JSON.parse(g.notices) : [],
+        ...(g.game_over ? { gameOver: g.game_over } : {}),
       };
     },
     'POST /api/games/:hash/unlocks'(body, req, { hash }) {

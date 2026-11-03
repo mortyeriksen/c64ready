@@ -42,6 +42,7 @@ write('demo.json', {
     { id: 1, title: 'High Score', description: 'Most points.', format: 'SCORE', lowerIsBetter: false, definition: 'STA:0=1::CAN:0=1::SUB:0=1::VAL:0xH0020' },
     { id: 2, title: 'Fastest', description: 'Least time.', format: 'FRAMES', lowerIsBetter: true, definition: 'STA:0=1::CAN:0=1::SUB:0=1::VAL:0xH0021' },
   ],
+  gameOver: '0xH0022=0',
 });
 
 let clock = 1_700_000_000_000;
@@ -93,6 +94,7 @@ const open = (who, hash = HASH) => api('GET', `/api/games/${hash}`, { token: who
   expect(bad({ leaderboards: [{ id: 1, title: 'L', description: 'l', format: 'SCORE', definition: 'VAL:1' }] }), 'a leaderboard needs STA, CAN, SUB and VAL');
   expect(bad({ achievements: [{ id: 1, title: 'A', description: 'a', memaddr: '1=1', score: -5 }] }), 'a milestone score is a whole number above 0');
   expect(bad({ achievements: [{ id: 1, title: 'A', description: 'a', memaddr: '1=1', score: 100 }], leaderboards: [{ id: 1, title: 'L', description: 'l', format: 'VALUE', lowerIsBetter: true, definition: 'STA:1::CAN:1::SUB:1::VAL:1' }] }), 'milestones need a board where higher is better');
+  expect(bad({ gameOver: 5 }) && bad({ gameOver: '' }) && !bad({ gameOver: '0xH0020=0' }), 'a game over, when a set has one, is a memaddr');
   expect(bad({ url: 'http://example.com/x' }) && bad({ url: 'javascript:alert(1)' }) && !bad({ url: 'https://example.com/x' }), 'a url, when a set has one, is an https address');
   ok('set files are checked');
 }
@@ -108,6 +110,7 @@ const open = (who, hash = HASH) => api('GET', `/api/games/${hash}`, { token: who
   const g2 = await api('GET', `/api/games/${HASH2}`);
   expect(g2.status === 200 && g2.body.game.id === 'demo', 'every hash a set lists finds the same game');
   expect(g.body.game.url === 'https://example.com/demo-game', 'and the game carries its set\'s url');
+  expect(g.body.gameOver === '0xH0022=0', 'and its game over');
   expect((await api('GET', `/api/games/${OTHER}`)).status === 404, 'an unknown hash is not a game');
   expect((await api('GET', '/api/games/nothex')).status === 400, 'a malformed hash is refused');
   ok('games are found by hash');

@@ -105,7 +105,8 @@ server starts. A file names the game, the MD5 of each file version it is for
 (the rcheevos hash of a C64 file), and its achievements and leaderboards as
 rcheevos condition strings. A set may also have `notices`: a text and a
 condition each, shown to the player when the condition becomes true, such as a
-trainer that keeps the game from counting. `checkSet()` in
+trainer that keeps the game from counting, and a `gameOver` condition, true
+when a game ends, which opens attract mode for a game whose end posts no score. `checkSet()` in
 [`games.mjs`](games.mjs) says what a set must contain, and refuses one that does
 not. Restarting with a changed set
 keeps everyone's unlocks and scores: they are kept by the game's id and each

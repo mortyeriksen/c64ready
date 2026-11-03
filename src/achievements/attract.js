@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 // src/achievements/attract.js — attract mode, centered over the whole window:
-// the page dimmed behind it, or the vibes view while that is open. When a
-// game's score is posted, as at game over, its high-score screen cycles the
+// the page dimmed behind it, or the vibes view while that is open. When a game
+// ends (its set's game over, or else its score posted), its high-score screen cycles the
 // way an arcade cabinet's does between games: each board, the Hall of Fame and the
 // player's trophies, a page at a time. It switches on like a CRT, a page's
 // title cycles the C64's colours over raster bars, and its rows are PRINTed a
@@ -47,13 +47,12 @@ export function fameRows(top, user, limit = ROWS) {
 }
 
 /**
- * The pages for a game: each board with scores on it, and always the one just
- * played (with none of either, the first, to say there are none yet), then the
- * Hall of Fame and the trophies when it has achievements.
+ * The pages for a game: after a game, the board just played and no other, as
+ * OutRun's route A without the other routes; opened from the GAME tab, every
+ * board. Then the Hall of Fame and the trophies when it has achievements.
  */
 export function attractPages(game, { boards = new Map(), fame = null, played = null } = {}) {
-  let shown = game.leaderboards.filter((l) => l.id === played || boards.get(l.id)?.entries?.length);
-  if (!shown.length) shown = game.leaderboards.slice(0, 1);
+  const shown = played != null ? game.leaderboards.filter((l) => l.id === played) : game.leaderboards;
   const pages = shown.map((l) => ({ kind: 'board', board: l, standings: boards.get(l.id) ?? null }));
   if (game.achievements.length) {
     if (fame?.entries?.length) pages.push({ kind: 'fame', top: fame });
@@ -87,6 +86,7 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
   let root = null, panel = null, screen = null, bar = null;
   let pages = [], page = -1, gen = 0, game = null, posted = null;
   let waiting = 0;                 // the settle timer, while waiting for the score's toast to go
+  let last = null, lastGame = null;   // the board news of the game in play: the board played, and its score when posted
   let cycling = 0, cycleStep = 0, letters = null, shown = null;   // the title's colour cycle: half-steps, and each letter's colour
   const timers = new Set();
   const later = (ms, fn) => { const t = setTimeout(() => { timers.delete(t); fn(); }, ms); timers.add(t); return t; };
@@ -252,7 +252,7 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
     const lines = p.kind === 'board'
       ? boardRows(p.standings, user).map((r) => (r ? { cls: rowClass(r), cells: [ordinal(r.rank).toUpperCase(), r.name, fmt(r.value)] } : null))
       : fameRows(p.top, user).map((r) => (r ? { cls: rowClass(r), cells: [ordinal(r.rank).toUpperCase(), r.name, `${r.points} PTS`], star: r.complete } : null));
-    if (p.kind === 'board' && posted?.leaderboard?.id === p.board.id) {
+    if (p.kind === 'board' && posted?.type === 'submitted' && posted.leaderboard?.id === p.board.id) {
       // The score just played, under the board.
       const tag = posted.softcore ? ' SOFTCORE' : posted.result?.improved ? ' NEW BEST!' : '';
       lines.push({ cls: 'is-blank', cells: ['', '', ''] }, { cls: 'is-you', cells: ['YOU', `${user?.name ?? 'PLAYER'}${tag}`, fmt(posted.value)] });
@@ -371,14 +371,25 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
     setTimeout(() => r.remove(), 260);
   }
 
-  /** A leaderboard's news (engine onLeaderboard): a posted score opens attract mode, the next attempt ends it. */
+  const ready = () => !!host() && !!engine()?.enabled;
+  /**
+   * A leaderboard's news (engine onLeaderboard): the next attempt ends attract
+   * mode, and a posted score opens it, unless the set says when its game is over.
+   */
   function leaderboardEvent(e) {
+    const g = engine()?.game;
+    if (e.type === 'started' || e.type === 'submitted') { last = e; lastGame = g?.hash ?? null; }
     if (e.type === 'started') { cancel(); if (root) close(); return; }
-    if (e.type === 'submitted' && host() && engine()?.enabled) schedule(e);
+    if (e.type === 'submitted' && ready() && !g?.gameOver) schedule(e);
+  }
+  /** The set's game over (engine onGameOver): attract mode opens on the board last played, if any. */
+  function gameOver() {
+    if (!ready() || root || waiting) return;
+    schedule(last && lastGame === engine().game?.hash ? last : null);
   }
 
   // Opening or closing the vibes view ends it: its place is gone.
   if (watch) new MutationObserver(() => { cancel(); if (root) close(); }).observe(watch, { attributes: true, attributeFilter: ['hidden'] });
 
-  return { leaderboardEvent, open, close, isOpen: () => !!root };
+  return { leaderboardEvent, gameOver, open, close, isOpen: () => !!root };
 }

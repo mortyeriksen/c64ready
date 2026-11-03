@@ -1,8 +1,9 @@
 // Attract mode (src/achievements/attract.js) in a browser, against a stub
 // engine: a posted score opens it once the score's toast has gone, centered
-// over the whole window (the vibes view while open, else the page), its first
-// page is the board just played, boards nobody has scored on are left out,
-// the pages turn on their own even with the pointer resting on it, and Space
+// over the whole window (the vibes view while open, else the page), it shows
+// the board just played and no other (OutRun's route C, not its other routes),
+// the pages turn on their own even with the pointer resting on it, a set with a
+// game over opens it then and not on a posted score, and Space
 // (kept from the C64), the next game or a click beside it ends it. Esc does not.
 //
 // Needs Playwright's Chromium; without it it reports a SKIP.
@@ -104,6 +105,7 @@ try {
       none: none.length,
       fame: fame.map((r) => (r ? (r.me ? 'me' : r.rank) : 'gap')).join(','), star: fame[0].complete,
       pages: m.attractPages(g, { boards, fame: { entries }, played: 3 }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
+      anyTime: m.attractPages(g, { boards, fame: { entries } }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
       noAch: m.attractPages({ leaderboards: [{ id: 1 }], achievements: [] }, { boards, played: 1 }).map((p) => p.kind).join(','),
       noScores: m.attractPages({ leaderboards: [{ id: 2 }, { id: 3 }], achievements: [{}] }, { boards }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
     };
@@ -113,9 +115,10 @@ try {
   expect(rules.below === '1,2,3,4,5,6,7,8,gap,me14', `further down: the top eight, a gap and their own row at the end (${rules.below})`);
   expect(rules.none === 10, 'signed out, the top ten');
   expect(rules.fame === '1,2,3,4,5,6,7,8,gap,me' && rules.star, `the Hall of Fame the same way, a star for a finished set (${rules.fame})`);
-  expect(rules.pages === 'b1,b3,fame,trophies', `boards with scores and the one just played, then the Hall of Fame and the trophies (${rules.pages})`);
+  expect(rules.pages === 'b3,fame,trophies', `after a game, the board just played and no other, then the Hall of Fame and the trophies (${rules.pages})`);
+  expect(rules.anyTime === 'b1,b2,b3,fame,trophies', `opened from the GAME tab, every board (${rules.anyTime})`);
   expect(rules.noAch === 'board', 'a game with only a board has only its page');
-  expect(rules.noScores === 'b2,trophies', `with no scores anywhere and none just played, the first board still shows, to say so (${rules.noScores})`);
+  expect(rules.noScores === 'b2,b3,trophies', `boards with no scores yet show too, to say so (${rules.noScores})`);
   ok('rows and pages');
 
   // 2. A posted score opens it once the score's toast has gone, on the C64's screen.
@@ -172,8 +175,8 @@ try {
   await turning.page.mouse.move(600, 400);
   await wait(turning.page, 7500);
   const seen = await turning.page.evaluate(() => window.titles);
-  expect(seen.slice(0, 5).join(',') === 'Route C,Hall of fame,Trophies,Route A,Route B', `it turns through the pages in order, the pointer on it (${seen})`);
-  expect(!seen.includes('Route D') && !seen.includes('Route E'), 'the routes nobody has scored on are left out');
+  expect(seen.slice(0, 4).join(',') === 'Route C,Hall of fame,Trophies,Route C', `it turns through the pages in order, the pointer on it (${seen})`);
+  expect(!seen.some((t) => /^Route [ABDE]$/.test(t)), `after a game on route C, no other route shows (${seen})`);
   ok('the pages turn');
   await turning.context.close();
 
@@ -214,6 +217,21 @@ try {
   await wait(page, 400);
   expect(!(await isOpen(page)), 'closing the view ends it');
   ok('in the vibes view while it is open');
+
+  // 6b. A set with a game over: a posted score, as of a level's time, opens nothing; game over opens it on the board last played.
+  await page.evaluate(() => { window.engine.game = { ...window.G, gameOver: true }; window.attract.leaderboardEvent(window.posted); });
+  await wait(page, 1500);
+  expect(!(await isOpen(page)), 'a posted score opens nothing while the game goes on');
+  await page.evaluate(() => { window.attract.leaderboardEvent({ type: 'started', leaderboard: window.G.leaderboards[0], value: 0 }); window.attract.gameOver(); });
+  await page.waitForFunction(() => window.attract.isOpen(), null, { timeout: 5000 }).catch(() => {});
+  expect(await isOpen(page), 'game over opens it');
+  await wait(page, 600);
+  const over = await page.evaluate(() => ({ pages: document.querySelectorAll('.ach-attract-page').length, title: document.querySelector('.ach-attract-title')?.getAttribute('aria-label'), you: !!document.querySelector('.ach-attract-row.is-you') }));
+  expect(over.pages === 3 && over.title === 'Route A', `on the board last played, then the Hall of Fame and trophies (${over.pages} pages, first ${over.title})`);
+  expect(!over.you, 'no score of the player\'s under a board not posted to');
+  await page.evaluate(() => { window.attract.close(); window.engine.game = window.G; });
+  await wait(page, 400);
+  ok('a set with a game over');
 
   // 7. With achievements off, nothing.
   await page.evaluate(() => { window.engine.enabled = false; window.attract.leaderboardEvent(window.posted); });

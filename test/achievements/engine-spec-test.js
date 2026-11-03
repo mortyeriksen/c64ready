@@ -8,7 +8,8 @@
 // different file without a set ends it, and the game is the one being played:
 // a cartridge with a set, else the medium put in last. A file without a set never leaves the browser: only the list
 // of games is fetched, and matched here. Results not saved yet belong to the
-// account that earned them. RAM is synthesized frame by frame.
+// account that earned them. A set's game over is told each time a game ends. RAM
+// is synthesized frame by frame.
 
 import http from 'node:http';
 import crypto from 'node:crypto';
@@ -48,6 +49,7 @@ fs.writeFileSync(path.join(sets, 'demo.json'), JSON.stringify({
     { id: 3, title: 'Next Step', description: 'Step from 1 to 2.', points: 5, memaddr: '0xH0013=2_d0xH0013=1' },
   ],
   notices: [{ id: 1, title: 'Cheat on', text: 'Nothing counts.', memaddr: '0xH0014=1' }],
+  gameOver: '0xH0015=1',
   leaderboards: [{ id: 1, title: 'High Score', description: 'Most points.', format: 'VALUE', lowerIsBetter: false,
     definition: 'STA:0xH0012=1_d0xH0012=0::CAN:0=1::SUB:0xH0012=0_d0xH0012=1::VAL:0xH0011' }],
 }));
@@ -73,8 +75,9 @@ db.prepare('INSERT INTO sessions (token_hash, user_id, created_at, expires_at, l
 
 const account = { token, user: { id: userId, name: 'Ann' } };
 const unlocks = [], boards = [], notices = [], softs = [];
+let overs = 0;
 const asked = [];   // every URL the engine fetched
-const engine = createAchievementEngine({ account, base, fetchImpl: (url, o) => { asked.push(String(url)); return fetch(url, o); }, onUnlock: (e) => unlocks.push(e), onLeaderboard: (e) => boards.push(e), onNotice: (e) => notices.push(e), onSoftcore: (e) => softs.push(e.reason), log: () => {} });
+const engine = createAchievementEngine({ account, base, fetchImpl: (url, o) => { asked.push(String(url)); return fetch(url, o); }, onUnlock: (e) => unlocks.push(e), onLeaderboard: (e) => boards.push(e), onNotice: (e) => notices.push(e), onGameOver: () => { overs++; }, onSoftcore: (e) => softs.push(e.reason), log: () => {} });
 const ram = new Uint8Array(0x10000);
 const frames = (n) => { for (let i = 0; i < n; i++) engine.frame(ram); };
 const settle = () => new Promise((r) => setTimeout(r, 50));
@@ -153,6 +156,21 @@ const settle = () => new Promise((r) => setTimeout(r, 50));
   expect(notices.length === 2, 'and it is told again the next time it comes true');
   ram[0x14] = 0; frames(1);
   ok('notices');
+}
+
+// 4b2. A set's game over: told each time a game ends, and neither an achievement nor a notice.
+{
+  unlocks.length = 0; notices.length = 0;
+  expect(engine.game.gameOver === true, 'the game says it has a game over');
+  ram[0x15] = 1; frames(3);
+  expect(overs === 1, `told when it comes true (${overs})`);
+  frames(5);
+  expect(overs === 1, 'once, while it stays true');
+  expect(!unlocks.length && !notices.length, 'no unlock and no notice');
+  ram[0x15] = 0; frames(2); ram[0x15] = 1; frames(2);
+  expect(overs === 2, 'and told again at the next game over');
+  ram[0x15] = 0; frames(1);
+  ok('game over');
 }
 
 // 4c. Hardcore: a notice or a loaded save state makes play softcore, said once, until a reset.

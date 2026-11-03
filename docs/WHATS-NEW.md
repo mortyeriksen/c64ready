@@ -16,6 +16,11 @@ The version you are running is shown at the bottom of the About dialog.
   a bar, a column or a pill.
 - **Attract mode.** When a game ends, its high scores, Hall of Fame and trophies
   cycle across the window, as on an arcade cabinet.
+- **A new GAME tab.** The Achievements window opens with the trophy HUD from
+  Retro Vibes, and while you play a board only that board's high scores show.
+- **The Last Ninja.** Trophies for a first kill and for crossing the marsh, a
+  board for the fastest level 1, and attract mode at GAME OVER. Stepping Stones
+  and Dragon's Breath now unlock as they should.
 - **Commando Arcade.** Nostalgia's universal disk now shares the cartridge's
   achievements and high scores.
 

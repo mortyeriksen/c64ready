@@ -94,16 +94,19 @@ try {
   // A game with achievements opens the window on its GAME tab by itself.
   await game.locator('h3', { hasText: 'Uridium' }).waitFor({ timeout: 15_000 });
   expect(await page.locator('#online-window').isVisible() && await page.locator('#online-tab-game').getAttribute('aria-selected') === 'true', 'loading the game opens the window on its achievements');
-  const items = await game.locator('.achievements-list li').count();
-  const summary = await game.locator('.ach-progress').textContent();
-  expect(items === 22, `the dialog lists Uridium's 22 achievements (got ${items})`);
-  expect(/^0 of 22 unlocked0 of \d+ points$/.test(summary), `with the count unlocked (got "${summary}")`);
-  expect(await game.locator('.ach-meter span').count() === 22 && await game.locator('.ach-meter span.is-lit').count() === 0, 'and a meter cell per achievement, none lit');
+  // The trophy HUD heads the tab, as in Retro Vibes: a slot per achievement, the count, the chase.
+  const items = await game.locator('.ach-trophies li').count();
+  const summary = await game.locator('.ach-hud-card .ach-hud-words small').textContent();
+  expect(items === 22, `the tab shows every one of Uridium's 22 trophies (got ${items})`);
+  expect(/^0 \/ \d+ pts · 0 of 22$/.test(summary), `with the points and the count unlocked (got "${summary}")`);
+  expect(await game.locator('.ach-hud-card .ach-hud-slot').count() === 22 && await game.locator('.ach-hud-card .ach-hud-slot.is-got').count() === 0, 'and a HUD slot per achievement, none lit');
+  expect(await game.locator('.ach-hud-card .ach-hud-slot.is-next').count() === 1 && await game.locator('.ach-trophies li.is-next').count() === 1, 'the next one to get is marked, in the HUD and in the list');
+  expect(await game.locator('.ach-hud-card .ach-hud-chase').count() === 1, 'and the chase of the board');
   const head = await game.locator('.ach-screen:not(.ach-fame) .ach-screen-head span').allTextContents();
   expect(head.length === 1 && head[0] === 'Hiscores', `and its high-score screen, headed HISCORES alone, since the game is named above it (got ${JSON.stringify(head)})`);
   await game.locator('.ach-screen-foot', { hasText: /NO SCORES YET|PLAYER/ }).first().waitFor({ timeout: 10_000 });
-  // The title line's high-score screen button, left of refresh, shows attract mode over the window. Space continues.
-  const titleButtons = await game.locator('.ach-game-top button').evaluateAll((bs) => bs.map((b) => (b.classList.contains('ach-attract-btn') ? 'attract' : b.classList.contains('ach-refresh-btn') ? 'refresh' : 'other')));
+  // The HUD's high-score screen button, left of refresh, shows attract mode over the window. Space continues.
+  const titleButtons = await game.locator('.ach-hud-card .ach-hud-id button').evaluateAll((bs) => bs.map((b) => (b.classList.contains('ach-attract-btn') ? 'attract' : b.classList.contains('ach-refresh-btn') ? 'refresh' : 'other')));
   expect(titleButtons.join() === 'attract,refresh', `the high-score screen's button sits left of refresh (got ${titleButtons})`);
   await game.locator('.ach-attract-btn').click();
   const shown = await page.locator('body > .ach-attract .ach-attract-title').waitFor({ timeout: 10_000 }).then(() => true, () => false);
@@ -118,10 +121,10 @@ try {
   // 3. The machine runs the game with the engine reading every frame.
   await page.waitForTimeout(6000);
   await page.click('#btn-online');
-  const after = await game.locator('.ach-progress').textContent();
+  const after = await game.locator('.ach-hud-card .ach-hud-words small').textContent();
   await page.click('#btn-online-close');
   expect(errors.length === 0, `no page errors while the game runs (got ${errors.slice(0, 2).join(' | ')})`);
-  expect(after.startsWith('0 of 22 unlocked'), `with nobody playing, nothing unlocks (got "${after}")`);
+  expect(after.endsWith('0 of 22'), `with nobody playing, nothing unlocks (got "${after}")`);
   ok('the game runs with achievements armed');
 
   // 3b. Options ▸ Other ▸ ACHIEVEMENTS off lets the game go and says so; on finds it again.
@@ -132,8 +135,8 @@ try {
   await page.click('#online-tab-game');
   expect(await game.locator('.ach-game-title').first().textContent() === 'Achievements are off', 'the GAME tab says achievements are off, with the game still loaded');
   expect(await toggle() === 'ACHIEVEMENTS: ON', 'and back on');
-  await game.locator('.ach-progress').waitFor({ timeout: 10_000 }).catch(() => {});
-  expect(/unlocked/.test(await game.locator('.ach-progress').textContent().catch(() => '')), 'turning them on finds the loaded game again');
+  await game.locator('.ach-hud-card').waitFor({ timeout: 10_000 }).catch(() => {});
+  expect(/of 22/.test(await game.locator('.ach-hud-card .ach-hud-words small').textContent().catch(() => '')), 'turning them on finds the loaded game again');
   await page.click('#btn-online-close');
   ok('achievements turn off and on from Options');
 

@@ -166,16 +166,16 @@ export function gameHead(ctx, game, achievements, isUnlocked, { link = false, ve
     progress(got.length, achievements.length, pts(got), pts(achievements)));
 }
 
-// Shows the game's high-score screen as attract mode cycles it after a game (attract.js).
-function attractButton(show) {
+/** Shows the game's high-score screen as attract mode cycles it after a game (attract.js). */
+export function attractButton(show) {
   return h('button', {
     type: 'button', class: 'ach-info-btn ach-attract-btn', 'aria-label': 'Show the high-score screen', title: 'Show the high-score screen',
     on: { click: () => show() },
   }, icon(['M3 4h18v12H3z', 'M8 20h8M12 16v4', 'M7 8h6M7 11h10'], 18));
 }
 
-// Fetches the game's standings and checks again, spinning until they are in.
-function refreshButton(refresh) {
+/** Fetches the game's standings and checks again, spinning until they are in. */
+export function refreshButton(refresh) {
   return h('button', {
     type: 'button', class: 'ach-info-btn ach-refresh-btn', 'aria-label': 'Refresh', title: 'Refresh',
     on: { click: async (e) => {

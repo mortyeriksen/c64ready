@@ -167,6 +167,8 @@ const MIGRATIONS = [
    UPDATE lb_entries SET hardcore = 1;`,
   // A score milestone, from its set: the score an achievement stands for on the game's boards.
   `ALTER TABLE achievements ADD COLUMN score_at INTEGER;`,
+  // A set's game over: the condition that ends a game, which opens attract mode.
+  `ALTER TABLE games ADD COLUMN game_over TEXT;`,
 ];
 
 /** The schema version a fully migrated database records. */
