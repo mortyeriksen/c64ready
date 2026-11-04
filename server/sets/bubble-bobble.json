@@ -63,7 +63,7 @@
       "title": "Clean Start",
       "description": "Clear round 1 without losing a life.",
       "points": 10,
-      "memaddr": "R:0xH045a<d0xH045a_N:0xH0010=0_N:0xH045a=3_N:0xH0400=0_N:0xH0401=0_0xH0402=0.1._d0xH0010=0_0xH0010>0_0xH0010<100"
+      "memaddr": "R:0xH045a<d0xH045a_N:0xH0010=0_N:0xH045a=3_N:0xH0400=0_N:0xH0401=0_0xH0402=0.1._T:d0xH0010=0_T:0xH0010>0_T:0xH0010<100"
     },
     {
       "id": 9,

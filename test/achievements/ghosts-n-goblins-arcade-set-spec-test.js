@@ -33,6 +33,7 @@ const D64_HASH = '804e0058ddaf0432943c257e3da545b9';
 const LEVEL = 0x78d, MINUTES = 0x7f3, LIVES = 0x7f2, SCORE = 0x7f0, LOST = 0x7eb, TRAINER = 0x5ba5;
 const NOTICE_ID = 1_000_000_001;
 const unlocked = new Set(), boards = [], notices = [];
+const primed = new Set();   // challenges that can still be earned (rcheevos PRIMED, until UNPRIMED)
 
 function score(shown) {
   const digits = String(shown / 100).padStart(4, '0');
@@ -41,7 +42,7 @@ function score(shown) {
 }
 function activate() {
   rc.clear(); ram.fill(0); ram[TRAINER] = 205;
-  unlocked.clear(); boards.length = 0; notices.length = 0;
+  unlocked.clear(); primed.clear(); boards.length = 0; notices.length = 0;
   const achievements = set.achievements.map((a) => rc.activateAchievement(a.id, a.memaddr));
   const leaderboard = rc.activateLeaderboard(set.leaderboards[0].id, set.leaderboards[0].definition);
   const notice = rc.activateAchievement(NOTICE_ID, set.notices[0].memaddr);
@@ -51,7 +52,8 @@ function frame() {
   for (const e of rc.doFrame(ram)) {
     if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) {
       if (e.id === NOTICE_ID) notices.push({ ...e }); else unlocked.add(e.id);
-    } else if ([EVENT.LBOARD_STARTED, EVENT.LBOARD_CANCELED, EVENT.LBOARD_TRIGGERED].includes(e.type)) boards.push({ ...e });
+    } else if (e.type === EVENT.ACHIEVEMENT_PRIMED) primed.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_UNPRIMED) primed.delete(e.id); else if ([EVENT.LBOARD_STARTED, EVENT.LBOARD_CANCELED, EVENT.LBOARD_TRIGGERED].includes(e.type)) boards.push({ ...e });
   }
 }
 function frames(n) { for (let i = 0; i < n; i++) frame(); }
@@ -171,6 +173,22 @@ const events = (type) => boards.filter((e) => e.type === type);
   ram[LIVES] = 1; ram[LOST] = 1; frames(2);
   expect(events(EVENT.LBOARD_TRIGGERED).length === 0, 'a canceled run never submits');
   ok('trainer activation cancels a running score');
+}
+
+// Not a Scratch is a challenge: live in level one with every life, out when one is lost.
+{
+  const t = ids['Not a Scratch'];
+  activate(); title();
+  expect(!primed.has(t), 'not live on the title');
+  start();
+  expect(primed.has(t), 'live as a game starts');
+  ram[LOST] = 1; ram[LIVES] = 4; frames(3);
+  expect(!primed.has(t) && !has('Not a Scratch'), 'out when a life is lost');
+  title(); start();
+  expect(primed.has(t), 'live again in a new game');
+  ram[LEVEL] = 1; frames(2);
+  expect(has('Not a Scratch'), 'and earned by clearing level one');
+  ok('Not a Scratch: live, out, and live again');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }

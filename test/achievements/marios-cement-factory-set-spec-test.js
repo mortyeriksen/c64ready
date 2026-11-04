@@ -42,17 +42,20 @@ function activateAll() {
   return { codes, lb };
 }
 const unlocked = new Set();
+const primed = new Set();   // challenges that can still be earned (rcheevos PRIMED, until UNPRIMED)
 const lbEvents = [];
 function frame() {
   for (const e of rc.doFrame(ram)) {
     if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) unlocked.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_PRIMED) primed.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_UNPRIMED) primed.delete(e.id);
     else if (e.type >= EVENT.LBOARD_STARTED && e.type <= EVENT.LBOARD_TRIGGERED) lbEvents.push({ ...e });
   }
 }
 const frames = (n) => { for (let i = 0; i < n; i++) frame(); };
 /** Power-on to the title screen, then the game start: misses and step zeroed, the step counts on. */
 function freshGame(mode = 0) {
-  activateAll(); unlocked.clear(); lbEvents.length = 0; ram.fill(0);
+  activateAll(); unlocked.clear(); primed.clear(); lbEvents.length = 0; ram.fill(0);
   ram[MODE] = mode; ram[COL] = 0; ram[ROW] = 2;
   frames(5);
   ram[STEP] = 0; frames(1);
@@ -71,7 +74,7 @@ function freshGame(mode = 0) {
 // 2. Before any game starts (a crunched PRG unpacking, the title screen) the score
 //    bytes can hold anything: nothing unlocks and no attempt starts.
 {
-  activateAll(); unlocked.clear(); lbEvents.length = 0; ram.fill(0);
+  activateAll(); unlocked.clear(); primed.clear(); lbEvents.length = 0; ram.fill(0);
   frames(3);
   ram[SCORE_HI] = 0xff; ram[SCORE_LO] = 0x00; ram[MODE] = 0x45; frames(30);
   ram[SCORE_HI] = 0; ram[MODE] = 0; ram[MISSES] = 1; frames(5); ram[MISSES] = 2; frames(5);
@@ -157,6 +160,20 @@ function freshGame(mode = 0) {
   ram[ROW] = 2; ram[COL] = 4; frames(2);
   expect(!unlocked.has(byTitle['Escape Artist']), 'a miss after the escape floor cancels it');
   ok('Escape Artist needs the escape floor, then safety, on one life');
+}
+
+// Double Shift is a challenge: live in a game before the first miss, out at it, live again next game.
+{
+  const t = byTitle['Double Shift'];
+  freshGame(0);
+  expect(primed.has(t), 'live as a game starts');
+  ram[MISSES] = 1; frames(2);
+  expect(!primed.has(t) && !unlocked.has(t), 'out at the first miss');
+  ram[MISSES] = 0; ram[STEP] = 0; frames(1); ram[STEP] = 1; frames(2);
+  expect(primed.has(t), 'live again in a new game');
+  setScore(300); ram[BONUS] = 1; frames(1);
+  expect(unlocked.has(t), 'and earned at 300');
+  ok('Double Shift: live, out, and live again');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }

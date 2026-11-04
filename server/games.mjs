@@ -358,7 +358,7 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser, fair
       // What the toast needs to tell a new best or a new first place: the old best and rank, and how many are on the board.
       return { best, rank: rankOf(g, lb, best), improved: better, previous: prev?.value ?? null, previousRank, players: q.players.get(g.id, lb.id).n, ...(flag ? { flagged: true } : {}) };
     },
-    // The Hall of Fame: who has the most of a game's achievement points, earlier first on a tie
+    // Trophy Hunters: who has the most of a game's achievement points, earlier first on a tie
     // (equal points share a place), how many have played, and how many finished the set.
     'GET /api/games/:hash/top'(body, req, { hash }) {
       const g = game(hash);

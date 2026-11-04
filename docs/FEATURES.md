@@ -331,7 +331,9 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
   floats, docks or shares the screen in fullscreen.
 - **Trophy HUD in Retro Vibes**: your trophies and the next player to pass, in
   a bar, column or pill you place anywhere.
-- **Attract mode**: when a game ends, its high scores, Hall of Fame and trophies
+- **Challenges out for now**: a challenge trophy you can no longer earn this
+  time powers down in the HUD and is stamped OUT until you can try again.
+- **Attract mode**: when a game ends, its high scores, Trophy Hunters and trophies
   cycle as on an arcade cabinet.
 - **Passkey accounts**: no password and no email. A recovery code, and passkeys
   on more than one device, keep you from losing the account.

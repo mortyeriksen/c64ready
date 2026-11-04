@@ -45,9 +45,10 @@ function setScore(shown) {
 }
 const scoreNow = () => Number([2, 1, 0].map((i) => ram[SCORE + i].toString(16).padStart(2, '0')).join('')) * 100;
 const unlocked = new Set();
+const primed = new Set();   // challenges that can still be earned (rcheevos PRIMED, until UNPRIMED)
 const lb = [];
 function activate() {
-  rc.clear(); unlocked.clear(); lb.length = 0; ram.fill(0); ram[TRAINER] = 0xcd;
+  rc.clear(); unlocked.clear(); primed.clear(); lb.length = 0; ram.fill(0); ram[TRAINER] = 0xcd;
   return {
     codes: set.achievements.map((a) => rc.activateAchievement(a.id, a.memaddr)),
     boards: set.leaderboards.map((l) => rc.activateLeaderboard(l.id, l.definition)),
@@ -56,6 +57,8 @@ function activate() {
 function frame() {
   for (const e of rc.doFrame(ram)) {
     if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) unlocked.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_PRIMED) primed.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_UNPRIMED) primed.delete(e.id);
     else if (e.type >= EVENT.LBOARD_STARTED && e.type <= EVENT.LBOARD_TRIGGERED && e.type !== EVENT.LBOARD_UPDATED) lb.push({ ...e });
   }
 }
@@ -202,6 +205,21 @@ function die() { ram[MEN] = ram[MEN] === 0x10 ? 0x09 : ram[MEN] - 1; frames(10);
   ram[TRAINER] = 0x4c; title();
   expect(!fired(), 'not on the title, with no game on');
   ok('the trainer notice');
+}
+
+// Untouchable is a challenge: live in area 1 with every man, out when one is lost.
+{
+  activate(); title();
+  expect(!primed.has(id.Untouchable), 'not live on the title');
+  start();
+  expect(primed.has(id.Untouchable), 'live as area 1 starts');
+  die();
+  expect(!primed.has(id.Untouchable) && !has('Untouchable'), 'out when a man is lost');
+  title(); start();
+  expect(primed.has(id.Untouchable), 'live again in a new game');
+  clearArea();
+  expect(has('Untouchable'), 'and earned by clearing area 1');
+  ok('Untouchable: live, out, and live again');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }

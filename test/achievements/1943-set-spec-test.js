@@ -48,9 +48,10 @@ const LIVES = 0xa161, GUN = 0xa165, ENERGY = 0x9f20, TARGETS = 0x9b6b, SECTION =
 const DIGITS = [0xa023, 0xa024, 0xa025, 0xa026, 0xa027, 0xa028];
 
 const unlocked = new Set();
+const primed = new Set();   // challenges that can still be earned (rcheevos PRIMED, until UNPRIMED)
 const boards = [];
 function activate() {
-  rc.clear(); unlocked.clear(); boards.length = 0; ram.fill(0);
+  rc.clear(); unlocked.clear(); primed.clear(); boards.length = 0; ram.fill(0);
   const codes = set.achievements.map((a) => rc.activateAchievement(a.id, a.memaddr));
   for (const l of set.leaderboards ?? []) codes.push(rc.activateLeaderboard(l.id, l.definition));
   return codes;
@@ -58,6 +59,8 @@ function activate() {
 function frame() {
   for (const e of rc.doFrame(ram)) {
     if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) unlocked.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_PRIMED) primed.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_UNPRIMED) primed.delete(e.id);
     else if (e.type === EVENT.LBOARD_STARTED || e.type === EVENT.LBOARD_TRIGGERED || e.type === EVENT.LBOARD_CANCELED) boards.push(e);
   }
 }
@@ -306,6 +309,22 @@ function begin() {
   ram[LIVES] = 3; frames(2);
   expect(submits().length === 0, 'losing one life posts nothing');
   ok('the score posts when the plane goes down');
+}
+
+// Not a Scratch is a challenge: live while no life is lost, out when one is, live again in a new game.
+{
+  const t = set.achievements.find((a) => a.title === 'Not a Scratch').id;
+  fresh();
+  expect(!primed.has(t), 'not live on the title');
+  begin(); score(5000); frames(2);
+  expect(primed.has(t), 'live in a game with every life');
+  ram[LIVES] = 3; frames(2);
+  expect(!primed.has(t) && !unlocked.has(t), 'out when a life is lost');
+  ram[FLAG] = 0; frames(2); ram[LIVES] = 4; score(0); frames(2); ram[FLAG] = 1; frames(2);
+  expect(primed.has(t), 'live again in a new game');
+  score(10000); frames(2);
+  expect(unlocked.has(t) && !primed.has(t), 'and earned at 10,000');
+  ok('Not a Scratch: live, out, and live again');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }

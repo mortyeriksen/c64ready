@@ -49,9 +49,10 @@ function setScore(n) {
   for (let i = 0; i < 3; i++) ram[SCORE + i] = parseInt(d.slice(2 * i, 2 * i + 2), 16);
 }
 const unlocked = new Set();
+const primed = new Set();   // challenges that can still be earned (rcheevos PRIMED, until UNPRIMED)
 const lb = [];
 function activate() {
-  rc.clear(); unlocked.clear(); lb.length = 0; ram.fill(0);
+  rc.clear(); unlocked.clear(); primed.clear(); lb.length = 0; ram.fill(0);
   return {
     codes: set.achievements.map((a) => rc.activateAchievement(a.id, a.memaddr)),
     boards: set.leaderboards.map((l) => rc.activateLeaderboard(l.id, l.definition)),
@@ -60,6 +61,8 @@ function activate() {
 function frame() {
   for (const e of rc.doFrame(ram)) {
     if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) unlocked.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_PRIMED) primed.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_UNPRIMED) primed.delete(e.id);
     else if (e.type >= EVENT.LBOARD_STARTED && e.type <= EVENT.LBOARD_TRIGGERED && e.type !== EVENT.LBOARD_UPDATED) lb.push({ ...e });
   }
 }
@@ -206,7 +209,7 @@ for (const [lit, how] of [[0, 'a plain clear'], [23, 'a firebomb clear']]) {
 
 // 9. The multiplier cell between rounds and on the title is not a B coin.
 {
-  activate(); title(); newGame(); ram[MULT] = 3; frames(2); unlocked.clear();
+  activate(); title(); newGame(); ram[MULT] = 3; frames(2); unlocked.clear(); primed.clear();
   activate(); title(); newGame();
   ram[IRQ] = BETWEEN; ram[MULT] = 4; frames(2); ram[MULT] = 5; frames(2);
   expect(!has('Bonus Bump') && !has('High Five'), 'no multiplier achievement between screens');
@@ -275,6 +278,22 @@ for (const [lit, how] of [[0, 'a plain clear'], [23, 'a firebomb clear']]) {
   activate(); title(); newGame(); die(); die(); gameOver();
   expect(started() === 1 && !submitted().length, 'a pointless game submits nothing');
   ok('an empty game is not submitted');
+}
+
+// Unscathed (each round) and Flawless Five (rounds 1 to 5) are challenges: a death puts them out.
+{
+  activate(); title();
+  expect(!primed.has(id.Unscathed) && !primed.has(id['Flawless Five']), 'not live on the title');
+  newGame();
+  expect(primed.has(id.Unscathed) && primed.has(id['Flawless Five']), 'both live as round 1 starts');
+  die();
+  expect(!primed.has(id.Unscathed) && !primed.has(id['Flawless Five']), 'a death puts both out');
+  clearRound();
+  expect(!has('Unscathed') && primed.has(id.Unscathed), 'Unscathed is live again in the next round');
+  expect(!primed.has(id['Flawless Five']), 'Flawless Five stays out for the rest of the game');
+  clearRound();
+  expect(has('Unscathed'), 'a clean round earns Unscathed');
+  ok('Unscathed and Flawless Five: live, out, and live again');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }

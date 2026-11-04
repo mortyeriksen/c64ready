@@ -76,7 +76,7 @@
       "title": "Untouchable",
       "description": "Win a fight without taking a hit.",
       "points": 10,
-      "memaddr": "0xHb9=128_0xHbd=0_d0xH93=12_0xHbe>d0xHbe"
+      "memaddr": "0xHb9=128_0xHbd=0_d0xH93=12_T:0xHbe>d0xHbe"
     },
     {
       "id": 8,

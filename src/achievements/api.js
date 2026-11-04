@@ -26,7 +26,7 @@ export function createGamesApi({ base, account, fetchImpl = (...a) => fetch(...a
     game: (hash) => request('GET', `/games/${hash}`),
     games: () => request('GET', '/games'),
     leaderboard: (hash, id, limit) => request('GET', `/games/${hash}/leaderboards/${id}${q({ limit })}`),
-    /** A game's Hall of Fame: its players by achievement points, and the account's own place. */
+    /** A game's Trophy Hunters: its players by achievement points, and the account's own place. */
     top: (hash, limit) => request('GET', `/games/${hash}/top${q({ limit })}`),
     /** Everyone's activity, or one game's when `hash` is given; `before` pages back. */
     activity: ({ hash = null, before = null } = {}) => request('GET', `${hash ? `/games/${hash}` : ''}/activity${q({ before })}`),

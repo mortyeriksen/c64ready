@@ -49,9 +49,10 @@ function setScore(n) {
 }
 const scoreNow = () => Number(String.fromCharCode(...ram.subarray(SCORE, SCORE + 6)).trim() || 0);
 const unlocked = new Set();
+const primed = new Set();   // challenges that can still be earned (rcheevos PRIMED, until UNPRIMED)
 const lb = [];
 function activate() {
-  rc.clear(); unlocked.clear(); lb.length = 0; ram.fill(0);
+  rc.clear(); unlocked.clear(); primed.clear(); lb.length = 0; ram.fill(0);
   return {
     codes: set.achievements.map((a) => rc.activateAchievement(a.id, a.memaddr)),
     boards: set.leaderboards.map((l) => rc.activateLeaderboard(l.id, l.definition)),
@@ -60,6 +61,8 @@ function activate() {
 function frame() {
   for (const e of rc.doFrame(ram)) {
     if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) unlocked.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_PRIMED) primed.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_UNPRIMED) primed.delete(e.id);
     else if (e.type >= EVENT.LBOARD_STARTED && e.type <= EVENT.LBOARD_TRIGGERED && e.type !== EVENT.LBOARD_UPDATED) lb.push({ ...e });
   }
 }
@@ -190,6 +193,21 @@ function loseContest() { ram[CPU_HALF] = 4; frames(20); ram[DEMO] = 1; setScore(
   activate(); newGame(); loseContest();
   expect(started() === 1 && !submitted().length, 'a pointless game submits nothing');
   ok('High Score start, submit and value');
+}
+
+// Unblemished is a challenge: live in a contest while the computer has no half point, out when it scores one.
+{
+  activate(); demo();
+  expect(!primed.has(id.Unblemished), 'not live in the title demo');
+  newGame();
+  expect(primed.has(id.Unblemished), 'live as a game starts');
+  ram[CPU_HALF] = 1; frames(3);
+  expect(!primed.has(id.Unblemished) && !has('Unblemished'), 'out when the computer scores');
+  winContest(1);
+  expect(!has('Unblemished') && primed.has(id.Unblemished), 'live again in the next contest');
+  winContest(0);
+  expect(has('Unblemished'), 'and earned by a clean contest');
+  ok('Unblemished: live, out, and live again');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }

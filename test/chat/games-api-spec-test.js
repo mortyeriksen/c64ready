@@ -249,7 +249,7 @@ const open = (who, hash = HASH) => api('GET', `/api/games/${hash}`, { token: who
   ok('posts cannot flood the feed');
 }
 
-// 8c. The Hall of Fame: players by achievement points, earlier first on equal points, which share a place.
+// 8c. Trophy Hunters: players by achievement points, earlier first on equal points, which share a place.
 {
   const hof = ['H1', 'H2', 'H3', 'H4'].map((n) => account(n));
   const unlock = async (who, id) => { clock += 60_000; await api('POST', `/api/games/${HASH}/unlocks`, { token: who.token, body: { achievementId: id } }); };
@@ -266,7 +266,7 @@ const open = (who, hash = HASH) => api('GET', `/api/games/${hash}`, { token: who
   expect(top.complete >= 1 && top.players >= 4, 'and it counts the players and the finished sets');
   const short = (await api('GET', `/api/games/${HASH}/top?limit=1`, { token: hof[3].token })).body;
   expect(short.entries.length === 1 && short.me?.rank === mine[3].rank && short.me.points === 5, 'a player further down sees their own place');
-  ok('the Hall of Fame');
+  ok('Trophy Hunters');
 }
 
 // 9. A leaderboard can list more than ten, up to a hundred.
@@ -319,7 +319,7 @@ const open = (who, hash = HASH) => api('GET', `/api/games/${hash}`, { token: who
 
   await open(eve); clock += 60_000;
   const soft = await raw(eve, 'unlocks', { achievementId: 1, hardcore: false });
-  expect(soft.body.new === true && !(await topNames()).includes('Eve') && !(await named('Eve')), 'a softcore unlock is kept, out of the Hall of Fame and the activity');
+  expect(soft.body.new === true && !(await topNames()).includes('Eve') && !(await named('Eve')), 'a softcore unlock is kept, out of Trophy Hunters and the activity');
   const mine = await api('GET', `/api/games/${HASH}`, { token: eve.token });
   expect(JSON.stringify(mine.body.unlocked) === '[1]', 'and the player still sees it as theirs');
   clock += 60_000;

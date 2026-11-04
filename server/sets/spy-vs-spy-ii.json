@@ -1,0 +1,165 @@
+{
+  "id": "spy-vs-spy-ii",
+  "title": "Spy vs. Spy II: The Island Caper",
+  "url": "https://www.lemon64.com/game/spy-vs-spy-2",
+  "hashes": [
+    {
+      "hash": "46f747592c949393429dbbd7c77c3a77",
+      "label": "OneLoad64 v5 cartridge (Spy vs Spy II - The Island Caper.crt)"
+    },
+    {
+      "hash": "8dbf59106fe599fce03f3142c90e2915",
+      "label": "OneLoad64 v5 crunched program (Spy vs Spy II - The Island Caper.prg)"
+    },
+    {
+      "hash": "37e3ce2deb841d497627b066e84a8f79",
+      "label": "OneLoad64 v5 uncrunched program (Spy vs Spy II - The Island Caper.prg)"
+    },
+    {
+      "hash": "8985ccb35f9043c0f6a5d2a5a2d2a7cd",
+      "label": "OneLoad64 v5 source tape (Spy vs Spy II.tap)"
+    },
+    {
+      "hash": "e31fded521902c28af0a1161f2d0060e",
+      "label": "C64PP First Star nibbler dump (converted G64)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Island Landfall",
+      "description": "Begin the hunt for the missile parts on Spy Island.",
+      "points": 5,
+      "memaddr": "0xH6400=169_0xH6401=40_d0xH0038=0_0xH0038>0_0xH0037<60"
+    },
+    {
+      "id": 2,
+      "title": "Missile Discovery",
+      "description": "Pick up a section of the XJ4½ missile.",
+      "points": 5,
+      "memaddr": "0xH6400=169_0xH6401=40_0xH0263=1_d0xH00d9=0_0xH00d9>0"
+    },
+    {
+      "id": 3,
+      "title": "Missile Ready",
+      "description": "Carry the fully assembled missile.",
+      "points": 15,
+      "memaddr": "0xH6400=169_0xH6401=40_0xH0263=1_d0xH00d9!=3_0xH00d9=3"
+    },
+    {
+      "id": 4,
+      "title": "Submarine Escape",
+      "description": "Board the submarine as the White Spy with the assembled missile.",
+      "points": 25,
+      "memaddr": "0xH6400=169_0xH6401=40_0xH00d9=3_0xH0211=1_O:0xH0038>0_0xH0037>0_d0xH00d2=0_0xH00d2=1"
+    },
+    {
+      "id": 5,
+      "title": "Two Sections Joined",
+      "description": "Assemble two adjoining missile sections.",
+      "points": 10,
+      "memaddr": "0xH6400=169_0xH6401=40_0xH0263=1_d0xH00d9!=2_0xH00d9=2"
+    },
+    {
+      "id": 6,
+      "title": "Island Level 1",
+      "description": "Escape island level 1 in the submarine.",
+      "points": 5,
+      "memaddr": "0xH6400=169_0xH6401=40_0xH00d9=3_0xH0211=1_O:0xH0038>0_0xH0037>0_d0xH00d2=0_0xH00d2=1_0xH00d1=0"
+    },
+    {
+      "id": 7,
+      "title": "Island Level 2",
+      "description": "Escape island level 2 in the submarine.",
+      "points": 5,
+      "memaddr": "0xH6400=169_0xH6401=40_0xH00d9=3_0xH0211=1_O:0xH0038>0_0xH0037>0_d0xH00d2=0_0xH00d2=1_0xH00d1=1"
+    },
+    {
+      "id": 8,
+      "title": "Island Level 3",
+      "description": "Escape island level 3 in the submarine.",
+      "points": 10,
+      "memaddr": "0xH6400=169_0xH6401=40_0xH00d9=3_0xH0211=1_O:0xH0038>0_0xH0037>0_d0xH00d2=0_0xH00d2=1_0xH00d1=2"
+    },
+    {
+      "id": 9,
+      "title": "Island Level 4",
+      "description": "Escape island level 4 in the submarine.",
+      "points": 10,
+      "memaddr": "0xH6400=169_0xH6401=40_0xH00d9=3_0xH0211=1_O:0xH0038>0_0xH0037>0_d0xH00d2=0_0xH00d2=1_0xH00d1=3"
+    },
+    {
+      "id": 10,
+      "title": "Island Level 5",
+      "description": "Escape island level 5 in the submarine.",
+      "points": 15,
+      "memaddr": "0xH6400=169_0xH6401=40_0xH00d9=3_0xH0211=1_O:0xH0038>0_0xH0037>0_d0xH00d2=0_0xH00d2=1_0xH00d1=4"
+    },
+    {
+      "id": 11,
+      "title": "Island Level 6",
+      "description": "Escape island level 6 in the submarine.",
+      "points": 15,
+      "memaddr": "0xH6400=169_0xH6401=40_0xH00d9=3_0xH0211=1_O:0xH0038>0_0xH0037>0_d0xH00d2=0_0xH00d2=1_0xH00d1=5"
+    },
+    {
+      "id": 12,
+      "title": "Island Level 7",
+      "description": "Escape island level 7 in the submarine.",
+      "points": 25,
+      "memaddr": "0xH6400=169_0xH6401=40_0xH00d9=3_0xH0211=1_O:0xH0038>0_0xH0037>0_d0xH00d2=0_0xH00d2=1_0xH00d1=6"
+    },
+    {
+      "id": 13,
+      "title": "Volcano Deadline",
+      "description": "Board the submarine in the last minute before the eruption.",
+      "points": 15,
+      "memaddr": "0xH6400=169_0xH6401=40_0xH00d9=3_0xH0211=1_O:0xH0038>0_0xH0037>0_d0xH00d2=0_0xH00d2=1_0xH0038=0_0xH0037>0"
+    },
+    {
+      "id": 14,
+      "title": "Island Shovel",
+      "description": "Carry the shovel used to dig island pits.",
+      "points": 5,
+      "memaddr": "0xH6400=169_0xH6401=40_0xH0263=1_0xH006f<=2"
+    },
+    {
+      "id": 15,
+      "title": "The Lone Gun",
+      "description": "Find and carry the island gun.",
+      "points": 10,
+      "memaddr": "0xH6400=169_0xH6401=40_0xH0263=1_0xH006f=3"
+    },
+    {
+      "id": 16,
+      "title": "Coconut Arsenal",
+      "description": "Carry a coconut for a gasoline bomb.",
+      "points": 5,
+      "memaddr": "0xH6400=169_0xH6401=40_0xH0263=1_0xH006f>=4_0xH006f<=43"
+    },
+    {
+      "id": 17,
+      "title": "Snare Rope",
+      "description": "Carry rope for a tree snare.",
+      "points": 5,
+      "memaddr": "0xH6400=169_0xH6401=40_0xH0263=1_0xH006f>=44_0xH006f<=63"
+    },
+    {
+      "id": 18,
+      "title": "Napalm Ready",
+      "description": "Carry a napalm canister from the Trapulator.",
+      "points": 5,
+      "memaddr": "0xH6400=169_0xH6401=40_0xH0263=1_0xH006f>=64_0xH006f<=73"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Island Speedrun",
+      "description": "Fastest White Spy submarine escape with the assembled missile.",
+      "format": "MILLISECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xH6400=169_0xH6401=40_d0xH0038=0_0xH0038>0_0xH0037<60::CAN:d0xH0263=1_0xH0263=0S0xH0038=0_0xH0037=0::SUB:0xH6400=169_0xH6401=40_0xH00d9=3_0xH0211=1_O:0xH0038>0_0xH0037>0_d0xH00d2=0_0xH00d2=1::VAL:C:1=1_M:1=1"
+    }
+  ]
+}

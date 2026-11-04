@@ -494,6 +494,14 @@
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
+  "ik-plus-d64": {
+   "description": "IK+ (System 3 1987), the Hooper crack disk IKplus.d64, MD5 6865783adc6ee8ca840eacaf4c9ca935: one file that runs the cartridge's game after its intro (Space)",
+   "env": "C64_IK_PLUS_D64",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/prg/IKplus.d64"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
   "exploding-fist-crt": {
    "description": "The Way of the Exploding Fist (Melbourne House 1985), the OneLoad64 v5 cartridge, MD5 228d147421640b3b602144271e328aa3: the release its own-design achievement set targets",
    "env": "C64_EXPLODING_FIST_CRT",

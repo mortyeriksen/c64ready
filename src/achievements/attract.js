@@ -3,7 +3,7 @@
 // src/achievements/attract.js — attract mode, centered over the whole window:
 // the page dimmed behind it, or the vibes view while that is open. When a game
 // ends (its set's game over, or else its score posted), its high-score screen cycles the
-// way an arcade cabinet's does between games: each board, the Hall of Fame and the
+// way an arcade cabinet's does between games: each board, Trophy Hunters and the
 // player's trophies, a page at a time. It switches on like a CRT, a page's
 // title cycles the C64's colours over raster bars, and its rows are PRINTed a
 // character at a time. The pages turn on their own wherever the pointer rests,
@@ -17,7 +17,12 @@ import { ordinal } from './browse.js';
 export const PAGE_MS = 7000;
 /** It waits for the score's toast to go, but no longer than this. */
 const SETTLE_MS = 12000;
-/** The top ten of a board or the Hall of Fame; a player further down ends it with their own row. */
+/**
+ * A game that seems to have ended may still be playing, as OutRun runs on for a second at 0 and can
+ * reach a checkpoint: it waits this long first, and an unlock after the first PLAYS_ON ms calls it off.
+ */
+const GRACE_MS = 2000, PLAYS_ON = 250;
+/** The top ten of a board or Trophy Hunters; a player further down ends it with their own row. */
 const ROWS = 10;
 
 // Two fewer rows at the top when the player's own goes under them, after a gap: the screen holds as many.
@@ -36,7 +41,7 @@ export function boardRows(st, user, limit = ROWS) {
   return rows;
 }
 
-/** The Hall of Fame's rows, as a board's: by points, a star for a finished set. */
+/** The Trophy Hunters rows, as a board's: by points, a star for a finished set. */
 export function fameRows(top, user, limit = ROWS) {
   const entries = top?.entries ?? [];
   const mine = (e) => user?.id != null && e.user?.id === user.id;
@@ -49,7 +54,7 @@ export function fameRows(top, user, limit = ROWS) {
 /**
  * The pages for a game: after a game, the board just played and no other, as
  * OutRun's route A without the other routes; opened from the GAME tab, every
- * board. Then the Hall of Fame and the trophies when it has achievements.
+ * board. Then Trophy Hunters and the trophies when it has achievements.
  */
 export function attractPages(game, { boards = new Map(), fame = null, played = null } = {}) {
   const shown = played != null ? game.leaderboards.filter((l) => l.id === played) : game.leaderboards;
@@ -110,16 +115,23 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
   // ── Opening: after the score's toast, with the standings as they are now ──
   function schedule(e) {
     cancel();
-    const until = performance.now() + SETTLE_MS;
+    const until = performance.now() + SETTLE_MS, since = Date.now() + PLAYS_ON;
     const look = () => {
       waiting = 0;
       const where = host();
-      if (!where) return;
+      if (!where || playsOn(since)) return;
       const busy = document.querySelector('.ach-toast:not(.ach-toast-out):not(.ach-toast-placing)');
       if (busy && performance.now() < until) { waiting = setTimeout(look, 400); return; }
       open(e);
     };
-    waiting = setTimeout(look, 600);
+    waiting = setTimeout(look, GRACE_MS);
+  }
+  // An unlock since the game seemed to end: it is still being played. A time ahead of this clock is
+  // the server's, from before, and not counted.
+  function playsOn(since) {
+    const list = engine()?.game?.achievements, now = Date.now();
+    if (list) for (let i = 0; i < list.length; i++) { const at = list[i].unlockedAt; if (at > since && at <= now) return true; }
+    return false;
   }
   function cancel() { clearTimeout(waiting); waiting = 0; }
 
@@ -229,7 +241,7 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
     const head = el('div', 'ach-attract-head');
     const bars = el('div', 'ach-attract-bars');
     for (let k = 0; k < 3; k++) bars.append(el('i'));
-    const label = p.kind === 'board' ? p.board.title : p.kind === 'fame' ? 'Hall of fame' : 'Trophies';
+    const label = p.kind === 'board' ? p.board.title : p.kind === 'fame' ? 'Trophy hunters' : 'Trophies';
     const title = el('div', 'ach-attract-title');
     title.style.setProperty('--ach-attract-fit', String(Math.min(1, 14 / Math.max(1, label.length))));
     stopCycle();

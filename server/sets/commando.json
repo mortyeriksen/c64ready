@@ -63,21 +63,21 @@
       "title": "Guns Only",
       "description": "Clear the 1st area, no grenades thrown.",
       "points": 10,
-      "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._N:0xHe348=109_R:0xH04ff<d0xH04ff_0xH04f3=1_0xHe348=109_0xHe349=93_0xH0500>0"
+      "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._N:0xHe348=109_R:0xH04ff<d0xH04ff_T:0xH04f3=1_T:0xHe348=109_T:0xHe349=93_T:0xH0500>0"
     },
     {
       "id": 9,
       "title": "Not a Scratch",
       "description": "Clear the 1st area without losing a man.",
       "points": 10,
-      "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._R:0xH0503!=0_0xH04f3=1_0xHe348=109_0xHe349=93_0xH0500>0"
+      "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._R:0xH0503!=0_T:0xH04f3=1_T:0xHe348=109_T:0xHe349=93_T:0xH0500>0"
     },
     {
       "id": 10,
       "title": "Flawless Mission",
       "description": "Complete the mission without losing a man.",
       "points": 25,
-      "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._R:0xH0503!=0_0xH04f3=4_0xHe348=109_0xHe349=93_0xH0500>0"
+      "memaddr": "N:0xHe348=109_N:d0xHe348!=109_N:0xH04f3=0_N:0xH0500=5_0x 04f8=0.1._R:0xH0503!=0_T:0xH04f3=4_T:0xHe348=109_T:0xHe349=93_T:0xH0500>0"
     },
     {
       "id": 11,

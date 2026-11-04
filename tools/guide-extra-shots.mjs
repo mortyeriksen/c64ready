@@ -35,7 +35,7 @@
 //                        afterwards; never the production one.
 //   achievements-game.webp / -games.webp / -activity.webp  the Achievements
 //                        window docked beside Commando Arcade running: its GAME tab
-//                        (progress, the high scores, the Hall of Fame, the
+//                        (progress, the high scores, Trophy Hunters, the
 //                        achievements), then GAMES, then ACTIVITY. Five players
 //                        sign up on the dev server, post unlocks and scores
 //                        through the games API, and are deleted afterwards.

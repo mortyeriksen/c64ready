@@ -237,7 +237,7 @@ try {
   expect(await detail.locator('.achievements-list li.is-unlocked').count() === 1 && await detail.locator('.achievements-list li').count() === 22, 'the game page marks 1 of its 22 achievements unlocked');
   expect(await detail.locator('.ach-screen:not(.ach-fame) li.is-me').count() === 1, 'and the account\'s own row on the high-score screen');
   const fame = detail.locator('.ach-fame');
-  expect(await fame.locator('.ach-screen-head').innerText() === 'HALL OF FAME' || /hall of fame/i.test(await fame.locator('.ach-screen-head').innerText()), 'the Hall of Fame follows it');
+  expect(await fame.locator('.ach-screen-head').innerText() === 'TROPHY HUNTERS' || /trophy hunters/i.test(await fame.locator('.ach-screen-head').innerText()), 'Trophy Hunters follows it');
   const mineFame = fame.locator('li.is-me');
   expect(/PILOT/i.test(await mineFame.innerText().catch(() => '')) && await mineFame.locator('.ach-fame-bar').getAttribute('aria-label').catch(() => '') === '1 of 22 achievements', 'with the account\'s own row lit, its meter at 1 of 22 unlocked');
   const podium = await detail.locator('.ach-screen li').evaluateAll((lis) => lis.map((li) => ({ rank: parseInt(li.querySelector('.ach-rank')?.textContent, 10), top: li.classList.contains('is-podium'), font: getComputedStyle(li).fontFamily })));
@@ -259,6 +259,20 @@ try {
   await page.keyboard.press('Escape');
   expect(await win.isHidden(), 'and then closes the window');
   ok('the list of games and a game\'s page');
+
+  // 6a. Lazy: each tab fetches once, and showing it again, or opening the window again, fetches
+  // nothing until something has changed.
+  await page.click('#btn-online');
+  for (const t of ['game', 'activity', 'games']) { await page.click(`#online-tab-${t}`); await page.waitForTimeout(700); }
+  const asked = [];
+  const count = (r) => { if (new URL(r.url()).pathname.startsWith('/api/')) asked.push(new URL(r.url()).pathname); };
+  page.on('request', count);
+  for (const t of ['game', 'activity', 'games', 'game', 'activity']) { await page.click(`#online-tab-${t}`); await page.waitForTimeout(300); }
+  await page.click('#btn-online-close'); await page.click('#btn-online'); await page.waitForTimeout(700);
+  page.off('request', count);
+  expect(!asked.length, `tabs already loaded show again without fetching (got ${asked.join(', ')})`);
+  await page.click('#btn-online-close');
+  ok('the tabs load lazily');
 
   // 6b. A feed longer than a page: LOAD MORE brings the next, older page. Pilot
   // unlocks 30 more achievements in three bursts of ten, the most one account

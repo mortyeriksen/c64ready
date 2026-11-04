@@ -84,8 +84,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
   let standings = new Map();   // leaderboard id → { entries, me } for the loaded game
   let standingsFor = null;     // the game being fetched
   let standingsOf = null;      // the game `standings` holds
-  let top = null;              // the loaded game's Hall of Fame
-  let topUnlocked = -1;        // how many achievements were unlocked when it was fetched
+  let top = null;              // the loaded game's Trophy Hunters
   let loadingStandings = false;
   const live = new Map();      // leaderboard id → the running score while a game is on, the latest started last
   // GAME's live parts, found once as it draws: the HUD card, the board it chases, the board in play and its NOW cell.
@@ -94,6 +93,14 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
   let detail = [];             // profiles and game pages opened over the tab, newest last
   let activityScope = 'all';   // 'all' or 'game'
   let poll = null;
+  // What the server holds changes with an unlock, a posted score, signing in or out, or REFRESH:
+  // dataGen counts those. Each view remembers what it fetched for (the game, the account, the
+  // generation) and fetches again only when that differs, so showing it again redraws, no more.
+  let dataGen = 0;
+  let engineReady = !engine?.load;   // rcheevos formats the scores: the first fetch waits for it
+  let standingsKey = null, activityKey = null, activityAt = 0, gamesKey = null;
+  const who = () => account.user?.id ?? 'out';
+  const gameKey = () => `${engine?.game?.hash ?? ''}:${who()}:${dataGen}`;
   let opener = buttons[0];
 
   // ── CHAT ────────────────────────────────────────────────────────────────
@@ -210,8 +217,8 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     render();
     showView();
     if (!checked) { checked = true; account.restore().finally(render); }
-    // Values are formatted by rcheevos: load it before the first standings show.
-    engine?.load?.().then(() => { if (!win.hidden && !['account', 'chat'].includes(currentTab())) showView(); }).catch(() => {});
+    // Values are formatted by rcheevos: the views fetch once it is loaded.
+    if (!engineReady) engine.load().then(() => { engineReady = true; if (!win.hidden && !['account', 'chat'].includes(currentTab())) showView(); }).catch(() => {});
   }
   function close(fromHistory = false) {
     if (win.hidden) return;
@@ -254,17 +261,35 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     stopPoll();
     if (t !== 'chat' || top) chat?.hidden();
     if (top) {
-      const body = h('div', {}, h('p', { class: 'achievements-note' }, 'Loading…'));
       // Back names where it goes: the tab, or Back to an earlier page.
       const to = detail.length > 1 ? 'Back' : { game: 'Game', activity: 'Activity', games: 'Games', chat: 'Chat', account: 'Account' }[t];
-      detailEl.replaceChildren(h('button', { type: 'button', class: 'achievements-link achievements-back', on: { click: back } }, `‹ ${to}`), body);
+      const backBtn = h('button', { type: 'button', class: 'achievements-link achievements-back', on: { click: back } }, `‹ ${to}`);
+      // A page drawn for this account and generation shows again as it was.
+      const key = `${who()}:${dataGen}`;
+      if (top.el && top.key === key) { detailEl.replaceChildren(backBtn, top.el); return; }
+      const body = h('div', {}, h('p', { class: 'achievements-note' }, 'Loading…'));
+      detailEl.replaceChildren(backBtn, body);
+      if (!engineReady) return;
+      top.el = body; top.key = key;
       if (top.type === 'profile') renderProfile(body, ctx, top.id);
       else renderGamePage(body, ctx, top.hash);
       return;
     }
-    if (t === 'game') { renderGame(); loadStandings(); }
-    else if (t === 'activity') { renderActivityTab(); startPoll(); }
-    else if (t === 'games') { panels.games.replaceChildren(h('p', { class: 'achievements-note' }, 'Loading…')); if (ctx.api) renderGames(panels.games, ctx); }
+    if (t === 'game') renderGame();
+    else if (t === 'activity') {
+      const key = `${activityScope}:${engine?.game?.hash ?? ''}:${who()}:${dataGen}`;
+      renderActivityTab(engineReady && (key !== activityKey || Date.now() - activityAt > POLL_MS) ? key : null);
+      startPoll();
+    } else if (t === 'games') {
+      const key = gameKey();
+      if (engineReady && key !== gamesKey && ctx.api) {
+        gamesKey = key;
+        panels.games.replaceChildren(h('p', { class: 'achievements-note' }, 'Loading…'));
+        // A failed list is fetched again the next time GAMES shows.
+        renderGames(panels.games, ctx).then(() => { if (panels.games.querySelector('.achievements-error')) gamesKey = null; });
+      } else if (!panels.games.childElementCount) panels.games.append(h('p', { class: 'achievements-note' }, 'Loading…'));
+      else panels.games._shown?.();
+    }
     else if (t === 'chat') ensureChat().then((c) => { if (!win.hidden && currentTab() === 'chat' && !detail.length) c.shown(); });
     else render();
   }
@@ -274,22 +299,24 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
   function activityQuery() {
     return activityScope === 'game' && engine?.game ? { hash: engine.game.hash, withGame: false } : {};
   }
-  function renderActivityTab() {
+  /** ACTIVITY's scope buttons and its feed, fetched only with a `key` (what it is fetched for). */
+  function renderActivityTab(key = null) {
     const game = engine?.game;
     if (!game) activityScope = 'all';
     const scope = (name, label) => h('button', {
       type: 'button', class: `btn achievements-scope${activityScope === name ? ' is-active' : ''}`, 'aria-pressed': String(activityScope === name),
-      on: { click: () => { activityScope = name; renderActivityTab(); } },
+      on: { click: () => { activityScope = name; showView(); } },
     }, label);
     panels.activity.replaceChildren(
       ...(game ? [h('div', { class: 'confirm-actions achievements-scopes' }, scope('all', 'EVERYONE'), scope('game', game.title.toUpperCase()))] : []),
       feedEl);
     if (!feedEl.childElementCount) feedEl.append(h('p', { class: 'achievements-note' }, 'Loading…'));
-    if (ctx.api) renderActivity(feedEl, ctx, activityQuery());
+    if (key && ctx.api) { activityKey = key; activityAt = Date.now(); renderActivity(feedEl, ctx, activityQuery()); }
   }
   function startPoll() {
     poll = setInterval(() => {
       if (win.hidden || currentTab() !== 'activity' || detail.length || feedEl._paged || document.hidden) return;
+      activityAt = Date.now();
       renderActivity(feedEl, ctx, activityQuery());
     }, POLL_MS);
   }
@@ -300,9 +327,9 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     const game = engine?.game;
     if (!game) return;
     standingsFor = game.hash;
+    standingsKey = gameKey();
     loadingStandings = true;
     const next = new Map();
-    const unlockedNow = game.achievements.filter((a) => a.unlocked).length;
     let nextTop = null;
     await Promise.all([
       ...game.leaderboards.map(async (l) => {
@@ -312,7 +339,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
       game.achievements.length ? engine.api.top(game.hash, 10).then((t) => { nextTop = t; }, () => { nextTop = { total: game.achievements.length, players: 0, complete: 0, entries: [] }; }) : null,
     ]);
     loadingStandings = false;
-    if (standingsFor === game.hash) { standings = next; standingsOf = game.hash; top = nextTop; topUnlocked = unlockedNow; renderGame(); }
+    if (standingsFor === game.hash) { standings = next; standingsOf = game.hash; top = nextTop; renderGame(); }
   }
 
   function renderGame() {
@@ -329,9 +356,8 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
         h('div', { class: 'confirm-actions achievements-scopes' }, h('button', { type: 'button', class: 'btn', on: { click: () => selectTab('games') } }, 'SEE THE GAMES')));
       return;
     }
-    const unlocked = (a) => a.unlocked;
-    // A new unlock moves the player in the Hall of Fame: fetch it again.
-    if (standingsOf === game.hash && !loadingStandings && game.achievements.filter(unlocked).length !== topUnlocked) loadStandings();
+    // Standings are fetched while GAME shows, once per game, account and generation (an unlock or a posted score).
+    if (engineReady && !win.hidden && currentTab() === 'game' && !detail.length && !loadingStandings && standingsKey !== gameKey()) loadStandings();
     // While a board is played only it shows, the latest started of those running; else all of them.
     playingId = null;
     for (const id of live.keys()) playingId = id;
@@ -344,7 +370,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     card = hudCard({
       game, board: chased, standings: chased ? st(chased.id) : null, live: chased ? live.get(chased.id) ?? null : null,
       meId: account.user?.id ?? null, format: ctx.format,
-      buttons: [attract ? attractButton(attract) : null, refreshButton(() => Promise.all([loadStandings(), engine.refreshChecks().catch(() => {})]))].filter(Boolean),
+      buttons: [attract ? attractButton(attract) : null, refreshButton(() => { dataGen++; return Promise.all([loadStandings(), engine.refreshChecks().catch(() => {})]); })].filter(Boolean),
     });
     gameEl.replaceChildren(...[
       card.el,
@@ -527,6 +553,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
   }
   closeBtn?.addEventListener('click', () => close());
   let shownGame = engine?.game?.hash ?? null;
+  let shownEnabled = !!engine?.enabled;   // achievements on or off, as last drawn
   // Three flashes on whichever opening button shows (the header's, or the
   // fullscreen toolbar's), to say the loaded game has achievements.
   function flashButtons() {
@@ -563,12 +590,24 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
         return;
       }
       live.delete(leaderboard.id);
+      if (type === 'submitted') dataGen++;
       if (win.hidden || detail.length) return;
       if (type === 'submitted') showView();
       else if (currentTab() === 'game') renderGame();
     },
+    /** An unlock the server has (engine onUnlock, after it is saved): the views fetch again as they show. */
+    unlocked() { dataGen++; },
     /**
-     * The account or the game changed: draw again, and refetch while open. A
+     * The engine's game changed. Another game, or achievements turned on or off, is a full
+     * refresh. The same game (an unlock, a challenge) draws only the GAME tab, once.
+     */
+    gameChanged() {
+      const on = !!engine?.enabled;
+      if ((engine?.game?.hash ?? null) !== shownGame || on !== shownEnabled) { shownEnabled = on; this.refresh(); return; }
+      if (!win.hidden && !detail.length && currentTab() === 'game') renderGame();
+    },
+    /**
+     * The account or the game changed: draw again, and fetch what changed while open. A
      * newly loaded game with achievements brings its tab forward, and on a
      * desktop opens the window on it. On a phone, or in fullscreen, the window
      * would cover the game, so the button that opens it flashes instead.

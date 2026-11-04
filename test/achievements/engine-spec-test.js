@@ -8,7 +8,8 @@
 // different file without a set ends it, and the game is the one being played:
 // a cartridge with a set, else the medium put in last. A file without a set never leaves the browser: only the list
 // of games is fetched, and matched here. Results not saved yet belong to the
-// account that earned them. A set's game over is told each time a game ends. RAM
+// account that earned them. A set's game over is told each time a game ends. A
+// challenge (a T: trigger) is live while it can be earned and out once spoiled. RAM
 // is synthesized frame by frame.
 
 import http from 'node:http';
@@ -59,6 +60,17 @@ const otherFile = crypto.randomBytes(4096);
 fs.writeFileSync(path.join(sets, 'other.json'), JSON.stringify({
   id: 'other', title: 'Other Game', hashes: [{ hash: crypto.createHash('md5').update(otherFile).digest('hex') }],
   achievements: [{ id: 1, title: 'Other One', description: 'Something else.', points: 5, memaddr: '0xH0020=7' }],
+}));
+
+// A game with a challenge: started by $30, spoiled by $31, won by $32 (its T: trigger).
+const challengeFile = crypto.randomBytes(4096);
+fs.writeFileSync(path.join(sets, 'challenge.json'), JSON.stringify({
+  id: 'challenge', title: 'Challenge Game', hashes: [{ hash: crypto.createHash('md5').update(challengeFile).digest('hex') }],
+  achievements: [
+    { id: 1, title: 'Clean Run', description: 'Win without a slip.', points: 10, memaddr: 'Z:0xH0031=1_0xH0030=1.1._T:0xH0032=1_T:d0xH0032=0' },
+    { id: 2, title: 'Any Run', description: 'Win.', points: 5, memaddr: '0xH0033=1_d0xH0033=0' },
+    { id: 3, title: 'Calm Run', description: 'Win without a slip, again.', points: 10, memaddr: 'Z:0xH0031=1_0xH0030=1.1._T:0xH0034=1_T:d0xH0034=0' },
+  ],
 }));
 
 const db = openDatabase(':memory:');
@@ -460,6 +472,37 @@ const settle = () => new Promise((r) => setTimeout(r, 50));
   setLoaded('tape', { ref: 'demo-tape', kind: 'tap', bytes: side2 });
   expect(await at() === 'Demo Game', 'of two put in at once, the last is the game, whatever its slot');
   ok('the game is the one being played: a cartridge, else the last put in');
+}
+
+// A challenge is live while it can still be earned, out when it is spoiled, and an unlock is not a failure.
+{
+  const told = [];
+  let changes = 0;
+  const e8 = createAchievementEngine({ account: { token: null, user: null }, base, log: () => {}, onChange: () => { changes++; }, onChallenge: (e) => told.push(`${e.achievement.title}:${e.state}`) });
+  _resetLoaded();
+  setLoaded('cart', { ref: 'challenge', kind: 'crt', bytes: challengeFile });
+  await e8.mediaChanged();
+  const state = () => e8.game.achievements.find((a) => a.id === 1).challenge;
+  const run = (n) => { for (let i = 0; i < n; i++) e8.frame(ram); };
+  ram.fill(0); run(3);
+  expect(state() === null && !told.length, 'nothing is live before its attempt starts');
+  changes = 0;
+  ram[0x30] = 1; run(1); ram[0x30] = 0; run(1);
+  expect(state() === 'live' && [...told].sort().join() === 'Calm Run:live,Clean Run:live', `the started attempt is live (${told})`);
+  expect(changes === 1, `two challenges live in one frame are one change for the window to draw (${changes})`);
+  expect(e8.game.achievements.find((a) => a.id === 2).challenge === null, 'an achievement without a T: trigger is never a challenge');
+  ram[0x31] = 1; run(1); ram[0x31] = 0; run(1);
+  expect(state() === 'out' && told.slice(-2).sort().join() === 'Calm Run:out,Clean Run:out', `a slip puts both out (${told})`);
+  ram[0x30] = 1; run(1); ram[0x30] = 0; run(1);
+  expect(state() === 'live', 'a new attempt makes it live again');
+  e8.reset(); run(1);
+  expect(state() === null, 'a reset machine has no challenge in play');
+  ram[0x30] = 1; run(1); ram[0x30] = 0; run(1);
+  told.length = 0;
+  ram[0x32] = 1; run(2);
+  await settle();
+  expect(!told.includes('Clean Run:out') && e8.game.achievements.find((a) => a.id === 1).unlocked && state() === null, `winning it unlocks it and is not reported out (${told})`);
+  ok('challenges: live, out, and an unlock is not a failure');
 }
 
 accounts.close();

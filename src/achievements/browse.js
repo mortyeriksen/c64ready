@@ -244,7 +244,7 @@ export function highScoreScreen(ctx, gameTitle, board, standings, live = null) {
 }
 
 /**
- * The Hall of Fame: a game's players by achievement points, as a second
+ * Trophy Hunters: a game's players by achievement points, as a second
  * high-score screen. A star marks a finished set; the reader's own row is lit,
  * and shown under the others when further down.
  */
@@ -262,8 +262,8 @@ export function hallOfFame(ctx, gameTitle, top) {
   const rows = entries.map((e) => row(e.rank, e.user, e.unlocked, e.points, e.complete, !!me && e.user.id === me.id));
   if (top?.me && me && !entries.some((e) => e.user.id === me.id)) rows.push(h('li', { class: 'ach-screen-gap', 'aria-hidden': 'true' }, '...'), row(top.me.rank, me, top.me.unlocked, top.me.points, top.me.complete, true));
   const foot = top ? `${top.players === 1 ? '1 PLAYER' : `${top.players} PLAYERS`}${top.complete ? `, ${top.complete} COMPLETE` : ''}` : '';
-  return h('section', { class: 'ach-screen ach-fame', 'aria-label': `${gameTitle}: hall of fame` },
-    h('div', { class: 'ach-screen-head' }, h('span', {}, 'Hall of fame')),
+  return h('section', { class: 'ach-screen ach-fame', 'aria-label': `${gameTitle}: trophy hunters` },
+    h('div', { class: 'ach-screen-head' }, h('span', {}, 'Trophy hunters')),
     top == null ? h('p', { class: 'ach-screen-foot' }, 'LOADING...')
       : entries.length ? h('ol', {}, rows) : h('p', { class: 'ach-screen-foot' }, 'NO ONE YET'),
     top && entries.length ? h('p', { class: 'ach-screen-foot' }, foot) : null);
@@ -378,6 +378,8 @@ export async function renderGames(el, ctx) {
     const missing = h('a', { class: 'achievements-link ach-games-missing', href: '/docs/guide-achievements.html#missing-a-game', target: '_blank', rel: 'noopener' }, 'Missing a game?');
     el.replaceChildren(h('div', { class: 'ach-games-bar' }, field, missing), count, list);
     if (field.value) { pushEscapeLayer(layer); layered = true; }
+    // Shown again as it was (the window keeps the list): text in the filter claims Esc again.
+    el._shown = () => { if (field.value) { pushEscapeLayer(layer); layered = true; } };
   } catch (e) {
     if (gen === el._gen) el.replaceChildren(failed(e));
   }

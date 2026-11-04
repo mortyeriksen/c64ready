@@ -1,0 +1,151 @@
+{
+  "id": "spy-vs-spy-iii",
+  "title": "Spy vs. Spy III: Arctic Antics",
+  "url": "https://www.lemon64.com/game/spy-vs-spy-3",
+  "hashes": [
+    {
+      "hash": "03768676bc2ca69715ae4f621cdba30c",
+      "label": "OneLoad64 v5 cartridge (Spy vs Spy III - Arctic Antics.crt)"
+    },
+    {
+      "hash": "5d90f4dbe4c7a7e2b85d5fedd111d098",
+      "label": "OneLoad64 v5 crunched program (Spy vs Spy III - Arctic Antics.prg)"
+    },
+    {
+      "hash": "dec7ae742e6ef9b13fd12bdf20c180fd",
+      "label": "OneLoad64 v5 uncrunched program (Spy vs Spy III - Arctic Antics.prg)"
+    },
+    {
+      "hash": "947f0c1c3084953f7f66422641045778",
+      "label": "OneLoad64 v5 source tape (Spy vs Spy III.tap)"
+    },
+    {
+      "hash": "34d5f8926eaafa5cbc15e718e3a46bda",
+      "label": "C64PP First Star PAL nibbler dump (converted G64)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Arctic Arrival",
+      "description": "Begin a mission to reach the escape rocket.",
+      "points": 5,
+      "memaddr": "0xH6400=120_0xH6401=216_d0xH0038=0_0xH0038>0_0xH0037<60"
+    },
+    {
+      "id": 2,
+      "title": "Launch Briefcase",
+      "description": "Pick up the launch briefcase.",
+      "points": 5,
+      "memaddr": "0xH6400=120_0xH6401=216_0xH0263=1_d0xH006f!=57_0xH006f=57"
+    },
+    {
+      "id": 3,
+      "title": "Punch Card",
+      "description": "Collect the punch card for the escape rocket.",
+      "points": 5,
+      "memaddr": "0xH6400=120_0xH6401=216_0xH0263=1_d0xQ03e3=0_0xQ03e3=1"
+    },
+    {
+      "id": 4,
+      "title": "Gyroscope",
+      "description": "Collect the gyroscope for the escape rocket.",
+      "points": 5,
+      "memaddr": "0xH6400=120_0xH6401=216_0xH0263=1_d0xO03e3=0_0xO03e3=1"
+    },
+    {
+      "id": 5,
+      "title": "Fuel Canister",
+      "description": "Collect the fuel canister for the escape rocket.",
+      "points": 5,
+      "memaddr": "0xH6400=120_0xH6401=216_0xH0263=1_d0xM03e3=0_0xM03e3=1"
+    },
+    {
+      "id": 6,
+      "title": "All Three Located",
+      "description": "Find the punch card, gyroscope and fuel canister.",
+      "points": 15,
+      "memaddr": "0xH6400=120_0xH6401=216_0xH0263=1_d0xH03e3!=21_0xH03e3=21"
+    },
+    {
+      "id": 7,
+      "title": "Rocket Escape",
+      "description": "Launch the rocket as the White Spy.",
+      "points": 25,
+      "memaddr": "0xH6400=120_0xH6401=216_0xH006f=57_0xH03e5=63_0xH025f=6_0xH00de=1_O:0xH0038>0_0xH0037>0_d0xH025d!=6_0xH025d=6"
+    },
+    {
+      "id": 8,
+      "title": "Packed for Launch",
+      "description": "Carry all three rocket items in the launch briefcase.",
+      "points": 15,
+      "memaddr": "0xH6400=120_0xH6401=216_0xH006f=57_d0xH03e5!=63_0xH03e5=63"
+    },
+    {
+      "id": 9,
+      "title": "Arctic Level 1",
+      "description": "Escape Arctic level 1 in the rocket.",
+      "points": 5,
+      "memaddr": "0xH6400=120_0xH6401=216_0xH006f=57_0xH03e5=63_0xH025f=6_0xH00de=1_O:0xH0038>0_0xH0037>0_d0xH025d!=6_0xH025d=6_0xH00d1=0"
+    },
+    {
+      "id": 10,
+      "title": "Arctic Level 2",
+      "description": "Escape Arctic level 2 in the rocket.",
+      "points": 5,
+      "memaddr": "0xH6400=120_0xH6401=216_0xH006f=57_0xH03e5=63_0xH025f=6_0xH00de=1_O:0xH0038>0_0xH0037>0_d0xH025d!=6_0xH025d=6_0xH00d1=1"
+    },
+    {
+      "id": 11,
+      "title": "Arctic Level 3",
+      "description": "Escape Arctic level 3 in the rocket.",
+      "points": 10,
+      "memaddr": "0xH6400=120_0xH6401=216_0xH006f=57_0xH03e5=63_0xH025f=6_0xH00de=1_O:0xH0038>0_0xH0037>0_d0xH025d!=6_0xH025d=6_0xH00d1=2"
+    },
+    {
+      "id": 12,
+      "title": "Arctic Level 4",
+      "description": "Escape Arctic level 4 in the rocket.",
+      "points": 10,
+      "memaddr": "0xH6400=120_0xH6401=216_0xH006f=57_0xH03e5=63_0xH025f=6_0xH00de=1_O:0xH0038>0_0xH0037>0_d0xH025d!=6_0xH025d=6_0xH00d1=3"
+    },
+    {
+      "id": 13,
+      "title": "Arctic Level 5",
+      "description": "Escape Arctic level 5 in the rocket.",
+      "points": 15,
+      "memaddr": "0xH6400=120_0xH6401=216_0xH006f=57_0xH03e5=63_0xH025f=6_0xH00de=1_O:0xH0038>0_0xH0037>0_d0xH025d!=6_0xH025d=6_0xH00d1=4"
+    },
+    {
+      "id": 14,
+      "title": "Arctic Level 6",
+      "description": "Escape Arctic level 6 in the rocket.",
+      "points": 15,
+      "memaddr": "0xH6400=120_0xH6401=216_0xH006f=57_0xH03e5=63_0xH025f=6_0xH00de=1_O:0xH0038>0_0xH0037>0_d0xH025d!=6_0xH025d=6_0xH00d1=5"
+    },
+    {
+      "id": 15,
+      "title": "Arctic Level 7",
+      "description": "Escape Arctic level 7 in the rocket.",
+      "points": 25,
+      "memaddr": "0xH6400=120_0xH6401=216_0xH006f=57_0xH03e5=63_0xH025f=6_0xH00de=1_O:0xH0038>0_0xH0037>0_d0xH025d!=6_0xH025d=6_0xH00d1=6"
+    },
+    {
+      "id": 16,
+      "title": "Storm Deadline",
+      "description": "Launch the rocket in the last minute before the blizzard.",
+      "points": 15,
+      "memaddr": "0xH6400=120_0xH6401=216_0xH006f=57_0xH03e5=63_0xH025f=6_0xH00de=1_O:0xH0038>0_0xH0037>0_d0xH025d!=6_0xH025d=6_0xH0038=0_0xH0037>0"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Arctic Speedrun",
+      "description": "Fastest White Spy rocket escape with a complete launch briefcase.",
+      "format": "MILLISECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xH6400=120_0xH6401=216_d0xH0038=0_0xH0038>0_0xH0037<60::CAN:d0xH0263=1_0xH0263=0S0xH0038=0_0xH0037=0::SUB:0xH6400=120_0xH6401=216_0xH006f=57_0xH03e5=63_0xH025f=6_0xH00de=1_O:0xH0038>0_0xH0037>0_d0xH025d!=6_0xH025d=6::VAL:C:1=1_M:1=1"
+    }
+  ]
+}

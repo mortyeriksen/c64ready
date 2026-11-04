@@ -3,7 +3,8 @@
 // the shape it is dragged to picks the layout and it fits inside that shape,
 // it stays in the view and snaps to its edges, phones and tablets start
 // without it and get only the bar, the slim column and the pill, the chase
-// follows a running score at most once a frame, and an unlock fills its slot.
+// follows a running score at most once a frame, an unlock fills its slot, and a
+// challenge out for now powers down its slot and stamps its GAME tab card.
 //
 // Needs Playwright's Chromium; without it it reports a SKIP.
 import fs from 'node:fs';
@@ -239,6 +240,37 @@ try {
   expect(!early, 'the slot waits for its trophy');
   expect(late.got && late.next && late.count === '5/14', `then it is filled, the next is marked, the count is 5/14 (${JSON.stringify(late)})`);
   ok('an unlock flies into its slot');
+
+  // 7b. A challenge out for now: its slot powers down at once, a refresh leaves the effect running,
+  // it flashes back when live again, and its GAME tab card is stamped OUT.
+  const out = await d.page.evaluate(async () => {
+    const a = window.G.achievements[6];
+    const slot = () => document.querySelectorAll('.ach-hud-slot')[6];
+    const anim = () => document.getAnimations().find((x) => x.effect?.target === slot() && x.animationName === 'ach-out-power');
+    a.challenge = 'out'; a.challengeAt = Date.now();
+    window.hud.refresh();
+    const first = anim();
+    const r = { cls: slot().className, label: slot().getAttribute('aria-label'), delay: first ? first.effect.getTiming().delay : null };
+    await new Promise((res) => setTimeout(res, 200));
+    window.hud.refresh();
+    r.kept = anim() === first && first.playState === 'running';
+    const card = (await import('/src/achievements/hud-card.js')).trophyCards(window.G.achievements).children[6];
+    document.body.append(card.parentElement ?? card);
+    r.card = card.className;
+    r.stamp = getComputedStyle(card, '::after').content;
+    r.stampAnim = document.getAnimations().some((x) => x.effect?.target === card && x.effect?.pseudoElement === '::after' && x.animationName === 'ach-card-stamp');
+    a.challenge = 'live'; a.challengeAt = Date.now();
+    window.hud.refresh();
+    r.back = slot().className;
+    return r;
+  });
+  expect(/\bis-out\b/.test(out.cls) && /\bis-going-out\b/.test(out.cls), `the slot is out and going out (${out.cls})`);
+  expect(out.delay === 0, `the power-down starts at once, not after the slots' entrance stagger (delay ${out.delay})`);
+  expect(/out for now/.test(out.label), `its label says it is out for now (${out.label})`);
+  expect(out.kept, 'a refresh mid-effect leaves it running');
+  expect(/\bis-out\b/.test(out.card) && out.stamp === '"OUT"' && out.stampAnim, `the trophy card is stamped OUT (${out.card}, ${out.stamp})`);
+  expect(/\bis-back\b/.test(out.back) && !/\bis-out\b/.test(out.back), `live again, it flashes back (${out.back})`);
+  ok('a challenge out for now');
   expect(!errors.length && !d.errors.length, `no page errors (${[...errors, ...d.errors].join('; ')})`);
   ok('no page errors');
   await d.context.close();

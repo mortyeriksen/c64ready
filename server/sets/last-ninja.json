@@ -35,14 +35,14 @@
       "title": "Stepping Stones",
       "description": "Cross the Wastelands river without dying.",
       "points": 10,
-      "memaddr": "0xH0805=65SO:0xH009b<d0xH009b_Z:0xH00a2=10_N:d0xH00a2=10_0xH00a2=11.1._d0xH00a2=11_0xH00a2=12SO:0xH009b<d0xH009b_Z:0xH00a2=12_N:d0xH00a2=12_0xH00a2=11.1._d0xH00a2=11_0xH00a2=10"
+      "memaddr": "0xH0805=65SO:0xH009b<d0xH009b_Z:0xH00a2=10_N:d0xH00a2=10_0xH00a2=11.1._T:d0xH00a2=11_T:0xH00a2=12SO:0xH009b<d0xH009b_Z:0xH00a2=12_N:d0xH00a2=12_0xH00a2=11.1._T:d0xH00a2=11_T:0xH00a2=10"
     },
     {
       "id": 5,
       "title": "Marsh Walker",
       "description": "Cross the Wastelands marsh without dying.",
       "points": 10,
-      "memaddr": "0xH0805=65SO:0xH009b<d0xH009b_Z:0xH00a2=3_N:d0xH00a2=3_0xH00a2=15.1._d0xH00a2=16_0xH00a2=17SO:0xH009b<d0xH009b_Z:0xH00a2=17_N:d0xH00a2=17_0xH00a2=16.1._d0xH00a2=15_0xH00a2=3"
+      "memaddr": "0xH0805=65SO:0xH009b<d0xH009b_Z:0xH00a2=3_N:d0xH00a2=3_0xH00a2=15.1._T:d0xH00a2=16_T:0xH00a2=17SO:0xH009b<d0xH009b_Z:0xH00a2=17_N:d0xH00a2=17_0xH00a2=16.1._T:d0xH00a2=15_T:0xH00a2=3"
     },
     {
       "id": 6,
@@ -77,14 +77,14 @@
       "title": "Wastelands Survivor",
       "description": "Reach the Wilderness without losing a life in the Wastelands.",
       "points": 15,
-      "memaddr": "N:d0xH009b=0_O:0xH009b>0_N:d0xH0805!=65_Z:0xH0805=65.1._P:0=0_N:0xH0805=65_R:0xH009b<d0xH009b_0xH0805=66_0xH0804=67"
+      "memaddr": "N:d0xH009b=0_O:0xH009b>0_N:d0xH0805!=65_Z:0xH0805=65.1._P:0=0_N:0xH0805=65_R:0xH009b<d0xH009b_T:0xH0805=66_T:0xH0804=67"
     },
     {
       "id": 11,
       "title": "Wastelands Sprint",
       "description": "Reach the Wilderness from the start of the Wastelands in under five minutes.",
       "points": 25,
-      "memaddr": "N:d0xH009b=0_O:0xH009b>0_N:d0xH0805!=65_Z:0xH0805=65.1._P:0=0_R:0=0.15000._0xH0805=66_0xH0804=67"
+      "memaddr": "N:d0xH009b=0_O:0xH009b>0_N:d0xH0805!=65_Z:0xH0805=65.1._P:0=0_R:0=0.15000._T:0xH0805=66_T:0xH0804=67"
     },
     {
       "id": 12,
@@ -161,7 +161,7 @@
       "title": "Iron Will",
       "description": "Take the sacred scrolls without losing a life in the whole game.",
       "points": 50,
-      "memaddr": "N:d0xH009b=0_O:0xH009b>0_N:d0xH0805!=65_Z:0xH0805=65.1._P:0=0_N:0xH0805>=65_N:0xH0805<=70_R:0xH009b<d0xH009b_0xH0805=70_0xH0804=65_0xH00a2=15_d0xH03f5=0_0xH03f5=1_0xH0077=9"
+      "memaddr": "N:d0xH009b=0_O:0xH009b>0_N:d0xH0805!=65_Z:0xH0805=65.1._P:0=0_N:0xH0805>=65_N:0xH0805<=70_R:0xH009b<d0xH009b_T:0xH0805=70_T:0xH0804=65_T:0xH00a2=15_T:d0xH03f5=0_T:0xH03f5=1_T:0xH0077=9"
     }
   ],
   "leaderboards": [

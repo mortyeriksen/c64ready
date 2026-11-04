@@ -28,6 +28,19 @@ export const FONT_MAX = 24;
 const MARGIN = 18, BUTTONS = 74;
 const SNAP = 12;
 
+/** A challenge's going-out effect, and the flash when it is live again, in ms. */
+export const OUT_MS = 1000, BACK_MS = 600;
+/** A challenge's look for `a` (an engine snapshot's achievement), as a number so a repaint allocates nothing. */
+export const FX_NONE = 0, FX_OUT = 1, FX_GOING_OUT = 2, FX_BACK = 3;
+export const FX_CLASS = Object.freeze(['', ' is-out', ' is-out is-going-out', ' is-back']);
+export const challengeSince = (a, now) => (now > a.challengeAt ? now - a.challengeAt : 0);
+export function challengeFx(a, now) {
+  if (a.unlocked || !a.challenge) return FX_NONE;
+  const t = challengeSince(a, now);
+  if (a.challenge === 'out') return t < OUT_MS ? FX_GOING_OUT : FX_OUT;
+  return t < BACK_MS ? FX_BACK : FX_NONE;
+}
+
 /** A box's layout by its width over its height. */
 export function layoutFor(aspect, compact = false) {
   if (compact) return aspect >= 1.5 ? 'row' : 'col1';
@@ -234,12 +247,19 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
   function paintSlots() {
     const list = game?.achievements ?? NONE;
     const firstLocked = list.findIndex((a) => !isGot(a));
+    const now = Date.now();
     list.forEach((a, i) => {
       const s = slots.children[i];
       if (!s) return;
       s.classList.toggle('is-got', isGot(a));
       s.classList.toggle('is-next', i === firstLocked);
-      s.setAttribute('aria-label', `${a.title}: ${isGot(a) ? 'unlocked' : 'locked'}, ${a.points} points`);
+      // A slot keeps its element: an effect is timed when it starts, and a refresh leaves it running.
+      const fx = challengeFx(a, now), going = fx === FX_GOING_OUT, back = fx === FX_BACK;
+      if ((going && !s.classList.contains('is-going-out')) || (back && !s.classList.contains('is-back'))) s.style.setProperty('--ach-fx-delay', `-${challengeSince(a, now)}ms`);
+      s.classList.toggle('is-out', going || fx === FX_OUT);
+      s.classList.toggle('is-going-out', going);
+      s.classList.toggle('is-back', back);
+      s.setAttribute('aria-label', `${a.title}: ${isGot(a) ? 'unlocked' : a.challenge === 'out' ? 'out for now' : 'locked'}, ${a.points} points`);
     });
     const n = list.filter(isGot).length;
     got.textContent = String(n);
@@ -386,7 +406,8 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
   function redraw(delay = 0) {
     if (reducedMotion()) return;
     for (const n of [id, chaseEl]) { n.style.animationDelay = `${delay}ms`; replay(n, 'ach-hud-in-raster'); }
-    [...slots.children].forEach((s, i) => { s.style.animationDelay = `${delay + i * 22}ms`; replay(s, 'ach-hud-clack'); });
+    // A custom property, so a slot's own effects keep their timing.
+    [...slots.children].forEach((s, i) => { s.style.setProperty('--ach-hud-in', `${delay + i * 22}ms`); replay(s, 'ach-hud-clack'); });
   }
   // A move and reshape as one: the skin glides from where it was, its contents redraw.
   function morph(change) {

@@ -14,8 +14,11 @@ The version you are running is shown at the bottom of the About dialog.
 - **Trophies in Retro Vibes.** A HUD with the game's trophies and the next
   player to pass, to keep up while you play. Drag it anywhere and shape it into
   a bar, a column or a pill.
-- **Attract mode.** When a game ends, its high scores, Hall of Fame and trophies
+- **Attract mode.** When a game ends, its high scores, Trophy Hunters and trophies
   cycle across the window, as on an arcade cabinet.
+- **Challenges out for now.** A challenge trophy you can no longer earn this
+  time powers down and is stamped OUT until you can try again. Fifteen games
+  have them.
 - **A new GAME tab.** The Achievements window opens with the trophy HUD from
   Retro Vibes, and while you play a board only that board's high scores show.
 - **The Last Ninja.** Trophies for a first kill and for crossing the marsh, a
@@ -25,8 +28,11 @@ The version you are running is shown at the bottom of the About dialog.
   achievements and high scores.
 - **Ghosts 'n Goblins Arcade.** `GHOSTNGA.D64` now shares the cartridge's
   achievements and high scores.
-- **Out Run.** Four more trophies reward an early score, a fast first checkpoint,
-  a close finish and a million points before the final stage.
+- **IK+.** `IKplus.d64` now shares the cartridge's achievements and high scores.
+- **Out Run.** Eight more trophies, from a first crash to a whole route without
+  one.
+- **Spy vs. Spy trilogy.** Trophies for escapes, items, traps and blowing up
+  the rival, with speedrun boards for all three and a score board for the first.
 
 ## 2026.11.2 — November 3, 2026
 

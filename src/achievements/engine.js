@@ -27,9 +27,10 @@ import { createGamesApi } from './api.js';
  * @param {(e: object) => void} [o.onSoftcore]     { reason, quiet }: play stopped counting in public, until the next reset
  * @param {(e: object) => void} [o.onNotice]       { title, text }: a set's notice became true, such as a trainer that keeps the game from counting
  * @param {() => void} [o.onGameOver]              the set's game over became true: a game ended
+ * @param {(e: object) => void} [o.onChallenge]    { achievement, state: 'live'|'out' }: a challenge (trigger marked T:) can be earned, or no longer
  * @param {() => void} [o.onSessionLost]           the server no longer knows the session (401): the account should be checked again
  */
-export function createAchievementEngine({ account, base, fetchImpl = (...a) => fetch(...a), loadRc = loadRcheevos, onChange = () => {}, onUnlock = () => {}, onLeaderboard = () => {}, onNotice = () => {}, onGameOver = () => {}, onSoftcore = () => {}, onSessionLost = () => {}, log = (...a) => console.warn(...a) } = {}) {
+export function createAchievementEngine({ account, base, fetchImpl = (...a) => fetch(...a), loadRc = loadRcheevos, onChange = () => {}, onUnlock = () => {}, onLeaderboard = () => {}, onNotice = () => {}, onGameOver = () => {}, onChallenge = () => {}, onSoftcore = () => {}, onSessionLost = () => {}, log = (...a) => console.warn(...a) } = {}) {
   let rc = null, rcLoading = null;
   let game = null;               // { hash, id, title, files, achievements, leaderboards, notices, gameOver, notice, unlocked: Map id → when }
   // Why this machine's play no longer counts in public, or null while it is hardcore: a save
@@ -42,6 +43,10 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
   // A set's game over runs the same way, under the one id no notice takes.
   const GAME_OVER_ID = NOTICE_BASE;
   let active = false;       // rcheevos holds this game's conditions
+  // Challenges: id → { state: 'live'|'out', at }. Live while rcheevos has the achievement primed
+  // (only its T: trigger is left), out when it is no longer and did not trigger.
+  const challenges = new Map();
+  let challenged = false;   // a challenge changed this frame: one onChange after its events
   const hashes = new WeakMap();   // file bytes → hash, so a medium is hashed once
   const lookups = new Map();      // hash → Promise<game JSON | null>
   let known = null;               // Promise<Set of hashes with a set>
@@ -133,6 +138,7 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
   function activate() {
     rc.clear();
     active = false;
+    challenges.clear();
     if (!game) return;
     for (const a of game.achievements) {
       if (game.unlocked.has(a.id)) continue;
@@ -277,6 +283,21 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
     onChange(snapshot());
   }
 
+  /** Whether this frame's `events` unlock `id`: a loop, so the frame allocates no closure. */
+  function triggeredIn(events, id) {
+    for (let i = 0; i < events.length; i++) if (events[i].type === EVENT.ACHIEVEMENT_TRIGGERED && events[i].id === id) return true;
+    return false;
+  }
+
+  /** A challenge can be earned again, or no longer. */
+  function challenge(id, state) {
+    const a = game.achievements.find((x) => x.id === id);
+    if (!a || (state === 'out' && challenges.get(id)?.state !== 'live')) return;
+    challenges.set(id, { state, at: Date.now() });
+    onChallenge({ achievement: a, state });
+    challenged = true;
+  }
+
   /** The game ended: told, and armed again for the next game. */
   function gameOver() {
     rc.deactivateAchievement(GAME_OVER_ID);
@@ -296,7 +317,7 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
     return game ? {
       id: game.id, title: game.title, hash: game.hash,
       files: game.files,
-      achievements: game.achievements.map((a) => ({ id: a.id, title: a.title, description: a.description, points: a.points, unlocked: game.unlocked.has(a.id), unlockedAt: game.unlocked.get(a.id) ?? null, checking: game.checking?.has(a.id) ?? false })),
+      achievements: game.achievements.map((a) => ({ id: a.id, title: a.title, description: a.description, points: a.points, unlocked: game.unlocked.has(a.id), unlockedAt: game.unlocked.get(a.id) ?? null, checking: game.checking?.has(a.id) ?? false, challenge: challenges.get(a.id)?.state ?? null, challengeAt: challenges.get(a.id)?.at ?? null })),
       leaderboards: game.leaderboards.map((l) => ({ id: l.id, title: l.title, description: l.description, format: l.format, lowerIsBetter: l.lowerIsBetter })),
       notice: game.notice,
       softcore,
@@ -327,13 +348,18 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
         const e = events[i];
         if (e.type === EVENT.ACHIEVEMENT_TRIGGERED && e.id === GAME_OVER_ID) gameOver();
         else if (e.type === EVENT.ACHIEVEMENT_TRIGGERED && e.id >= NOTICE_BASE) noticed(e.id - NOTICE_BASE);
-        else if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) unlocked(e.id);
+        else if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) { challenges.delete(e.id); unlocked(e.id); }
+        else if (e.type === EVENT.ACHIEVEMENT_PRIMED && e.id < NOTICE_BASE) challenge(e.id, 'live');
+        // An unlock unprimes it in the same frame, just before it triggers.
+        else if (e.type === EVENT.ACHIEVEMENT_UNPRIMED && e.id < NOTICE_BASE && !triggeredIn(events, e.id)) challenge(e.id, 'out');
         else if (e.type === EVENT.LBOARD_TRIGGERED) submitted(e.id, e.value);
         else if (e.type === EVENT.LBOARD_STARTED || e.type === EVENT.LBOARD_UPDATED || e.type === EVENT.LBOARD_CANCELED) {
           const l = game.leaderboards.find((x) => x.id === e.id);
           if (l) onLeaderboard({ type: e.type === EVENT.LBOARD_STARTED ? 'started' : e.type === EVENT.LBOARD_CANCELED ? 'canceled' : 'updated', leaderboard: l, value: e.value });
         }
       }
+      // Challenges changed together, as a game start arms several, draw once.
+      if (challenged) { challenged = false; onChange(snapshot()); }
     },
     /**
      * A reset machine: every achievement waits for its conditions to be false
@@ -346,7 +372,10 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
       if (!active) return;
       if (game && !heldBy()) { setGame(null); return; }
       rc.reset();
-      if (game?.notice) { game.notice = null; onChange(snapshot()); }
+      const changed = challenges.size > 0 || !!game?.notice;
+      challenges.clear();
+      if (game) game.notice = null;
+      if (changed) onChange(snapshot());
     },
     /** The account changed: its unlocks are fetched again, and the set re-armed. */
     async accountChanged() {

@@ -46,9 +46,10 @@ const SPEED = 0x4ce8, MISSILE = 0x50d9, DOUBLE = 0x50da, LASER = 0x50db, MULTI =
 /** The score in play: ten digit bytes. */
 function setScore(n) { const d = String(n).padStart(10, '0'); for (let i = 0; i < 10; i++) ram[SCORE + i] = Number(d[i]); }
 const unlocked = new Set();
+const primed = new Set();   // challenges that can still be earned (rcheevos PRIMED, until UNPRIMED)
 const lb = [];
 function activate() {
-  rc.clear(); unlocked.clear(); lb.length = 0; ram.fill(0);
+  rc.clear(); unlocked.clear(); primed.clear(); lb.length = 0; ram.fill(0);
   return {
     codes: set.achievements.map((a) => rc.activateAchievement(a.id, a.memaddr)),
     boards: set.leaderboards.map((l) => rc.activateLeaderboard(l.id, l.definition)),
@@ -57,6 +58,8 @@ function activate() {
 function frame() {
   for (const e of rc.doFrame(ram)) {
     if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) unlocked.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_PRIMED) primed.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_UNPRIMED) primed.delete(e.id);
     else if (e.type >= EVENT.LBOARD_STARTED && e.type <= EVENT.LBOARD_TRIGGERED && e.type !== EVENT.LBOARD_UPDATED) lb.push({ ...e });
   }
 }
@@ -193,7 +196,7 @@ function gameOver() { while (ram[P1LIVES] > 0) die(); ram[STAGE] = 1; frames(30)
 
 // 9. The power-up reset at a new life, and the next life's base values, are not purchases.
 {
-  activate(); title(); newGame(); ram[SPEED] = 2; frames(2); unlocked.clear();
+  activate(); title(); newGame(); ram[SPEED] = 2; frames(2); unlocked.clear(); primed.clear();
   activate(); title(); newGame();
   ram[SHIELD] = 3; frames(2); ram[SHIELD] = 2; frames(2);
   expect(!has('Force Field'), 'the shield wearing down is no purchase');
@@ -236,6 +239,22 @@ function gameOver() { while (ram[P1LIVES] > 0) die(); ram[STAGE] = 1; frames(30)
   activate(); title(); newGame(); gameOver();
   expect(started() === 1 && !submitted().length, 'a pointless game submits nothing');
   ok('an empty game is not submitted');
+}
+
+// Clean Sweep is a challenge: live in stage 1 of a new game, out at a death, live again next game.
+{
+  const t = id['Clean Sweep'];
+  activate(); title();
+  expect(!primed.has(t), 'not live on the title');
+  newGame();
+  expect(primed.has(t), 'live as a game starts');
+  die();
+  expect(!primed.has(t) && !has('Clean Sweep'), 'out at a death');
+  gameOver(); newGame();
+  expect(primed.has(t), 'live again in the next game');
+  clearStage();
+  expect(has('Clean Sweep'), 'and earned by clearing stage 1');
+  ok('Clean Sweep: live, out, and live again');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }

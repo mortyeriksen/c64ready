@@ -8,13 +8,15 @@
 
 import { KIND_ICONS, iconMask } from './toast.js';
 import { GAME_ICONS } from './game-icons.js';
-import { chase, gapText, boardLabel, slotColumns } from './hud.js';
+import { chase, gapText, boardLabel, slotColumns, challengeFx, challengeSince, FX_CLASS, FX_GOING_OUT, FX_BACK } from './hud.js';
 import { h, ordinal, ago } from './browse.js';
 
 const BLANK = ' ';
 // The fill's 501 steps, made once: a running score moves it without allocating.
 const FILL = Array.from({ length: 501 }, (_, i) => `scaleX(${i / 500})`);
 const write = (node, text) => { if (node.firstChild) node.firstChild.data = text; else node.textContent = text; };
+// A slot or card built again mid-effect carries on where it was.
+const fxDelay = (a, fx, now) => (fx === FX_GOING_OUT || fx === FX_BACK ? `--ach-fx-delay: -${challengeSince(a, now)}ms` : null);
 
 /** The boards GAME shows: while one is played only that one, else every one. */
 export function boardsShown(leaderboards, playingId) {
@@ -43,6 +45,7 @@ export function hudCard({ game, board, standings, live = null, meId = null, form
   const pts = list.filter((a) => a.unlocked).reduce((t, a) => t + (a.points || 0), 0);
   const total = list.reduce((t, a) => t + (a.points || 0), 0);
   const next = list.findIndex((a) => !a.unlocked);
+  const now = Date.now();
 
   const icon = h('span', { class: 'ach-hud-icon' });
   icon.style.setProperty('--ach-icon', iconMask(GAME_ICONS[game.id] ?? KIND_ICONS.unlock));
@@ -51,7 +54,10 @@ export function hudCard({ game, board, standings, live = null, meId = null, form
       list.length ? h('small', {}, h('i', {}, String(pts)), ` / ${total} pts · `, h('i', {}, String(n)), ` of ${list.length}`) : null),
     ...buttons);
   const slots = list.length ? h('div', { class: 'ach-hud-slots', role: 'img', 'aria-label': `${n} of ${list.length} unlocked` },
-    list.map((a, i) => h('span', { class: `ach-hud-slot${a.unlocked ? ' is-got' : ''}${i === next ? ' is-next' : ''}`, title: `${a.title}: ${a.description} (${a.points})` }, String(i + 1)))) : null;
+    list.map((a, i) => {
+      const fx = challengeFx(a, now);
+      return h('span', { class: `ach-hud-slot${a.unlocked ? ' is-got' : ''}${i === next ? ' is-next' : ''}${FX_CLASS[fx]}`, style: fxDelay(a, fx, now), title: `${a.title}: ${a.description} (${a.points})` }, String(i + 1));
+    })) : null;
 
   // The chase: the running score, else the best, its rank and the next player to pass.
   const label = h('span', { class: 'ach-hud-now' }, 'BEST '), value = h('span', { class: 'ach-hud-value' }, '------'), rank = h('span', { class: 'ach-hud-rank' }, BLANK);
@@ -108,16 +114,17 @@ export function hudCard({ game, board, standings, live = null, meId = null, form
  */
 export function trophyCards(achievements, unlockedAt = () => null, checking = () => false) {
   const next = achievements.findIndex((a) => !a.unlocked);
+  const now = Date.now();
   const list = h('ul', { class: 'ach-trophies' }, achievements.map((a, i) => {
-    const got = a.unlocked, at = got ? unlockedAt(a) : null;
-    return h('li', { class: `ach-trophy ${got ? 'is-got' : 'is-locked'}${i === next ? ' is-next' : ''}` },
+    const got = a.unlocked, at = got ? unlockedAt(a) : null, fx = challengeFx(a, now);
+    return h('li', { class: `ach-trophy ${got ? 'is-got' : 'is-locked'}${i === next ? ' is-next' : ''}${FX_CLASS[fx]}`, style: fxDelay(a, fx, now) },
       h('span', { class: 'ach-trophy-icon', 'aria-hidden': 'true' }, got ? null : String(i + 1)),
       h('span', { class: 'ach-trophy-words' },
         h('b', {}, a.title),
         h('span', {}, a.description),
         at ? h('em', {}, `Unlocked ${ago(at)}`) : null,
         got && checking(a) ? h('span', { class: 'ach-checking' }, 'Being checked') : null,
-        h('span', { class: 'sr-only' }, got ? ' Unlocked.' : ' Locked.')),
+        h('span', { class: 'sr-only' }, got ? ' Unlocked.' : a.challenge === 'out' ? ' Out for now.' : ' Locked.')),
       h('span', { class: 'ach-trophy-pts' }, got ? `+${a.points}` : String(a.points)),
       i === next ? h('span', { class: 'ach-trophy-tag' }, 'NEXT UP') : null);
   }));

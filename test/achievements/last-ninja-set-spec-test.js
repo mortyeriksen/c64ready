@@ -35,11 +35,14 @@ const HERE = 0x805, NEXT = 0x804;
 const LEVELS = 'ABCDEF';
 
 const unlocked = new Set();
+const primed = new Set();   // challenges that can still be earned (rcheevos PRIMED, until UNPRIMED)
 function activate() {
-  rc.clear(); unlocked.clear(); ram.fill(0);
+  rc.clear(); unlocked.clear(); primed.clear(); ram.fill(0);
   return set.achievements.map((a) => rc.activateAchievement(a.id, a.memaddr));
 }
-function frame() { for (const e of rc.doFrame(ram)) if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) unlocked.add(e.id); }
+function frame() { for (const e of rc.doFrame(ram)) if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) unlocked.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_PRIMED) primed.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_UNPRIMED) primed.delete(e.id); }
 const frames = (n) => { for (let i = 0; i < n; i++) frame(); };
 const has = (title) => unlocked.has(id[title]);
 
@@ -413,6 +416,38 @@ function load(letter, junk = [0x9e, 0xdf, 0xff]) {
   ram[0x9b] = 3; frames(1000); load('B');
   expect(has('Wastelands Sprint') && has('Wastelands Survivor'), 'a clean, fast game after a GAME OVER in level 1 unlocks Survivor and Sprint');
   ok('a new game after GAME OVER starts the runs again');
+}
+
+// The no-death trophies and the sprint are challenges: live while they can be earned, out at a lost
+// life (or, for the sprint, at five minutes), and the river and marsh live again on the next try.
+{
+  const SCREEN = 0xa2, LIVES = 0x9b;
+  const live = (t) => primed.has(id[t]);
+  const to = (n, f = 10) => { ram[SCREEN] = n; frames(f); };
+  const runs = ['Wastelands Survivor', 'Wastelands Sprint', 'Iron Will'];
+  activate(); ram[HERE] = 0x85; frames(10);
+  expect(![...runs, 'Stepping Stones', 'Marsh Walker'].some(live), 'none is live on the title');
+  load('A'); ram[LIVES] = 3; to(9);
+  expect(runs.every(live), `the level 1 runs are live as the Wastelands load (${runs.filter(live)})`);
+  expect(!live('Stepping Stones'), 'the river is not live before it is reached');
+  to(10); to(11);
+  expect(live('Stepping Stones'), 'the river is live once stepped on');
+  ram[LIVES] = 2; frames(10);
+  expect(!live('Stepping Stones') && !live('Wastelands Survivor') && !live('Iron Will'), 'a lost life puts out the river and the no-death runs');
+  expect(live('Wastelands Sprint'), 'the sprint stays live: only time puts it out');
+  to(10); to(11);
+  expect(live('Stepping Stones'), 'the river is live again on the next try');
+  to(12);
+  expect(has('Stepping Stones'), 'and earned on the far bank');
+  to(3); to(15);
+  expect(live('Marsh Walker'), 'the marsh is live once stepped on');
+  ram[LIVES] = 1; frames(10);
+  expect(!live('Marsh Walker'), 'a lost life puts it out');
+  to(3); to(15); to(16); to(17);
+  expect(has('Marsh Walker'), 'the next try earns it');
+  frames(15010);
+  expect(!live('Wastelands Sprint') && !has('Wastelands Sprint'), 'five minutes put the sprint out');
+  ok('the Last Ninja challenges: live, out, and live again');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }

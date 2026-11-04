@@ -2536,10 +2536,11 @@ if (_vibesOverlay) {
 // The trophy HUD in the vibes view, shown and hidden by its button there, and
 // attract mode, the high-score screen that cycles after a posted score.
 let _trophyHud = null, _attract = null;
+const _outNow = [];   // challenge titles gone out this frame, for one toast
 achievements = createAchievementEngine({
   account: achievementAccount,
   base: apiBase(),
-  onChange: () => { achievementsPanel?.refresh(); _trophyHud?.refresh(); },
+  onChange: () => { achievementsPanel?.gameChanged(); _trophyHud?.refresh(); },
   onUnlock: ({ achievement, saved, signedIn, complete, softcore, checking }) => {
     const text = signedIn && !saved ? 'Saved when the server is back.' : softcore ? `${achievement.description} (softcore)` : checking ? `${achievement.description} Being checked.` : achievement.description;
     _achToasts.show({
@@ -2550,6 +2551,8 @@ achievements = createAchievementEngine({
     });
     // Its trophy flies from the toast into the HUD.
     _trophyHud?.unlocked(achievement);
+    // The window's views fetch again, now that the server has it.
+    achievementsPanel?.unlocked();
   },
   // Play stopped counting in public, as when a save state is loaded: said once, for a game with a set.
   onSoftcore: ({ reason, quiet }) => {
@@ -2559,6 +2562,19 @@ achievements = createAchievementEngine({
   onNotice: ({ title, text }) => _achToasts.show({ kind: 'notice', title: title || text, text: title ? text : '' }),
   // The set's game over: attract mode shows the boards and trophies.
   onGameOver: () => { _attract?.gameOver(); },
+  // A challenge spoiled: its trophy is out until it can be tried again. Those out in one frame, as a
+  // crash or a game over can put out several, share one toast.
+  onChallenge: ({ achievement, state }) => {
+    if (state !== 'out') return;
+    if (!_outNow.length) queueMicrotask(() => {
+      const n = _outNow.length;
+      _achToasts.show(n === 1
+        ? { kind: 'notice', title: `${_outNow[0]}: out`, text: 'It comes back when you can try again.' }
+        : { kind: 'notice', title: `${n} challenges out`, text: `${_outNow.join(', ')}. They come back when you can try again.` });
+      _outNow.length = 0;
+    });
+    _outNow.push(achievement.title);
+  },
   // The server no longer knows the session: checking it signs the page out, so the window and the toasts say so.
   onSessionLost: () => { achievementAccount.restore(); },
   onLeaderboard: (e) => {

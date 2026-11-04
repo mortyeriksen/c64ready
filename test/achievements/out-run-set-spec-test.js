@@ -3,11 +3,15 @@
 // synthesized RAM laid out as the game keeps it:
 //   $AA50-$AA56 (A-C) or $AA47-$AA4D (D-E): score digits, units first.
 //   $AA21/$AA22 (A-C) or $AA18/$AA19 (D-E): timer units and tens, 75 at the start;
-//         a checkpoint adds time (tens capped at 9); 0 ends the game.
+//         a checkpoint adds time (tens capped at 9). At 0 the car runs on for about a second and
+//         can still reach a checkpoint; then the game ends and the timer is reset to 75.
 //   $9144 stage index 0-4 (stage 1-5), stepped at each checkpoint.
 //   $80A9 the high byte of a JSR in the main loop: $83, rewritten to $93 by the goal routine at the
 //         end of stage 5.
 //   $A20D a route-specific byte, shared by standalone and MultiLoad64 builds.
+//   $AC10 (A-C) or $AC07 (D-E): 1 while the car is crashed.
+//   $8DBB the car's place across the road, $29 centred: a wheel is on the grass at $40 and up or
+//         below $12.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -40,13 +44,13 @@ const HASHES = {
   'out-run-d-crt': 'cf7b3cbc83fea9f38f466e04fe624d32', 'out-run-e-crt': '72b909481a6c20d19af7474b70a20991',
 };
 const ROUTES = [
-  ['A', 'Vineyard', 0x08, 0xaa21, 0xaa22, 0xaa50],
-  ['B', 'Death Valley', 0x0d, 0xaa21, 0xaa22, 0xaa50],
-  ['C', 'Desolation Hill', 0x09, 0xaa21, 0xaa22, 0xaa50],
-  ['D', 'Autobahn', 0x04, 0xaa18, 0xaa19, 0xaa47],
-  ['E', 'Lakeside', 0x03, 0xaa18, 0xaa19, 0xaa47],
+  ['A', 'Vineyard', 0x08, 0xaa21, 0xaa22, 0xaa50, 0xac10],
+  ['B', 'Death Valley', 0x0d, 0xaa21, 0xaa22, 0xaa50, 0xac10],
+  ['C', 'Desolation Hill', 0x09, 0xaa21, 0xaa22, 0xaa50, 0xac10],
+  ['D', 'Autobahn', 0x04, 0xaa18, 0xaa19, 0xaa47, 0xac07],
+  ['E', 'Lakeside', 0x03, 0xaa18, 0xaa19, 0xaa47, 0xac07],
 ];
-const STAGE = 0x9144, GOAL = 0x80a9, ROUTE = 0xa20d;
+const STAGE = 0x9144, GOAL = 0x80a9, ROUTE = 0xa20d, POS = 0x8dbb, CENTRE = 0x29;
 let route = ROUTES[0];
 function choose(label) { route = ROUTES.find(r => r[0] === label); ram[ROUTE] = route[2]; }
 function setScore(n) { const d = String(n).padStart(7, '0'); for (let i = 0; i < 7; i++) ram[route[5] + i] = Number(d[6 - i]); }
@@ -55,8 +59,9 @@ function setTime(t) { ram[route[4]] = Math.floor(t / 10); ram[route[3]] = t % 10
 const timeNow = () => ram[route[4]] * 10 + ram[route[3]];
 const unlocked = new Set();
 const lb = [];
+const primed = new Set();   // challenges that can still be earned (rcheevos PRIMED, until UNPRIMED)
 function activate() {
-  rc.clear(); unlocked.clear(); lb.length = 0; ram.fill(0); ram[GOAL] = 0x83; choose('A');
+  rc.clear(); unlocked.clear(); lb.length = 0; primed.clear(); ram.fill(0); ram[GOAL] = 0x83; ram[POS] = CENTRE; choose('A');
   return {
     codes: set.achievements.map((a) => rc.activateAchievement(a.id, a.memaddr)),
     boards: set.leaderboards.map((l) => rc.activateLeaderboard(l.id, l.definition)),
@@ -65,6 +70,8 @@ function activate() {
 function frame() {
   for (const e of rc.doFrame(ram)) {
     if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) unlocked.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_PRIMED) primed.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_UNPRIMED) primed.delete(e.id);
     else if (e.type >= EVENT.LBOARD_STARTED && e.type <= EVENT.LBOARD_TRIGGERED && e.type !== EVENT.LBOARD_UPDATED) lb.push({ ...e });
   }
 }
@@ -81,7 +88,13 @@ function start() { setScore(0); ram[STAGE] = 0; setTime(75); frames(30); setTime
 function drive(points, seconds = 5) { setScore(scoreNow() + points); setTime(timeNow() - seconds); frames(10); }
 /** A checkpoint: the stage steps on and time is added. */
 function checkpoint() { ram[STAGE]++; frames(1); setTime(Math.min(99, timeNow() + 50)); frames(10); }
-function timeOut() { setTime(1); frames(10); setTime(0); frames(60); }
+/** The clock runs out: about a second at 0, then the game ends and the timer is reset to 75. */
+function timeOut() { setTime(1); frames(10); setTime(0); frames(50); setTime(75); frames(20); }
+/** A crash: the flag holds for about three seconds while the car is put back on the road. */
+function crash() { ram[route[6]] = 1; frames(140); ram[route[6]] = 0; frames(5); }
+/** A drift to `pos` and back to the centre of the road. */
+function swerve(pos) { ram[POS] = pos; frames(20); ram[POS] = CENTRE; frames(5); }
+const goal = () => { drive(50000); ram[GOAL] = 0x93; frames(5); };
 
 // Every condition and leaderboard parses, and the set names the cartridges.
 {
@@ -204,6 +217,123 @@ for (const label of ['A', 'D']) {
   setScore(1000000); frames(2);
   expect(!has('Million Mile Smile'), `${label}: a million points first reached in stage 5 is too late`);
   ok(`${label}: million-point cutoff`);
+}
+
+// A crash counts only in a game, and only on the active layout's crash flag.
+for (const label of ['A', 'D']) {
+  activate(); title(label); crash();
+  expect(!has('Fender Bender'), `${label}: a crash flag on the music screen earns nothing`);
+  start(); drive(10000);
+  const other = route[6] === 0xac10 ? 0xac07 : 0xac10;
+  ram[other] = 1; frames(5); ram[other] = 0; frames(5);
+  expect(!has('Fender Bender'), `${label}: the other layout's crash byte is not a crash`);
+  crash();
+  expect(has('Fender Bender'), `${label}: a crash in a game earns Fender Bender`);
+  ok(`${label}: first crash`);
+}
+
+// A clean stage has no crash between its start and its checkpoint, or the goal for stage 5.
+for (const label of ['A', 'D']) {
+  activate(); title(label); start(); drive(50000); checkpoint();
+  expect(has('Not a Scratch'), `${label}: a stage 1 with no crash earns Not a Scratch`);
+  ok(`${label}: clean first stage`);
+
+  activate(); title(label); start(); drive(20000); crash(); drive(20000); checkpoint();
+  expect(!has('Not a Scratch'), `${label}: a crash in stage 1 spoils its checkpoint`);
+  crash(); drive(20000); checkpoint();
+  expect(!has('Not a Scratch'), `${label}: a crash in stage 2 spoils the next checkpoint`);
+  drive(20000); checkpoint();
+  expect(has('Not a Scratch'), `${label}: a stage 3 with no crash earns Not a Scratch`);
+  ok(`${label}: clean stage after crashes`);
+
+  activate(); title(label); start();
+  for (let s = 1; s < 5; s++) { crash(); checkpoint(); }
+  crash(); goal();
+  expect(!has('Not a Scratch'), `${label}: a crash in every stage earns nothing`);
+  activate(); title(label); start();
+  for (let s = 1; s < 5; s++) { crash(); checkpoint(); }
+  expect(!has('Not a Scratch'), `${label}: four crashed stages earn nothing`);
+  goal();
+  expect(has('Not a Scratch'), `${label}: a stage 5 with no crash earns it at the goal`);
+  ok(`${label}: clean final stage`);
+}
+
+// Leaving the road is a wheel on the grass: $40 and up on one side, below $12 on the other.
+for (const label of ['A', 'D']) {
+  activate(); title(label); start(); swerve(0x3f); swerve(0x12); drive(50000); checkpoint();
+  expect(has('Tarmac Only'), `${label}: $3F and $12 are still on the road`);
+  ok(`${label}: road edge`);
+
+  for (const pos of [0x40, 0x11]) {
+    activate(); title(label); start(); swerve(pos); drive(50000); checkpoint();
+    expect(!has('Tarmac Only'), `${label}: $${pos.toString(16).toUpperCase()} is off the road`);
+    drive(50000); checkpoint();
+    expect(has('Tarmac Only'), `${label}: the next stage on the road earns Tarmac Only`);
+    ok(`${label}: off-road at $${pos.toString(16).toUpperCase()}`);
+  }
+
+  activate(); title(label); start();
+  for (let s = 1; s < 5; s++) { swerve(0x48); checkpoint(); }
+  expect(!has('Tarmac Only'), `${label}: four stages off the road earn nothing`);
+  goal();
+  expect(has('Tarmac Only'), `${label}: a stage 5 on the road earns it at the goal`);
+  ok(`${label}: final stage on the road`);
+
+  activate(); title(label); ram[STAGE] = 1; frames(5); ram[STAGE] = 2; frames(5); ram[STAGE] = 4; frames(5); ram[GOAL] = 0x93; frames(5);
+  expect(!has('Tarmac Only') && !has('Not a Scratch') && !has('Unstoppable'), `${label}: stage steps and a goal without a game earn nothing`);
+  ok(`${label}: no road trophy off the game`);
+}
+
+// A route without a crash runs from the start of a game to the goal.
+for (const label of ['A', 'D']) {
+  activate(); title(label); start();
+  for (let s = 1; s < 5; s++) { drive(50000); checkpoint(); }
+  goal();
+  expect(has('Unstoppable'), `${label}: a route with no crash earns Unstoppable`);
+  ok(`${label}: route without a crash`);
+
+  activate(); title(label); start(); drive(50000); checkpoint(); checkpoint(); crash(); checkpoint(); checkpoint(); goal();
+  expect(!has('Unstoppable'), `${label}: a crash in stage 3 spoils the route`);
+  ram[GOAL] = 0x83; timeOut(); title(label); start();
+  for (let s = 1; s < 5; s++) { drive(50000); checkpoint(); }
+  goal();
+  expect(has('Unstoppable'), `${label}: the next game without a crash earns it`);
+  ok(`${label}: a crash spoils only its own game`);
+}
+
+// The clean-driving trophies are challenges: live while they can be earned, out when spoiled.
+for (const label of ['A', 'D']) {
+  const live = (t) => primed.has(id[t]);
+  const challenges = ['Not a Scratch', 'Tarmac Only', 'Unstoppable'];
+  activate(); title(label);
+  expect(challenges.every((t) => !live(t)), `${label}: no challenge is live before a game`);
+  start();
+  expect(challenges.every(live), `${label}: all three are live once a game starts`);
+  expect(!live('Fender Bender') && !live('Checkpoint!'), `${label}: trophies without a challenge are never live`);
+  swerve(0x48);
+  expect(!live('Tarmac Only') && live('Not a Scratch') && live('Unstoppable'), `${label}: leaving the road puts out only Tarmac Only`);
+  crash();
+  expect(!live('Not a Scratch') && !live('Unstoppable'), `${label}: a crash puts out Not a Scratch and Unstoppable`);
+  checkpoint();
+  expect(live('Tarmac Only') && live('Not a Scratch') && !challenges.some(has), `${label}: the per-stage two are live again at the next stage`);
+  expect(!live('Unstoppable'), `${label}: Unstoppable stays out for the rest of the game`);
+  timeOut(); title(label); start();
+  expect(live('Unstoppable'), `${label}: Unstoppable is live again in the next game`);
+  ok(`${label}: challenge indicators`);
+}
+
+// The clock at 0 is not yet the end: a checkpoint reached in the second after it plays on, and
+// the board posts the score the game really ends with.
+for (const label of ['A', 'D']) {
+  activate(); title(label); start(); drive(116860, 10);
+  setTime(1); frames(10); setTime(0); frames(30);
+  expect(!submitted().length, `${label}: nothing is posted while the clock reads 0`);
+  checkpoint(); drive(20000);
+  expect(!submitted().length && has('Checkpoint!'), `${label}: a checkpoint at 0 plays on`);
+  timeOut();
+  const s = submitted();
+  expect(s.length === 1 && s[0].value === 136860, `${label}: the real end posts 136,860 (${s.map((e) => e.value)})`);
+  ok(`${label}: a checkpoint reached at 0 seconds`);
 }
 
 // Each route has its own leaderboard; timeout and goal submit the active score.

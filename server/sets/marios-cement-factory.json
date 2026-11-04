@@ -26,7 +26,7 @@
       "title": "Double Shift",
       "description": "Reach 300 points without a miss.",
       "points": 10,
-      "memaddr": "N:0xH982c=1_d0xH982c=0.1._0xH8126=1_d0xH8126=0_d0xH824c=0"
+      "memaddr": "N:0xH982c=1_d0xH982c=0.1._T:0xH8126=1_T:d0xH8126=0_d0xH824c=0"
     },
     {
       "id": 3,

@@ -44,9 +44,10 @@ function setScore(n) {
   for (let i = 0; i < 4; i++) ram[SCORE + i] = parseInt(d.slice(6 - 2 * i, 8 - 2 * i), 16);
 }
 const unlocked = new Set();
+const primed = new Set();   // challenges that can still be earned (rcheevos PRIMED, until UNPRIMED)
 const lbEvents = [];
 function activate() {
-  rc.clear(); unlocked.clear(); lbEvents.length = 0;
+  rc.clear(); unlocked.clear(); primed.clear(); lbEvents.length = 0;
   return {
     codes: set.achievements.map((a) => rc.activateAchievement(a.id, a.memaddr)),
     lb: set.leaderboards.map((l) => rc.activateLeaderboard(l.id, l.definition)),
@@ -55,6 +56,8 @@ function activate() {
 function frame() {
   for (const e of rc.doFrame(ram)) {
     if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) unlocked.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_PRIMED) primed.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_UNPRIMED) primed.delete(e.id);
     else if (e.type >= EVENT.LBOARD_STARTED && e.type <= EVENT.LBOARD_TRIGGERED) lbEvents.push({ ...e });
   }
 }
@@ -227,6 +230,32 @@ for (const diff of [TROOPER, DAREDEVIL, CRAZY]) {
   const sub = lbEvents.find((e) => e.type === EVENT.LBOARD_TRIGGERED);
   expect(sub && sub.value === 12345670, `game over submits the score (got ${sub?.value})`);
   ok('high score');
+}
+
+// The perfect waves and Bone Collector are challenges: live until the arrow that breaks them, and a
+// spoiled wave stays out for the rest of the game while the next wave's own one is live.
+{
+  const live = (t) => primed.has(id[t]);
+  newGame(TROOPER);
+  expect(live('Waste Not') && live('Bee Line'), 'the perfect waves are live as a Trooper game starts');
+  shoot(8);
+  expect(live('Waste Not'), 'still live at the eighth arrow, the spiders\' requirement');
+  shoot(1);
+  expect(!live('Waste Not') && !unlocked.has(id['Waste Not']), 'out at the ninth arrow');
+  advance();
+  expect(!live('Waste Not'), 'and still out once the bees come: the spiders are gone this game');
+  expect(live('Bee Line'), 'the bees\' own challenge is live');
+  clearWave(0);
+  expect(unlocked.has(id['Bee Line']), 'a perfect bee wave earns Bee Line');
+
+  newGame(TROOPER); for (let i = 0; i < 3; i++) clearWave(1); setScore(30000); frames(2); clearWave(1);
+  expect(live('Bone Collector'), 'Bone Collector is live in the phantom wave');
+  ram[ARROWS]--; frames(2);
+  for (let i = 0; i < 4; i++) { ram[ARROWS]--; frames(4); }
+  expect(live('Bone Collector'), 'still live after five arrows');
+  ram[ARROWS]--; frames(2);
+  expect(!live('Bone Collector') && !unlocked.has(id['Bone Collector']), 'out at the sixth arrow');
+  ok('the Forbidden Forest challenges: live, and out at the arrow that breaks them');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }

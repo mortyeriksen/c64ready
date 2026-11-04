@@ -42,9 +42,10 @@ const CODE = 0x2462, CODE2 = 0x0c89, ENERGY = 0x0cc3, ARMS = 0x19ed, POW = 0x0af
 const FLYING = 0x22c2, LANDED = 0xe6, RAID = 0x08eb, ENDED = 0x0f, SCORE = 0x2483;
 
 const unlocked = new Set();
+const primed = new Set();   // challenges that can still be earned (rcheevos PRIMED, until UNPRIMED)
 const boards = [];
 function activate() {
-  rc.clear(); unlocked.clear(); boards.length = 0; ram.fill(0);
+  rc.clear(); unlocked.clear(); primed.clear(); boards.length = 0; ram.fill(0);
   const codes = set.achievements.map((a) => rc.activateAchievement(a.id, a.memaddr));
   for (const l of set.leaderboards ?? []) codes.push(rc.activateLeaderboard(l.id, l.definition));
   return codes;
@@ -52,6 +53,8 @@ function activate() {
 function frame() {
   for (const e of rc.doFrame(ram)) {
     if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) unlocked.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_PRIMED) primed.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_UNPRIMED) primed.delete(e.id);
     else if (e.type === EVENT.LBOARD_STARTED || e.type === EVENT.LBOARD_TRIGGERED || e.type === EVENT.LBOARD_CANCELED) boards.push(e);
   }
 }
@@ -237,6 +240,22 @@ function begin(lastMsg = 3) {
   posted = submits();
   expect(posted.length === 2 && posted[1].value === 1100, `the next game posts 1100 (got ${posted.map((e) => e.value).join(',')})`);
   ok('the score posts at game over');
+}
+
+// Untouchable (task one) and Clean Hands (5,000 points) are challenges: out at the first hit.
+{
+  const ids = ['Untouchable', 'Clean Hands'].map((t) => set.achievements.find((a) => a.title === t).id);
+  attract();
+  expect(!ids.some((t) => primed.has(t)), 'neither is live in the attract');
+  ram[ENERGY] = 48; frames(2);
+  expect(ids.every((t) => primed.has(t)), 'both live as a game starts');
+  ram[ENERGY] = 41; frames(2);
+  expect(!ids.some((t) => primed.has(t) || unlocked.has(t)), 'a hit puts both out');
+  ram[ENERGY] = 0; frames(2); ram[ENERGY] = 48; frames(2);
+  expect(ids.every((t) => primed.has(t)), 'both live again in a new game');
+  score(5000); frames(2);
+  expect(unlocked.has(ids[1]) && primed.has(ids[0]), 'Clean Hands earned at 5,000, Untouchable still live');
+  ok('Untouchable and Clean Hands: live, out, and live again');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }

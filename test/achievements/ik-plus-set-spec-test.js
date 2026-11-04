@@ -38,7 +38,7 @@ const set = checkSet(JSON.parse(fs.readFileSync(path.join(root, 'server/sets/ik-
 const rc = await loadRcheevos();
 const ram = new Uint8Array(0x10000);
 const id = Object.fromEntries(set.achievements.map((a) => [a.title, a.id]));
-const HASH = '819c741a29030beb67cbb36d8379f9d7';
+const HASH = '819c741a29030beb67cbb36d8379f9d7', D64_HASH = '6865783adc6ee8ca840eacaf4c9ca935';
 const WHITE_HUMAN = 0x45, RED_HUMAN = 0x46, HUMANS = 0x48, PHASE = 0x66, LEVEL = 0x10c, POINTS = 0x10f, FIGHT = 0x195, SCORE = 0x113;
 const SETUP = 0, FIGHTING = 1, OVER = 3, GAME_OVER = 4, BONUS = 5;
 
@@ -99,6 +99,7 @@ function gameOver() { ram[PHASE] = GAME_OVER; frames(30); ram[WHITE_HUMAN] = 0; 
   codes.forEach((c, i) => expect(c === 0, `"${set.achievements[i].title}" parses (code ${c})`));
   expect(boards.length === 1 && boards[0] === 0, 'the high-score leaderboard parses');
   expect(set.hashes.some((h) => h.hash === HASH), 'the set names IK+.crt');
+  expect(set.hashes.some((h) => h.hash === D64_HASH), 'the set names IKplus.d64');
   expect(set.leaderboards[0].format === 'SCORE' && !set.leaderboards[0].lowerIsBetter, 'High Score is a SCORE board, higher is better');
   ok(`all ${codes.length} achievements and ${boards.length} leaderboard parse`);
 }
@@ -112,6 +113,13 @@ function gameOver() { ram[PHASE] = GAME_OVER; frames(30); ram[WHITE_HUMAN] = 0; 
     try { note = missingNote('ik-plus-crt'); } catch { /* keep the note */ }
     console.log(`ok  - test ${++testNo}: the OneLoad64 cartridge hashes to the listed hash # SKIP ${note}`);
   } else { expect(rc.hash(fs.readFileSync(file)) === HASH, `${path.basename(file)} hashes to ${HASH}`); ok('the OneLoad64 cartridge hashes to the listed hash'); }
+}
+
+// 2b. The Hooper crack disk runs the same game, after its intro: its hash is the disk file's.
+{
+  const file = assetPath('ik-plus-d64');
+  if (!file) console.log(`ok  - test ${++testNo}: the disk hashes to the listed hash # SKIP ${missingNote('ik-plus-d64')}`);
+  else { expect(rc.hash(fs.readFileSync(file)) === D64_HASH, `${path.basename(file)} hashes to ${D64_HASH}`); ok('the disk hashes to the listed hash'); }
 }
 
 // 3. The attract demo unlocks nothing and starts no attempt.

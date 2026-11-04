@@ -100,6 +100,7 @@ const TESTS = [
   'test/achievements/giana-sisters-set-spec-test.js',
   'test/achievements/paradroid-set-spec-test.js',
   'test/achievements/paperboy-set-spec-test.js',
+  'test/achievements/spy-vs-spy-set-spec-test.js',
   'test/achievements/nemesis-set-spec-test.js',
   'test/achievements/action-biker-set-spec-test.js',
   'test/achievements/chuckie-egg-set-spec-test.js',

@@ -53,7 +53,7 @@
       "title": "Not a Scratch",
       "description": "Clear level 1 without losing a life.",
       "points": 10,
-      "memaddr": "N:0xH078D=0_N:d0xH07F3=0_N:0xH07F3>0_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._0xH5BA5=205_N:0xH07EB=1_R:d0xH07EB=0_d0xH078D=0_0xH078D=1"
+      "memaddr": "N:0xH078D=0_N:d0xH07F3=0_N:0xH07F3>0_N:0xH07F2=5_N:0xH07F0=0_N:0xH07F1=0_0xH5BA5=205.1._T:0xH5BA5=205_N:0xH07EB=1_R:d0xH07EB=0_T:d0xH078D=0_T:0xH078D=1"
     },
     {
       "id": 7,

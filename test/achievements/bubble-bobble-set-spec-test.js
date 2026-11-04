@@ -35,9 +35,10 @@ const HASH = '0f5841ab63b80e7e8bb20e2c25f6d5cf';
 const LEVEL = 0x10, LIVES = 0x45a, SCORE = 0x400, ITEM = 0x54;
 
 const unlocked = new Set();
+const primed = new Set();   // challenges that can still be earned (rcheevos PRIMED, until UNPRIMED)
 const boards = [];
 function activate() {
-  rc.clear(); unlocked.clear(); boards.length = 0; ram.fill(0);
+  rc.clear(); unlocked.clear(); primed.clear(); boards.length = 0; ram.fill(0);
   const codes = set.achievements.map((a) => rc.activateAchievement(a.id, a.memaddr));
   for (const l of set.leaderboards ?? []) codes.push(rc.activateLeaderboard(l.id, l.definition));
   return codes;
@@ -45,6 +46,8 @@ function activate() {
 function frame() {
   for (const e of rc.doFrame(ram)) {
     if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) unlocked.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_PRIMED) primed.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_UNPRIMED) primed.delete(e.id);
     else if (e.type === EVENT.LBOARD_STARTED || e.type === EVENT.LBOARD_TRIGGERED || e.type === EVENT.LBOARD_CANCELED) boards.push(e);
   }
 }
@@ -181,6 +184,22 @@ function setScore(n) {
   const posted = boards.filter((e) => e.type === EVENT.LBOARD_TRIGGERED);
   expect(posted.length === 1 && posted[0].value === 12340, `the posted score is 12340 (got ${posted.map((e) => e.value)})`);
   ok('the high score');
+}
+
+// Clean Start is a challenge: live in round 1 with every life, out when one is lost.
+{
+  const t = id['Clean Start'];
+  fresh();
+  expect(!primed.has(t), 'not live before a game');
+  begin();
+  expect(primed.has(t), 'live as round 1 starts');
+  ram[LIVES] = 2; frames(2);
+  expect(!primed.has(t) && !has('Clean Start'), 'out when a life is lost');
+  setScore(0); ram[LEVEL] = 0; ram[LIVES] = 3; frames(2);
+  expect(primed.has(t), 'live again in a new game');
+  clear(0);
+  expect(has('Clean Start'), 'and earned by clearing round 1');
+  ok('Clean Start: live, out, and live again');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }

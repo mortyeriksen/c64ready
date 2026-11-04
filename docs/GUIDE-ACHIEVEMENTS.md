@@ -4,6 +4,8 @@
 
 # Achievements
 
+![How achievements work, in four steps: load a game and its file is matched to the game's set, play while each frame the set reads the C64's memory, your unlocks and best scores are saved, and they are shared as Trophy Hunters, high scores and activity. Below, where you see it: the GAME tab, the trophy HUD in Retro Vibes, toasts and attract mode.](/guide/achievements-overview.svg)
+
 Some games have achievements: goals like clearing a level or passing a score.
 Each one unlocks the moment you reach it, and your best score goes on the
 game's leaderboard. The same window holds a chat for everyone signed in. Part
@@ -45,7 +47,7 @@ When a game with achievements loads, the window opens on its **GAME** tab. On
 a phone or in fullscreen, the **ACHIEVEMENTS** button flashes three times
 instead.
 
-![The Achievements window docked beside Commando Arcade in play, on its GAME tab: the progress meter with 4 of 14 achievements, the high scores and the Hall of Fame with five players and your own row highlighted, and the first achievements, two of them unlocked.](/guide/achievements-game.webp)
+![The Achievements window docked beside Commando Arcade in play, on its GAME tab: the trophy HUD with 4 of 14 trophies lit and the next player to pass, the high scores and Trophy Hunters with five players and your own row highlighted, and the first trophies.](/guide/achievements-game.webp)
 
 The **GAME** tab shows:
 
@@ -67,7 +69,7 @@ says so when it is on.
 
 Only hardcore play counts in public. Loading a save state, or a trainer a game
 notices, makes the game softcore until you reset the machine: what you unlock
-stays on your own page, but not in the Hall of Fame or the activity, and scores
+stays on your own page, but not in Trophy Hunters or the activity, and scores
 are not posted. Results that look unlikely wait for a check before they show.
 
 With more than one game loaded, the one you are playing counts: a cartridge,
@@ -109,12 +111,16 @@ trophy button shows and hides it.
 An unlock's trophy flies into its slot. With the HUD hidden, the button's ring
 shows your progress.
 
+A challenge, such as a stage without a crash, goes out when you can no longer
+earn it this time: its slot powers down and its card is stamped **OUT**. It
+comes back when you can try again.
+
 ![Retro Vibes' IK+ Sunset with Commando Arcade in play on the TV. The trophy HUD runs along the foot: the game's icon and points, a slot per achievement with five lit and the next one marked, and the chase with the best score, fourth place and the next player to pass. An unlock toast lands at the top.](/guide/vibes-hud.webp)
 
 ### Attract mode
 
 When a game ends, its high-score screen fills the window and cycles the board
-you played, the Hall of Fame and your trophies, as an arcade does between
+you played, Trophy Hunters and your trophies, as an arcade does between
 games. OutRun on route A shows route A, not the other routes. A game without a
 score, such as The Last Ninja, shows it at its GAME OVER. Click the bars
 under it to pick a page. Press **Space** to continue, or play again or click
@@ -149,19 +155,22 @@ every board.
 | Ghosts 'n Goblins Arcade | 10 | yes | OneLoad64 v5 extras: `Ghosts'n Goblins Arcade [EasyFlash].crt`, or `GHOSTNGA.D64` |
 | Great Giana Sisters | 10 | yes | OneLoad64 v5: `Great Giana Sisters, The.crt` |
 | Gribbly's Day Out | | yes | OneLoad64 v5: `Gribbly's Day Out.crt` |
-| IK+ | 13 | yes | OneLoad64 v5: `IK+.crt` |
+| IK+ | 13 | yes | OneLoad64 v5: `IK+.crt`, or the disk `IKplus.d64` |
 | Impossible Mission | 10 | yes | OneLoad64 v5: `Impossible Mission.crt` |
 | Mario's Cement Factory | 15 | Game A and Game B | c64cade's PRG, or `mario-cf131.prg` |
 | Mole Attack | | yes | OneLoad64 v5 extras: `Mole Attack.crt` (the official cartridge), or c64cade's PRG |
 | Munchy Worm | | yes | c64cade's `munchyworm_1_01.d64` |
 | Nemesis | 22 | yes | OneLoad64 v5: `Nemesis.crt` |
-| Out Run | 18 | five routes | OneLoad64 v5: `Out Run (Route A) (J1).crt` through Route E, or MultiLoad64: `Out Run (by $olo1870) [EasyFlash].crt` (select routes 1 to 5) |
+| Out Run | 22 | five routes | OneLoad64 v5: `Out Run (Route A) (J1).crt` through Route E, or MultiLoad64: `Out Run (by $olo1870) [EasyFlash].crt` (select routes 1 to 5) |
 | Paperboy | 18 | yes | OneLoad64 v5: `Paperboy.crt`, or `AlternativeFormats/PRGs/Crunched/Paperboy.prg` or `AlternativeFormats/PRGs/Uncrunched/Paperboy.prg` |
 | Panther | | yes | OneLoad64 v5: `Panther.crt`, or c64cade's cartridge |
 | Paradroid | 11 | yes | OneLoad64 v5: `Paradroid.crt` |
 | Rainbow Islands | 24 | yes | OneLoad64 v5 MultiLoad64: `Rainbow Islands (by $olo1870) [EasyFlash].crt`, or c64cade's copy |
 | Rambo First Blood Part II | 17 | yes | OneLoad64 v5: `Rambo - First Blood Part II.crt` |
 | Road Runner | | yes | OneLoad64 v5 MultiLoad64: `Road Runner (by $olo1870) [EasyFlash].crt` |
+| Spy vs. Spy | 18 | fastest escape, highest score | OneLoad64 v5 cartridge, crunched or uncrunched program, source tape, or C64PP First Star M4 disk dumps |
+| Spy vs. Spy II: The Island Caper | 18 | fastest submarine escape | OneLoad64 v5 cartridge, crunched or uncrunched program, source tape, or C64PP First Star disk dump |
+| Spy vs. Spy III: Arctic Antics | 16 | fastest rocket escape | OneLoad64 v5 cartridge, crunched or uncrunched program, source tape, or C64PP First Star PAL disk dump |
 | Stix | | yes | OneLoad64 v5: `Stix (J1).crt`, the official cartridge `Stix.crt` in the extras, or c64cade's PRG |
 | Super Mario Bros 64 | 17 | yes | OneLoad64 v5: `Super Mario Bros 64 (Zeropaige - 2019).crt` |
 | The Hitchhiker's Guide to the Galaxy | 22 | Fewest moves to 400 points | Release 47 disk: `hitchhikers_guide[infocom_1984](r47).d64` |
@@ -194,7 +203,7 @@ page, pages the same way. A player keeps the same colour here and in the chat.
 games you have played, most complete first, with when you last played them
 where the window has room. **Filter
 games** narrows the list by title. A game's page shows its high-score screen,
-its Hall of Fame, your achievements, its activity and the versions it accepts.
+its Trophy Hunters, your achievements, its activity and the versions it accepts.
 Its **i** button shows the versions, and **About the game** under them opens the
 game's page on [Lemon64](https://www.lemon64.com) in a new window.
 

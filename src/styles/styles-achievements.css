@@ -1343,11 +1343,67 @@
 }
 .ach-hud-slot.is-next::after { box-shadow: inset 0 0 0 1px var(--ach-hud-cyan); }
 @keyframes ach-hud-blink { 50% { opacity: 0; } }
-.ach-hud-slot.ach-hud-clack { animation: ach-hud-clack 300ms cubic-bezier(.3, 1.6, .5, 1) both; }
+.ach-hud-slot.ach-hud-clack { animation: ach-hud-clack 300ms cubic-bezier(.3, 1.6, .5, 1) var(--ach-hud-in, 0ms) both; }
 @keyframes ach-hud-clack { from { opacity: 0; transform: translateY(0.6em) scale(0.5); } }
 .ach-hud-slot.ach-hud-flash { animation: ach-hud-flash 600ms ease-out; }
 @keyframes ach-hud-flash { from { background: var(--highlight); box-shadow: 0 0 1.6em var(--highlight); transform: scale(1.35); } }
 .ach-hud-in-raster { animation: ach-hud-raster 260ms steps(5) backwards; }
+
+/* A challenge out for now (engine onChallenge): it can no longer be earned this time. It switches
+   off like a CRT, to a line, then a dot, and comes back an empty frame with a red cross. Only
+   transform and opacity animate, on the compositor: the beam (::before) and the cross (::after,
+   a mask in the theme's red) are painted once. --ach-fx-delay resumes a slot built again mid-effect. */
+.ach-hud-slot.is-out {
+  color: color-mix(in srgb, var(--dim) 60%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dim) 35%, transparent);
+  opacity: 0.5;
+}
+.ach-hud-slot.is-out::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: none;
+  background: var(--red);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1 1L9 9M9 1L1 9' stroke='%23000' stroke-width='0.5'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  animation: none;
+  opacity: 0.55;
+}
+.ach-hud-slot.is-going-out { animation: ach-out-power 800ms ease-in var(--ach-fx-delay, 0ms) both; }
+.ach-hud-slot.is-going-out::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--text-bright);
+  box-shadow: 0 0 0.8em var(--text-bright);
+  animation: ach-out-beam 800ms ease-in var(--ach-fx-delay, 0ms) both;
+}
+.ach-hud-slot.is-going-out::after { animation: ach-out-cross 800ms steps(1) var(--ach-fx-delay, 0ms) both; }
+@keyframes ach-out-power {
+  0% { transform: none; opacity: 1; }
+  28% { transform: scale(1.2, 0.08); opacity: 1; }
+  46% { transform: scale(0.08, 0.08); opacity: 1; }
+  60% { transform: scale(0); opacity: 0; }
+  61% { transform: none; opacity: 0; }
+  100% { transform: none; opacity: 0.5; }
+}
+@keyframes ach-out-beam { 0% { opacity: 0; } 20%, 50% { opacity: 1; } 61%, 100% { opacity: 0; } }
+@keyframes ach-out-cross { 0% { opacity: 0; } 61%, 100% { opacity: 0.55; } }
+/* Live again: a flash, by the opacity of a painted glow. */
+.ach-hud-slot.is-back::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--highlight);
+  box-shadow: 0 0 1.6em var(--highlight);
+  opacity: 0;
+  animation: ach-slot-back 600ms ease-out var(--ach-fx-delay, 0ms) both;
+}
+@keyframes ach-slot-back { from { opacity: 1; transform: scale(1.35); } }
+
 @keyframes ach-hud-raster { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0); } }
 
 /* The chase, in the score toast's green. */
@@ -1736,6 +1792,49 @@
   letter-spacing: 0.08em;
 }
 
+/* A challenge out for now, in the GAME tab: an OUT stamp slams on and the card shakes and greys.
+   Its NEXT UP tag gives way to the stamp. */
+.ach-trophy.is-out { --ach-ink: var(--red); }
+.ach-trophy.is-out .ach-trophy-tag { display: none; }
+.ach-trophy.is-out > * { opacity: 0.5; }
+.ach-trophy.is-out::after {
+  content: "OUT";
+  position: absolute;
+  top: 50%;
+  right: 3.4em;
+  padding: 0.15em 0.5em;
+  border: 0.18em solid var(--red);
+  border-radius: 0.25em;
+  background: color-mix(in srgb, var(--panel-bg) 70%, transparent);
+  color: var(--red);
+  font-size: 1em;
+  font-weight: bold;
+  letter-spacing: 0.15em;
+  transform: translateY(-50%) rotate(-12deg);
+}
+.ach-trophy.is-going-out { animation: ach-card-shake 400ms linear calc(var(--ach-fx-delay, 0ms) + 220ms) both; }
+.ach-trophy.is-going-out::after { animation: ach-card-stamp 260ms cubic-bezier(.5, 0, .7, .4) var(--ach-fx-delay, 0ms) both; }
+@keyframes ach-card-stamp { from { opacity: 0; transform: translateY(-50%) rotate(-24deg) scale(3); } }
+@keyframes ach-card-shake { 20% { transform: translate(-0.2em, 0.1em); } 40% { transform: translate(0.2em, -0.1em); } 60% { transform: translate(-0.12em, 0); } 80% { transform: translate(0.08em, 0); } }
+/* Live again: a flash, by the opacity of a painted glow. */
+.ach-trophy.is-back::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--info) 35%, transparent);
+  box-shadow: 0 0 1.2em var(--info);
+  opacity: 0;
+  animation: ach-card-back 600ms ease-out var(--ach-fx-delay, 0ms) both;
+}
+@keyframes ach-card-back { from { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .ach-hud-slot.is-going-out, .ach-hud-slot.is-going-out::before, .ach-hud-slot.is-going-out::after, .ach-hud-slot.is-back::before,
+  .ach-trophy.is-going-out, .ach-trophy.is-going-out::after, .ach-trophy.is-back::after { animation: none; }
+  .ach-hud-slot.is-going-out::before, .ach-hud-slot.is-back::before, .ach-trophy.is-back::after { opacity: 0; }
+}
+
 /* ── Attract mode (achievements/attract.js) ────────────────────────────────
    After a posted score, the game's high-score screen cycles as an arcade's
    does between games, centered over the whole window, the page or the vibes
@@ -2099,7 +2198,7 @@
   width: auto;
 }
 
-/* The Hall of Fame: the high-score screen, with a meter of the achievements
+/* Trophy Hunters: the high-score screen, with a meter of the achievements
    unlocked and the points they are worth. A star after the name marks a
    finished set. */
 .ach-fame {

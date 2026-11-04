@@ -52,9 +52,10 @@ function setScore(points) {
 const statusLine = (on) => { ram[LABEL] = on ? 0x6d : 0x20; ram[LABEL + 1] = on ? 0x5d : 0x20; };
 
 const unlocked = new Set();
+const primed = new Set();   // challenges that can still be earned (rcheevos PRIMED, until UNPRIMED)
 const lb = [];
 function activateAll() {
-  rc.clear(); unlocked.clear(); lb.length = 0;
+  rc.clear(); unlocked.clear(); primed.clear(); lb.length = 0;
   const codes = set.achievements.map((a) => rc.activateAchievement(a.id, a.memaddr));
   const boards = set.leaderboards.map((l) => rc.activateLeaderboard(l.id, l.definition));
   return { codes, boards };
@@ -62,6 +63,8 @@ function activateAll() {
 function frame() {
   for (const e of rc.doFrame(ram)) {
     if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) unlocked.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_PRIMED) primed.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_UNPRIMED) primed.delete(e.id);
     else if (e.type >= EVENT.LBOARD_STARTED && e.type <= EVENT.LBOARD_TRIGGERED) lb.push({ ...e });
   }
 }
@@ -223,7 +226,7 @@ function loseMan() {
   activateAll(); powerOn(); frames(10);
   startGame();
   ram[MEN] = 1; frames(2); ram[MEN] = 0; frames(2);
-  unlocked.clear();
+  unlocked.clear(); primed.clear();
   ram[AREA] = AREA_2; statusLine(true); frames(2);                // drawn once before the title
   statusLine(false);
   for (const a of [BETWEEN, AREA_1, AREA_2, AREA_3, 0x53]) { ram[AREA] = a; ram[ROWS] = 0; frames(20); }
@@ -242,6 +245,26 @@ function loseMan() {
   expect(unlocked.size === 0, `no unlock without a game start (got ${[...unlocked]})`);
   expect(lb.length === 0, 'no high-score attempt without a game start');
   ok('a game starts only with five men and a zero score');
+}
+
+// Guns Only (no grenade), Not a Scratch (no man lost in area 1) and Flawless Mission (none in the
+// mission) are challenges: live from the start of a game, out at the first grenade or lost man.
+{
+  const all = ['Guns Only', 'Not a Scratch', 'Flawless Mission'];
+  const live = (t) => primed.has(id[t]);
+  activateAll(); powerOn(); frames(5);
+  expect(!all.some(live), 'none is live on the title');
+  startGame();
+  expect(all.every(live), 'all three are live as a game starts');
+  ram[GRENADES] = bcd(4); frames(2);
+  expect(!live('Guns Only') && live('Not a Scratch') && live('Flawless Mission'), 'a grenade puts out only Guns Only');
+  loseMan();
+  expect(!live('Not a Scratch') && !live('Flawless Mission') && !all.some(has), 'a lost man puts out the other two');
+  powerOn(); frames(5); startGame();
+  expect(all.every(live), 'all three are live again in a new game');
+  breakArea(AREA_2);
+  expect(has('Guns Only') && has('Not a Scratch') && live('Flawless Mission'), 'a clean area 1 earns two, the mission one stays live');
+  ok('Guns Only, Not a Scratch and Flawless Mission: live, out, and live again');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }

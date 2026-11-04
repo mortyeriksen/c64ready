@@ -1,0 +1,177 @@
+{
+  "id": "spy-vs-spy",
+  "title": "Spy vs. Spy",
+  "url": "https://www.lemon64.com/game/spy-vs-spy",
+  "hashes": [
+    {
+      "hash": "4eb1e1e556cd1bf8bca882f11668881d",
+      "label": "OneLoad64 v5 cartridge (Spy vs Spy.crt)"
+    },
+    {
+      "hash": "eb43243a38d477b818c3da08d9e6cf4c",
+      "label": "OneLoad64 v5 crunched program (Spy vs Spy.prg)"
+    },
+    {
+      "hash": "db128de56f15a00e9e3bf29f35a06f92",
+      "label": "OneLoad64 v5 uncrunched program (Spy vs Spy.prg)"
+    },
+    {
+      "hash": "b12b32c8c912aa3e195b3c0f4c6cad6b",
+      "label": "OneLoad64 v5 source tape (Spy vs Spy.tap)"
+    },
+    {
+      "hash": "163fadb63eee2f1a71a1c1f1b9cfc851",
+      "label": "C64PP First Star M4 nibbler dump (converted G64)"
+    },
+    {
+      "hash": "09350c3863387a267fdc13686797df86",
+      "label": "C64PP First Star M4 alternate nibbler dump (converted G64)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Embassy Infiltration",
+      "description": "Start an embassy mission as the White Spy.",
+      "points": 5,
+      "memaddr": "0xH7429=181_0xH742a=121_0xH0093>0_d0xH0093=0_0xH0093>0"
+    },
+    {
+      "id": 2,
+      "title": "Your Papers, Please",
+      "description": "Pick up the passport.",
+      "points": 5,
+      "memaddr": "0xH7429=181_0xH742a=121_d0xM0079=0_0xM0079=1"
+    },
+    {
+      "id": 3,
+      "title": "Expense Account",
+      "description": "Pick up the money.",
+      "points": 5,
+      "memaddr": "0xH7429=181_0xH742a=121_d0xN0079=0_0xN0079=1"
+    },
+    {
+      "id": 4,
+      "title": "Open Sesame",
+      "description": "Pick up the key.",
+      "points": 5,
+      "memaddr": "0xH7429=181_0xH742a=121_d0xO0079=0_0xO0079=1"
+    },
+    {
+      "id": 5,
+      "title": "Classified",
+      "description": "Pick up the secret plans.",
+      "points": 5,
+      "memaddr": "0xH7429=181_0xH742a=121_d0xP0079=0_0xP0079=1"
+    },
+    {
+      "id": 6,
+      "title": "Full Briefcase",
+      "description": "Carry the passport, money, key and secret plans at once.",
+      "points": 15,
+      "memaddr": "0xH7429=181_0xH742a=121_d0xH0079!=15_0xH0079=15"
+    },
+    {
+      "id": 7,
+      "title": "Boom, Spy!",
+      "description": "Blow up the Black Spy with a bomb trap.",
+      "points": 10,
+      "memaddr": "0xH7429=181_0xH742a=121_d0xH0084!=192_0xH0084=192"
+    },
+    {
+      "id": 8,
+      "title": "Getaway Plane",
+      "description": "Escape the embassy as the White Spy.",
+      "points": 25,
+      "memaddr": "0xH7429=181_0xH742a=121_0xH0041=0_0xH0287=1_0xH6400=0_O:0xH0093>0_0xH0091>0_d0xH0255!=5_0xH0255=5"
+    },
+    {
+      "id": 9,
+      "title": "Embassy Level 1",
+      "description": "Escape embassy level 1 as the White Spy.",
+      "points": 5,
+      "memaddr": "0xH7429=181_0xH742a=121_0xH0041=0_0xH0287=1_0xH6400=0_O:0xH0093>0_0xH0091>0_d0xH0255!=5_0xH0255=5_0xH022c=0"
+    },
+    {
+      "id": 10,
+      "title": "Embassy Level 2",
+      "description": "Escape embassy level 2 as the White Spy.",
+      "points": 5,
+      "memaddr": "0xH7429=181_0xH742a=121_0xH0041=0_0xH0287=1_0xH6400=0_O:0xH0093>0_0xH0091>0_d0xH0255!=5_0xH0255=5_0xH022c=1"
+    },
+    {
+      "id": 11,
+      "title": "Embassy Level 3",
+      "description": "Escape embassy level 3 as the White Spy.",
+      "points": 10,
+      "memaddr": "0xH7429=181_0xH742a=121_0xH0041=0_0xH0287=1_0xH6400=0_O:0xH0093>0_0xH0091>0_d0xH0255!=5_0xH0255=5_0xH022c=2"
+    },
+    {
+      "id": 12,
+      "title": "Embassy Level 4",
+      "description": "Escape embassy level 4 as the White Spy.",
+      "points": 10,
+      "memaddr": "0xH7429=181_0xH742a=121_0xH0041=0_0xH0287=1_0xH6400=0_O:0xH0093>0_0xH0091>0_d0xH0255!=5_0xH0255=5_0xH022c=3"
+    },
+    {
+      "id": 13,
+      "title": "Embassy Level 5",
+      "description": "Escape embassy level 5 as the White Spy.",
+      "points": 15,
+      "memaddr": "0xH7429=181_0xH742a=121_0xH0041=0_0xH0287=1_0xH6400=0_O:0xH0093>0_0xH0091>0_d0xH0255!=5_0xH0255=5_0xH022c=4"
+    },
+    {
+      "id": 14,
+      "title": "Embassy Level 6",
+      "description": "Escape embassy level 6 as the White Spy.",
+      "points": 15,
+      "memaddr": "0xH7429=181_0xH742a=121_0xH0041=0_0xH0287=1_0xH6400=0_O:0xH0093>0_0xH0091>0_d0xH0255!=5_0xH0255=5_0xH022c=5"
+    },
+    {
+      "id": 15,
+      "title": "Embassy Level 7",
+      "description": "Escape embassy level 7 as the White Spy.",
+      "points": 25,
+      "memaddr": "0xH7429=181_0xH742a=121_0xH0041=0_0xH0287=1_0xH6400=0_O:0xH0093>0_0xH0091>0_d0xH0255!=5_0xH0255=5_0xH022c=6"
+    },
+    {
+      "id": 16,
+      "title": "Embassy Level 8",
+      "description": "Escape embassy level 8 as the White Spy.",
+      "points": 25,
+      "memaddr": "0xH7429=181_0xH742a=121_0xH0041=0_0xH0287=1_0xH6400=0_O:0xH0093>0_0xH0091>0_d0xH0255!=5_0xH0255=5_0xH022c=7"
+    },
+    {
+      "id": 17,
+      "title": "Final Call",
+      "description": "Escape the embassy in the last minute.",
+      "points": 15,
+      "memaddr": "0xH7429=181_0xH742a=121_0xH0041=0_0xH0287=1_0xH6400=0_O:0xH0093>0_0xH0091>0_d0xH0255!=5_0xH0255=5_0xH0093=0_0xH0091>0"
+    },
+    {
+      "id": 18,
+      "title": "Top Secret Briefcase",
+      "description": "Pick up the briefcase that holds the escape documents.",
+      "points": 5,
+      "memaddr": "0xH7429=181_0xH742a=121_d0xH007b!=10_0xH007b=10"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Embassy Speedrun",
+      "description": "Fastest White Spy escape from a new embassy mission.",
+      "format": "MILLISECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xH7429=181_0xH742a=121_0xH0093>0_d0xH0093=0_0xH0093>0::CAN:0xH0093=0_0xH0091=0::SUB:0xH7429=181_0xH742a=121_0xH0041=0_0xH0287=1_0xH6400=0_O:0xH0093>0_0xH0091>0_d0xH0255!=5_0xH0255=5::VAL:C:1=1_M:1=1"
+    },
+    {
+      "id": 2,
+      "title": "Embassy Hiscore",
+      "description": "The White Spy’s final score after an embassy escape.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH7429=181_0xH742a=121_0xH0093>0_d0xH0093=0_0xH0093>0::CAN:0xH0093=0_0xH0091=0::SUB:0xH7429=181_0xH742a=121_0xH0041=0_0xH0287=1_0xH6400=0_0xH0255=5_O:0xH0093>0_0xH0091>0_d0xH0045=3_0xH0045=2::VAL:0xU02bd*1000_0xL02bd*100_0xU02bb*10_0xL02bb"
+    }
+  ]
+}

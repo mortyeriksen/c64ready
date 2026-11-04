@@ -52,9 +52,10 @@ const P1 = 0xb9b8, P2 = 0xbb22;
 const PRACTICE = 1, DUEL = 2;
 
 const unlocked = new Set();
+const primed = new Set();   // challenges that can still be earned (rcheevos PRIMED, until UNPRIMED)
 const boards = [];
 function activate() {
-  rc.clear(); unlocked.clear(); boards.length = 0; ram.fill(0);
+  rc.clear(); unlocked.clear(); primed.clear(); boards.length = 0; ram.fill(0);
   const codes = set.achievements.map((a) => rc.activateAchievement(a.id, a.memaddr));
   for (const l of set.leaderboards ?? []) codes.push(rc.activateLeaderboard(l.id, l.definition));
   return codes;
@@ -62,6 +63,8 @@ function activate() {
 function frame() {
   for (const e of rc.doFrame(ram)) {
     if (e.type === EVENT.ACHIEVEMENT_TRIGGERED) unlocked.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_PRIMED) primed.add(e.id);
+    else if (e.type === EVENT.ACHIEVEMENT_UNPRIMED) primed.delete(e.id);
     else if (e.type === EVENT.LBOARD_STARTED || e.type === EVENT.LBOARD_TRIGGERED || e.type === EVENT.LBOARD_CANCELED) boards.push(e);
   }
 }
@@ -466,6 +469,22 @@ for (const [key, hash] of Object.entries(HASHES)) {
   frames(1);
   expect(cancels(DUEL).length === 1, 'switching to 2PLR cancels the duel');
   ok('two-player and demo transitions cancel both boards');
+}
+
+// Untouchable is a challenge: live in a fight while your energy is full, out at the first blow taken.
+{
+  const t = set.achievements.find((a) => a.title === 'Untouchable').id;
+  fresh();
+  expect(!primed.has(t), 'not live before a fight');
+  practice(); frames(2);
+  expect(primed.has(t), 'live as a fight starts');
+  ram[E1] = 11; frames(2);
+  expect(!primed.has(t) && !unlocked.has(t), 'out at the first blow taken');
+  ram[E1] = 12; frames(2);
+  expect(primed.has(t), 'live again when the next fight refills the energy');
+  ram[BE] = 1; frames(1);
+  expect(unlocked.has(t), 'and earned by winning it');
+  ok('Untouchable: live, out, and live again');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }
