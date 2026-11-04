@@ -29,6 +29,7 @@ const rc = await loadRcheevos();
 const ram = new Uint8Array(0x10000);
 const ids = Object.fromEntries(set.achievements.map((a) => [a.title, a.id]));
 const HASH = '20f3b8dfce814ebba9c06fa7288a24a6';
+const D64_HASH = '804e0058ddaf0432943c257e3da545b9';
 const LEVEL = 0x78d, MINUTES = 0x7f3, LIVES = 0x7f2, SCORE = 0x7f0, LOST = 0x7eb, TRAINER = 0x5ba5;
 const NOTICE_ID = 1_000_000_001;
 const unlocked = new Set(), boards = [], notices = [];
@@ -71,9 +72,20 @@ const events = (type) => boards.filter((e) => e.type === type);
   expect(codes.notice === 0, 'the trainer notice parses');
   expect(set.achievements.length === 10, 'ten achievements are listed');
   expect(set.hashes.some((h) => h.hash === HASH), 'the set names the Arcade cartridge');
+  expect(set.hashes.some((h) => h.hash === D64_HASH), 'the set names the Arcade disk');
+  expect(set.hashes.length === 2, 'the set supports the cartridge and disk');
   expect(set.leaderboards[0].format === 'SCORE' && !set.leaderboards[0].lowerIsBetter, 'the board ranks higher scores first');
   expect(set.notices[0].title === 'Trainer on', 'the trainer notice has its displayed title');
   ok('the Arcade definitions parse');
+}
+
+{
+  const file = assetPath('ghosts-n-goblins-arcade-d64');
+  if (!file) console.log(`ok  - test ${++testNo}: disk hash # SKIP ${missingNote('ghosts-n-goblins-arcade-d64')}`);
+  else {
+    expect(rc.hash(fs.readFileSync(file)) === D64_HASH, 'the Arcade disk hashes to the set');
+    ok('the Arcade disk hash');
+  }
 }
 
 {

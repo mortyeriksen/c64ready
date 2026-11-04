@@ -343,7 +343,7 @@
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
   "zork-i-d64": {
-   "description": "Zork I (Infocom), release 30 on disk, Assembly64's zorki-1541.d64, MD5 066845adee747394e0395ddc613d4372: the release its own-design achievement set targets",
+   "description": "Zork I (Infocom), release 30 on disk, zorki-1541.d64, MD5 066845adee747394e0395ddc613d4372: the release its own-design achievement set targets",
    "env": "C64_ZORK_I_D64",
    "paths": [
     "~/projects/c64ready-workspace/c64media/d64/zorki-1541.d64"
@@ -531,6 +531,14 @@
    "env": "C64_GNG_ARCADE_CRT",
    "paths": [
     "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Extras/OtherCRTs/Ghosts'n Goblins Arcade [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "ghosts-n-goblins-arcade-d64": {
+   "description": "Ghosts 'n Goblins Arcade, GHOSTNGA.D64, MD5 804e0058ddaf0432943c257e3da545b9",
+   "env": "C64_GNG_ARCADE_D64",
+   "paths": [
+    "~/projects/c64ready-workspace/assembly64/Ghostsn Goblins Arcade/GHOSTNGA.D64"
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },

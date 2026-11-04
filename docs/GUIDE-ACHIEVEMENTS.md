@@ -146,7 +146,7 @@ every board.
 | Forbidden Forest | 16 | yes | OneLoad64 v5: `Forbidden Forest.crt`, or c64cade's cartridge |
 | Galaga (Arlasoft) | | yes | OneLoad64 v5: `Galaga (Arlasoft - 2021).crt`, or c64cade's `galagaV106_FH.d64` |
 | Ghosts 'n Goblins | 15 | yes | OneLoad64 v5: `Ghosts'n Goblins.crt` |
-| Ghosts 'n Goblins Arcade | 10 | yes | OneLoad64 v5 extras: `Ghosts'n Goblins Arcade [EasyFlash].crt` |
+| Ghosts 'n Goblins Arcade | 10 | yes | OneLoad64 v5 extras: `Ghosts'n Goblins Arcade [EasyFlash].crt`, or `GHOSTNGA.D64` |
 | Great Giana Sisters | 10 | yes | OneLoad64 v5: `Great Giana Sisters, The.crt` |
 | Gribbly's Day Out | | yes | OneLoad64 v5: `Gribbly's Day Out.crt` |
 | IK+ | 13 | yes | OneLoad64 v5: `IK+.crt` |
@@ -172,7 +172,7 @@ every board.
 | Vegetables Deluxe | | Shopping, Classic and Countdown | c64cade's `vegdlxnointro.prg` |
 | Wizball | 9 | yes | OneLoad64 v5: `Wizball.crt` |
 | Yie Ar Kung-Fu | 12 | yes | OneLoad64 v5: `Yie Ar Kung-Fu.crt` |
-| Zork I | 20 | Fewest moves to 350 points | Assembly64's `zorki-1541.d64` (release 30) |
+| Zork I | 20 | Fewest moves to 350 points | `zorki-1541.d64` |
 
 Action Biker, Chuckie Egg, Forbidden Forest, Galaga (Arlasoft), Gribbly's Day
 Out, Mario's Cement Factory, Mole Attack, Munchy Worm, Panther, Rainbow
@@ -254,8 +254,7 @@ machine's memory. Anyone can ask for a set, or write one.
 ### Ask for a game
 
 [Open an issue on GitHub](https://github.com/mortyeriksen/c64ready/issues/new)
-with the game's title, where your file comes from (OneLoad64, an Assembly64
-or CSDb release), and its MD5 fingerprint:
+with the game's title, the exact file name and its MD5 fingerprint:
 
 | System | Command |
 | --- | --- |
