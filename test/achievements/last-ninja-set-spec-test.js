@@ -46,11 +46,22 @@ function frame() { for (const e of rc.doFrame(ram)) if (e.type === EVENT.ACHIEVE
 const frames = (n) => { for (let i = 0; i < n; i++) frame(); };
 const has = (title) => unlocked.has(id[title]);
 
-/** A level load: junk at $0805 while the files arrive, then the level's letter and the next one's. */
-function load(letter, junk = [0x9e, 0xdf, 0xff]) {
+/**
+ * A level load: junk at $0805 while the files arrive, then the level's letter and the next one's. In a
+ * game the lives ($9B) read 0 as the level-exit routine starts (4 frames, the old letter still in
+ * place), come back while the files load, and read 0 again for 20 frames as the new letter arrives.
+ * `pause` holds the loader screen that many frames, until the player goes on.
+ */
+function load(letter, junk = [0x9e, 0xdf, 0xff], pause = 0) {
+  const lives = ram[0x9b];
+  if (lives) { ram[0x9b] = 0; frames(4); }
   for (const j of junk) { ram[HERE] = j; frames(3); }
+  frames(pause);
+  if (lives) ram[0x9b] = lives;
   const i = LEVELS.indexOf(letter);
-  ram[HERE] = letter.charCodeAt(0); ram[NEXT] = LEVELS.charCodeAt((i + 1) % 6); frames(20);
+  ram[HERE] = letter.charCodeAt(0); ram[NEXT] = LEVELS.charCodeAt((i + 1) % 6);
+  if (lives) { ram[0x9b] = 0; frames(20); ram[0x9b] = lives; }
+  frames(20);
 }
 
 // 1. Every condition parses, the set names the cartridge, its one board is a level 1 time (the game keeps
@@ -193,16 +204,20 @@ function load(letter, junk = [0x9e, 0xdf, 0xff]) {
   ok('Wastelands Survivor needs a full level without a lost life');
 }
 
-// 9. The five-minute timer starts on A's load transition and counts PAL frames, including time spent
-// loading B. A timed-out attempt cannot restart halfway through A.
+// 9. The five-minute timer starts on A's load transition, counts PAL frames and stops as the level
+// ends: the loader screen after it, a pause until the player goes on, does not count. A timed-out
+// attempt cannot restart halfway through A.
 {
-  activate(); ram[HERE] = 0x85; frames(10); load('A'); frames(14900); load('B');
+  activate(); ram[HERE] = 0x85; frames(10); load('A'); ram[0x9b] = 3; frames(14900); load('B');
   expect(has('Wastelands Sprint'), 'a level 1 run under five minutes unlocks');
 
-  activate(); ram[HERE] = 0x85; frames(10); load('A'); frames(15010); load('B');
+  activate(); ram[HERE] = 0x85; frames(10); load('A'); ram[0x9b] = 3; frames(14900); load('B', undefined, 3000);
+  expect(has('Wastelands Sprint'), 'the loader screen\'s pause after the level does not count against it');
+
+  activate(); ram[HERE] = 0x85; frames(10); load('A'); ram[0x9b] = 3; frames(15010); load('B');
   expect(!has('Wastelands Sprint'), 'a level 1 run after five minutes does not unlock');
 
-  activate(); ram[HERE] = 0x85; frames(10); load('A'); frames(15010);
+  activate(); ram[HERE] = 0x85; frames(10); load('A'); ram[0x9b] = 3; frames(15010);
   frames(100); load('B');
   expect(!has('Wastelands Sprint'), 'timeout cannot restart while still in level 1');
   ok('Wastelands Sprint has a five-minute limit from level start');
@@ -384,26 +399,48 @@ function load(letter, junk = [0x9e, 0xdf, 0xff]) {
   expect(overs === 0, 'not at the title');
   ram[HERE] = 0x41; ram[NEXT] = 0x42; ram[0x9b] = 3; run(10); ram[0x9b] = 2; run(10); ram[0x9b] = 1; run(10);
   expect(overs === 0, 'not while lives are left');
-  ram[0x9b] = 0; run(10);
-  expect(overs === 1, 'the last life lost is game over');
+  ram[0x9b] = 0; run(30);
+  expect(overs === 0, 'not in the first moment: a level change reads 0 lives too');
+  run(30);
+  expect(overs === 1, 'the last life lost, and still none a second later, is game over');
+  rc.clear(); ram.fill(0); overs = 0; rc.activateAchievement(1, set.gameOver);
+  ram[HERE] = 0x41; ram[NEXT] = 0x42; ram[0x9b] = 3; run(10);
+  ram[0x9b] = 0; run(4); ram[HERE] = 0x9e; run(3); ram[0x9b] = 3; run(10);
+  ram[HERE] = 0x42; ram[NEXT] = 0x43; ram[0x9b] = 0; run(20); ram[0x9b] = 3; run(20);
+  expect(overs === 0, 'a level change, its lives read 0 on the way out and in, is no game over');
   ok('game over');
 }
 
 // 20. The speedrun board: from a new game (A loads after the title, or GAME OVER's fire refills the lives
-// from 0) to B loading. Its time is in hundredths (2 a PAL frame). A lost life goes on, game over cancels.
+// from 0) to the end of level 1, where the loader screen for B begins. Its time is in hundredths (2 a
+// PAL frame). A lost life goes on, game over cancels.
 {
   const board = set.leaderboards[0];
   let posted = [], cancels = 0;
   const run = (n) => { for (let i = 0; i < n; i++) for (const e of rc.doFrame(ram)) { if (e.type === EVENT.LBOARD_TRIGGERED) posted.push(e.value); if (e.type === EVENT.LBOARD_CANCELED) cancels++; } };
   const fresh = () => { rc.clear(); ram.fill(0); posted = []; cancels = 0; rc.activateLeaderboard(board.id, board.definition); ram[HERE] = 0x85; run(20); };
-  const loadIn = (letter) => { for (const j of [0x9e, 0xdf, 0xff]) { ram[HERE] = j; run(3); } ram[HERE] = letter.charCodeAt(0); ram[NEXT] = LEVELS.charCodeAt((LEVELS.indexOf(letter) + 1) % 6); run(5); };
+  // As load() above: in a game the lives read 0 on the way out of a level and as the next one arrives.
+  const loadIn = (letter, pause = 0) => {
+    const lives = ram[0x9b];
+    if (lives) { ram[0x9b] = 0; run(4); }
+    for (const j of [0x9e, 0xdf, 0xff]) { ram[HERE] = j; run(3); }
+    run(pause);
+    if (lives) ram[0x9b] = lives;
+    ram[HERE] = letter.charCodeAt(0); ram[NEXT] = LEVELS.charCodeAt((LEVELS.indexOf(letter) + 1) % 6);
+    if (lives) { ram[0x9b] = 0; run(20); ram[0x9b] = lives; }
+    run(5);
+  };
   fresh(); loadIn('A'); ram[0x9b] = 3; run(2991); loadIn('B');
-  expect(posted.length === 1 && Math.abs(posted[0] - 6000) <= 40, `a minute in level 1 posts about 1:00.00 (${posted})`);
+  expect(posted.length === 1 && Math.abs(posted[0] - 6000) <= 40 && !cancels, `a minute in level 1 posts about 1:00.00, the level change's zeroed lives no cancel (${posted})`);
+  fresh(); loadIn('A'); ram[0x9b] = 3; run(2991); loadIn('B', 3000);
+  expect(posted.length === 1 && Math.abs(posted[0] - 6000) <= 40, `the clock stops at the level's end: a minute on the loader screen adds nothing (${posted})`);
+  fresh(); loadIn('A'); loadIn('A');
+  expect(!posted.length, 'A loading again before a game, its lives 0, is no level cleared');
   fresh(); loadIn('A'); ram[0x9b] = 3; run(500); ram[0x9b] = 2; run(500); loadIn('B');
   expect(posted.length === 1, 'a lost life does not stop the run');
-  fresh(); loadIn('A'); ram[0x9b] = 3; run(500); ram[0x9b] = 0; run(20);
+  fresh(); loadIn('A'); ram[0x9b] = 3; run(500); ram[0x9b] = 0; run(60);
   expect(cancels === 1 && !posted.length, 'game over cancels it');
-  ram[0x9b] = 3; run(991); loadIn('B');
+  ram[0x9b] = 3; run(987); loadIn('B');
   expect(posted.length === 1 && Math.abs(posted[0] - 2000) <= 40, `a new game from GAME OVER runs again from its start (${posted})`);
   ok('the level 1 speedrun board');
 }

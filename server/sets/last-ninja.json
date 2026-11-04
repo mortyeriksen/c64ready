@@ -77,14 +77,14 @@
       "title": "Wastelands Survivor",
       "description": "Reach the Wilderness without losing a life in the Wastelands.",
       "points": 15,
-      "memaddr": "N:d0xH009b=0_O:0xH009b>0_N:d0xH0805!=65_Z:0xH0805=65.1._P:0=0_N:0xH0805=65_R:0xH009b<d0xH009b_T:0xH0805=66_T:0xH0804=67"
+      "memaddr": "N:d0xH009b=0_O:0xH009b>0_N:d0xH0805!=65_Z:0xH0805=65.1._P:0=0_N:0xH0805=65_N:0xH009b>0_R:0xH009b<d0xH009b_T:0xH0805=66_T:0xH0804=67"
     },
     {
       "id": 11,
       "title": "Wastelands Sprint",
-      "description": "Reach the Wilderness from the start of the Wastelands in under five minutes.",
+      "description": "Clear the Wastelands in under five minutes from their start.",
       "points": 25,
-      "memaddr": "N:d0xH009b=0_O:0xH009b>0_N:d0xH0805!=65_Z:0xH0805=65.1._P:0=0_R:0=0.15000._T:0xH0805=66_T:0xH0804=67"
+      "memaddr": "N:d0xH009b=0_O:0xH009b>0_N:d0xH0805!=65_Z:0xH0805=65.1._P:0=0_R:0=0.15000._Z:0xH009b>0_N:0xH0805=65_N:d0xH009b>0_T:0xH009b=0.1._T:0xH0805!=65_T:d0xH0805=65_T:d0xH0804=66"
     },
     {
       "id": 12,
@@ -161,18 +161,18 @@
       "title": "Iron Will",
       "description": "Take the sacred scrolls without losing a life in the whole game.",
       "points": 50,
-      "memaddr": "N:d0xH009b=0_O:0xH009b>0_N:d0xH0805!=65_Z:0xH0805=65.1._P:0=0_N:0xH0805>=65_N:0xH0805<=70_R:0xH009b<d0xH009b_T:0xH0805=70_T:0xH0804=65_T:0xH00a2=15_T:d0xH03f5=0_T:0xH03f5=1_T:0xH0077=9"
+      "memaddr": "N:d0xH009b=0_O:0xH009b>0_N:d0xH0805!=65_Z:0xH0805=65.1._P:0=0_N:0xH0805>=65_N:0xH0805<=70_N:0xH009b>0_R:0xH009b<d0xH009b_T:0xH0805=70_T:0xH0804=65_T:0xH00a2=15_T:d0xH03f5=0_T:0xH03f5=1_T:0xH0077=9"
     }
   ],
   "leaderboards": [
     {
       "id": 1,
       "title": "Wastelands Speedrun",
-      "description": "Fastest from a new game to the Wilderness, level 2.",
+      "description": "Fastest from a new game to the end of the Wastelands, level 1.",
       "format": "MILLISECS",
       "lowerIsBetter": true,
-      "definition": "STA:0xH0805=65Sd0xH0805!=65Sd0xH009b=0_0xH009b>0::CAN:0xH009b=0::SUB:0xH0805=66_0xH0804=67_d0xH0805!=66::VAL:C:1=1_M:1=1"
+      "definition": "STA:0xH0805=65Sd0xH0805!=65Sd0xH009b=0_0xH009b>0::CAN:R:0xH009b!=0_0xH0805>=65_0xH0805<=70_0xH009b=0.50.::SUB:Z:0xH009b>0_N:0xH0805=65_N:d0xH009b>0_0xH009b=0.1._0xH0805!=65_d0xH0805=65_d0xH0804=66::VAL:C:1=1_M:1=1"
     }
   ],
-  "gameOver": "0xH0805>=65_0xH0805<=70_d0xH009b>0_0xH009b=0"
+  "gameOver": "R:0xH009b!=0_N:0xH0805>=65_N:0xH0805<=70_N:d0xH009b>0_0xH009b=0.1._0xH0805>=65_0xH0805<=70_0xH009b=0.50."
 }
