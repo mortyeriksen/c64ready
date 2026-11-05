@@ -18,6 +18,7 @@ import { floatingWindow, resizeHandles, fillsScreen } from '../ui/floating-windo
 import { LIMITS } from '../../server/protocol.mjs';
 import { h, renderActivity, renderGames, renderGamePage, renderProfile, highScoreScreen, playerChip, hallOfFame, attractButton, refreshButton } from '../achievements/browse.js';
 import { hudCard, trophyCards, boardsShown, boardChased } from '../achievements/hud-card.js';
+import { boardInPlay } from '../achievements/hud.js';
 
 const TABS = ['game', 'activity', 'chat', 'games', 'account'];
 const POLL_MS = 30_000;
@@ -88,7 +89,8 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
   let loadingStandings = false;
   const live = new Map();      // leaderboard id → the running score while a game is on, the latest started last
   // GAME's live parts, found once as it draws: the HUD card, the board it chases, the board in play and its NOW cell.
-  let card = null, chasedId = null, playingId = null, liveCell = null;
+  let card = null, chasedId = null, playingId = null;
+  const liveCells = new Map();   // board id → its NOW cell, while it runs
   let tab = null;              // the tab chosen in this session; until then, by what is loaded
   let detail = [];             // profiles and game pages opened over the tab, newest last
   let activityScope = 'all';   // 'all' or 'game'
@@ -358,10 +360,10 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     }
     // Standings are fetched while GAME shows, once per game, account and generation (an unlock or a posted score).
     if (engineReady && !win.hidden && currentTab() === 'game' && !detail.length && !loadingStandings && standingsKey !== gameKey()) loadStandings();
-    // While a board is played only it shows, the latest started of those running; else all of them.
-    playingId = null;
-    for (const id of live.keys()) playingId = id;
-    const shown = boardsShown(game.leaderboards, playingId);
+    // While boards are played those running show, the one in play on top (the latest started, a time
+    // first); else all of them.
+    playingId = boardInPlay(game.leaderboards, live.keys());
+    const shown = boardsShown(game.leaderboards, [...live.keys()], playingId);
     const st = (id) => (standingsOf === game.hash ? standings.get(id) ?? null : null);
     const topFive = (s) => (s ? { ...s, entries: s.entries.slice(0, 5) } : null);
     // The HUD on top chases the board in play, else one the player has a score on, else the first.
@@ -383,7 +385,8 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
       game.achievements.length ? hallOfFame(ctx, game.title, standingsOf === game.hash ? top : null) : null,
       ...(game.achievements.length ? [h('h4', { class: 'ach-h' }, 'Trophies'), trophyCards(game.achievements, (a) => a.unlockedAt, (a) => a.checking)] : []),
     ].filter(Boolean));
-    liveCell = playingId != null ? gameEl.querySelector('.ach-screen-live-value') : null;
+    liveCells.clear();
+    for (const p of gameEl.querySelectorAll('.ach-screen-live[data-board]')) liveCells.set(Number(p.dataset.board), p.querySelector('.ach-screen-live-value'));
   }
 
   // ── ACCOUNT ─────────────────────────────────────────────────────────────
@@ -581,11 +584,11 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
         if (type === 'started') live.delete(id);   // the latest started goes last
         live.set(id, value);
         if (win.hidden || currentTab() !== 'game' || detail.length) return;
-        // A board starting is drawn as the one in play; another running board's score is not shown.
-        if (type === 'started' || !had || !liveCell) { renderGame(); return; }
-        if (id !== playingId) return;
+        // A board starting draws the tab again, with the board in play on top.
+        const cell = liveCells.get(id);
+        if (type === 'started' || !had || !cell) { renderGame(); return; }
         // The hot path: the NOW cell's text and the card's chase, written in place.
-        liveCell.firstChild.data = ctx.format(value, leaderboard.format);
+        cell.firstChild.data = ctx.format(value, leaderboard.format);
         if (id === chasedId) card.live(value);
         return;
       }

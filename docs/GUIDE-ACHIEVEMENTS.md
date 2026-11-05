@@ -55,8 +55,8 @@ The **GAME** tab shows:
   achievement with the next one marked, your points, and the chase of the next
   player to pass.
 - **The high-score screens**, in the game's own style, with your row
-  highlighted. Equal scores share a place. While you play a board, only that
-  board shows, such as OutRun's route A.
+  highlighted. Equal scores share a place. While you play, only the boards in
+  play show, such as OutRun's route A, with a speedrun on top.
 - **The trophies**: every one, what it takes, its points, and when you
   unlocked it.
 
@@ -99,8 +99,8 @@ anywhere and resize it. The browser remembers both.
 ### Trophies in Retro Vibes
 
 While a game with achievements is loaded, [Retro Vibes](GUIDE-LOOKS.md#retro-vibes)
-shows a trophy HUD: a slot per achievement and the next player to pass. Its
-trophy button shows and hides it.
+shows a trophy HUD: a slot per achievement and the next player to pass, on
+a running speedrun when there is one. Its trophy button shows and hides it.
 
 - **Drag** it anywhere. It snaps to the edges and the center.
 - **Drag its corner** to reshape it: a bar, a box or a column, down to a pill.
@@ -146,7 +146,7 @@ every board.
 | Bubble Bobble | 14 | yes | OneLoad64 v5: `Bubble Bobble.crt` |
 | Buggy Boy | 12 | yes | OneLoad64 v5: `Buggy Boy.crt` |
 | Chuckie Egg | | yes | OneLoad64 v5: `Chuckie Egg.crt` |
-| Commando | 14 | yes | OneLoad64 v5: `Commando.crt` |
+| Commando | 14 | highest score, fastest 1st area | OneLoad64 v5: `Commando.crt` |
 | Commando Arcade | 14 | yes | Nostalgia's `CommandoArcade_N0S_EF.crt` or `CommandoArcade_N0S_FL_Universal.d64`, or OneLoad64 v5 extras: `Commando Arcade - Special Edition [EasyFlash].crt` |
 | Cybernoid | 13 | yes | OneLoad64 v5: `Cybernoid.crt` |
 | Cybernoid II | 10 | yes | OneLoad64 v5: `Cybernoid II.crt` |
@@ -178,7 +178,7 @@ every board.
 | Stix | | yes | OneLoad64 v5: `Stix (J1).crt`, the official cartridge `Stix.crt` in the extras, or c64cade's PRG |
 | Super Mario Bros 64 | 17 | yes | OneLoad64 v5: `Super Mario Bros 64 (Zeropaige - 2019).crt` |
 | The Hitchhiker's Guide to the Galaxy | 22 | Fewest moves to 400 points | Release 47 disk: `hitchhikers_guide[infocom_1984](r47).d64` |
-| The Last Ninja | 22 | fastest level 1 | OneLoad64 v5 MultiLoad64: `Last Ninja, The (by $olo1870) [EasyFlash].crt` |
+| The Last Ninja | 22 | fastest of each level and the whole game | OneLoad64 v5 MultiLoad64: `Last Ninja, The (by $olo1870) [EasyFlash].crt` |
 | The Way of the Exploding Fist | 10 | yes | OneLoad64 v5: `Way of the Exploding Fist, The.crt` |
 | Thrust | | yes | OneLoad64 v5: `Thrust (J1).crt` |
 | Turrican | 17 | highest score, fastest world 1 | OneLoad64 v5 MultiLoad64: `Turrican (by $olo1870) [EasyFlash].crt` |

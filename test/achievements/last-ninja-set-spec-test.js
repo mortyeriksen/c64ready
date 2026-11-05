@@ -64,15 +64,15 @@ function load(letter, junk = [0x9e, 0xdf, 0xff], pause = 0) {
   frames(20);
 }
 
-// 1. Every condition parses, the set names the cartridge, its one board is a level 1 time (the game keeps
-// no score), and its trophies run in route order.
+// 1. Every condition parses, the set names the cartridge, its boards are times (the game keeps no score):
+// one per level and one for the whole game, and its trophies run in route order.
 {
   const codes = activate();
   codes.forEach((c, i) => expect(c === 0, `"${set.achievements[i].title}" parses (code ${c})`));
   expect(set.hashes.some((h) => h.hash === HASH), 'the set names the MultiLoad64 cartridge');
   const boards = set.leaderboards ?? [];
-  expect(boards.length === 1 && boards[0].format === 'MILLISECS' && boards[0].lowerIsBetter === true, 'one board: the fastest level 1, lower is better');
-  expect(rc.activateLeaderboard(boards[0].id, boards[0].definition) === 0, 'the board parses');
+  expect(boards.length === 7 && boards.every((b) => b.format === 'MILLISECS' && b.lowerIsBetter === true), 'seven boards: each level and the whole game, lower is better');
+  boards.forEach((b) => expect(rc.activateLeaderboard(b.id, b.definition) === 0, `${b.title} parses`));
   expect(typeof set.gameOver === 'string' && rc.activateAchievement(999, set.gameOver) === 0, 'the game over parses');
   const order = [
     'First Blood', 'The Sword', 'Nunchaku', 'Stepping Stones', 'Marsh Walker', 'Now You See Me', 'Throwing Stars',
@@ -445,7 +445,55 @@ function load(letter, junk = [0x9e, 0xdf, 0xff], pause = 0) {
   ok('the level 1 speedrun board');
 }
 
-// 21. GAME OVER's fire starts a new game in A without A loading again: the lives go from 0 to 3. The runs
+// 21. The level boards: each from the moment its level's letter arrives to its end, where the next
+// level's loader screen begins, or for the Inner Sanctum the scrolls taken. The full game runs from a new
+// game to the scrolls. A lost life goes on, game over or a new game in the Wastelands cancels.
+{
+  const boards = set.leaderboards;
+  let posted = {}, cancels = {};
+  const run = (n) => { for (let i = 0; i < n; i++) for (const e of rc.doFrame(ram)) { if (e.type === EVENT.LBOARD_TRIGGERED) (posted[e.id] ??= []).push(e.value); if (e.type === EVENT.LBOARD_CANCELED) cancels[e.id] = (cancels[e.id] ?? 0) + 1; } };
+  const fresh = () => { rc.clear(); ram.fill(0); posted = {}; cancels = {}; for (const b of boards) rc.activateLeaderboard(b.id, b.definition); ram[HERE] = 0x85; run(20); };
+  // As load() above, with the lives back for a moment while the files load, as in the game.
+  const loadIn = (letter, pause = 0) => {
+    const lives = ram[0x9b];
+    if (lives) { ram[0x9b] = 0; run(4); }
+    for (const j of [0x9e, 0xdf, 0xff]) { ram[HERE] = j; run(3); }
+    run(pause);
+    if (lives) { ram[0x9b] = lives; run(3); }
+    ram[HERE] = letter.charCodeAt(0); ram[NEXT] = LEVELS.charCodeAt((LEVELS.indexOf(letter) + 1) % 6);
+    if (lives) { ram[0x9b] = 0; run(20); ram[0x9b] = lives; }
+    run(5);
+  };
+  const scrolls = () => { ram[0xa2] = 15; run(5); ram[0x77] = 9; ram[0x3f5] = 1; run(5); };
+  const near = (id, hundredths) => posted[id]?.length === 1 && Math.abs(posted[id][0] - hundredths) <= 60;
+  const byTitle = Object.fromEntries(boards.map((b) => [b.title, b.id]));
+  const levelBoards = ['Wilderness Speedrun', 'Palace Gardens Speedrun', 'Dungeons Speedrun', 'Palace Speedrun', 'Inner Sanctum Speedrun'];
+
+  fresh(); loadIn('A'); ram[0x9b] = 3; run(2991);
+  'BCDEF'.split('').forEach((L, i) => { loadIn(L, 500); run(2970 + 500 * i); });
+  scrolls();
+  expect(near(1, 6000), `the Wastelands post about 1:00 (${posted[1]})`);
+  levelBoards.forEach((t, i) => expect(near(byTitle[t], 6000 + 1000 * i), `${t} posts about ${60 + 10 * i} seconds, the loader screen not counted (${posted[byTitle[t]]})`));
+  expect(posted[byTitle['Full Game Speedrun']]?.length === 1 && posted[byTitle['Full Game Speedrun']][0] > 40000, `the full game posts once, loaders and all (${posted[byTitle['Full Game Speedrun']]})`);
+  expect(!Object.keys(cancels).length, `no cancels in a clean run (${JSON.stringify(cancels)})`);
+
+  fresh(); loadIn('A'); ram[0x9b] = 3; run(100); loadIn('B'); ram[0x9b] = 2; run(500); loadIn('C');
+  expect(posted[byTitle['Wilderness Speedrun']]?.length === 1, 'a lost life does not stop a level run');
+
+  fresh(); loadIn('A'); ram[0x9b] = 3; run(100); loadIn('B'); run(500); ram[0x9b] = 0; run(60);
+  expect(cancels[byTitle['Wilderness Speedrun']] === 1 && cancels[byTitle['Full Game Speedrun']] === 1, 'game over cancels the level and the full game');
+  ram[0x9b] = 3; loadIn('A'); run(100); loadIn('B'); run(300); loadIn('C');
+  expect(posted[byTitle['Wilderness Speedrun']]?.length === 1, 'the next game runs the level again');
+
+  fresh(); loadIn('A'); ram[0x9b] = 3; run(500); loadIn('B');
+  expect(!posted[byTitle['Wilderness Speedrun']] && !posted[byTitle['Palace Gardens Speedrun']], 'clearing the Wastelands posts no later level');
+
+  fresh(); loadIn('A'); ram[0x9b] = 3; run(100); loadIn('B'); ram[HERE] = 0x44; run(3); ram[HERE] = 0x42; run(3);
+  expect(!posted[byTitle['Wilderness Speedrun']], 'loading junk that looks like a letter clears nothing');
+  ok('the level and full game speedrun boards');
+}
+
+// 22. GAME OVER's fire starts a new game in A without A loading again: the lives go from 0 to 3. The runs
 // that start with A start again then.
 {
   activate(); ram[HERE] = 0x85; frames(5); load('A'); ram[0x9b] = 3; frames(15010);

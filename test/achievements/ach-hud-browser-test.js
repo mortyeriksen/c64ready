@@ -326,6 +326,34 @@ try {
   ok('several boards');
   await multi.context.close();
 
+  // 9b. A speedrun and a high score that start with the same game, in either order: the running time
+  // is followed, and when it posts the score still running takes over.
+  for (const order of [[2, 1], [1, 2]]) {
+    const mixed = await openPage();
+    await mixed.page.evaluate(() => {
+      window.G.leaderboards = [{ id: 1, title: 'Hiscores', format: 'SCORE', lowerIsBetter: false }, { id: 2, title: 'Area 1 Speedrun', format: 'MILLISECS', lowerIsBetter: true }];
+    });
+    await loadGame(mixed.page);
+    const shown = () => mixed.page.evaluate(() => ({ name: document.querySelector('.ach-hud-board').textContent, now: document.querySelector('.ach-hud-now').textContent.trim() }));
+    const sendTo = (type, id, value) => mixed.page.evaluate(([t, i, v]) => window.hud.leaderboardEvent({ type: t, leaderboard: window.G.leaderboards[i - 1], value: v }), [type, id, value]);
+    for (const id of order) await sendTo('started', id, 0);
+    await sendTo('updated', 1, 500);
+    await sendTo('updated', 2, 1200);
+    await wait(mixed.page, 100);
+    let s = await shown();
+    expect(s.name === 'AREA 1 SPEEDRUN' && s.now === 'NOW', `the running time is followed, started ${order.join(' then ')} (${JSON.stringify(s)})`);
+    await sendTo('updated', 1, 900);
+    await wait(mixed.page, 100);
+    s = await shown();
+    expect(s.name === 'AREA 1 SPEEDRUN', `a score update does not take it over (${JSON.stringify(s)})`);
+    await sendTo('submitted', 2, 1500);
+    await wait(mixed.page, 100);
+    s = await shown();
+    expect(s.name === 'HISCORES' && s.now === 'NOW', `when the time posts, the running score takes over (${JSON.stringify(s)})`);
+    await mixed.context.close();
+  }
+  ok('a running time before a score');
+
   // 10. Reduced motion: no trophy flies, the slot simply fills.
   const still = await openPage({ reducedMotion: 'reduce' });
   await loadGame(still.page);

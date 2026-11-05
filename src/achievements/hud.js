@@ -108,6 +108,13 @@ export function boardLabel(title) {
 
 /** The rcheevos formats that are a time. */
 export const TIME_FORMATS = new Set(['TIME', 'FRAMES', 'TIMESECS', 'MILLISECS', 'SECS', 'MINUTES', 'SECS_AS_MINS']);
+/** The board in play of those running (ids, the latest started last): the latest time, as a speedrun that starts with the game, else the latest. */
+export function boardInPlay(leaderboards, runningIds) {
+  let latest = null, latestTime = null;
+  for (const id of runningIds) { latest = id; if (TIME_FORMATS.has(leaderboards.find((l) => l.id === id)?.format)) latestTime = id; }
+  return latestTime ?? latest;
+}
+const timed = (board) => !!board && TIME_FORMATS.has(board.format);
 /** The gap to the next player: a time in its board's format, else the points grouped. */
 export function gapText(n, board, format) {
   return TIME_FORMATS.has(board.format) ? format(Math.abs(n)) : grouped(n);
@@ -763,7 +770,8 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
   /**
    * A leaderboard's running score, its end, or a posted score (engine onLeaderboard).
    * Several boards can run at once, as OutRun's routes: it follows the one that
-   * started last, and another only when that one is no longer running.
+   * started last, and another only when that one is no longer running. A running
+   * time is preferred over a score, as a speedrun that starts with the game.
    */
   function leaderboardEvent(e) {
     if (!game) return;
@@ -771,7 +779,9 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
     if (type === 'started' || type === 'updated') {
       if (type === 'started') running.delete(id);
       running.set(id, e.value);
-      if (board === null || (board.id !== id && (type === 'started' || !running.has(board.id)))) setBoard(boardOf(id) ?? e.leaderboard);
+      const l = boardOf(id) ?? e.leaderboard;
+      const keep = board !== null && board.id !== id && running.has(board.id) && (type === 'updated' || (timed(board) && !timed(l)));
+      if (board === null || (board.id !== id && !keep)) setBoard(l);
       if (board.id !== id) return;
       live = e.value;
       if (!framed && !area.hidden) { framed = true; requestAnimationFrame(paintFrame); }
@@ -780,9 +790,8 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
     running.delete(id);
     if (type === 'submitted') { const l = boardOf(id); if (l) loadStandings(l); }
     if (board?.id !== id) return;
-    // The board followed ended: the latest started of those still running takes over.
-    let after = null;
-    for (const k of running.keys()) after = k;
+    // The board followed ended: the latest started of those still running takes over, a time first.
+    const after = boardInPlay(game.leaderboards, running.keys());
     if (after != null) setBoard(boardOf(after));
     live = after != null ? running.get(after) : null;
     lastRank = 0;

@@ -18,9 +18,11 @@ const write = (node, text) => { if (node.firstChild) node.firstChild.data = text
 // A slot or card built again mid-effect carries on where it was.
 const fxDelay = (a, fx, now) => (fx === FX_GOING_OUT || fx === FX_BACK ? `--ach-fx-delay: -${challengeSince(a, now)}ms` : null);
 
-/** The boards GAME shows: while one is played only that one, else every one. */
-export function boardsShown(leaderboards, playingId) {
-  return playingId != null ? leaderboards.filter((l) => l.id === playingId) : leaderboards;
+/** The boards GAME shows: while boards are played those running, the one in play on top, else every one. */
+export function boardsShown(leaderboards, runningIds = [], playingId = null) {
+  const on = leaderboards.filter((l) => runningIds.includes(l.id));
+  if (!on.length) return leaderboards;
+  return [...on.filter((l) => l.id === playingId), ...on.filter((l) => l.id !== playingId)];
 }
 /** The board the HUD chases: the one in play, else the first the player has a score on, else the first. */
 export function boardChased(leaderboards, playingId, hasScore) {

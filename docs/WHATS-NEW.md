@@ -20,12 +20,15 @@ The version you are running is shown at the bottom of the About dialog.
   time powers down and is stamped OUT until you can try again. Fifteen games
   have them.
 - **A new GAME tab.** The Achievements window opens with the trophy HUD from
-  Retro Vibes, and while you play a board only that board's high scores show.
-- **The Last Ninja.** New trophies, a level 1 speedrun board and attract mode.
-  Stepping Stones and Dragon's Breath now unlock.
+  Retro Vibes, and while you play only the boards in play show, a speedrun on
+  top.
+- **The Last Ninja.** New trophies, speedrun boards for every level and the
+  whole game, and attract mode. Stepping Stones and Dragon's Breath now
+  unlock.
 - **Commando Arcade, Ghosts 'n Goblins Arcade and IK+.** Their disk versions
   now share the cartridges' trophies and high scores.
 - **Out Run.** Eight more trophies.
+- **Commando.** A speedrun board for the 1st area.
 - **New sets.** Arkanoid, Arkanoid: Revenge of Doh, Green Beret, the Spy vs. Spy
   trilogy, Turrican, Turrican II and Pirates!
 

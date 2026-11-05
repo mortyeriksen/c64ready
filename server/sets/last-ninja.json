@@ -172,6 +172,54 @@
       "format": "MILLISECS",
       "lowerIsBetter": true,
       "definition": "STA:0xH0805=65Sd0xH0805!=65Sd0xH009b=0_0xH009b>0::CAN:R:0xH009b!=0_0xH0805>=65_0xH0805<=70_0xH009b=0.50.::SUB:Z:0xH009b>0_N:0xH0805=65_N:d0xH009b>0_0xH009b=0.1._0xH0805!=65_d0xH0805=65_d0xH0804=66::VAL:C:1=1_M:1=1"
+    },
+    {
+      "id": 2,
+      "title": "Wilderness Speedrun",
+      "description": "Fastest through the Wilderness, level 2, from its start to its end.",
+      "format": "MILLISECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xH0805=66_0xH0804=67_d0xH0805!=66::CAN:0=0SR:0xH009b!=0_0xH0805>=65_0xH0805<=70_0xH009b=0.50.S0xH0805=65::SUB:Z:0xH009b>0_N:0xH0805=66_N:d0xH009b>0_0xH009b=0.1._0xH0805!=66_d0xH0805=66_d0xH0804=67::VAL:C:1=1_M:1=1"
+    },
+    {
+      "id": 3,
+      "title": "Palace Gardens Speedrun",
+      "description": "Fastest through the Palace Gardens, level 3, from its start to its end.",
+      "format": "MILLISECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xH0805=67_0xH0804=68_d0xH0805!=67::CAN:0=0SR:0xH009b!=0_0xH0805>=65_0xH0805<=70_0xH009b=0.50.S0xH0805=65::SUB:Z:0xH009b>0_N:0xH0805=67_N:d0xH009b>0_0xH009b=0.1._0xH0805!=67_d0xH0805=67_d0xH0804=68::VAL:C:1=1_M:1=1"
+    },
+    {
+      "id": 4,
+      "title": "Dungeons Speedrun",
+      "description": "Fastest through the Dungeons, level 4, from its start to its end.",
+      "format": "MILLISECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xH0805=68_0xH0804=69_d0xH0805!=68::CAN:0=0SR:0xH009b!=0_0xH0805>=65_0xH0805<=70_0xH009b=0.50.S0xH0805=65::SUB:Z:0xH009b>0_N:0xH0805=68_N:d0xH009b>0_0xH009b=0.1._0xH0805!=68_d0xH0805=68_d0xH0804=69::VAL:C:1=1_M:1=1"
+    },
+    {
+      "id": 5,
+      "title": "Palace Speedrun",
+      "description": "Fastest through the Palace, level 5, from its start to its end.",
+      "format": "MILLISECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xH0805=69_0xH0804=70_d0xH0805!=69::CAN:0=0SR:0xH009b!=0_0xH0805>=65_0xH0805<=70_0xH009b=0.50.S0xH0805=65::SUB:Z:0xH009b>0_N:0xH0805=69_N:d0xH009b>0_0xH009b=0.1._0xH0805!=69_d0xH0805=69_d0xH0804=70::VAL:C:1=1_M:1=1"
+    },
+    {
+      "id": 6,
+      "title": "Inner Sanctum Speedrun",
+      "description": "Fastest through the Inner Sanctum, level 6, from its start to taking the scrolls.",
+      "format": "MILLISECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xH0805=70_0xH0804=65_d0xH0805!=70::CAN:0=0SR:0xH009b!=0_0xH0805>=65_0xH0805<=70_0xH009b=0.50.S0xH0805=65::SUB:0xH0805=70_0xH0804=65_0xH0805=d0xH0805_0xH00a2=15_d0xH03f5=0_0xH03f5=1_0xH0077=9::VAL:C:1=1_M:1=1"
+    },
+    {
+      "id": 7,
+      "title": "Full Game Speedrun",
+      "description": "Fastest from a new game to taking the sacred scrolls.",
+      "format": "MILLISECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xH0805=65Sd0xH0805!=65Sd0xH009b=0_0xH009b>0::CAN:R:0xH009b!=0_0xH0805>=65_0xH0805<=70_0xH009b=0.50.::SUB:0xH0805=70_0xH0804=65_0xH0805=d0xH0805_0xH00a2=15_d0xH03f5=0_0xH03f5=1_0xH0077=9::VAL:C:1=1_M:1=1"
     }
   ],
   "gameOver": "R:0xH009b!=0_N:0xH0805>=65_N:0xH0805<=70_N:d0xH009b>0_0xH009b=0.1._0xH0805>=65_0xH0805<=70_0xH009b=0.50."

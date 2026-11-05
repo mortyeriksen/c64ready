@@ -120,6 +120,15 @@
       "format": "SCORE",
       "lowerIsBetter": false,
       "definition": "STA:0xHe348=109_d0xHe348!=109_0xH04f3=0_0xH0500=5_0x 04f8=0::CAN:0=1::SUB:0xH0500=0_d0xH0500=1::VAL:0xU04f9*100000_0xL04f9*10000_0xU04f8*1000_0xL04f8*100"
+    },
+    {
+      "id": 2,
+      "title": "Area 1 Speedrun",
+      "description": "Fastest from a new game to breaking through the 1st area.",
+      "format": "MILLISECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xHe348=109_d0xHe348!=109_0xH04f3=0_0xH0500=5_0x 04f8=0::CAN:0xH0500=0_d0xH0500=1::SUB:d0xH04f3=0_0xH04f3=2_0xH0500>0::VAL:C:1=1_M:1=1"
     }
-  ]
+  ],
+  "gameOver": "0xH0500=0_d0xH0500=1"
 }

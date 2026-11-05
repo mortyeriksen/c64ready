@@ -70,7 +70,7 @@ function frame() {
 }
 const frames = (n) => { for (let i = 0; i < n; i++) frame(); };
 const has = (title) => unlocked.has(id[title]);
-const lbOf = (type) => lb.filter((e) => e.type === type);
+const lbOf = (type, board = 1) => lb.filter((e) => e.type === type && e.id === board);
 
 /** The title screen after power-on: uninitialised game bytes, no status line. */
 function powerOn() {
@@ -103,7 +103,8 @@ function loseMan() {
 {
   const { codes, boards } = activateAll();
   codes.forEach((c, i) => expect(c === 0, `"${set.achievements[i].title}" parses (code ${c})`));
-  expect(boards.every((c) => c === 0), 'the high-score leaderboard parses');
+  expect(boards.every((c) => c === 0), 'the high-score and area 1 speedrun boards parse');
+  expect(set.leaderboards[1].format === 'MILLISECS' && set.leaderboards[1].lowerIsBetter, 'the speedrun is a time, lower is better');
   expect(set.achievements.every((a) => [5, 10, 25].includes(a.points)), 'points are 5, 10 or 25');
   ok(`all ${codes.length} achievements and ${boards.length} leaderboard parse`);
 }
@@ -265,6 +266,41 @@ function loseMan() {
   breakArea(AREA_2);
   expect(has('Guns Only') && has('Not a Scratch') && live('Flawless Mission'), 'a clean area 1 earns two, the mission one stays live');
   ok('Guns Only, Not a Scratch and Flawless Mission: live, out, and live again');
+}
+
+// The area 1 speedrun: from a new game to the between-areas screen after the 1st area, in hundredths
+// (2 a PAL frame). A lost man goes on, game over cancels, and a game over's title is no area cleared.
+{
+  const posted = () => lbOf(EVENT.LBOARD_TRIGGERED, 2).map((e) => e.value);
+  activateAll(); powerOn(); frames(10); startGame(); frames(2993); breakArea(AREA_2);
+  expect(posted().length === 1 && Math.abs(posted()[0] - 6000) <= 30, `a minute in the 1st area posts about 1:00.00 (${posted()})`);
+  breakArea(AREA_3);
+  expect(posted().length === 1, 'the 2nd area posts nothing more');
+
+  activateAll(); powerOn(); frames(10); startGame(); frames(500); loseMan(); frames(500); breakArea(AREA_2);
+  expect(posted().length === 1, 'a lost man does not stop the run');
+
+  activateAll(); powerOn(); frames(10); startGame(); frames(500);
+  ram[MEN] = 1; frames(2); ram[MEN] = 0; frames(2); ram[AREA] = BETWEEN; statusLine(false); frames(30);
+  expect(!posted().length && lbOf(EVENT.LBOARD_CANCELED, 2).length === 1, 'game over cancels it, and its title clears nothing');
+  startGame(); frames(1000); breakArea(AREA_2);
+  expect(posted().length === 1 && Math.abs(posted()[0] - 2000) <= 30, `the next game runs from its own start (${posted()})`);
+  ok('the area 1 speedrun board');
+}
+
+// The game over: the last man lost. The speedrun posting as the 1st area ends is not one, so attract
+// mode waits for the real end.
+{
+  let overs = 0;
+  const run = (n) => { for (let i = 0; i < n; i++) for (const e of rc.doFrame(ram)) if (e.type === EVENT.ACHIEVEMENT_TRIGGERED && e.id === 999) overs++; };
+  rc.clear(); expect(rc.activateAchievement(999, set.gameOver) === 0, 'the game over parses');
+  powerOn(); run(10); ram[AREA] = AREA_1; setScore(0); ram[MEN] = 5; statusLine(true); run(10);
+  ram[ROWS] = 0; run(2); ram[AREA] = BETWEEN; statusLine(false); run(30); ram[AREA] = AREA_2; statusLine(true); run(5);
+  ram[MEN] = 4; run(5);
+  expect(overs === 0, 'not at the end of an area, nor at a lost man with more left');
+  ram[MEN] = 1; run(5); ram[MEN] = 0; run(5);
+  expect(overs === 1, 'the last man lost is the game over');
+  ok('the game over');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }
