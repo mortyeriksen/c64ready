@@ -288,6 +288,17 @@ function loseMan() {
   ok('the area 1 speedrun board');
 }
 
+// The end text, not the next area: the area byte is 2 while "BROKE THE 1ST AREA" shows, then the next
+// area starts. The trophy unlocks as the text starts.
+{
+  activateAll(); powerOn(); frames(10); startGame(); frames(500);
+  ram[ROWS] = 0; frames(2); ram[AREA] = BETWEEN; statusLine(false); frames(5);
+  expect(has('Breakthrough') && has('Not a Scratch') && has('Guns Only'), 'area 1 is cleared as its end text starts');
+  ram[AREA] = AREA_2; statusLine(true); frames(5);
+  expect(!has('Pressing On'), 'and area 2 starting adds nothing');
+  ok('an area is cleared as its end text starts');
+}
+
 // The game over: the last man lost. The speedrun posting as the 1st area ends is not one, so attract
 // mode waits for the real end.
 {
