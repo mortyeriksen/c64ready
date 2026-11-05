@@ -212,14 +212,6 @@
       "format": "MILLISECS",
       "lowerIsBetter": true,
       "definition": "STA:0xH0805=70_0xH0804=65_d0xH0805!=70::CAN:0=0SR:0xH009b!=0_0xH0805>=65_0xH0805<=70_0xH009b=0.50.S0xH0805=65::SUB:0xH0805=70_0xH0804=65_0xH0805=d0xH0805_0xH00a2=15_d0xH03f5=0_0xH03f5=1_0xH0077=9::VAL:C:1=1_M:1=1"
-    },
-    {
-      "id": 7,
-      "title": "Full Game Speedrun",
-      "description": "Fastest from a new game to taking the sacred scrolls.",
-      "format": "MILLISECS",
-      "lowerIsBetter": true,
-      "definition": "STA:0xH0805=65Sd0xH0805!=65Sd0xH009b=0_0xH009b>0::CAN:R:0xH009b!=0_0xH0805>=65_0xH0805<=70_0xH009b=0.50.::SUB:0xH0805=70_0xH0804=65_0xH0805=d0xH0805_0xH00a2=15_d0xH03f5=0_0xH03f5=1_0xH0077=9::VAL:C:1=1_M:1=1"
     }
   ],
   "gameOver": "R:0xH009b!=0_N:0xH0805>=65_N:0xH0805<=70_N:d0xH009b>0_0xH009b=0.1._0xH0805>=65_0xH0805<=70_0xH009b=0.50."

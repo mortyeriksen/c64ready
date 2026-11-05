@@ -178,7 +178,7 @@ every board.
 | Stix | | yes | OneLoad64 v5: `Stix (J1).crt`, the official cartridge `Stix.crt` in the extras, or c64cade's PRG |
 | Super Mario Bros 64 | 17 | yes | OneLoad64 v5: `Super Mario Bros 64 (Zeropaige - 2019).crt` |
 | The Hitchhiker's Guide to the Galaxy | 22 | Fewest moves to 400 points | Release 47 disk: `hitchhikers_guide[infocom_1984](r47).d64` |
-| The Last Ninja | 22 | fastest of each level and the whole game | OneLoad64 v5 MultiLoad64: `Last Ninja, The (by $olo1870) [EasyFlash].crt` |
+| The Last Ninja | 22 | fastest of each level | OneLoad64 v5 MultiLoad64: `Last Ninja, The (by $olo1870) [EasyFlash].crt` |
 | The Way of the Exploding Fist | 10 | yes | OneLoad64 v5: `Way of the Exploding Fist, The.crt` |
 | Thrust | | yes | OneLoad64 v5: `Thrust (J1).crt` |
 | Turrican | 17 | highest score, fastest world 1 | OneLoad64 v5 MultiLoad64: `Turrican (by $olo1870) [EasyFlash].crt` |

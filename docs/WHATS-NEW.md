@@ -22,8 +22,8 @@ The version you are running is shown at the bottom of the About dialog.
 - **A new GAME tab.** The Achievements window opens with the trophy HUD from
   Retro Vibes, and while you play only the boards in play show, a speedrun on
   top.
-- **The Last Ninja.** New trophies, speedrun boards for every level and the
-  whole game, and attract mode. Stepping Stones and Dragon's Breath now
+- **The Last Ninja.** New trophies, a speedrun board for every level, and
+  attract mode. Stepping Stones and Dragon's Breath now
   unlock.
 - **Commando Arcade, Ghosts 'n Goblins Arcade and IK+.** Their disk versions
   now share the cartridges' trophies and high scores.
