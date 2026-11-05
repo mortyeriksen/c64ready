@@ -1,5 +1,5 @@
 {
-  "$schema": "https://railway.com/railway.schema.json",
+  "$schema": "https://schema.railpack.com",
   "deploy": {
     "startCommand": "node main.mjs"
   }

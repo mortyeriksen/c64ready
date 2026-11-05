@@ -30,7 +30,7 @@ investigation/
 !test/external-assets.json
 # Achievement sets ship with the server.
 !server/sets/*.json
-!server/railway.json
+!server/railpack.json
 # rcheevos's build output: the app ships it embedded in src/achievements/rcheevos-wasm-blob.js.
 native/rcheevos/build/
 *.zip
