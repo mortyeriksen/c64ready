@@ -33,8 +33,8 @@ The version you are running is shown at the bottom of the About dialog.
   one.
 - **Arkanoid.** Trophies for the rounds up to Doh, every capsule and a clean start, and a
   high-score board.
-- **Arkanoid: Revenge of Doh.** Trophies for the rounds up to Doh, the B and P
-  capsules, a clean start and scores, and a high-score board.
+- **Arkanoid: Revenge of Doh.** Trophies for the rounds, both of Doh's forms,
+  six capsules, a clean start and scores, and a high-score board.
 - **Green Beret.** Trophies for each stage, the rescue and a second mission,
   a clean stage and a knife-only one, and a high-score board.
 - **Spy vs. Spy trilogy.** Trophies for escapes, items, traps and blowing up

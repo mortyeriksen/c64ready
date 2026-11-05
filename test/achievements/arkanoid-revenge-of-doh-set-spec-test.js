@@ -5,7 +5,11 @@
 //         entry it reads 1 for a single frame, with the last game's score still in place.
 //   $0200 player 1's lives: 4 at the start, at most 6, 0 on the last, 4 again at the game over.
 //   $0688 the player playing, 0 for player 1. $0682 the round shown, BCD: $33 is Doh's.
-//   $03F5 the last capsule caught: 11 B, 12 P. 0 as a round starts, 4 after a lost life.
+//   $03F5 the last capsule caught: 2 widens the Vaus, 3 splits it in two, 8 splits the ball, 11 B,
+//         12 P, 13 the mystery capsule. 0 as a round starts, 4 after a lost life.
+//   Round 33's own code area: $408C Doh's form (0 as a ball starts, 1 his face, 2 his core), $43C9 the
+//         hits on it, $03EB the hits it takes (7, then 6). A lost ball zeroes the target for a moment,
+//         then sends him back to his face with no hits. Other rounds keep other things there.
 //   The score: $D9's low nibble the 100,000s, $D4 BCD the 1,000s, $CF BCD the 10s. A game's start
 //   clears it in the frame the mode turns 1.
 
@@ -36,7 +40,7 @@ const rc = await loadRcheevos();
 const ram = new Uint8Array(0x10000);
 const id = Object.fromEntries(set.achievements.map((a) => [a.title, a.id]));
 const HASHES = { 'arkanoid-revenge-of-doh-crt': '4ec2f031497b2fecbd1b68685577e332', 'arkanoid-revenge-of-doh-prg-crunched': 'e91260f2e2558f8bbc95e23f47784157', 'arkanoid-revenge-of-doh-prg-uncrunched': '054cb41539ab442d71b6821e21f27318' };
-const MODE = 0x21b7, LIVES = 0x200, PLAYER = 0x688, ROUND = 0x682, CAPSULE = 0x3f5;
+const MODE = 0x21b7, LIVES = 0x200, PLAYER = 0x688, ROUND = 0x682, CAPSULE = 0x3f5, FORM = 0x408c, HITS = 0x43c9, TARGET = 0x3eb;
 const GAME_OVER_ID = 999;
 
 const unlocked = new Set();
@@ -160,7 +164,48 @@ for (const [key, hash] of Object.entries(HASHES)) {
   ok('the B and P capsules');
 }
 
-// 7. Flawless Start: live from a game's start, out at a lost life, live again in the next game.
+// 7. Doh: his face broken, then his core, in one life; a lost ball starts him over.
+{
+  const hit = () => { ram[HITS]++; frames(3); };
+  const form = (f, target) => { ram[FORM] = f; ram[HITS] = 0; ram[TARGET] = target; frames(3); };
+  const lostBall = () => { ram[TARGET] = 0; ram[HITS] = 0; frames(2); form(0, 7); form(1, 7); };
+  activate(); menu(); start();
+  while (ram[ROUND] < bcd(33)) clearRound();
+  form(0, 7); form(1, 7);
+  for (let i = 0; i < 6; i++) hit();
+  expect(!has('Face Off'), 'not before his face breaks');
+  form(2, 6);
+  expect(has('Face Off') && !has('Doh Destroyed'), 'his face broken');
+  for (let i = 0; i < 5; i++) hit();
+  lostBall();
+  expect(!has('Doh Destroyed'), 'five hits on the core, then a lost ball');
+  ram[FORM] = 2; ram[TARGET] = 0; ram[HITS] = 0; frames(3);
+  expect(!has('Doh Destroyed'), 'the lost ball\'s zeroed count and target are no win');
+  form(1, 7); form(2, 6);
+  for (let i = 0; i < 5; i++) hit();
+  expect(!has('Doh Destroyed'), 'one hit short');
+  hit();
+  expect(has('Doh Destroyed'), 'the sixth hit on the core destroys Doh');
+  ok('Face Off and Doh Destroyed');
+
+  activate(); menu(); start(); ram[ROUND] = bcd(12); frames(3);
+  ram[FORM] = 1; ram[TARGET] = 3; frames(3); ram[FORM] = 2; ram[HITS] = 3; frames(3);
+  expect(!has('Face Off') && !has('Doh Destroyed'), 'the same bytes outside round 33 are no Doh');
+  ok('Doh only in round 33');
+}
+
+// 8. The capsules with a known effect.
+{
+  activate(); menu(); start();
+  for (const [k, t] of [[2, 'Wide Body'], [3, 'Seeing Double'], [8, 'Ball Storm'], [13, 'Lucky Dip']]) {
+    expect(!has(t), `${t} not before its capsule`);
+    catchCapsule(k); clearRound();
+    expect(has(t), `${t} as capsule ${k} is caught`);
+  }
+  ok('the capsules with a known effect');
+}
+
+// 9. Flawless Start: live from a game's start, out at a lost life, live again in the next game.
 {
   activate(); menu();
   expect(!live('Flawless Start'), 'not live on the menu');
@@ -178,7 +223,7 @@ for (const [key, hash] of Object.entries(HASHES)) {
   ok('Flawless Start');
 }
 
-// 8. Score tiers read the three score bytes.
+// 10. Score tiers read the three score bytes.
 {
   activate(); menu(); start();
   for (const [t, n] of [['Five Figures', 10000], ['Fifty Grand', 50000], ['Six Figures', 100000], ["Doh's Nemesis", 250000]]) {
@@ -190,7 +235,7 @@ for (const [key, hash] of Object.entries(HASHES)) {
   ok('score tiers');
 }
 
-// 9. Player 2's turn counts for nothing: the set is player 1's.
+// 11. Player 2's turn counts for nothing: the set is player 1's.
 {
   activate(); menu(); start(); ram[PLAYER] = 1; frames(3);
   catchCapsule(11); setScore(60000); frames(3); clearRound();

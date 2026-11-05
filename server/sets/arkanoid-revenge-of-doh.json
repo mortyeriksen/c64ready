@@ -61,48 +61,90 @@
     },
     {
       "id": 7,
+      "title": "Face Off",
+      "description": "Break Doh's face, the first of his two forms.",
+      "points": 25,
+      "memaddr": "0xH21B7=1_0xH0688=0_0xH0682=51_0xH408C=2_d0xH408C=1"
+    },
+    {
+      "id": 8,
+      "title": "Doh Destroyed",
+      "description": "Destroy the core inside Doh.",
+      "points": 50,
+      "memaddr": "0xH21B7=1_0xH0688=0_0xH0682=51_0xH408C=2_0xH03EB!=0_0xH43C9=0xH03EB_d0xH43C9!=d0xH03EB"
+    },
+    {
+      "id": 9,
       "title": "Flawless Start",
       "description": "Clear round 1 without losing a life.",
       "points": 10,
       "memaddr": "0xH21B7=1_0xH0688=0_N:0xH21B7=1_N:d0xH21B7=2_N:0xH00CF=0_N:0xH00D4=0_0xL00D9=0.1._R:0xH0200<d0xH0200_T:0xH0682=2_T:d0xH0682=1"
     },
     {
-      "id": 8,
+      "id": 10,
       "title": "Escape Hatch",
       "description": "Catch a B capsule, to open the exit.",
       "points": 5,
       "memaddr": "0xH21B7=1_0xH0688=0_0xH03F5=11_d0xH03F5!=11"
     },
     {
-      "id": 9,
+      "id": 11,
       "title": "Backup Vaus",
       "description": "Catch a P capsule, for an extra life.",
       "points": 10,
       "memaddr": "0xH21B7=1_0xH0688=0_0xH03F5=12_d0xH03F5!=12"
     },
     {
-      "id": 10,
+      "id": 12,
+      "title": "Wide Body",
+      "description": "Catch the capsule that widens the Vaus.",
+      "points": 5,
+      "memaddr": "0xH21B7=1_0xH0688=0_0xH03F5=2_d0xH03F5!=2"
+    },
+    {
+      "id": 13,
+      "title": "Seeing Double",
+      "description": "Catch the capsule that splits the Vaus in two.",
+      "points": 5,
+      "memaddr": "0xH21B7=1_0xH0688=0_0xH03F5=3_d0xH03F5!=3"
+    },
+    {
+      "id": 14,
+      "title": "Ball Storm",
+      "description": "Catch the capsule that splits the ball into several.",
+      "points": 5,
+      "memaddr": "0xH21B7=1_0xH0688=0_0xH03F5=8_d0xH03F5!=8"
+    },
+    {
+      "id": 15,
+      "title": "Lucky Dip",
+      "description": "Catch the mystery capsule, with its random effect.",
+      "points": 10,
+      "memaddr": "0xH21B7=1_0xH0688=0_0xH03F5=13_d0xH03F5!=13"
+    },
+    {
+      "id": 16,
       "title": "Five Figures",
       "description": "Score 10,000 points.",
       "points": 5,
       "memaddr": "0xH21B7=1_0xH0688=0_A:0xL00D9*10000_A:b0xH00D4*100_b0xH00CF>=1000"
     },
     {
-      "id": 11,
+      "id": 17,
       "title": "Fifty Grand",
       "description": "Score 50,000 points.",
       "points": 10,
       "memaddr": "0xH21B7=1_0xH0688=0_A:0xL00D9*10000_A:b0xH00D4*100_b0xH00CF>=5000"
     },
     {
-      "id": 12,
+      "id": 18,
       "title": "Six Figures",
       "description": "Score 100,000 points.",
       "points": 25,
       "memaddr": "0xH21B7=1_0xH0688=0_A:0xL00D9*10000_A:b0xH00D4*100_b0xH00CF>=10000"
     },
     {
-      "id": 13,
+      "id": 19,
       "title": "Doh's Nemesis",
       "description": "Score 250,000 points.",
       "points": 50,

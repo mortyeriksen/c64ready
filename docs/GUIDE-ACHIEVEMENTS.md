@@ -136,7 +136,7 @@ every board.
 | 1943 | 14 | yes | OneLoad64 v5: `1943 - The Battle of Midway (J1).crt` |
 | Action Biker | 41 | yes | OneLoad64 v5: `Action Biker.crt` |
 | Arkanoid | 21 | yes | OneLoad64 v5: `Arkanoid (J1).crt`, or its crunched and uncrunched programs |
-| Arkanoid: Revenge of Doh | 13 | yes | OneLoad64 v5: `Arkanoid - Revenge of Doh (J1).crt`, or its crunched and uncrunched programs |
+| Arkanoid: Revenge of Doh | 19 | yes | OneLoad64 v5: `Arkanoid - Revenge of Doh (J1).crt`, or its crunched and uncrunched programs |
 | Barbarian: The Ultimate Warrior | 10 | yes | OneLoad64 v5: both `Barbarian - The Ultimate Warrior (Side 1)` and `(Side 2)` cartridges, or their crunched and uncrunched programs |
 | Beach-Head | 10 | yes | OneLoad64 v5: `Beach-Head.crt` |
 | Blue Max | 16 | yes | OneLoad64 v5: `Blue Max.crt` |
