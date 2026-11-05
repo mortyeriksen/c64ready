@@ -147,7 +147,7 @@ every board.
 | Buggy Boy | 12 | yes | OneLoad64 v5: `Buggy Boy.crt` |
 | Chuckie Egg | | yes | OneLoad64 v5: `Chuckie Egg.crt` |
 | Commando | 14 | highest score, fastest 1st area | OneLoad64 v5: `Commando.crt` |
-| Commando Arcade | 14 | yes | Nostalgia's `CommandoArcade_N0S_EF.crt` or `CommandoArcade_N0S_FL_Universal.d64`, or OneLoad64 v5 extras: `Commando Arcade - Special Edition [EasyFlash].crt` |
+| Commando Arcade | 14 | highest score, fastest area 1 | Nostalgia's `CommandoArcade_N0S_EF.crt` or `CommandoArcade_N0S_FL_Universal.d64`, or OneLoad64 v5 extras: `Commando Arcade - Special Edition [EasyFlash].crt` |
 | Cybernoid | 13 | yes | OneLoad64 v5: `Cybernoid.crt` |
 | Cybernoid II | 10 | yes | OneLoad64 v5: `Cybernoid II.crt` |
 | Defender of the Crown | 12 |  | OneLoad64 v5 extras: `Defender of the Crown [EasyFlash].crt` |

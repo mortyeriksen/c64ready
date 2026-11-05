@@ -128,6 +128,14 @@
       "format": "SCORE",
       "lowerIsBetter": false,
       "definition": "STA:0xH0410=5_d0xH0410=0_0xH04F3=0_0xH04F8=0_0xH04F9=0_0xH04FA=0_0xH0E48=205::CAN:0xH0E48!=205::SUB:0xH0410=0_d0xH0410>0S0xH04F8>0S0xH04F9>0S0xH04FA>0::VAL:0xU04FA*10000000_0xL04FA*1000000_0xU04F9*100000_0xL04F9*10000_0xU04F8*1000_0xL04F8*100"
+    },
+    {
+      "id": 2,
+      "title": "Area 1 Speedrun",
+      "description": "Fastest from a new game to clearing area 1, no trainers.",
+      "format": "MILLISECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xH0410=5_d0xH0410=0_0xH04F3=0_0xH04F8=0_0xH04F9=0_0xH04FA=0_0xH0E48=205::CAN:0=0S0xH0E48!=205S0xH0410=0_d0xH0410>0::SUB:0xH0E48=205_0xH0410>0_d0xH0410>0_0xH04F3=1_d0xH04F3=0::VAL:C:1=1_M:1=1"
     }
   ],
   "notices": [
@@ -137,5 +145,6 @@
       "text": "Nothing counts until you play without trainers.",
       "memaddr": "0xH0E48=76_0xH0410>0"
     }
-  ]
+  ],
+  "gameOver": "0xH0410=0_d0xH0410>0"
 }

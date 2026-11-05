@@ -63,8 +63,9 @@ function frame() {
   }
 }
 const frames = (n) => { for (let i = 0; i < n; i++) frame(); };
-const started = () => lb.filter((e) => e.type === EVENT.LBOARD_STARTED).length;
-const submitted = () => lb.filter((e) => e.type === EVENT.LBOARD_TRIGGERED);
+const started = (board = 1) => lb.filter((e) => e.type === EVENT.LBOARD_STARTED && e.id === board).length;
+const submitted = (board = 1) => lb.filter((e) => e.type === EVENT.LBOARD_TRIGGERED && e.id === board);
+const canceled = (board = 1) => lb.filter((e) => e.type === EVENT.LBOARD_CANCELED && e.id === board).length;
 const has = (title) => unlocked.has(id[title]);
 
 /** The title and attract screens: no men, the last game's area and score left over. */
@@ -81,7 +82,9 @@ function die() { ram[MEN] = ram[MEN] === 0x10 ? 0x09 : ram[MEN] - 1; frames(10);
 {
   const { codes, boards } = activate();
   codes.forEach((c, i) => expect(c === 0, `"${set.achievements[i].title}" parses (code ${c})`));
-  expect(boards.length === 1 && boards[0] === 0, 'the high-score leaderboard parses');
+  expect(boards.length === 2 && boards.every((c) => c === 0), 'the high-score and area 1 speedrun boards parse');
+  expect(set.leaderboards[1].format === 'MILLISECS' && set.leaderboards[1].lowerIsBetter, 'the speedrun is a time, lower is better');
+  expect(rc.activateAchievement(999, set.gameOver) === 0, 'the game over parses'); rc.deactivateAchievement(999);
   expect(set.hashes.some((h) => h.hash === HASH), 'the set names CommandoArcade_N0S_EF.crt');
   expect(set.hashes.some((h) => h.hash === DISK_HASH), 'the set names CommandoArcade_N0S_FL_Universal.d64');
   expect(set.leaderboards[0].format === 'SCORE' && !set.leaderboards[0].lowerIsBetter, 'High Score is a SCORE board, higher is better');
@@ -220,6 +223,41 @@ function die() { ram[MEN] = ram[MEN] === 0x10 ? 0x09 : ram[MEN] - 1; frames(10);
   clearArea();
   expect(has('Untouchable'), 'and earned by clearing area 1');
   ok('Untouchable: live, out, and live again');
+}
+
+// The area 1 speedrun: from a new game to area 1 cleared, in hundredths (2 a PAL frame). A lost man goes
+// on; game over or a trainer cancels it, and a trainer's game starts none.
+{
+  activate(); title(); start(); frames(2990); clearArea();
+  expect(submitted(2).length === 1 && Math.abs(submitted(2)[0].value - 6000) <= 30, `a minute in area 1 posts about 1:00.00 (${submitted(2).map((e) => e.value)})`);
+  clearArea();
+  expect(submitted(2).length === 1, 'area 2 posts nothing more');
+
+  activate(); title(); start(); frames(500); die(); frames(500); clearArea();
+  expect(submitted(2).length === 1, 'a lost man does not stop the run');
+
+  activate(); title(); start(); frames(500); ram[MEN] = 1; frames(5); ram[MEN] = 0; frames(10);
+  expect(!submitted(2).length && canceled(2) === 1, 'game over cancels it');
+  title(); start(); frames(990); clearArea();
+  expect(submitted(2).length === 1 && Math.abs(submitted(2)[0].value - 2000) <= 30, `the next game runs from its own start (${submitted(2).map((e) => e.value)})`);
+
+  activate(); title(); start({ trainer: true }); frames(500); clearArea();
+  expect(!started(2) && !submitted(2).length, 'a game with a trainer starts no run');
+  activate(); title(); start(); frames(500); ram[TRAINER] = 0x4c; frames(5); clearArea();
+  expect(canceled(2) === 1 && !submitted(2).length, 'a trainer turned on mid-run cancels it');
+  ok('the area 1 speedrun board');
+}
+
+// The game over: the last man lost, not an area cleared, so attract mode waits for the real end.
+{
+  let overs = 0;
+  const run = (n) => { for (let i = 0; i < n; i++) for (const e of rc.doFrame(ram)) if (e.type === EVENT.ACHIEVEMENT_TRIGGERED && e.id === 999) overs++; };
+  rc.clear(); ram.fill(0); ram[TRAINER] = 0xcd; rc.activateAchievement(999, set.gameOver); run(10);
+  ram[AREA] = 0; setScore(0); ram[MEN] = 5; run(10); ram[AREA] = 1; run(10); ram[MEN] = 4; run(10);
+  expect(overs === 0, 'not at an area cleared, nor at a lost man with more left');
+  ram[MEN] = 1; run(5); ram[MEN] = 0; run(10);
+  expect(overs === 1, 'the last man lost is the game over');
+  ok('the game over');
 }
 
 if (failing) { console.log(`\n${failing} of ${testNo} failing`); process.exit(1); }
