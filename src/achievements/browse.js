@@ -10,6 +10,7 @@
 
 import { pushEscapeLayer, popEscapeLayer } from '../ui/escape-stack.js';
 import { ICON_GRID, gameIconUrl } from './game-icons.js';
+import { namesOf } from './library-match.js';
 
 /** Builds an element: attributes, `on` listeners, then children. */
 export function h(tag, attrs = {}, ...children) {
@@ -141,12 +142,15 @@ export function progress(got, total, points, totalPoints) {
 }
 /**
  * A game's head: its icon and title (a link, or plain for the loaded game), meter and
- * progress, and on the title line the versions, attract mode and refresh
- * buttons it is given. A game with high scores and no achievements says so instead.
+ * progress, and on the title line the load, versions, attract mode and refresh
+ * buttons it is given. `load` resolves to what loads the game's file, or null for none.
+ * A game with high scores and no achievements says so instead.
  */
-export function gameHead(ctx, game, achievements, isUnlocked, { link = false, versions = [], url = null, attract = null, refresh = null } = {}) {
+export function gameHead(ctx, game, achievements, isUnlocked, { link = false, versions = [], url = null, attract = null, refresh = null, load = null } = {}) {
   const title = h('h3', { class: 'ach-game-title' }, gameIcon(game.id, 24), link ? gameLink(ctx, game) : h('span', {}, game.title));
-  const buttons = [versions.length ? versionButton() : null, attract ? attractButton(attract) : null, refresh ? refreshButton(refresh) : null].filter(Boolean);
+  const loadSlot = load ? h('span', { class: 'ach-load-slot' }) : null;
+  load?.then((fn) => { if (fn) loadSlot.replaceWith(loadButton(fn, game.title)); else loadSlot.remove(); }, () => loadSlot.remove());
+  const buttons = [loadSlot, versions.length ? versionButton() : null, attract ? attractButton(attract) : null, refresh ? refreshButton(refresh) : null].filter(Boolean);
   const top = buttons.length ? [h('div', { class: 'ach-game-top' }, title, ...buttons), ...(versions.length ? [versionCard(versions, game.title, url)] : [])] : [title];
   if (!achievements.length) return h('div', { class: 'ach-game' }, ...top, h('p', { class: 'achievements-note' }, 'This game has high scores, and no achievements yet.'));
   const got = achievements.filter(isUnlocked);
@@ -154,6 +158,13 @@ export function gameHead(ctx, game, achievements, isUnlocked, { link = false, ve
   return h('div', { class: 'ach-game' }, ...top,
     meter(achievements.map(isUnlocked)),
     progress(got.length, achievements.length, pts(got), pts(achievements)));
+}
+
+/** Loads the game's file from the LOAD library. */
+function loadButton(load, title) {
+  const label = `Load ${title} from the library`;
+  return h('button', { type: 'button', class: 'ach-info-btn ach-load-btn', 'aria-label': label, title: label, on: { click: () => load() } },
+    icon(['M7 4.5v15L19.5 12z'], 18));
 }
 
 /** Shows the game's high-score screen as attract mode cycles it after a game (attract.js). */
@@ -446,7 +457,10 @@ export async function renderGamePage(el, ctx, hash) {
     const labels = (g.files ?? []).map((f) => f.label).filter(Boolean);
     const feed = h('div', { class: 'achievements-feed' }, note('Loading…'));
     el.replaceChildren(...[
-      gameHead(ctx, g.game, g.achievements, isUnlocked, { versions: labels, url: g.game.url }),
+      gameHead(ctx, g.game, g.achievements, isUnlocked, {
+        versions: labels, url: g.game.url,
+        load: ctx.fromLibrary?.({ hashes: [hash, ...(g.files ?? []).map((f) => f.hash)], names: namesOf(g.game.title, labels) }) ?? null,
+      }),
       ...g.leaderboards.map((l, i) => highScoreScreen(ctx, g.game.title, l, boards[i] ?? { entries: [], players: 0 })),
       g.achievements.length ? hallOfFame(ctx, g.game.title, top) : null,
       ...(g.achievements.length ? [heading('Your achievements'), achievementList(g.achievements, isUnlocked, (a) => at.get(a.id))] : []),

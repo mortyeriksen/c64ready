@@ -221,6 +221,9 @@
   color: var(--text-bright);
 }
 
+/* Where the load button goes while the library is checked: no box, so no gap. */
+.ach-load-slot { display: contents; }
+
 /* The title with the version button at its right. */
 .ach-game-top {
   display: flex;

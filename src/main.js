@@ -42,7 +42,7 @@ import {
   _flashDrive9Led, drive9LedActive, updateMediaIndicators, downloadSnapshot, rearmPrgTdeOffer,
   currentD64, currentD64Drive9, noteTrapDiskWrite, drive9Enabled, drive9TdeEnabled,
   _cachedCartData, _cachedTapData, _cachedTapName, _cachedTapProtected, _cacheTapeFromDeck,
-  _cachedTapDeck, _restoreDeck,
+  _cachedTapDeck, _restoreDeck, loadLibraryEntry,
 } from './media.js';
 import { initializeAssembly64 } from './assembly64/start.js';
 import { initOnline } from './online/window.js';
@@ -2651,6 +2651,7 @@ achievementsPanel = initOnline({
   closeBtn: document.getElementById('btn-online-close'),
   account: achievementAccount,
   engine: achievements,
+  loadFromLibrary: loadLibraryEntry,
   attract: () => _attract?.open(),
   // A dev server's toast tests, each on and off, one at a time: TEST TOAST cycles every
   // kind of toast, TEST GAME every toast of the loaded game.

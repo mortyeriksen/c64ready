@@ -255,6 +255,13 @@ async function _loadLibraryEntry(entry) {
   }
 }
 
+/** Loads a library entry by its id, as picking it in the library does. False when it is gone or does not load. */
+export async function loadLibraryEntry(id) {
+  const entry = await libLoad(id);
+  if (!entry) { setStatus('Library entry missing or corrupt', 'error'); return false; }
+  return _loadLibraryEntry(entry);
+}
+
 // Live import progress / result line shown inside the library dialog.
 function _setImportStatus(text) {
   if (!libraryImportStatusEl) return;

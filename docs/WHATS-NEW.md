@@ -31,6 +31,8 @@ The version you are running is shown at the bottom of the About dialog.
 - **Commando and Commando Arcade.** A speedrun board for the first area.
 - **New sets.** Arkanoid, Arkanoid: Revenge of Doh, Green Beret, the Spy vs. Spy
   trilogy, Turrican, Turrican II and Pirates!
+- **Load a game from its page.** When a game's file is in your library, its
+  page under GAMES has a play button that loads it.
 - **Game icons in colour.** Every game has a new, more detailed pixel icon in
   colour: in the games list, at the top of a game's page, in the chat, on the
   trophy HUD and on the toast for a finished set.

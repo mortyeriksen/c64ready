@@ -77,6 +77,7 @@ const TESTS = [
   'test/chat/games-api-spec-test.js',
   'test/achievements/rcheevos-spec-test.js',
   'test/achievements/game-icons-test.js',
+  'test/achievements/library-match-test.js',
   'test/achievements/uridium-set-spec-test.js',
   'test/achievements/commando-set-spec-test.js',
   'test/achievements/ghosts-n-goblins-set-spec-test.js',

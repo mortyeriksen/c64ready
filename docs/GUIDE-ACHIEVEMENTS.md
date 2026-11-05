@@ -211,7 +211,9 @@ where the window has room. **Filter
 games** narrows the list by title. A game's page shows its high-score screen,
 its Trophy Hunters, your achievements, its activity and the versions it accepts.
 Its **i** button shows the versions, and **About the game** under them opens the
-game's page on [Lemon64](https://www.lemon64.com) in a new window.
+game's page on [Lemon64](https://www.lemon64.com) in a new window. When one of
+those versions is in your **LOAD LIB** library, a **▷** button beside it loads
+the game.
 
 ![The GAMES tab docked on the right of the app: a row for each game, with its pixel icon, its title, your count and a meter of your progress.](/guide/achievements-games.webp)
 

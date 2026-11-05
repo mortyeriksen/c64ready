@@ -242,7 +242,16 @@ try {
   expect(/PILOT/i.test(await mineFame.innerText().catch(() => '')) && await mineFame.locator('.ach-fame-bar').getAttribute('aria-label').catch(() => '') === '1 of 22 achievements', 'with the account\'s own row lit, its meter at 1 of 22 unlocked');
   const podium = await detail.locator('.ach-screen li').evaluateAll((lis) => lis.map((li) => ({ rank: parseInt(li.querySelector('.ach-rank')?.textContent, 10), top: li.classList.contains('is-podium'), font: getComputedStyle(li).fontFamily })));
   expect(podium.every((r) => r.top === (r.rank <= 3) && /PetMe64/.test(r.font) === r.top), `the top three in the C64 face, the rest in the regular one (${JSON.stringify(podium)})`);
-  const info = detail.locator('.ach-game-top .ach-info-btn');
+  // The cartridge loaded above is in the LOAD library, so the page offers to load it, before the info button.
+  const load = detail.locator('.ach-game-top .ach-load-btn');
+  await load.waitFor({ timeout: 10_000 }).catch(() => {});
+  const line = await detail.locator('.ach-game-top button').evaluateAll((bs) => bs.map((b) => b.className));
+  expect(/ach-load-btn/.test(line[0] ?? '') && /ach-info-btn/.test(line[1] ?? '') && !/ach-load-btn/.test(line[1]), `a game whose file is in the library has a load button on its title line, left of the info button (${JSON.stringify(line)})`);
+  await page.evaluate(() => { window.__mediaChanges = 0; addEventListener('c64-media', () => { window.__mediaChanges++; }); });
+  await load.click();
+  await page.waitForFunction(() => window.__mediaChanges > 0, null, { timeout: 10_000 }).catch(() => {});
+  expect(await page.evaluate(() => window.__mediaChanges) > 0 && /uridium/i.test(await page.locator('#crt-label').textContent().catch(() => '')), 'and the button loads that file');
+  const info = detail.locator('.ach-game-top .ach-info-btn[aria-controls]');
   const versions = detail.locator('.ach-versions');
   expect(await versions.isHidden() && await info.getAttribute('aria-expanded') === 'false', 'which version the set is for waits behind the info button on the title line');
   await info.click();

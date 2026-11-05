@@ -16,6 +16,7 @@ import { pushEscapeLayer, popEscapeLayer } from '../ui/escape-stack.js';
 import { confirmDialog } from '../ui/dialogs.js';
 import { floatingWindow, resizeHandles, fillsScreen } from '../ui/floating-window.js';
 import { LIMITS } from '../../server/protocol.mjs';
+import { findInLibrary } from '../achievements/library-match.js';
 import { h, renderActivity, renderGames, renderGamePage, renderProfile, highScoreScreen, playerChip, hallOfFame, attractButton, refreshButton } from '../achievements/browse.js';
 import { hudCard, trophyCards, boardsShown, boardChased } from '../achievements/hud-card.js';
 import { boardInPlay } from '../achievements/hud.js';
@@ -41,7 +42,7 @@ function passkeyMessage(e) {
  *   every kind or the loaded game's own, one at a time
  * @param {() => void} [o.attract]  shows the loaded game's high-score screen (achievements/attract.js), from GAME
  */
-export function initOnline({ buttons, win, closeBtn, account = createAccount(), engine = null, testToasts = null, attract = null }) {
+export function initOnline({ buttons, win, closeBtn, account = createAccount(), engine = null, testToasts = null, attract = null, loadFromLibrary = null }) {
   buttons = buttons.filter(Boolean);
   if (!buttons.length || !win) return null;
   // Talking to anything but the production server (the dev server's own, or an override) says so in the
@@ -163,6 +164,10 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     setPicture: (file) => account.setPicture(file),
     removePicture: () => account.removePicture(),
     loaded: () => engine?.game?.hash ?? null,
+    // A game's file in the LOAD library ({ hashes, names }), to load from its page.
+    fromLibrary: engine?.hash && loadFromLibrary
+      ? (game) => findInLibrary(game, engine.hash).then((id) => (id == null ? null : () => loadFromLibrary(id)))
+      : null,
   };
 
   const handles = resizeHandles();

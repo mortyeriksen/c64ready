@@ -312,7 +312,9 @@ export function create() { return { onPortB() { throw new Error('crashed on purp
     s = await state(page);
     expect(/Waiting for the C64/.test(s.status), `POWER OFF: the card says the C64 is off (${s.status})`);
     await page.click('#btn-power');
-    await sleep(4500);
+    // Booting and plugging the modem back in takes longer on a busy machine: wait for it, not for a time.
+    await page.waitForFunction(() => window.machine?.userport?.deviceId === 'builtin.wifi-modem' && /Ready/.test(document.getElementById('userport-status').textContent), null, { timeout: 30_000 }).catch(() => {});
+    await speaker.waitFor({ timeout: 10_000 }).catch(() => {});
     s = await state(page);
     expect(/Ready/.test(s.status) && await page.evaluate(() => window.machine.userport?.deviceId === 'builtin.wifi-modem'), 'POWER ON plugs it back in');
     expect(await speaker.getAttribute('aria-pressed') === 'true', 'the speaker choice survives power cycling');

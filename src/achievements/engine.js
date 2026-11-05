@@ -420,6 +420,8 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
     leaderboard(id, limit) { return game ? api.leaderboard(game.hash, id, limit) : Promise.resolve(null); },
     /** Loads rcheevos, so values can be formatted before any game is found. */
     load: () => getRc().then(() => {}),
+    /** A file's hash, as a loaded file is hashed to find its game, or null. */
+    hash: (bytes) => getRc().then((r) => r.hash(bytes)),
     /** A value in its leaderboard's format, as rcheevos writes it. */
     format(value, format) { return rc ? rc.formatValue(value, format) : String(value); },
   };
