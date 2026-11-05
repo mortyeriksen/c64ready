@@ -1,0 +1,179 @@
+{
+  "id": "arkanoid",
+  "title": "Arkanoid",
+  "url": "https://www.lemon64.com/game/arkanoid",
+  "hashes": [
+    {
+      "hash": "9e6db649f3938ba9cc19f98a75320449",
+      "label": "OneLoad64 v5 cartridge (Arkanoid (J1).crt)"
+    },
+    {
+      "hash": "c2834c16b0a85a6ec278ff3730542791",
+      "label": "OneLoad64 v5 crunched program (Arkanoid (J1).prg)"
+    },
+    {
+      "hash": "1854e9690965467d1ad9c33549387d9c",
+      "label": "OneLoad64 v5 uncrunched program (Arkanoid (J1).prg)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Round Two",
+      "description": "Clear round 1.",
+      "points": 5,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_0xH093D=1_d0xH093D=0"
+    },
+    {
+      "id": 2,
+      "title": "Fifth Round",
+      "description": "Reach round 5.",
+      "points": 10,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_0xH093D=4_d0xH093D=3"
+    },
+    {
+      "id": 3,
+      "title": "Double Digits",
+      "description": "Reach round 10.",
+      "points": 10,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_0xH093D=9_d0xH093D=8"
+    },
+    {
+      "id": 4,
+      "title": "Halfway There",
+      "description": "Reach round 17.",
+      "points": 25,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_0xH093D=16_d0xH093D=15"
+    },
+    {
+      "id": 5,
+      "title": "Deep Space",
+      "description": "Reach round 25.",
+      "points": 25,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_0xH093D=24_d0xH093D=23"
+    },
+    {
+      "id": 6,
+      "title": "Face of Doh",
+      "description": "Reach round 33 and face Doh.",
+      "points": 25,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_0xH093D=32_d0xH093D=31"
+    },
+    {
+      "id": 7,
+      "title": "Doh Destroyed",
+      "description": "Defeat Doh and save the Arkanoid.",
+      "points": 50,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xH093D=32_0xH0455=255_d0xH0455=0"
+    },
+    {
+      "id": 8,
+      "title": "Beginner's Luck",
+      "description": "Clear round 1 without losing a life.",
+      "points": 10,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_O:d0xH0936=0_N:d0xH0936=153_0xH0936=4.1._N:d0xH0936<=9_R:0xH0936<d0xH0936_T:0xH093D=1_T:d0xH093D=0"
+    },
+    {
+      "id": 9,
+      "title": "Untouchable",
+      "description": "Reach round 6 without losing a life.",
+      "points": 25,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_O:d0xH0936=0_N:d0xH0936=153_0xH0936=4.1._N:d0xH0936<=9_R:0xH0936<d0xH0936_T:0xH093D=5_T:d0xH093D=4"
+    },
+    {
+      "id": 10,
+      "title": "Slow Motion",
+      "description": "Catch an S capsule, to slow the ball.",
+      "points": 5,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_0xH0208=1_d0xH0208!=1"
+    },
+    {
+      "id": 11,
+      "title": "Sticky Fingers",
+      "description": "Catch a C capsule, to catch the ball.",
+      "points": 5,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_0xH0208=2_d0xH0208!=2"
+    },
+    {
+      "id": 12,
+      "title": "Wide Load",
+      "description": "Catch an E capsule, to enlarge the Vaus.",
+      "points": 5,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_0xH0208=3_d0xH0208!=3"
+    },
+    {
+      "id": 13,
+      "title": "Triple Trouble",
+      "description": "Catch a D capsule, to split the ball.",
+      "points": 5,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_0xH0208=4_d0xH0208!=4"
+    },
+    {
+      "id": 14,
+      "title": "Laser Show",
+      "description": "Catch an L capsule, to fire lasers.",
+      "points": 5,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_0xH0208=5_d0xH0208!=5"
+    },
+    {
+      "id": 15,
+      "title": "Way Out",
+      "description": "Catch a B capsule, to open the exit.",
+      "points": 5,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_0xH0208=6_d0xH0208!=6"
+    },
+    {
+      "id": 16,
+      "title": "Spare Vaus",
+      "description": "Catch a P capsule, for an extra life.",
+      "points": 10,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_0xH0208=7_d0xH0208!=7"
+    },
+    {
+      "id": 17,
+      "title": "Full House",
+      "description": "Catch all seven kinds of capsule in one game.",
+      "points": 25,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_O:d0xH0936=0_N:d0xH0936=153_R:0xH0936=4_0xH0208=1.1._0xH0208=2.1._0xH0208=3.1._0xH0208=4.1._0xH0208=5.1._0xH0208=6.1._0xH0208=7.1."
+    },
+    {
+      "id": 18,
+      "title": "Five Figures",
+      "description": "Score 10,000 points.",
+      "points": 5,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_A:0xLC187*1000000_A:0xLC188*100000_A:0xLC189*10000_A:0xLC18A*1000_A:0xLC18B*100_A:0xLC18C*10_0xLC18D>=10000"
+    },
+    {
+      "id": 19,
+      "title": "Fifty Grand",
+      "description": "Score 50,000 points.",
+      "points": 10,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_A:0xLC187*1000000_A:0xLC188*100000_A:0xLC189*10000_A:0xLC18A*1000_A:0xLC18B*100_A:0xLC18C*10_0xLC18D>=50000"
+    },
+    {
+      "id": 20,
+      "title": "Six Figures",
+      "description": "Score 100,000 points.",
+      "points": 25,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_A:0xLC187*1000000_A:0xLC188*100000_A:0xLC189*10000_A:0xLC18A*1000_A:0xLC18B*100_A:0xLC18C*10_0xLC18D>=100000"
+    },
+    {
+      "id": 21,
+      "title": "Arkanoid Ace",
+      "description": "Score 250,000 points.",
+      "points": 50,
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_A:0xLC187*1000000_A:0xLC188*100000_A:0xLC189*10000_A:0xLC18A*1000_A:0xLC18B*100_A:0xLC18C*10_0xLC18D>=250000"
+    }
+  ],
+  "gameOver": "0xH0936=153_d0xH0936!=153",
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score",
+      "description": "Your best score in a game.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH0938=0_0xH0936=4_0xH093D=0_0xHC18D>=48_0xHC18D<=57_O:d0xHC18D<48_d0xHC18D>57::CAN:0=1::SUB:0=0S0xH0936=153_d0xH0936!=153S0xH093D=32_0xH0455=255_d0xH0455=0::VAL:0xLC187*1000000_0xLC188*100000_0xLC189*10000_0xLC18A*1000_0xLC18B*100_0xLC18C*10_0xLC18D"
+    }
+  ]
+}

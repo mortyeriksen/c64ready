@@ -486,6 +486,78 @@
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
+  "arkanoid-crt": {
+   "description": "Arkanoid (Imagine 1987), the OneLoad64 v5 cartridge, MD5 9e6db649f3938ba9cc19f98a75320449: the release its achievement set targets",
+   "env": "C64_ARKANOID_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Arkanoid (J1).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "arkanoid-prg-crunched": {
+   "description": "Arkanoid (Imagine 1987), the OneLoad64 v5 crunched program, MD5 c2834c16b0a85a6ec278ff3730542791",
+   "env": "C64_ARKANOID_PRG_CRUNCHED",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Crunched/Arkanoid (J1).prg"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "arkanoid-prg-uncrunched": {
+   "description": "Arkanoid (Imagine 1987), the OneLoad64 v5 uncrunched program, MD5 1854e9690965467d1ad9c33549387d9c",
+   "env": "C64_ARKANOID_PRG_UNCRUNCHED",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Uncrunched/Arkanoid (J1).prg"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "arkanoid-revenge-of-doh-crt": {
+   "description": "Arkanoid: Revenge of Doh (Imagine 1988), the OneLoad64 v5 cartridge, MD5 4ec2f031497b2fecbd1b68685577e332: the release its achievement set targets",
+   "env": "C64_ARKANOID_REVENGE_OF_DOH_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Arkanoid - Revenge of Doh (J1).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "arkanoid-revenge-of-doh-prg-crunched": {
+   "description": "Arkanoid: Revenge of Doh (Imagine 1988), the OneLoad64 v5 crunched program, MD5 e91260f2e2558f8bbc95e23f47784157",
+   "env": "C64_ARKANOID_REVENGE_OF_DOH_PRG_CRUNCHED",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Crunched/Arkanoid - Revenge of Doh (J1).prg"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "arkanoid-revenge-of-doh-prg-uncrunched": {
+   "description": "Arkanoid: Revenge of Doh (Imagine 1988), the OneLoad64 v5 uncrunched program, MD5 054cb41539ab442d71b6821e21f27318",
+   "env": "C64_ARKANOID_REVENGE_OF_DOH_PRG_UNCRUNCHED",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Uncrunched/Arkanoid - Revenge of Doh (J1).prg"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "green-beret-crt": {
+   "description": "Green Beret (Imagine 1986), the OneLoad64 v5 cartridge, MD5 a3a897a0a9ccde307548c6132002e462: the release its achievement set targets",
+   "env": "C64_GREEN_BERET_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Green Beret.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "green-beret-prg-crunched": {
+   "description": "Green Beret (Imagine 1986), the OneLoad64 v5 crunched program, MD5 3b4e279df48c704dda68b22bd7180302",
+   "env": "C64_GREEN_BERET_PRG_CRUNCHED",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Crunched/Green Beret.prg"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "green-beret-prg-uncrunched": {
+   "description": "Green Beret (Imagine 1986), the OneLoad64 v5 uncrunched program, MD5 dcf88d3490deeb4bee8ecaa7e28abd93",
+   "env": "C64_GREEN_BERET_PRG_UNCRUNCHED",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Uncrunched/Green Beret.prg"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
   "ik-plus-crt": {
    "description": "IK+ (System 3 1987), the OneLoad64 v5 cartridge, MD5 819c741a29030beb67cbb36d8379f9d7: the release its own-design achievement set targets",
    "env": "C64_IK_PLUS_CRT",

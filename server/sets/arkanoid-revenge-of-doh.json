@@ -1,0 +1,123 @@
+{
+  "id": "arkanoid-revenge-of-doh",
+  "title": "Arkanoid: Revenge of Doh",
+  "url": "https://www.lemon64.com/games/details.php?ID=146",
+  "hashes": [
+    {
+      "hash": "4ec2f031497b2fecbd1b68685577e332",
+      "label": "OneLoad64 v5 cartridge (Arkanoid - Revenge of Doh (J1).crt)"
+    },
+    {
+      "hash": "e91260f2e2558f8bbc95e23f47784157",
+      "label": "OneLoad64 v5 crunched program (Arkanoid - Revenge of Doh (J1).prg)"
+    },
+    {
+      "hash": "054cb41539ab442d71b6821e21f27318",
+      "label": "OneLoad64 v5 uncrunched program (Arkanoid - Revenge of Doh (J1).prg)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Back for More",
+      "description": "Clear round 1.",
+      "points": 5,
+      "memaddr": "0xH21B7=1_0xH0688=0_d0xH0688=0_0xH0682=2_d0xH0682=1"
+    },
+    {
+      "id": 2,
+      "title": "Five Down",
+      "description": "Reach round 5.",
+      "points": 10,
+      "memaddr": "0xH21B7=1_0xH0688=0_d0xH0688=0_0xH0682=5_d0xH0682=4"
+    },
+    {
+      "id": 3,
+      "title": "Double Figures",
+      "description": "Reach round 10.",
+      "points": 10,
+      "memaddr": "0xH21B7=1_0xH0688=0_d0xH0688=0_0xH0682=16_d0xH0682=9"
+    },
+    {
+      "id": 4,
+      "title": "Halfway to Doh",
+      "description": "Reach round 17.",
+      "points": 25,
+      "memaddr": "0xH21B7=1_0xH0688=0_d0xH0688=0_0xH0682=23_d0xH0682=22"
+    },
+    {
+      "id": 5,
+      "title": "Deep in Zarg",
+      "description": "Reach round 25.",
+      "points": 25,
+      "memaddr": "0xH21B7=1_0xH0688=0_d0xH0688=0_0xH0682=37_d0xH0682=36"
+    },
+    {
+      "id": 6,
+      "title": "Doh Returns",
+      "description": "Reach round 33 and face Doh.",
+      "points": 25,
+      "memaddr": "0xH21B7=1_0xH0688=0_d0xH0688=0_0xH0682=51_d0xH0682=50"
+    },
+    {
+      "id": 7,
+      "title": "Flawless Start",
+      "description": "Clear round 1 without losing a life.",
+      "points": 10,
+      "memaddr": "0xH21B7=1_0xH0688=0_N:0xH21B7=1_N:d0xH21B7=2_N:0xH00CF=0_N:0xH00D4=0_0xL00D9=0.1._R:0xH0200<d0xH0200_T:0xH0682=2_T:d0xH0682=1"
+    },
+    {
+      "id": 8,
+      "title": "Escape Hatch",
+      "description": "Catch a B capsule, to open the exit.",
+      "points": 5,
+      "memaddr": "0xH21B7=1_0xH0688=0_0xH03F5=11_d0xH03F5!=11"
+    },
+    {
+      "id": 9,
+      "title": "Backup Vaus",
+      "description": "Catch a P capsule, for an extra life.",
+      "points": 10,
+      "memaddr": "0xH21B7=1_0xH0688=0_0xH03F5=12_d0xH03F5!=12"
+    },
+    {
+      "id": 10,
+      "title": "Five Figures",
+      "description": "Score 10,000 points.",
+      "points": 5,
+      "memaddr": "0xH21B7=1_0xH0688=0_A:0xL00D9*10000_A:b0xH00D4*100_b0xH00CF>=1000"
+    },
+    {
+      "id": 11,
+      "title": "Fifty Grand",
+      "description": "Score 50,000 points.",
+      "points": 10,
+      "memaddr": "0xH21B7=1_0xH0688=0_A:0xL00D9*10000_A:b0xH00D4*100_b0xH00CF>=5000"
+    },
+    {
+      "id": 12,
+      "title": "Six Figures",
+      "description": "Score 100,000 points.",
+      "points": 25,
+      "memaddr": "0xH21B7=1_0xH0688=0_A:0xL00D9*10000_A:b0xH00D4*100_b0xH00CF>=10000"
+    },
+    {
+      "id": 13,
+      "title": "Doh's Nemesis",
+      "description": "Score 250,000 points.",
+      "points": 50,
+      "memaddr": "0xH21B7=1_0xH0688=0_A:0xL00D9*10000_A:b0xH00D4*100_b0xH00CF>=25000"
+    }
+  ],
+  "gameOver": "0xH21B7=1_0xH0200=4_d0xH0200=0",
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score",
+      "description": "Your best score in a game.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:N:0xH21B7=1_N:d0xH21B7=2_N:0xH00CF=0_N:0xH00D4=0_0xL00D9=0_0xH0688=0::CAN:0=1::SUB:0xH21B7=1_0xH0200=4_d0xH0200=0::VAL:0xL00D9*100000_b0xH00D4*1000_b0xH00CF*10"
+    }
+  ]
+}

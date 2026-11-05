@@ -135,6 +135,8 @@ every board.
 | --- | --- | --- | --- |
 | 1943 | 14 | yes | OneLoad64 v5: `1943 - The Battle of Midway (J1).crt` |
 | Action Biker | 41 | yes | OneLoad64 v5: `Action Biker.crt` |
+| Arkanoid | 21 | yes | OneLoad64 v5: `Arkanoid (J1).crt`, or its crunched and uncrunched programs |
+| Arkanoid: Revenge of Doh | 13 | yes | OneLoad64 v5: `Arkanoid - Revenge of Doh (J1).crt`, or its crunched and uncrunched programs |
 | Barbarian: The Ultimate Warrior | 10 | yes | OneLoad64 v5: both `Barbarian - The Ultimate Warrior (Side 1)` and `(Side 2)` cartridges, or their crunched and uncrunched programs |
 | Beach-Head | 10 | yes | OneLoad64 v5: `Beach-Head.crt` |
 | Blue Max | 16 | yes | OneLoad64 v5: `Blue Max.crt` |
@@ -154,6 +156,7 @@ every board.
 | Ghosts 'n Goblins | 15 | yes | OneLoad64 v5: `Ghosts'n Goblins.crt` |
 | Ghosts 'n Goblins Arcade | 10 | yes | OneLoad64 v5 extras: `Ghosts'n Goblins Arcade [EasyFlash].crt`, or `GHOSTNGA.D64` |
 | Great Giana Sisters | 10 | yes | OneLoad64 v5: `Great Giana Sisters, The.crt` |
+| Green Beret | 14 | yes | OneLoad64 v5: `Green Beret.crt`, or its crunched and uncrunched programs |
 | Gribbly's Day Out | | yes | OneLoad64 v5: `Gribbly's Day Out.crt` |
 | IK+ | 13 | yes | OneLoad64 v5: `IK+.crt`, or the disk `IKplus.d64` |
 | Impossible Mission | 10 | yes | OneLoad64 v5: `Impossible Mission.crt` |

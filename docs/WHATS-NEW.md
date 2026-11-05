@@ -31,6 +31,12 @@ The version you are running is shown at the bottom of the About dialog.
 - **IK+.** `IKplus.d64` now shares the cartridge's achievements and high scores.
 - **Out Run.** Eight more trophies, from a first crash to a whole route without
   one.
+- **Arkanoid.** Trophies for the rounds up to Doh, every capsule and a clean start, and a
+  high-score board.
+- **Arkanoid: Revenge of Doh.** Trophies for the rounds up to Doh, the B and P
+  capsules, a clean start and scores, and a high-score board.
+- **Green Beret.** Trophies for each stage, the rescue and a second mission,
+  a clean stage and a knife-only one, and a high-score board.
 - **Spy vs. Spy trilogy.** Trophies for escapes, items, traps and blowing up
   the rival, with speedrun boards for all three and a score board for the first.
 

@@ -1,0 +1,130 @@
+{
+  "id": "green-beret",
+  "title": "Green Beret",
+  "url": "https://www.lemon64.com/games/details.php?ID=1096",
+  "hashes": [
+    {
+      "hash": "a3a897a0a9ccde307548c6132002e462",
+      "label": "OneLoad64 v5 cartridge (Green Beret.crt)"
+    },
+    {
+      "hash": "3b4e279df48c704dda68b22bd7180302",
+      "label": "OneLoad64 v5 crunched program (Green Beret.prg)"
+    },
+    {
+      "hash": "dcf88d3490deeb4bee8ecaa7e28abd93",
+      "label": "OneLoad64 v5 uncrunched program (Green Beret.prg)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Missile Base Taken",
+      "description": "Clear stage 1, the missile base.",
+      "points": 10,
+      "memaddr": "0xH03B3<=9_0xH03B1=1_d0xH03B1=0"
+    },
+    {
+      "id": 2,
+      "title": "Harbour Secured",
+      "description": "Clear stage 2, the harbour.",
+      "points": 10,
+      "memaddr": "0xH03B3<=9_0xH03B1=2_d0xH03B1=1"
+    },
+    {
+      "id": 3,
+      "title": "Choppers Down",
+      "description": "Clear stage 3, the bridge, by shooting down the helicopters.",
+      "points": 25,
+      "memaddr": "0xH03B3<=9_0xH03B1=3_d0xH03B1=2"
+    },
+    {
+      "id": 4,
+      "title": "Captives Rescued",
+      "description": "Clear stage 4, the prison camp, and rescue the captives.",
+      "points": 50,
+      "memaddr": "0xH03B3<=9_0xH03B1=4_d0xH03B1=3"
+    },
+    {
+      "id": 5,
+      "title": "Second Tour",
+      "description": "Clear the missile base again, on the second mission.",
+      "points": 25,
+      "memaddr": "0xH03B3<=9_N:0xH03B1=0_d0xH03B1=4.1._R:0xH03B3=255_0xH03B1=1_d0xH03B1=0"
+    },
+    {
+      "id": 6,
+      "title": "Armed",
+      "description": "Pick up a special weapon.",
+      "points": 5,
+      "memaddr": "0xH03B3<=9_0xH0264!=0_d0xH0264=0"
+    },
+    {
+      "id": 7,
+      "title": "Reinforcements",
+      "description": "Earn an extra life.",
+      "points": 5,
+      "memaddr": "N:0xH039A=63_N:d0xH039A=1_N:0xH03B3=2_N:0xH03B1=0_N:0xH03B4=0_N:0xH03B5=0_0xH03B6=0.1._R:0xH03B3=255_0xH03B3<=9_0xH03B3>d0xH03B3"
+    },
+    {
+      "id": 8,
+      "title": "Clean Sweep",
+      "description": "Clear stage 1 without losing a life.",
+      "points": 10,
+      "memaddr": "N:0xH039A=63_N:d0xH039A=1_N:0xH03B3=2_N:0xH03B1=0_N:0xH03B4=0_N:0xH03B5=0_0xH03B6=0.1._R:0xH03B3=255_R:0xH03B3<d0xH03B3_T:0xH03B1=1_T:d0xH03B1=0"
+    },
+    {
+      "id": 9,
+      "title": "Cold Steel",
+      "description": "Clear stage 1 with the knife alone, picking up no weapon.",
+      "points": 10,
+      "memaddr": "N:0xH039A=63_N:d0xH039A=1_N:0xH03B3=2_N:0xH03B1=0_N:0xH03B4=0_N:0xH03B5=0_0xH03B6=0.1._R:0xH03B3=255_R:0xH0264!=0_T:0xH03B1=1_T:d0xH03B1=0"
+    },
+    {
+      "id": 10,
+      "title": "Iron Beret",
+      "description": "Rescue the captives without losing a life.",
+      "points": 50,
+      "memaddr": "N:0xH039A=63_N:d0xH039A=1_N:0xH03B3=2_N:0xH03B1=0_N:0xH03B4=0_N:0xH03B5=0_0xH03B6=0.1._R:0xH03B3=255_R:0xH03B3<d0xH03B3_T:0xH03B1=4_T:d0xH03B1=3"
+    },
+    {
+      "id": 11,
+      "title": "Private",
+      "description": "Score 25,000 points.",
+      "points": 5,
+      "memaddr": "0xHC433>=48_0xHC433<=57_0xHC439=48_A:0xLC433*1000000_A:0xLC434*100000_A:0xLC435*10000_A:0xLC436*1000_A:0xLC437*100_A:0xLC438*10_0xLC439>=25000"
+    },
+    {
+      "id": 12,
+      "title": "Sergeant",
+      "description": "Score 50,000 points.",
+      "points": 10,
+      "memaddr": "0xHC433>=48_0xHC433<=57_0xHC439=48_A:0xLC433*1000000_A:0xLC434*100000_A:0xLC435*10000_A:0xLC436*1000_A:0xLC437*100_A:0xLC438*10_0xLC439>=50000"
+    },
+    {
+      "id": 13,
+      "title": "Captain",
+      "description": "Score 100,000 points.",
+      "points": 25,
+      "memaddr": "0xHC433>=48_0xHC433<=57_0xHC439=48_A:0xLC433*1000000_A:0xLC434*100000_A:0xLC435*10000_A:0xLC436*1000_A:0xLC437*100_A:0xLC438*10_0xLC439>=100000"
+    },
+    {
+      "id": 14,
+      "title": "Colonel",
+      "description": "Score 200,000 points.",
+      "points": 50,
+      "memaddr": "0xHC433>=48_0xHC433<=57_0xHC439=48_A:0xLC433*1000000_A:0xLC434*100000_A:0xLC435*10000_A:0xLC436*1000_A:0xLC437*100_A:0xLC438*10_0xLC439>=200000"
+    }
+  ],
+  "gameOver": "0xH03B3=255_d0xH03B3=0",
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score",
+      "description": "Your best score in a game.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:N:0xH039A=63_N:d0xH039A=1_N:0xH03B3=2_N:0xH03B1=0_N:0xH03B4=0_N:0xH03B5=0_0xH03B6=0::CAN:0=1::SUB:0xH03B3=255_d0xH03B3=0::VAL:0xLC433*1000000_0xLC434*100000_0xLC435*10000_0xLC436*1000_0xLC437*100_0xLC438*10_0xLC439"
+    }
+  ]
+}
