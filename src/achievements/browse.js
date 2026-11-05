@@ -9,7 +9,7 @@
 // chat's name colours from the C64 palette.
 
 import { pushEscapeLayer, popEscapeLayer } from '../ui/escape-stack.js';
-import { GAME_ICONS } from './game-icons.js';
+import { ICON_GRID, gameIconUrl } from './game-icons.js';
 
 /** Builds an element: attributes, `on` listeners, then children. */
 export function h(tag, attrs = {}, ...children) {
@@ -31,27 +31,17 @@ function icon(paths, size = 15) {
 export const trophyIcon = (size) => icon(['M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z', 'M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4'], size);
 export const starIcon = (size) => icon(['M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z'], size);
 
-// A bitmap ('#' lit, '+' half-tone) about `px` CSS pixels across, at a whole
-// number of device pixels per bitmap pixel, so its pixels stay square and
-// sharp on any screen.
-function pixelArt(rows, px, cls) {
-  const n = rows.length, dpr = globalThis.devicePixelRatio || 1;
-  const size = (n * Math.max(1, Math.round((px / n) * dpr))) / dpr;
-  const s = document.createElementNS(SVG, 'svg');
-  for (const [k, v] of Object.entries({ viewBox: `0 0 ${n} ${n}`, width: size, height: size, fill: 'currentColor', 'shape-rendering': 'crispEdges', class: cls, 'aria-hidden': 'true', focusable: 'false' })) s.setAttribute(k, v);
-  for (const [ch, opacity] of [['#', null], ['+', '0.45']]) {
-    let d = '';
-    rows.forEach((row, y) => { for (const m of row.matchAll(ch === '#' ? /#+/g : /\++/g)) d += `M${m.index} ${y}h${m[0].length}v1h-${m[0].length}z`; });
-    if (!d) continue;
-    const p = document.createElementNS(SVG, 'path');
-    p.setAttribute('d', d);
-    if (opacity) p.setAttribute('opacity', opacity);
-    s.append(p);
-  }
-  return s;
+/**
+ * A game's own pixel icon, about `px` CSS pixels across at a whole number of device pixels per icon
+ * pixel, so its pixels stay square and sharp on any screen; null for a game without one.
+ */
+export function gameIcon(id, px = 14) {
+  const url = gameIconUrl(id);
+  if (!url) return null;
+  const dpr = globalThis.devicePixelRatio || 1;
+  const size = (ICON_GRID * Math.max(1, Math.round((px / ICON_GRID) * dpr))) / dpr;
+  return h('img', { src: url, width: size, height: size, alt: '', class: 'ach-game-icon', 'aria-hidden': 'true', draggable: 'false' });
 }
-/** A game's own pixel icon, about `px` across, or null for a game without one. */
-export const gameIcon = (id, px = 14) => (GAME_ICONS[id] ? pixelArt(GAME_ICONS[id], px, 'ach-game-icon') : null);
 
 /** How long ago `at` was, in a few words. */
 export function ago(at, now = Date.now()) {
@@ -150,12 +140,12 @@ export function progress(got, total, points, totalPoints) {
     h('span', {}, h('span', { class: 'ach-pts' }, String(points)), ` of ${totalPoints} points`));
 }
 /**
- * A game's head: its title (a link, or plain for the loaded game), meter and
+ * A game's head: its icon and title (a link, or plain for the loaded game), meter and
  * progress, and on the title line the versions, attract mode and refresh
  * buttons it is given. A game with high scores and no achievements says so instead.
  */
 export function gameHead(ctx, game, achievements, isUnlocked, { link = false, versions = [], url = null, attract = null, refresh = null } = {}) {
-  const title = h('h3', { class: 'ach-game-title' }, link ? gameLink(ctx, game) : game.title);
+  const title = h('h3', { class: 'ach-game-title' }, gameIcon(game.id, 24), link ? gameLink(ctx, game) : h('span', {}, game.title));
   const buttons = [versions.length ? versionButton() : null, attract ? attractButton(attract) : null, refresh ? refreshButton(refresh) : null].filter(Boolean);
   const top = buttons.length ? [h('div', { class: 'ach-game-top' }, title, ...buttons), ...(versions.length ? [versionCard(versions, game.title, url)] : [])] : [title];
   if (!achievements.length) return h('div', { class: 'ach-game' }, ...top, h('p', { class: 'achievements-note' }, 'This game has high scores, and no achievements yet.'));
@@ -417,9 +407,9 @@ function gameCard(ctx, g, isLoaded) {
   const got = g.mine?.unlocked ?? 0;
   // A game the reader has played (an unlock or a score) has its count in amber.
   const played = got > 0 || !!g.mine?.last;
-  const icon = GAME_ICONS[g.id] ? pixelArt(GAME_ICONS[g.id], 24, 'ach-game-icon') : g.title.replace(/^the\s+/i, '').slice(0, 1).toUpperCase();
+  const icon = gameIcon(g.id, 24);
   return h('button', { type: 'button', class: `ach-card ${playerHue(g.id)}${isLoaded ? ' is-loaded' : ''}`, on: { click: () => ctx.go({ type: 'game', hash: g.hash }) } },
-    h('span', { class: `ach-tile${GAME_ICONS[g.id] ? ' has-icon' : ''}`, 'aria-hidden': 'true' }, icon),
+    h('span', { class: `ach-tile${icon ? ' has-icon' : ''}`, 'aria-hidden': 'true' }, icon ?? g.title.replace(/^the\s+/i, '').slice(0, 1).toUpperCase()),
     h('span', { class: 'ach-card-name' }, h('span', { class: 'ach-games-title' }, g.title),
       isLoaded ? h('span', { class: 'ach-card-loaded' }, 'LOADED') : null,
       g.mine?.last ? h('em', { class: 'ach-card-when' }, `(last played ${agoShort(g.mine.last)})`) : null),

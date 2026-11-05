@@ -93,8 +93,7 @@ function pickUp(k) { ram[WEAPON] = k; frames(5); }
   expect(set.achievements.every((a, i) => a.id === i + 1), 'achievement IDs follow display order');
   expect(set.leaderboards.length === 1 && set.leaderboards[0].format === 'SCORE' && !set.leaderboards[0].lowerIsBetter, 'one High Score board, higher is better');
   expect(set.url === 'https://www.lemon64.com/games/details.php?ID=1096', 'the set links the game on Lemon64');
-  const icon = GAME_ICONS[set.id];
-  expect(icon?.length === 10 && icon.every((row) => /^[#+.]{10}$/.test(row)), 'its icon is 10 by 10 pixels');
+  expect(GAME_ICONS.has(set.id), 'the game has its icon');
   ok(`all ${set.achievements.length} achievements, the board and the game over parse`);
 }
 

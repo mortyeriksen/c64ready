@@ -20,7 +20,7 @@ export const COMPLETE_EXTRA_MS = 2500;
 /** Unlocks worth this many points or more get the sweep, the sparkles, the full celebration. */
 export const SWEEP_POINTS = 10, SPARKLE_POINTS = 25, CELEBRATE_POINTS = 50;
 
-// 10x10, drawn like the game icons: '#' lit, '+' half-tone, '.' none.
+// 10x10: '#' lit, '+' half-tone, '.' none.
 export const KIND_ICONS = {
   // A trophy.
   unlock: ['##########', '#+######+#', '#+######+#', '.+######+.', '..######..', '...####...', '....##....', '....##....', '..######..', '..######..'],
@@ -89,7 +89,17 @@ export function iconMask(rows) {
 }
 function drawIcon(icon, rows) {
   icon.style.setProperty('--ach-icon', iconMask(rows));
+  icon.style.removeProperty('--ach-art');
   icon.dataset.rows = rows.join('');
+  delete icon.dataset.art;
+}
+/** Shows a game's colour icon (its URL, game-icons.js) on an icon element, or the trophy without one. */
+export function drawGameIcon(icon, url) {
+  if (!url) { drawIcon(icon, KIND_ICONS.unlock); return; }
+  icon.style.setProperty('--ach-art', `url("${url}")`);
+  icon.style.removeProperty('--ach-icon');
+  icon.dataset.art = url;
+  delete icon.dataset.rows;
 }
 
 /** The unlock's tier by its points: 0 calm, 1 the sweep, 2 sparkles, 3 the full celebration. */
@@ -120,7 +130,7 @@ export function createAchToasts({ host, ms = ACH_TOAST_MS }) {
    * @param {boolean} [t.score.stillTop]  a new best by the player already first: a crown for the icon
    * @param {string} [t.score.topTitle]  for a new first place, the title it turns to, such as the board's own
    * @param {object} [t.complete]         the unlock finishes the game's set: the toast then turns to gold
-   * @param {string[]} [t.complete.icon]  the game's 10x10 icon (game-icons.js)
+   * @param {string} [t.complete.icon]    the game's icon URL (game-icons.js)
    * @param {string} t.complete.title
    * @param {string} t.complete.text
    * @param {string} [t.action]           a button's label
@@ -300,7 +310,7 @@ export function flap(title, heading) {
 // The finished set's side of the card: gold, the game's icon, its line and a 100% stamp.
 function finished(el, icon, words, chip, c, stamped = true) {
   el.classList.add('ach-toast-gold');
-  drawIcon(icon, c.icon ?? KIND_ICONS.unlock);
+  drawGameIcon(icon, c.icon);
   words.title.textContent = c.title;
   words.title.setAttribute('aria-label', c.title);
   words.text.textContent = c.text;

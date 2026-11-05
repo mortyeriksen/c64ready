@@ -9,7 +9,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { KIND_ICONS } from '../src/achievements/toast.js';
-import { GAME_ICONS } from '../src/achievements/game-icons.js';
+import { GAME_ICON_ART } from './game-icons-art.mjs';
+import { iconSvg, GRID } from './game-icons.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = process.env.GUIDE_OUT || path.join(ROOT, 'public/guide');
@@ -35,6 +36,8 @@ function pixels(icon, x, y, cell, ink) {
   }));
   return s;
 }
+// A game's colour icon (tools/game-icons.mjs), `cell` pixels to each of its own.
+const gameArt = (id, x, y, cell) => iconSvg(GAME_ICON_ART[id]).trim().replace('<svg ', `<svg x="${x}" y="${y}" `).replace(/width="\d+" height="\d+"/, `width="${GRID * cell}" height="${GRID * cell}"`);
 // A trophy HUD slot, as the app draws it: lit with its trophy, marked next, out with a red cross, or locked.
 function slot(x, y, n, kind) {
   const s = 30;
@@ -50,7 +53,7 @@ let body = text(W / 2, 64, 'How achievements work', { size: 32, fill: C.bright, 
 body += text(W / 2, 98, 'Each game with a set has trophies and high-score boards, checked as you play', { size: 16, fill: C.dim, anchor: 'middle' });
 
 const stages = [
-  { n: 1, title: 'Load a game', lines: ['Its file is matched', 'to the game\'s set'], icon: GAME_ICONS['commando-arcade'] ?? KIND_ICONS.unlock, ink: C.green },
+  { n: 1, title: 'Load a game', lines: ['Its file is matched', 'to the game\'s set'], art: 'commando-arcade', ink: C.green },
   { n: 2, title: 'Play', lines: ['Each frame, the set', 'reads the C64\'s memory'], icon: KIND_ICONS.unlock, ink: C.amber },
   { n: 3, title: 'Saved', lines: ['Your unlocks and best', 'scores, signed in'], icon: KIND_ICONS.score, ink: C.cyan },
   { n: 4, title: 'Shared', lines: ['Trophy Hunters, high', 'scores and activity'], icon: KIND_ICONS.crown, ink: C.accent },
@@ -60,7 +63,7 @@ stages.forEach((s, i) => {
   const x = x0 + i * (cw + gap);
   body += rect(x, y0, cw, ch, { r: 12, stroke: i === 1 ? C.amber : C.line, sw: i === 1 ? 1.8 : 1.2 });
   body += text(x + 20, y0 + 30, String(s.n), { size: 14, fill: C.dim });
-  body += pixels(s.icon, x + cw / 2 - 25, y0 + 30, 5, s.ink);
+  body += s.art ? gameArt(s.art, x + cw / 2 - 27, y0 + 28, 3) : pixels(s.icon, x + cw / 2 - 25, y0 + 30, 5, s.ink);
   body += text(x + cw / 2, y0 + 120, s.title, { size: 21, fill: C.bright, anchor: 'middle', weight: 600 });
   s.lines.forEach((l, k) => { body += text(x + cw / 2, y0 + 148 + k * 20, l, { size: 13, fill: C.text, anchor: 'middle' }); });
   if (i < stages.length - 1) body += arrow(x + cw + 6, y0 + ch / 2, x + cw + gap - 6);

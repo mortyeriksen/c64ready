@@ -112,8 +112,7 @@ function retire(points) {
   const [pp] = set.leaderboards;
   expect(set.leaderboards.length === 1 && pp.format === 'VALUE' && !pp.lowerIsBetter, 'one Pirate Points board, higher is better');
   expect(set.url === 'https://www.lemon64.com/game/pirates', 'the set links the game on Lemon64');
-  const icon = GAME_ICONS[set.id];
-  expect(icon?.length === 10 && icon.every((row) => /^[#+.]{10}$/.test(row)), 'its icon is 10 by 10 pixels');
+  expect(GAME_ICONS.has(set.id), 'the game has its icon');
   ok(`all ${set.achievements.length} achievements, the board, the notice and the game over parse`);
 }
 

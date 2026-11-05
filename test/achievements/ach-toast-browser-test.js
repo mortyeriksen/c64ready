@@ -183,7 +183,7 @@ try {
   ok('a new best and a new first place');
 
   // 4c. The unlock that finishes a set turns to gold with the game's icon, stamped 100%, and stays longer.
-  const ICON = ['##########', '#........#', '#.######.#', '#.#....#.#', '#.#.##.#.#', '#.#.##.#.#', '#.#....#.#', '#.######.#', '#........#', '##########'];
+  const ICON = '/gameicons/commando-arcade.svg';
   await page.evaluate((icon) => window.lasting.show({ kind: 'unlock', title: 'War Hero', text: 'Score 100,000 points.', points: 25, complete: { icon, title: 'Demo complete!', text: 'All 14 achievements, 180 points.' } }), ICON);
   await page.waitForSelector('.ach-toast:not(.ach-toast-out)');
   await wait(page, 3600);
@@ -193,11 +193,12 @@ try {
       gold: t.classList.contains('ach-toast-gold'), stamp: t.querySelector('.ach-toast-stamp')?.textContent ?? null,
       title: t.querySelector('.ach-toast-title').getAttribute('aria-label'), text: t.querySelector('.ach-toast-text').textContent,
       chip: !!t.querySelector('.ach-toast-points'),
-      icon: t.querySelector('.ach-toast-icon').dataset.rows ?? '',
+      icon: t.querySelector('.ach-toast-icon').dataset.art ?? '',
+      art: getComputedStyle(t.querySelector('.ach-toast-icon'), '::before').backgroundImage,
     };
   });
   expect(fin.gold && fin.stamp === '100%' && fin.title === 'Demo complete!' && fin.text === 'All 14 achievements, 180 points.' && !fin.chip, `a finished set turns to its gold side (${JSON.stringify(fin)})`);
-  expect(fin.icon === ICON.join(''), 'with the game\'s own icon');
+  expect(fin.icon === ICON && fin.art.includes(ICON), `with the game's own icon in its colours (${fin.art})`);
   await close(page);
   await page.waitForFunction(() => !document.querySelector('.ach-toast, .ach-toast-shower, .ach-toast-ring, .ach-toast-glint, .ach-toast-spark'), null, { timeout: 5000 });
   await page.evaluate(() => window.toasts.show({ kind: 'unlock', title: 'Done', points: 5, complete: { title: 'Demo complete!', text: 'All 3.' } }));

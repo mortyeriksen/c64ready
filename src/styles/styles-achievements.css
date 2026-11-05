@@ -211,6 +211,9 @@
 
 /* ── A game's head: title, one meter cell per achievement, progress ────── */
 .ach-game-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0 0 8px;
   font-size: 1.1rem;
   font-weight: normal;
@@ -1301,6 +1304,12 @@
   mask: var(--ach-icon, none) center / 100% 100% no-repeat;
 }
 .ach-hud-slot.is-got::before { --ach-icon: var(--ach-hud-trophy, none); }
+/* A game's own icon, in its colours. */
+.ach-toast-icon[data-art]::before,
+.ach-hud-icon[data-art]::before {
+  background: var(--ach-art, none) center / 100% 100% no-repeat;
+  mask: none;
+}
 .ach-hud-words { display: flex; flex-direction: column; white-space: nowrap; }
 .ach-hud-words small { color: var(--text); font-size: 0.82em; }
 .ach-hud-words i,
@@ -1682,6 +1691,7 @@
 .ach-hud-card .ach-hud-in { justify-items: stretch; padding: 0.55em 0.65em 0.65em; }
 .ach-hud-card .ach-hud-words { flex: 1; min-width: 0; }
 .ach-hud-card .ach-hud-title {
+  display: block;
   margin: 0;
   overflow: hidden;
   font-size: 1.15em;

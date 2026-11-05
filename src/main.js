@@ -50,7 +50,7 @@ import { createAchievementEngine } from './achievements/engine.js';
 import { createAchToasts } from './achievements/toast.js';
 import { createTrophyHud, TIME_FORMATS } from './achievements/hud.js';
 import { createAttract } from './achievements/attract.js';
-import { GAME_ICONS } from './achievements/game-icons.js';
+import { gameIconUrl } from './achievements/game-icons.js';
 import { readPlace, savePlace, nextPlace, applyPlace, dragPlace, readVibesPlace, saveVibesPlace, VIBES_MARGIN, readVibesSize, saveVibesSize, applySize, dragSize } from './achievements/toast-place.js';
 import { createAccount, apiBase } from './account/account.js';
 import { setLoaded } from './media/now-loaded.js';
@@ -2472,7 +2472,7 @@ function _scoreTitles(board, game, first) {
   const top = board.title.replace(/^Hiscores\b/, 'Hiscore');
   return { title: first ? top : mine, topTitle: top, mode: first ? '' : mode };
 }
-const _completeToast = ({ id, title, count, points }) => ({ icon: GAME_ICONS[id], title: `${title} complete!`, text: `All ${count} achievements, ${points} points.` });
+const _completeToast = ({ id, title, count, points }) => ({ icon: gameIconUrl(id), title: `${title} complete!`, text: `All ${count} achievements, ${points} points.` });
 // Where toasts show. On the screen, Options ▸ Other ▸ TOAST cycles six places
 // in the borders. In vibes, its toast button lets a sample be dragged to any
 // spot. Both kept in the browser.

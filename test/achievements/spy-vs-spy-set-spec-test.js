@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadRcheevos, EVENT } from '../../src/achievements/rcheevos.js';
 import { GAME_ICONS } from '../../src/achievements/game-icons.js';
+import { GAME_ICON_ART } from '../../tools/game-icons-art.mjs';
 import { nibFileToG64 } from '../../src/media/nib.js';
 import { C64Machine } from '../../src/machine.js';
 import { checkSet } from '../../server/games.mjs';
@@ -33,10 +34,9 @@ expect(sets[0].leaderboards[1].format === 'SCORE' && sets[0].leaderboards[1].low
 expect(sets.every((s) => s.leaderboards[0].format === 'MILLISECS' && s.leaderboards[0].lowerIsBetter), 'all escape speed boards rank shorter times');
 expect(sets.map((s) => s.achievements.length).join(',') === '18,18,16', 'the trilogy has item, level clear and last-minute escape trophies');
 for (const set of sets) {
-  const icon = GAME_ICONS[set.id];
-  expect(icon?.length === 10 && icon.every((row) => /^[#+.]{10}$/.test(row)), `${set.id}: the game has a complete 10 by 10 icon`);
+  expect(GAME_ICONS.has(set.id), `${set.id}: the game has its icon`);
 }
-expect(new Set(sets.map((set) => GAME_ICONS[set.id].join(''))).size === 3, 'each Spy vs. Spy game has its own icon');
+expect(new Set(sets.map((set) => GAME_ICON_ART[set.id].join(''))).size === 3, 'each Spy vs. Spy game has its own icon');
 
 activate(sets[0]);
 frame(); embassy(); frame();

@@ -12,8 +12,8 @@
 // display frame, writes only what changed, and allocates nothing but the
 // texts it shows.
 
-import { KIND_ICONS, iconMask, flap, count, sparkle, tremble, burst } from './toast.js';
-import { GAME_ICONS } from './game-icons.js';
+import { KIND_ICONS, iconMask, drawGameIcon, flap, count, sparkle, tremble, burst } from './toast.js';
+import { gameIconUrl } from './game-icons.js';
 import { ordinal, ago } from './browse.js';
 
 export const HUD_KEY = 'c64emu.achHud';
@@ -744,7 +744,7 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
       setBoard(game?.leaderboards[0] ?? null);
       if (game) {
         title.textContent = game.title;
-        icon.style.setProperty('--ach-icon', iconMask(GAME_ICONS[game.id] ?? KIND_ICONS.unlock));
+        drawGameIcon(icon, gameIconUrl(game.id));
         buildSlots();
         hud.dataset.slots = game.achievements.length ? 'on' : 'off';
       }

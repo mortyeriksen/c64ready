@@ -623,6 +623,9 @@ if (want('user-port-bbs')) {
 // Accounts made with a virtual passkey, and deleted again afterwards (tools/guide-achievements.mjs).
 const deleteAccounts = (tokens) => deleteAccountsAt(BASE, tokens);
 
+// The game plays on under the window shots: a notice it raises (a challenge going out) is not theirs.
+const clearToasts = (page) => page.evaluate(() => document.querySelectorAll('.ach-toast').forEach((t) => t.remove()));
+
 // ── desktop: the chat, docked beside a game, the player mentioning it ───────────────
 if (want('achievements-chat')) {
   const guests = [], tokens = [];
@@ -702,6 +705,7 @@ if (want('achievements-chat')) {
     ]) { await say(); await sleep(1100); }
     await page.mouse.move(10, 890);   // no hover highlight in the shot
     await sleep(500);
+    await clearToasts(page);
     const info = saveGuideShot(await page.screenshot(), OUT, 'achievements-chat');
     done.push('achievements-chat'); console.log('  ✓', shotLabel('achievements-chat', info));
     await ctx.close();
@@ -770,6 +774,7 @@ if (want('achievements')) {
     await intoCommandoArcade(page);
     await page.mouse.move(10, 890);
     await sleep(400);
+    await clearToasts(page);
     let info = saveGuideShot(await page.screenshot(), OUT, 'achievements-game');
     done.push('achievements-game'); console.log('  ✓', shotLabel('achievements-game', info));
 
@@ -778,6 +783,7 @@ if (want('achievements')) {
     await page.locator('.ach-card').first().waitFor({ timeout: 10000 });
     await page.mouse.move(10, 890);
     await sleep(600);
+    await clearToasts(page);
     info = saveGuideShot(await page.screenshot(), OUT, 'achievements-games');
     done.push('achievements-games'); console.log('  ✓', shotLabel('achievements-games', info));
 
@@ -785,6 +791,7 @@ if (want('achievements')) {
     await page.locator('#achievements-activity li').first().waitFor({ timeout: 10000 });
     await page.mouse.move(10, 890);
     await sleep(600);
+    await clearToasts(page);
     info = saveGuideShot(await page.screenshot(), OUT, 'achievements-activity');
     done.push('achievements-activity'); console.log('  ✓', shotLabel('achievements-activity', info));
     await ctx.close();

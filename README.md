@@ -152,6 +152,7 @@ Hosted at **[c64ready.com/docs](https://www.c64ready.com/docs/)**, with sources 
 ├── docs/              # Markdown docs, compiled to HTML by tools/build-docs.mjs
 ├── test/              # unit + spec + hardware-testprog suites (npm test)
 ├── public/            # fonts, icons, logos, screenshots, guide media, compiled docs
+│   └── gameicons/     # each game's icon, drawn by tools/game-icons.mjs
 ├── tools/             # build + dev tooling: docs compile, WASM embed, screenshot & perf harnesses
 ├── dist/              # npm run build output, ready to serve (git-ignored)
 ├── roms/              # your own C64 ROMs, read by npm test (git-ignored)

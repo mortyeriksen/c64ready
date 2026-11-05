@@ -6,8 +6,8 @@
 // (hud.js, styles-achievements.css), so a player knows it from the 3D view.
 // And every trophy under the boards as a toast in miniature.
 
-import { KIND_ICONS, iconMask } from './toast.js';
-import { GAME_ICONS } from './game-icons.js';
+import { KIND_ICONS, iconMask, drawGameIcon } from './toast.js';
+import { gameIconUrl } from './game-icons.js';
 import { chase, gapText, boardLabel, slotColumns, challengeFx, challengeSince, FX_CLASS, FX_GOING_OUT, FX_BACK } from './hud.js';
 import { h, ordinal, ago } from './browse.js';
 
@@ -50,7 +50,7 @@ export function hudCard({ game, board, standings, live = null, meId = null, form
   const now = Date.now();
 
   const icon = h('span', { class: 'ach-hud-icon' });
-  icon.style.setProperty('--ach-icon', iconMask(GAME_ICONS[game.id] ?? KIND_ICONS.unlock));
+  drawGameIcon(icon, gameIconUrl(game.id));
   const id = h('div', { class: 'ach-hud-id' }, icon,
     h('span', { class: 'ach-hud-words' }, h('h3', { class: 'ach-hud-title ach-game-title' }, game.title),
       list.length ? h('small', {}, h('i', {}, String(pts)), ` / ${total} pts · `, h('i', {}, String(n)), ` of ${list.length}`) : null),
