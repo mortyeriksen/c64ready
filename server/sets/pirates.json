@@ -1,0 +1,207 @@
+{
+  "id": "pirates",
+  "title": "Pirates!",
+  "url": "https://www.lemon64.com/game/pirates",
+  "hashes": [
+    {
+      "hash": "a2b122448c4c4981e4f125f2aa15d957",
+      "label": "OneLoad64 v5 extras, EasyFlash cartridge (Pirates! [EasyFlash].crt, the Nostalgia +10 release)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Commissioned",
+      "description": "Earn your first title, a commission as Ensign.",
+      "points": 5,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255Sd0xH940D=0_0xH940D=1Sd0xH940E=0_0xH940E=1Sd0xH940F=0_0xH940F=1Sd0xH9410=0_0xH9410=1"
+    },
+    {
+      "id": 2,
+      "title": "Captain of the Crown",
+      "description": "Be promoted to Captain.",
+      "points": 5,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255Sd0xH940D=1_0xH940D=2Sd0xH940E=1_0xH940E=2Sd0xH940F=1_0xH940F=2Sd0xH9410=1_0xH9410=2"
+    },
+    {
+      "id": 3,
+      "title": "Colonel",
+      "description": "Be promoted to Colonel.",
+      "points": 10,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255Sd0xH940D=3_0xH940D=4Sd0xH940E=3_0xH940E=4Sd0xH940F=3_0xH940F=4Sd0xH9410=3_0xH9410=4"
+    },
+    {
+      "id": 4,
+      "title": "Admiral of the Main",
+      "description": "Be promoted to Admiral.",
+      "points": 25,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255Sd0xH940D=4_0xH940D=5Sd0xH940E=4_0xH940E=5Sd0xH940F=4_0xH940F=5Sd0xH9410=4_0xH9410=5"
+    },
+    {
+      "id": 5,
+      "title": "Ennobled",
+      "description": "Be made a Baron.",
+      "points": 25,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255Sd0xH940D=5_0xH940D=6Sd0xH940E=5_0xH940E=6Sd0xH940F=5_0xH940F=6Sd0xH9410=5_0xH9410=6"
+    },
+    {
+      "id": 6,
+      "title": "His Grace",
+      "description": "Be made a Duke.",
+      "points": 50,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255Sd0xH940D=8_0xH940D=9Sd0xH940E=8_0xH940E=9Sd0xH940F=8_0xH940F=9Sd0xH9410=8_0xH9410=9"
+    },
+    {
+      "id": 7,
+      "title": "Land Grant",
+      "description": "Receive your first grant of land.",
+      "points": 10,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255_d0xH9405=0_0xH9405>=1"
+    },
+    {
+      "id": 8,
+      "title": "Great Estate",
+      "description": "Hold 2,500 acres of land.",
+      "points": 25,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255_d0xH9405<50_0xH9405>=50"
+    },
+    {
+      "id": 9,
+      "title": "Wedding Bells",
+      "description": "Marry a governor's daughter.",
+      "points": 10,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255_d0xH9414=0_0xH9414>=1_0xH9414<=4"
+    },
+    {
+      "id": 10,
+      "title": "Fairest of Them All",
+      "description": "Marry an exciting and beautiful bride.",
+      "points": 25,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255_d0xH9414=0_0xH9414=4"
+    },
+    {
+      "id": 11,
+      "title": "Family Ties",
+      "description": "Rescue a lost member of your family.",
+      "points": 10,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255_d0xH9406=0_0xH9406=1"
+    },
+    {
+      "id": 12,
+      "title": "Family Reunion",
+      "description": "Rescue all four lost members of your family.",
+      "points": 50,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255_d0xH9406=3_0xH9406=4"
+    },
+    {
+      "id": 13,
+      "title": "Prize Taken",
+      "description": "Capture a ship.",
+      "points": 5,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255_0xH9300>d0xH9300_0xH9300<=62_I:0xH9300*4_0xH92FF=4"
+    },
+    {
+      "id": 14,
+      "title": "Sack and Pillage",
+      "description": "Plunder a town.",
+      "points": 10,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255_0xH9300>d0xH9300_0xH9300<=62_I:0xH9300*4_0xH92FF=3"
+    },
+    {
+      "id": 15,
+      "title": "X Marks the Spot",
+      "description": "Find buried treasure.",
+      "points": 25,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255_0xH9300>d0xH9300_0xH9300<=62_I:0xH9300*4_0xH92FF=8"
+    },
+    {
+      "id": 16,
+      "title": "Silver Train",
+      "description": "Capture the Spanish silver train.",
+      "points": 25,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255_0xH9300>d0xH9300_0xH9300<=62_I:0xH9300*4_0xH92FF=25"
+    },
+    {
+      "id": 17,
+      "title": "Treasure Fleet",
+      "description": "Capture the Spanish treasure fleet.",
+      "points": 25,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255_0xH9300>d0xH9300_0xH9300<=62_I:0xH9300*4_0xH92FF=24"
+    },
+    {
+      "id": 18,
+      "title": "Famous",
+      "description": "Become famous across the Caribbean.",
+      "points": 10,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255_0xH9404>=8_0xH9404<128Sd0xH9404<8Sd0xH9404>=128"
+    },
+    {
+      "id": 19,
+      "title": "Infamous!",
+      "description": "Become infamous.",
+      "points": 25,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255_0xH9404>=16_0xH9404<128Sd0xH9404<16Sd0xH9404>=128"
+    },
+    {
+      "id": 20,
+      "title": "Nest Egg",
+      "description": "Have 10,000 gold of your own.",
+      "points": 10,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255_d0x 9402<1000_0x 9402>=1000"
+    },
+    {
+      "id": 21,
+      "title": "Fortune of the Main",
+      "description": "Have 100,000 gold of your own.",
+      "points": 25,
+      "memaddr": "0xH02FF=0_0xX0801=264222_d0xX0801=264222_0xH940C=255_d0xH940C=255_d0x 9402<10000_0x 9402>=10000"
+    },
+    {
+      "id": 22,
+      "title": "Ashore for Good",
+      "description": "Retire from privateering.",
+      "points": 5,
+      "memaddr": "0xH02FF=0_0xX0801=2055_0xH0805=143_0xH35EB=80_0xH35EC=84_dfM0x35ED=37920_fM0x35ED<1000"
+    },
+    {
+      "id": 23,
+      "title": "Comfortable Retirement",
+      "description": "Retire with 50 Pirate Points or more.",
+      "points": 25,
+      "memaddr": "0xH02FF=0_0xX0801=2055_0xH0805=143_0xH35EB=80_0xH35EC=84_dfM0x35ED=37920_fM0x35ED<1000_fM0x35ED>=50"
+    },
+    {
+      "id": 24,
+      "title": "King's Advisor",
+      "description": "Retire as the King's Advisor, with 95 Pirate Points or more.",
+      "points": 50,
+      "memaddr": "0xH02FF=0_0xX0801=2055_0xH0805=143_0xH35EB=80_0xH35EC=84_dfM0x35ED=37920_fM0x35ED<1000_fM0x35ED>=95"
+    },
+    {
+      "id": 25,
+      "title": "Swashbuckler's Rest",
+      "description": "Retire from a career at the Swashbuckler level.",
+      "points": 25,
+      "memaddr": "0xH02FF=0_0xX0801=2055_0xH0805=143_0xH35EB=80_0xH35EC=84_dfM0x35ED=37920_fM0x35ED<1000_0xH93FD=3"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Pirate Points",
+      "description": "The Pirate Points your career earns when you retire.",
+      "format": "VALUE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xH02FF=0_0xX0801=2055_0xH0805=143_0xH35EB=80_0xH35EC=84_dfM0x35ED=37920_fM0x35ED<1000_fM0x35ED>=0::CAN:0=1::SUB:0xH02FF=0_0xX0801=2055_0xH0805=143_0xH35EB=80_0xH35EC=84_dfM0x35ED=37920_fM0x35ED<1000_fM0x35ED>=0::VAL:fM0x35ED"
+    }
+  ],
+  "notices": [
+    {
+      "id": 1,
+      "title": "Trainer on",
+      "text": "Nothing counts while a trainer cheat is on. Reset and start the game with every cheat set to NO.",
+      "memaddr": "0xH02FF=1_0xX0801=264222"
+    }
+  ],
+  "gameOver": "0xH02FF=0_0xX0801=2055_0xH0805=143_0xH35EB=80_0xH35EC=84_dfM0x35ED=37920_fM0x35ED<1000"
+}

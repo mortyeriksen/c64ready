@@ -168,6 +168,7 @@ every board.
 | Paperboy | 18 | yes | OneLoad64 v5: `Paperboy.crt`, or `AlternativeFormats/PRGs/Crunched/Paperboy.prg` or `AlternativeFormats/PRGs/Uncrunched/Paperboy.prg` |
 | Panther | | yes | OneLoad64 v5: `Panther.crt`, or c64cade's cartridge |
 | Paradroid | 11 | yes | OneLoad64 v5: `Paradroid.crt` |
+| Pirates! | 25 | most Pirate Points | OneLoad64 v5 extras: `Pirates! [EasyFlash].crt`, with every trainer cheat set to NO |
 | Rainbow Islands | 24 | yes | OneLoad64 v5 MultiLoad64: `Rainbow Islands (by $olo1870) [EasyFlash].crt`, or c64cade's copy |
 | Rambo First Blood Part II | 17 | yes | OneLoad64 v5: `Rambo - First Blood Part II.crt` |
 | Road Runner | | yes | OneLoad64 v5 MultiLoad64: `Road Runner (by $olo1870) [EasyFlash].crt` |

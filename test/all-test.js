@@ -121,6 +121,7 @@ const TESTS = [
   'test/achievements/green-beret-set-spec-test.js',
   'test/achievements/turrican-set-spec-test.js',
   'test/achievements/turrican-ii-set-spec-test.js',
+  'test/achievements/pirates-set-spec-test.js',
   'test/achievements/ik-plus-set-spec-test.js',
   'test/achievements/exploding-fist-set-spec-test.js',
   'test/achievements/super-mario-bros-64-set-spec-test.js',

@@ -42,6 +42,9 @@ The version you are running is shown at the bottom of the About dialog.
 - **Turrican and Turrican II.** Trophies for every world and the ending,
   diamonds, extra lives, scores and runs without a death or a continue, with a
   high-score board and a world 1 speedrun board for each.
+- **Pirates!** Trophies for titles from Ensign to Duke, land, a bride, your
+  lost family, prizes, plunder, buried treasure, fame and fortune, and a
+  retirement as the King's Advisor, with a board for Pirate Points.
 
 ## 2026.11.2 — November 3, 2026
 
