@@ -5,9 +5,12 @@
 //         The title shows none.
 //   $04FF grenades: 5 at the start, one less per throw, more from a grenade box.
 //   $04F3 area index: 0-7 for areas 1-8, +1 as the next area starts (then the map loops).
-//   $80   the player's Y. The main loop ($09BB) ends the area when it reads $5A, the gate; then the
-//         bonus, $80 set to $FF, and the end text ("BROKE THE 1ST AREA ...") for about ten seconds
-//         before $04F3 is raised. An area counts as cleared as the end text starts: $80 from $5A to $FF.
+//   $3EF1 the raster IRQ's charset switch (an LDA # operand): 1 while a text screen shows, 0 in play.
+//         At the gate the end text routine ($14B4) sets it as "BROKE THE 1ST AREA ..." starts, about ten
+//         seconds before $04F3 is raised as the next area starts. After area 8 it sets $04F3 to $FF
+//         first, so the raise wraps it to 0. The title and GAME OVER (no men left) set it too; a death
+//         does not. An area counts as cleared as $3EF1 goes from 0 to 1 with men left.
+//   $80   the player's Y: $FF while the end text shows.
 //   $04F8/$04F9/$04FA score in BCD, low byte first, shown with "00" after.
 //   $0E48 $CD in a plain game. Any trainer from the options menu (invincibility, unlimited
 //         lives or grenades, a starting level, the level-skip key) patches it to $4C.
@@ -39,7 +42,7 @@ const ram = new Uint8Array(0x10000);
 const id = Object.fromEntries(set.achievements.map((a) => [a.title, a.id]));
 const HASH = '1227141266752c0c04608fac355c7a4e';
 const DISK_HASH = '647a1b60d3024575ae23f342be37637e';
-const MEN = 0x410, GRENADES = 0x4ff, AREA = 0x4f3, SCORE = 0x4f8, TRAINER = 0xe48, PLAYER_Y = 0x80;
+const MEN = 0x410, GRENADES = 0x4ff, AREA = 0x4f3, SCORE = 0x4f8, TRAINER = 0xe48, PLAYER_Y = 0x80, TEXT = 0x3ef1;
 
 /** The score: shown / 100 in six BCD digits, low byte first. */
 function setScore(shown) {
@@ -72,15 +75,16 @@ const canceled = (board = 1) => lb.filter((e) => e.type === EVENT.LBOARD_CANCELE
 const has = (title) => unlocked.has(id[title]);
 
 /** The title and attract screens: no men, the last game's area and score left over. */
-function title() { ram[MEN] = 0; frames(10); }
+function title() { ram[MEN] = 0; ram[TEXT] = 1; frames(10); }
 /** A game: area index (0 = area 1), score and grenades set as the men go 0 to 5. With a trainer, $0E48 is patched. */
 function start({ trainer = false, area = 0 } = {}) {
   ram[TRAINER] = trainer ? 0x4c : 0xcd;
-  ram[AREA] = area; setScore(0); ram[GRENADES] = 5; ram[MEN] = 5; ram[PLAYER_Y] = 0xa3; frames(10);
+  ram[AREA] = area; setScore(0); ram[GRENADES] = 5; ram[MEN] = 5; ram[PLAYER_Y] = 0xa3; ram[TEXT] = 0; frames(10);
 }
-/** The gate: the player's Y at $5A, then $FF as the end text starts; the next area starts after it, the player walking in from $B4. */
-function reachGate() { ram[PLAYER_Y] = 0x5a; frames(2); ram[PLAYER_Y] = 0xff; frames(10); }
-function nextArea() { frames(500); ram[AREA]++; ram[PLAYER_Y] = 0xb4; frames(10); ram[PLAYER_Y] = 0xa3; frames(5); }
+/** The gate: the player's Y reaches $5A and is $FF by the frame's end, the bonus, then the end text ($3EF1 1,
+ * and after area 8 the area byte $FF). The next area starts after it, the player walking in from $B4. */
+function reachGate() { ram[PLAYER_Y] = 0xff; frames(3); if (ram[AREA] === 7) ram[AREA] = 0xff; ram[TEXT] = 1; frames(10); }
+function nextArea() { frames(500); ram[TEXT] = 0; ram[AREA] = (ram[AREA] + 1) & 0xff; ram[PLAYER_Y] = 0xb4; frames(10); ram[PLAYER_Y] = 0xa3; frames(5); }
 function clearArea() { reachGate(); nextArea(); }
 function die() { ram[MEN] = ram[MEN] === 0x10 ? 0x09 : ram[MEN] - 1; frames(10); }
 
@@ -259,14 +263,27 @@ function die() { ram[MEN] = ram[MEN] === 0x10 ? 0x09 : ram[MEN] - 1; frames(10);
 {
   activate(); title(); start(); frames(1000);
   ram[PLAYER_Y] = 0xff; frames(10); ram[PLAYER_Y] = 0xa3; frames(10);
-  expect(!has('Off the Truck') && !submitted(2).length, 'the player gone from the screen without the gate clears nothing');
+  expect(!has('Off the Truck') && !submitted(2).length, 'the player gone from the screen without the end text clears nothing');
   reachGate();
   expect(has('Off the Truck') && has('Untouchable'), 'area 1 is cleared as its end text starts');
-  expect(submitted(2).length === 1 && Math.abs(submitted(2)[0].value - 2048) <= 30, `the speedrun stops there (${submitted(2).map((e) => e.value)})`);
+  expect(submitted(2).length === 1 && Math.abs(submitted(2)[0].value - 2054) <= 30, `the speedrun stops there (${submitted(2).map((e) => e.value)})`);
   expect(ram[AREA] === 0 && !has('Area 2 Cleared'), 'before the area byte is raised');
   nextArea();
   expect(!has('Area 2 Cleared') && submitted(2).length === 1, 'and area 2 starting adds nothing');
   ok('an area is cleared as its end text starts');
+}
+
+// GAME OVER's text screen (no men left) clears no area; area 8's text, with the area byte already $FF, does.
+{
+  activate(); title(); start(); frames(500); ram[MEN] = 1; frames(5); ram[MEN] = 0; frames(20); ram[TEXT] = 1; frames(20);
+  expect(!has('Off the Truck') && !submitted(2).length, 'the GAME OVER text clears nothing');
+  activate(); title(); start(); for (let a = 0; a < 7; a++) clearArea();
+  expect(!has('Full Circle') && has('Area 7 Cleared'), 'seven areas cleared');
+  reachGate();
+  expect(has('Full Circle') && ram[AREA] === 0xff, 'area 8 as its text starts, the area byte already $FF');
+  nextArea();
+  expect(ram[AREA] === 0, 'and the map loops to area 1');
+  ok('the GAME OVER text and area 8');
 }
 
 // The game over: the last man lost, not an area cleared, so attract mode waits for the real end.
