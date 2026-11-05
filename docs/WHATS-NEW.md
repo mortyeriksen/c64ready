@@ -21,30 +21,13 @@ The version you are running is shown at the bottom of the About dialog.
   have them.
 - **A new GAME tab.** The Achievements window opens with the trophy HUD from
   Retro Vibes, and while you play a board only that board's high scores show.
-- **The Last Ninja.** Trophies for a first kill and for crossing the marsh, a
-  board for the fastest level 1, and attract mode at GAME OVER. Stepping Stones
-  and Dragon's Breath now unlock as they should.
-- **Commando Arcade.** Nostalgia's universal disk now shares the cartridge's
-  achievements and high scores.
-- **Ghosts 'n Goblins Arcade.** `GHOSTNGA.D64` now shares the cartridge's
-  achievements and high scores.
-- **IK+.** `IKplus.d64` now shares the cartridge's achievements and high scores.
-- **Out Run.** Eight more trophies, from a first crash to a whole route without
-  one.
-- **Arkanoid.** Trophies for the rounds up to Doh, every capsule and a clean start, and a
-  high-score board.
-- **Arkanoid: Revenge of Doh.** Trophies for the rounds, both of Doh's forms,
-  six capsules, a clean start and scores, and a high-score board.
-- **Green Beret.** Trophies for each stage, the rescue and a second mission,
-  a clean stage and a knife-only one, and a high-score board.
-- **Spy vs. Spy trilogy.** Trophies for escapes, items, traps and blowing up
-  the rival, with speedrun boards for all three and a score board for the first.
-- **Turrican and Turrican II.** Trophies for every world and the ending,
-  diamonds, extra lives, scores and runs without a death or a continue, with a
-  high-score board and a world 1 speedrun board for each.
-- **Pirates!** Trophies for titles from Ensign to Duke, land, a bride, your
-  lost family, prizes, plunder, buried treasure, fame and fortune, and a
-  retirement as the King's Advisor, with a board for Pirate Points.
+- **The Last Ninja.** New trophies, a level 1 speedrun board and attract mode.
+  Stepping Stones and Dragon's Breath now unlock.
+- **Commando Arcade, Ghosts 'n Goblins Arcade and IK+.** Their disk versions
+  now share the cartridges' trophies and high scores.
+- **Out Run.** Eight more trophies.
+- **New sets.** Arkanoid, Arkanoid: Revenge of Doh, Green Beret, the Spy vs. Spy
+  trilogy, Turrican, Turrican II and Pirates!
 
 ## 2026.11.2 — November 3, 2026
 
