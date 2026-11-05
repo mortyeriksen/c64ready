@@ -594,7 +594,7 @@ export function createChatServer({
       req.on('error', reject);
     });
   }
-  const ACTIONS = new Set(['signout', 'rename', 'picture', 'score', 'results', 'delete']);
+  const ACTIONS = new Set(['signout', 'rename', 'picture', 'score', 'results', 'entry', 'delete']);
   /** The console's players API: GET overview, players, a player, their logins and activity; POST an action. */
   async function adminApi(req, res, path, url, sameOrigin) {
     if (!adminData) { apiJson(res, 404, { error: 'no accounts on this server' }); return; }
@@ -657,7 +657,7 @@ export function createChatServer({
         const reason = typeof body.reason === 'string' ? cleanText(body.reason, 200) : null;
         if (!reason) return apiJson(res, 400, { error: 'a reason is needed' });
         const id = Number(m[1]);
-        const out = adminData.act(id, m[2], { game: body.game, board: body.board });
+        const out = adminData.act(id, m[2], { game: body.game, board: body.board, entry: body.entry });
         if (['signout', 'rename', 'delete'].includes(m[2])) dropAccount(id);
         record({ ev: 'admin', action: m[2], uid: id, name: out.name, did: out.did, reason });
         return apiJson(res, 200, { ok: true, did: out.did });

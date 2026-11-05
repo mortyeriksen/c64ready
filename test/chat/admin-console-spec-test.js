@@ -202,6 +202,17 @@ db.prepare("INSERT INTO activity (at, user_id, game_id, kind, ref, value) VALUES
   expect((await actOn(ann.id, 'signout', {})).status === 400, 'an action needs a reason');
   expect((await actOn(ann.id, 'signout', { reason: 'x' }, { origin: 'https://evil.example' })).status === 403, 'and must come from the console itself');
   expect((await actOn(ann.id, 'signout', { reason: 'shared device' })).status === 200 && accounts.userForToken(ann.token) === null, 'sign out everywhere ends every session');
+  const line = (uid) => Number(db.prepare("INSERT INTO activity (at, user_id, game_id, kind, ref, value) VALUES (?, ?, 'demo', 'unlock', 1, NULL)").run(clock, uid).lastInsertRowid);
+  const kept = line(ann.id), gone = line(ann.id), bobs = line(bob.id);
+  const listed = (uid) => (call('GET', `/admin/api/players/${uid}/activity`, { cookie })).then((r) => r.body.items.map((a) => a.id));
+  expect((await listed(ann.id)).includes(gone), 'a player\'s activity lists each line with its id');
+  expect((await actOn(ann.id, 'entry', { reason: 'bogus', entry: gone })).status === 200, 'one line of the activity can be removed');
+  const after = await listed(ann.id);
+  expect(!after.includes(gone) && after.includes(kept), 'that line is gone, the others stay');
+  expect(!!db.prepare("SELECT 1 FROM unlocks WHERE user_id = ? AND game_id = 'demo' AND achievement_id = 1").get(ann.id), 'and the unlock it told of stays');
+  expect((await actOn(ann.id, 'entry', { reason: 'x', entry: bobs })).status === 404 && (await listed(bob.id)).includes(bobs), 'another player\'s line is not removed through this player');
+  expect((await actOn(ann.id, 'entry', { reason: 'x', entry: gone })).status === 404, 'a line already gone cannot be removed again');
+  expect((await actOn(ann.id, 'entry', { reason: 'x', entry: 'all' })).status === 400, 'the line is named by its id');
   await actOn(ann.id, 'score', { reason: 'cheated', game: 'demo', board: 1 });
   expect(!db.prepare('SELECT 1 FROM lb_entries WHERE user_id = ?').get(ann.id), 'a score can be removed');
   await actOn(ann.id, 'results', { reason: 'trainer', game: 'demo' });
@@ -214,7 +225,7 @@ db.prepare("INSERT INTO activity (at, user_id, game_id, kind, ref, value) VALUES
   const reviews = readLog().filter((e) => e.ev === 'admin' && e.action.startsWith('review-')).map((e) => e.action);
   expect(reviews.join() === 'review-approve,review-clear', `each review is logged too (got ${reviews})`);
   const logged = readLog().filter((e) => e.ev === 'admin' && !e.action.startsWith('review-')).map((e) => `${e.action}:${e.reason}`);
-  expect(logged.join() === 'signout:shared device,score:cheated,results:trainer,rename:rude name,delete:asked to', `every action is logged with its reason (got ${logged})`);
+  expect(logged.join() === 'signout:shared device,entry:bogus,score:cheated,results:trainer,rename:rude name,delete:asked to', `every action is logged with its reason (got ${logged})`);
   ok('each action needs a reason, does what it says and is logged');
 }
 

@@ -75,6 +75,8 @@ export function createAdminData({ db, accounts, bans = null, now = Date.now }) {
     dropUnlocks: db.prepare('DELETE FROM unlocks WHERE user_id = ? AND game_id = ?'),
     dropEntries: db.prepare('DELETE FROM lb_entries WHERE user_id = ? AND game_id = ?'),
     dropActivity: db.prepare('DELETE FROM activity WHERE user_id = ? AND game_id = ?'),
+    oneActivity: db.prepare('SELECT game_id, kind, ref FROM activity WHERE id = ? AND user_id = ?'),
+    dropOneActivity: db.prepare('DELETE FROM activity WHERE id = ? AND user_id = ?'),
     remove: db.prepare('DELETE FROM users WHERE id = ?'),
   };
   // The players list: each player with their numbers, sorted and searched as asked.
@@ -159,7 +161,8 @@ export function createAdminData({ db, accounts, bans = null, now = Date.now }) {
     /**
      * The admin's actions. Each returns what to log: signout, rename (to
      * PlayerN, which the player can change by making a new account name… or
-     * keep), picture, score (one board's best), results (a game's), delete.
+     * keep), picture, score (one board's best), results (a game's), entry (one
+     * line of the activity, the result itself kept), delete.
      */
     /** A consistent copy of the whole database, written to `file` while the server runs (SQLite's VACUUM INTO). */
     snapshot(file) {
@@ -187,7 +190,7 @@ export function createAdminData({ db, accounts, bans = null, now = Date.now }) {
       if (row.hardcore) q.feed.run(row.at, user, game, kind, ref, kind === 'score' ? row.value : null);
       return { did: `flagged ${kind} approved (${game} ${ref})` };
     },
-    act(id, action, { game = null, board = null } = {}) {
+    act(id, action, { game = null, board = null, entry = null } = {}) {
       const u = user(id);
       switch (action) {
         case 'signout':
@@ -212,6 +215,13 @@ export function createAdminData({ db, accounts, bans = null, now = Date.now }) {
           db.exec('BEGIN');
           try { q.dropUnlocks.run(id, game); q.dropEntries.run(id, game); q.dropActivity.run(id, game); db.exec('COMMIT'); } catch (e) { db.exec('ROLLBACK'); throw e; }
           return { did: `results cleared (${game})`, name: u.name };
+        case 'entry': {
+          if (!Number.isSafeInteger(entry)) throw Object.assign(new Error('which activity?'), { status: 400 });
+          const row = q.oneActivity.get(entry, id);
+          if (!row) throw Object.assign(new Error('no such activity'), { status: 404 });
+          q.dropOneActivity.run(entry, id);
+          return { did: `activity removed (${row.game_id} ${row.kind} ${row.ref})`, name: u.name };
+        }
         case 'delete':
           q.remove.run(id);
           return { did: 'account deleted', name: u.name };

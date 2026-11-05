@@ -69,8 +69,9 @@ another device, good for 10 minutes. If every device is lost, set a new hash.
 - **Players:** every account, searchable and sortable. A player's page shows
   their account, passkeys, games and scores, activity, and login history with
   IP address and browser (kept 90 days). Its actions (sign out everywhere,
-  rename, remove the badge, remove a score, clear a game's results, delete)
-  ask for a reason, which goes in the chat log. **ban** on a login or the
+  rename, remove the badge, remove a score, clear a game's results, remove
+  one line of the activity while the result stays, delete) ask for a reason,
+  which goes in the chat log. **ban** on a login or the
   last IP bans that address (an IPv6 address by its /64) for up to 30 days:
   it can still read what is public, but cannot chat, sign in, sign up,
   recover or post results, and a session from it is signed out. Bans are kept

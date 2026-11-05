@@ -252,9 +252,12 @@ async function openPlayer(id) {
     tr.append(el('td', when(l.at)), el('td', l.kind), el('td', `${l.ip ?? '–'}${l.banned ? ' (banned)' : ''}`, l.banned ? 'bad' : null), el('td', l.device ?? '–'), el('td', l.ok ? 'ok' : 'failed', l.ok ? null : 'bad'), ban);
     return tr;
   }));
-  const activity = paged(p.activity, `/admin/api/players/${id}/activity`, ['When', 'Game', 'What'], (items) => items.map((a) => {
+  const activity = paged(p.activity, `/admin/api/players/${id}/activity`, ['When', 'Game', 'What', ''], (items) => items.map((a) => {
     const tr = el('tr');
-    tr.append(el('td', when(a.at)), el('td', a.game), el('td', a.kind === 'unlock' ? `unlocked ${a.achievement} (+${a.points})` : `best ${a.value} on ${a.board}`));
+    const what = a.kind === 'unlock' ? `unlocked ${a.achievement} (+${a.points})` : `best ${a.value} on ${a.board}`;
+    const remove = el('td');
+    remove.append(btn('remove', () => act(p, 'entry', (x) => `Remove "${what}" in ${a.game} from the activity of ${x.name}? The result itself stays.`, { entry: a.id }), 'danger'));
+    tr.append(el('td', when(a.at)), el('td', a.game), el('td', what), remove);
     return tr;
   }));
   box.replaceChildren(head, facts, actions, el('h2', 'Passkeys'), keys, el('h2', 'Games'), games, el('h2', 'Logins'), logins, el('h2', 'Activity'), activity);
