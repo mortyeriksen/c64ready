@@ -558,6 +558,22 @@
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
+  "turrican-crt": {
+   "description": "Turrican (Rainbow Arts 1990), the OneLoad64 v5 MultiLoad64 EasyFlash cartridge by $olo1870, MD5 21548ddd14a398780035ccc9fa104257: the release its own-design achievement set targets",
+   "env": "C64_TURRICAN_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/MultiLoad64/Turrican (by $olo1870) [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "turrican-ii-crt": {
+   "description": "Turrican II: The Final Fight (Rainbow Arts 1991), the OneLoad64 v5 MultiLoad64 EasyFlash cartridge by $olo1870, MD5 14203a5f31fc13a9751f082de502508e: the release its own-design achievement set targets",
+   "env": "C64_TURRICAN_II_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/MultiLoad64/Turrican II (by $olo1870) [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
   "ik-plus-crt": {
    "description": "IK+ (System 3 1987), the OneLoad64 v5 cartridge, MD5 819c741a29030beb67cbb36d8379f9d7: the release its own-design achievement set targets",
    "env": "C64_IK_PLUS_CRT",

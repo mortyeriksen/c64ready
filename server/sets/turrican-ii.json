@@ -1,0 +1,158 @@
+{
+  "id": "turrican-ii",
+  "title": "Turrican II: The Final Fight",
+  "url": "https://www.lemon64.com/game/turrican-2",
+  "hashes": [
+    {
+      "hash": "14203a5f31fc13a9751f082de502508e",
+      "label": "OneLoad64 v5 MultiLoad64, EasyFlash cartridge (Turrican II (by $olo1870) [EasyFlash].crt)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Boots on the Ground",
+      "description": "Clear level 1-1.",
+      "points": 5,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_0xH03E4=4_d0xH03EF=0_0xH03EF=1"
+    },
+    {
+      "id": 2,
+      "title": "First World Down",
+      "description": "Clear world 1 by finishing level 1-2.",
+      "points": 10,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_0xH03E4=4_d0xH03EF=1_0xH03EF=2"
+    },
+    {
+      "id": 3,
+      "title": "Second World Down",
+      "description": "Clear world 2 by finishing level 2-2, the first flight.",
+      "points": 10,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_0xH03E4=4_d0xH03EF=3_0xH03EF=4"
+    },
+    {
+      "id": 4,
+      "title": "Third World Down",
+      "description": "Clear world 3 by finishing level 3-3.",
+      "points": 25,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_0xH03E4=4_d0xH03EF=6_0xH03EF=7"
+    },
+    {
+      "id": 5,
+      "title": "Fourth World Down",
+      "description": "Clear world 4 by finishing level 4-2.",
+      "points": 25,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_0xH03E4=4_d0xH03EF=8_0xH03EF=9"
+    },
+    {
+      "id": 6,
+      "title": "The Final Fight",
+      "description": "Finish level 5-2 and free the planet from the Machine.",
+      "points": 50,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_0xH03E4=4_d0xH03EF=10_0xH03EF=11"
+    },
+    {
+      "id": 7,
+      "title": "Ace Pilot",
+      "description": "Fly through levels 2-2, 3-1 and 3-2 without losing a ship.",
+      "points": 25,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_N:0xH03E4=4_N:d0xH03EF=2_0xH03EF=3.1._R:0xHFFFC<d0xHFFFC_R:0xH03E4=3_T:0xH03E4=4_T:d0xH03EF=5_T:0xH03EF=6"
+    },
+    {
+      "id": 8,
+      "title": "Sparkle",
+      "description": "Collect 50 diamonds.",
+      "points": 5,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_0xH0737=80"
+    },
+    {
+      "id": 9,
+      "title": "Diamond Dividend",
+      "description": "Trade 50 diamonds for an extra continue.",
+      "points": 10,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_d0xH0737=80_0xH0737=0_0xH0778>d0xH0778_0xH0778<=181_O:0xH07FA>0_O:0xH07FB>0_O:0xH07FC>0_0xH07FD>0"
+    },
+    {
+      "id": 10,
+      "title": "Spare Suit",
+      "description": "Pick up an extra life.",
+      "points": 5,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_d0xHFFFC>0_0xHFFFC>d0xHFFFC_0xH03E4!=5_O:0xH07FA>0_O:0xH07FB>0_O:0xH07FC>0_0xH07FD>0"
+    },
+    {
+      "id": 11,
+      "title": "Clean Landing",
+      "description": "Clear level 1-1 without losing a life.",
+      "points": 10,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_O:d0xHFFFC!=3_N:d0xH03EF!=0_N:0xHFFFC=3_N:0xH03EF=0_N:0xH07FA=0_N:0xH07FB=0_N:0xH07FC=0_0xH07FD=0.1._R:0xHFFFC<d0xHFFFC_R:0xH03E4=3_T:0xH03E4=4_T:d0xH03EF=0_T:0xH03EF=1"
+    },
+    {
+      "id": 12,
+      "title": "Flawless World",
+      "description": "Clear world 1 without losing a life.",
+      "points": 25,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_O:d0xHFFFC!=3_N:d0xH03EF!=0_N:0xHFFFC=3_N:0xH03EF=0_N:0xH07FA=0_N:0xH07FB=0_N:0xH07FC=0_0xH07FD=0.1._R:0xHFFFC<d0xHFFFC_R:0xH03E4=3_T:0xH03E4=4_T:d0xH03EF=1_T:0xH03EF=2"
+    },
+    {
+      "id": 13,
+      "title": "One Credit",
+      "description": "Finish the game without using a continue.",
+      "points": 50,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_O:d0xHFFFC!=3_N:d0xH03EF!=0_N:0xHFFFC=3_N:0xH03EF=0_N:0xH07FA=0_N:0xH07FB=0_N:0xH07FC=0_0xH07FD=0.1._O:0xH07FA>0_O:0xH07FB>0_O:0xH07FC>0_N:0xH07FD>0_R:0xH03E4=5_R:0xH03E4=3_T:0xH03E4=4_T:d0xH03EF=10_T:0xH03EF=11"
+    },
+    {
+      "id": 14,
+      "title": "Unbreakable",
+      "description": "Finish the game without losing a life.",
+      "points": 50,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_O:d0xHFFFC!=3_N:d0xH03EF!=0_N:0xHFFFC=3_N:0xH03EF=0_N:0xH07FA=0_N:0xH07FB=0_N:0xH07FC=0_0xH07FD=0.1._R:0xHFFFC<d0xHFFFC_R:0xH03E4=3_T:0xH03E4=4_T:d0xH03EF=10_T:0xH03EF=11"
+    },
+    {
+      "id": 15,
+      "title": "Rookie",
+      "description": "Score 25,000 points.",
+      "points": 5,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_A:b0xH07FA*1000000_A:b0xH07FB*10000_A:b0xH07FC*100_b0xH07FD>=25000"
+    },
+    {
+      "id": 16,
+      "title": "Trooper",
+      "description": "Score 50,000 points.",
+      "points": 10,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_A:b0xH07FA*1000000_A:b0xH07FB*10000_A:b0xH07FC*100_b0xH07FD>=50000"
+    },
+    {
+      "id": 17,
+      "title": "Top of the Table",
+      "description": "Score 100,000 points, the best on the built-in high score table.",
+      "points": 25,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_A:b0xH07FA*1000000_A:b0xH07FB*10000_A:b0xH07FC*100_b0xH07FD>=100000"
+    },
+    {
+      "id": 18,
+      "title": "Legend",
+      "description": "Score 250,000 points.",
+      "points": 50,
+      "memaddr": "0xHFFFC<=153_0xH03EF<=11_A:b0xH07FA*1000000_A:b0xH07FB*10000_A:b0xH07FC*100_b0xH07FD>=250000"
+    }
+  ],
+  "gameOver": "0xHFFFC<=153_0xH03EF<=11_0xH03E4=3_d0xH03E4!=3",
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "High Score",
+      "description": "Your score at GAME OVER, or after the final tally when you finish the game.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:O:d0xHFFFC!=3_N:d0xH03EF!=0_N:0xHFFFC=3_N:0xH03EF=0_N:0xH07FA=0_N:0xH07FB=0_N:0xH07FC=0_0xH07FD=0::CAN:0=1::SUB:0=0S0xHFFFC<=153_0xH03EF<=11_0xH03E4=3_d0xH03E4!=3S0xH03EF=11_0xH03E4=4_0xHFFFC=0_0xH0778=172_0xH080F=0_0xH0810=0_0xH0811=0_0xH0738=0_0xH07F6=0_0xH07F7=0_0xH07F8=0_0xH07F9=0.25.::VAL:b0xH07FA*1000000_b0xH07FB*10000_b0xH07FC*100_b0xH07FD"
+    },
+    {
+      "id": 2,
+      "title": "World 1 Speedrun",
+      "description": "Fastest from a new game to the end of level 1-2.",
+      "format": "MILLISECS",
+      "lowerIsBetter": true,
+      "definition": "STA:O:d0xHFFFC!=3_N:d0xH03EF!=0_N:0xHFFFC=3_N:0xH03EF=0_N:0xH07FA=0_N:0xH07FB=0_N:0xH07FC=0_0xH07FD=0::CAN:0xH03E4=3::SUB:0xHFFFC<=153_0xH03EF<=11_0xH03E4=4_d0xH03EF=1_0xH03EF=2::VAL:C:1=1_M:1=1"
+    }
+  ]
+}

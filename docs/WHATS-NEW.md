@@ -39,6 +39,9 @@ The version you are running is shown at the bottom of the About dialog.
   a clean stage and a knife-only one, and a high-score board.
 - **Spy vs. Spy trilogy.** Trophies for escapes, items, traps and blowing up
   the rival, with speedrun boards for all three and a score board for the first.
+- **Turrican and Turrican II.** Trophies for every world and the ending,
+  diamonds, extra lives, scores and runs without a death or a continue, with a
+  high-score board and a world 1 speedrun board for each.
 
 ## 2026.11.2 — November 3, 2026
 

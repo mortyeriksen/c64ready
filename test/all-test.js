@@ -119,6 +119,8 @@ const TESTS = [
   'test/achievements/arkanoid-set-spec-test.js',
   'test/achievements/arkanoid-revenge-of-doh-set-spec-test.js',
   'test/achievements/green-beret-set-spec-test.js',
+  'test/achievements/turrican-set-spec-test.js',
+  'test/achievements/turrican-ii-set-spec-test.js',
   'test/achievements/ik-plus-set-spec-test.js',
   'test/achievements/exploding-fist-set-spec-test.js',
   'test/achievements/super-mario-bros-64-set-spec-test.js',

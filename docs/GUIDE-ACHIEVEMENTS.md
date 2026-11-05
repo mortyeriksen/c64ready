@@ -180,6 +180,8 @@ every board.
 | The Last Ninja | 22 | fastest level 1 | OneLoad64 v5 MultiLoad64: `Last Ninja, The (by $olo1870) [EasyFlash].crt` |
 | The Way of the Exploding Fist | 10 | yes | OneLoad64 v5: `Way of the Exploding Fist, The.crt` |
 | Thrust | | yes | OneLoad64 v5: `Thrust (J1).crt` |
+| Turrican | 17 | highest score, fastest world 1 | OneLoad64 v5 MultiLoad64: `Turrican (by $olo1870) [EasyFlash].crt` |
+| Turrican II: The Final Fight | 18 | highest score, fastest world 1 | OneLoad64 v5 MultiLoad64: `Turrican II (by $olo1870) [EasyFlash].crt` |
 | Uridium | 22 | yes | OneLoad64 v5: `Uridium.crt` |
 | Vegetables Deluxe | | Shopping, Classic and Countdown | c64cade's `vegdlxnointro.prg` |
 | Wizball | 9 | yes | OneLoad64 v5: `Wizball.crt` |
