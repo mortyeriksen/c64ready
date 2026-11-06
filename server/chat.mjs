@@ -611,6 +611,14 @@ export function createChatServer({
         record({ ev: 'admin', action: `review-${body.decision}`, uid: body.user, did: out.did });
         return apiJson(res, 200, { ok: true, did: out.did });
       }
+      // Demo players: a batch of 50 added, or all of them removed.
+      if (req.method === 'POST' && path === '/admin/api/demo') {
+        if (!sameOrigin) return apiJson(res, 403, { error: 'not from the console' });
+        const body = await readAdminJson(req);
+        const out = adminData.demo(body.action);
+        record({ ev: 'admin', action: `demo-${body.action}`, did: out.did });
+        return apiJson(res, 200, { ok: true, ...out });
+      }
       // The whole database, as one SQLite file: put it in CHAT_DATA_DIR as c64ready.db to run the same server elsewhere.
       if (req.method === 'GET' && path === '/admin/api/export') {
         const file = nodePath.join(os.tmpdir(), `c64ready-export-${randomId(8)}.db`);

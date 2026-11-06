@@ -286,6 +286,20 @@ db.prepare("INSERT INTO activity (at, user_id, game_id, kind, ref, value) VALUES
   ok('one address cannot hold the console\'s sign-in challenges');
 }
 
+// 7e. Demo players: added and removed from the console's page, and logged.
+{
+  const demo = (body, opts = {}) => call('POST', '/admin/api/demo', { cookie, body, ...opts });
+  expect((await demo({ action: 'add' }, { origin: 'https://evil.example' })).status === 403, 'demo players are added only from the console itself');
+  const added = await demo({ action: 'add' });
+  expect(added.status === 200 && added.body.players === 50 && (await call('GET', '/admin/api/overview', { cookie })).body.demoPlayers === 50, `the console adds 50 demo players (got ${JSON.stringify(added.body)})`);
+  expect((await demo({ action: 'both' })).status === 400, 'an unknown action is refused');
+  const removed = await demo({ action: 'remove' });
+  expect(removed.status === 200 && removed.body.removed === 50 && (await call('GET', '/admin/api/overview', { cookie })).body.demoPlayers === 0, 'and removes them');
+  await chatLog.flush();
+  expect(readLog().some((e) => e.ev === 'admin' && e.action === 'demo-add') && readLog().some((e) => e.ev === 'admin' && e.action === 'demo-remove'), 'both are logged');
+  ok('demo players come and go from the console');
+}
+
 // 8. Logins older than 90 days go.
 {
   clock += 91 * 24 * 3600_000;

@@ -85,7 +85,27 @@ async function renderOverview() {
   latest.append(ll);
   const split = el('div', null, 'split');
   split.append(active, games, latest);
-  box.replaceChildren(cards, await reviewSection(), split);
+  box.replaceChildren(cards, await reviewSection(), split, demoSection(o.demoPlayers));
+}
+
+// Demo players: made-up accounts with unlocks and scores in every game, to fill the pages on a test
+// server. Each press adds 50 more with new names; they all go at once.
+function demoSection(count) {
+  const sec = el('section', null, 'demo');
+  sec.append(el('h2', 'Demo players'));
+  const status = el('p', `${count} demo players.`, 'meta');
+  const run = (action, ask) => async () => {
+    if (!confirm(ask)) return;
+    status.textContent = action === 'add' ? 'Adding…' : 'Removing…';
+    try {
+      const r = await api('/admin/api/demo', { action });
+      status.textContent = action === 'add' ? `Added ${r.players} players, ${r.unlocks} unlocks and ${r.scores} scores.` : `Removed ${r.removed} demo players.`;
+      setTimeout(renderOverview, 1500);
+    } catch (e) { status.textContent = e.message; }
+  };
+  sec.append(status, btn('Add 50 demo players', run('add', 'Add 50 demo players, with unlocks and scores in every game?')), ' ',
+    btn('Remove all demo players', run('remove', 'Remove every demo player and all their unlocks and scores?'), 'danger'));
+  return sec;
 }
 
 // Results the fair-play checks flagged: hidden from the public until approved, or cleared.

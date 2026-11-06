@@ -169,6 +169,8 @@ const MIGRATIONS = [
   `ALTER TABLE achievements ADD COLUMN score_at INTEGER;`,
   // A set's game over: the condition that ends a game, which opens attract mode.
   `ALTER TABLE games ADD COLUMN game_over TEXT;`,
+  // Demo players the admin console adds (server/demo-players.mjs): removed with their account.
+  `CREATE TABLE demo_players (user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE);`,
 ];
 
 /** The schema version a fully migrated database records. */

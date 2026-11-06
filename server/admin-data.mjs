@@ -3,12 +3,13 @@
 // server/admin-data.mjs — the admin console's view of the players: an overview,
 // every registered player, one player's details (account, passkeys, progress,
 // activity, login history with addresses), the admin's actions on them, the
-// results the fair-play checks flagged for review, and a copy of the whole
-// database to download.
+// results the fair-play checks flagged for review, demo players to add and
+// remove, and a copy of the whole database to download.
 // It reads and writes the accounts and games database; the chat server serves
 // it under /admin/api behind the admin's login (server/chat.mjs).
 
 import { addressKey } from './address.mjs';
+import { createDemoPlayers } from './demo-players.mjs';
 
 const ACTIVE_MS = 5 * 60_000;   // "active now": the app used within this long
 const PLAYING_MS = 30 * 60_000;  // "playing X": an unlock or best in X within this long
@@ -93,6 +94,7 @@ export function createAdminData({ db, accounts, bans = null, now = Date.now }) {
   const like = (text) => `%${String(text || '').normalize('NFKC').toLowerCase().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
   const user = (id) => q.user.get(id) ?? (() => { throw Object.assign(new Error('no such player'), { status: 404 }); })();
   const isBanned = (ip) => !!(ip && bans?.get(addressKey(ip)));
+  const demo = createDemoPlayers({ db, now });
 
   return {
     /** The front page: counts, who is active now, the week's top games and the latest sign-ups. */
@@ -110,11 +112,18 @@ export function createAdminData({ db, accounts, bans = null, now = Date.now }) {
         active7d: q.activeSince.get(t - 7 * DAY).n,
         unlocksToday: events.unlock ?? 0,
         toReview: q.flaggedCount.get().n,
+        demoPlayers: demo.count(),
         bestsToday: events.score ?? 0,
         active,
         topGames: q.topGames.all(t - 7 * DAY).map((r) => ({ id: r.id, title: r.title, players: r.players, unlocks: r.unlocks })),
         latest: q.latest.all().map((r) => ({ id: r.id, name: r.name, avatar: r.avatar_at || 0, joined: r.created_at })),
       };
+    },
+    /** Demo players: `add` a batch of 50 with new random names, or `remove` them all. */
+    demo(action) {
+      if (action === 'add') return { did: 'demo players added', ...demo.populate(50) };
+      if (action === 'remove') return { did: 'demo players removed', ...demo.remove() };
+      throw Object.assign(new Error('add or remove?'), { status: 400 });
     },
     /** Every registered player, 50 a page: search by name, sort by any column. */
     players({ search = '', sort = 'joined', dir = 'desc', page = 0, online = [] } = {}) {

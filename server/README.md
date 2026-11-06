@@ -82,6 +82,11 @@ another device, good for 10 minutes. If every device is lost, set a new hash.
   fewer is better) from its set, or past `score` milestones not unlocked. The
   last clears by itself when those milestones arrive. **Approve** lets one count, **Clear** removes
   it, and both go in the chat log. The dev server skips these checks.
+- **Demo players** (on the Overview): *Add 50 demo players* makes 50 accounts
+  with new random names, early and mid-game unlocks in every game and five
+  moderate scores on every board, spread over the last six weeks. Each press
+  adds 50 more. *Remove all demo players* deletes them with everything they
+  did. Demo accounts have no passkey, so no one can sign in as one.
 - **Live:** the channel, under the name C64 READY, with **Online users**.
   Select a name for the channel's members and moderation controls. The list
   updates live and leaves out disconnected members during their reconnect
