@@ -33,7 +33,9 @@ try{
  await page.click('#btn-monitor');
  assert.equal(await page.locator('button[data-view=setup]').getAttribute('aria-pressed'),'true','Reopening from a running component selects Live');
  assert.equal(await page.locator('[data-monitor=status]').textContent(),'Running','Reopening Live preserves running playback');
+ await page.mouse.move(0,0);
  const runningStyle=await page.locator('[data-monitor=pause]').evaluate(button=>{
+  for(const a of document.getAnimations()) if(a instanceof CSSTransition) a.finish();
   const style=getComputedStyle(button),tab=getComputedStyle(document.querySelector('button[data-view=setup]'));
   return {radius:parseFloat(style.borderRadius),tabRadius:parseFloat(tab.borderRadius),background:style.backgroundColor,tabBackground:tab.backgroundColor};
  });
@@ -45,8 +47,9 @@ try{
  await page.click('#btn-monitor');
  assert.equal(await page.locator('button[data-view=setup]').getAttribute('aria-pressed'),'true','Reopening from a paused component selects Live');
  assert.equal(await page.locator('[data-monitor=status]').textContent(),'Running','Closing paused inspection resumes playback');
- await page.click('[data-monitor=pause]');
+ await page.click('[data-monitor=pause]');await page.mouse.move(0,0);
  const pausedStyle=await page.locator('[data-monitor=pause]').evaluate(button=>{
+  for(const a of document.getAnimations()) if(a instanceof CSSTransition) a.finish();
   const style=getComputedStyle(button),tab=getComputedStyle(document.querySelector('button[data-view=setup]'));
   return {background:style.backgroundColor,tabBackground:tab.backgroundColor};
  });
