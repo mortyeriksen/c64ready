@@ -33,9 +33,11 @@
 //                        game with @. The three sign up with passkeys on the
 //                        dev server's own chat (/chat, /api) and are deleted
 //                        afterwards; never the production one.
-//   achievements-game.webp / -games.webp / -activity.webp  the Achievements
-//                        window docked beside Commando Arcade running: its GAME tab
-//                        (progress, the high scores, Trophy Hunters, the
+//   achievements-game-page.webp / -game.webp / -games.webp / -activity.webp  first
+//                        Commando Arcade's own page under GAMES before it is loaded,
+//                        its cartridge in the library and so its ▷ button. Then the
+//                        Achievements window docked beside the game running: its
+//                        GAME tab (progress, the high scores, Trophy Hunters, the
 //                        achievements), then GAMES, then ACTIVITY. Five players
 //                        sign up on the dev server, post unlocks and scores
 //                        through the games API, and are deleted afterwards.
@@ -765,6 +767,26 @@ if (want('achievements')) {
     await play(mine, [1, 2, 9, 11], 34600);
     await page.reload({ waitUntil: 'networkidle' });   // the app picks up the stored session
     await page.waitForSelector('#btn-power:not([disabled])', { timeout: 20000 });
+
+    // Before it is loaded: the cartridge waits in the library, so Commando Arcade's page under GAMES has its ▷ button.
+    await page.evaluate(async ([name, b64]) => {
+      const { libSave } = await import('/src/media/library.js');
+      await libSave('crt', name, Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)));
+    }, [path.basename(ARCADE), fs.readFileSync(ARCADE).toString('base64')]);
+    await page.locator('#btn-online').click();
+    if (!(await page.evaluate(() => document.body.classList.contains('has-docked-window')))) await page.locator('#btn-online-dock').click();
+    await page.locator('#online-tab-games').click();
+    await page.locator('.ach-card', { hasText: 'Commando Arcade' }).first().click();
+    await page.locator('#achievements-detail .ach-game-top .ach-load-btn').waitFor({ timeout: 15000 });
+    await page.mouse.move(10, 890);
+    await sleep(600);
+    await clearToasts(page);
+    let info = saveGuideShot(await page.screenshot(), OUT, 'achievements-game-page');
+    done.push('achievements-game-page'); console.log('  ✓', shotLabel('achievements-game-page', info));
+    // Back to the list, so GAMES opens on it later, and the window closed until the game loads.
+    await page.locator('#achievements-detail .achievements-back').click();
+    if (await page.locator('#btn-online-close').isVisible()) await page.locator('#btn-online-close').click();
+
     await page.setInputFiles('#prg-input', ARCADE);
     const offer = page.locator('#confirm-modal:not([hidden])');
     if (await offer.waitFor({ timeout: 3000 }).then(() => true, () => false)) await page.locator('#btn-confirm-ok').click();
@@ -775,7 +797,7 @@ if (want('achievements')) {
     await page.mouse.move(10, 890);
     await sleep(400);
     await clearToasts(page);
-    let info = saveGuideShot(await page.screenshot(), OUT, 'achievements-game');
+    info = saveGuideShot(await page.screenshot(), OUT, 'achievements-game');
     done.push('achievements-game'); console.log('  ✓', shotLabel('achievements-game', info));
 
     await page.locator('#online-tab-games').click();

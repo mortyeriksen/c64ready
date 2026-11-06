@@ -215,6 +215,8 @@ game's page on [Lemon64](https://www.lemon64.com) in a new window. When one of
 those versions is in your **LOAD LIB** library, a **▷** button beside it loads
 the game.
 
+![Commando Arcade's page under GAMES, before the game is loaded: its icon and title with the ▷ button that loads it from the library beside the i button, then its progress and high scores.](/guide/achievements-game-page.webp)
+
 ![The GAMES tab docked on the right of the app: a row for each game, with its pixel icon, its title, your count and a meter of your progress.](/guide/achievements-games.webp)
 
 A player's profile shows their points, and their progress and best scores in
