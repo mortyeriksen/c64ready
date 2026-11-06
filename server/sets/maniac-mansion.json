@@ -1,0 +1,178 @@
+{
+  "id": "maniac-mansion",
+  "title": "Maniac Mansion",
+  "url": "https://www.lemon64.com/game/maniac-mansion",
+  "hashes": [
+    {
+      "hash": "314bb3f8db2d69015131fe0fe8f4f243",
+      "label": "OneLoad64 v5 extras, EasyFlash cartridge (Maniac Mansion & Zak McKracken [EasyFlash].crt), Maniac Mansion"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "The Old Mansion",
+      "description": "Get inside the mansion.",
+      "points": 5,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_0xHff6b=10_d0xHff6b!=10"
+    },
+    {
+      "id": 2,
+      "title": "To the Dungeon!",
+      "description": "End up in the dungeon.",
+      "points": 5,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_0xHff6b=4_d0xHff6b!=4"
+    },
+    {
+      "id": 3,
+      "title": "The Deep End",
+      "description": "Climb down into the drained swimming pool.",
+      "points": 10,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_0xHff6b=2_d0xHff6b!=2"
+    },
+    {
+      "id": 4,
+      "title": "Stargazer",
+      "description": "Reach the observatory.",
+      "points": 10,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_0xHff6b=28_d0xHff6b!=28"
+    },
+    {
+      "id": 5,
+      "title": "Special Delivery",
+      "description": "Get Weird Ed his commando package.",
+      "points": 10,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_0xHff6b=d0xHff6b_d0xHffb0=0_0xHffb0=1"
+    },
+    {
+      "id": 6,
+      "title": "Hot Stuff",
+      "description": "Make Mark Eteer love the meteor's memoir.",
+      "points": 10,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_0xHff6b=d0xHff6b_d0xHffb9=0_0xHffb9=1"
+    },
+    {
+      "id": 7,
+      "title": "GT and the Suction Cups",
+      "description": "Get Green Tentacle a recording contract.",
+      "points": 25,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_0xHff6b=d0xHff6b_d0xHfff0=0_0xHfff0=1"
+    },
+    {
+      "id": 8,
+      "title": "Inside the Lab",
+      "description": "Get into Dr. Fred's secret lab.",
+      "points": 25,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_0xHff6b=30_d0xHff6b!=30"
+    },
+    {
+      "id": 9,
+      "title": "Face to Face",
+      "description": "Find the meteor.",
+      "points": 10,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_0xHff6b=51_d0xHff6b!=51"
+    },
+    {
+      "id": 10,
+      "title": "Crater-Head",
+      "description": "Have the Meteor Police haul the meteor away, and win.",
+      "points": 50,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_O:0xH714b=58_O:0xH714c=58_O:0xH714d=58_O:0xH714e=58_O:0xH714f=58_O:0xH7150=58_O:0xH7151=58_O:0xH7152=58_O:0xH7153=58_O:0xH7154=58_O:0xH7155=58_O:0xH7156=58_O:0xH7157=58_O:0xH7158=58_O:0xH7159=58_0xH715a=58_0xHff79=3"
+    },
+    {
+      "id": 11,
+      "title": "Wheeeee!",
+      "description": "Send the meteor into space in the Edsel, and win.",
+      "points": 50,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_O:0xH714b=58_O:0xH714c=58_O:0xH714d=58_O:0xH714e=58_O:0xH714f=58_O:0xH7150=58_O:0xH7151=58_O:0xH7152=58_O:0xH7153=58_O:0xH7154=58_O:0xH7155=58_O:0xH7156=58_O:0xH7157=58_O:0xH7158=58_O:0xH7159=58_0xH715a=58_0xHff79=2"
+    },
+    {
+      "id": 12,
+      "title": "Famous, Not Infamous",
+      "description": "Get the meteor a publishing contract, and win.",
+      "points": 50,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_O:0xH714b=58_O:0xH714c=58_O:0xH714d=58_O:0xH714e=58_O:0xH714f=58_O:0xH7150=58_O:0xH7151=58_O:0xH7152=58_O:0xH7153=58_O:0xH7154=58_O:0xH7155=58_O:0xH7156=58_O:0xH7157=58_O:0xH7158=58_O:0xH7159=58_0xH715a=58_0xHffb9=4"
+    },
+    {
+      "id": 13,
+      "title": "Sandy Rescued",
+      "description": "Win the game.",
+      "points": 25,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_O:0xH714b=58_O:0xH714c=58_O:0xH714d=58_O:0xH714e=58_O:0xH714f=58_O:0xH7150=58_O:0xH7151=58_O:0xH7152=58_O:0xH7153=58_O:0xH7154=58_O:0xH7155=58_O:0xH7156=58_O:0xH7157=58_O:0xH7158=58_O:0xH7159=58_0xH715a=58"
+    },
+    {
+      "id": 14,
+      "title": "Nobody Left Behind",
+      "description": "Win with all three kids alive.",
+      "points": 25,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_O:0xH714b=58_O:0xH714c=58_O:0xH714d=58_O:0xH714e=58_O:0xH714f=58_O:0xH7150=58_O:0xH7151=58_O:0xH7152=58_O:0xH7153=58_O:0xH7154=58_O:0xH7155=58_O:0xH7156=58_O:0xH7157=58_O:0xH7158=58_O:0xH7159=58_0xH715a=58_0xHffb5=0"
+    },
+    {
+      "id": 15,
+      "title": "But That Is Another Story",
+      "description": "Win after Dave has died.",
+      "points": 10,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_O:0xH714b=58_O:0xH714c=58_O:0xH714d=58_O:0xH714e=58_O:0xH714f=58_O:0xH7150=58_O:0xH7151=58_O:0xH7152=58_O:0xH7153=58_O:0xH7154=58_O:0xH7155=58_O:0xH7156=58_O:0xH7157=58_O:0xH7158=58_O:0xH7159=58_0xH715a=58_0xHffc7=1_0xHffb5>0"
+    },
+    {
+      "id": 16,
+      "title": "Steamed",
+      "description": "Get caught in radioactive steam.",
+      "points": 5,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_O:0xH714b=56_O:0xH714c=56_O:0xH714d=56_O:0xH714e=56_O:0xH714f=56_O:0xH7150=56_O:0xH7151=56_O:0xH7152=56_O:0xH7153=56_O:0xH7154=56_O:0xH7155=56_O:0xH7156=56_O:0xH7157=56_O:0xH7158=56_O:0xH7159=56_0xH715a=56_0xHffb5>d0xHffb5_0xHffb3=1"
+    },
+    {
+      "id": 17,
+      "title": "Glug! Glug!",
+      "description": "Drown in the swimming pool.",
+      "points": 5,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_O:0xH714b=56_O:0xH714c=56_O:0xH714d=56_O:0xH714e=56_O:0xH714f=56_O:0xH7150=56_O:0xH7151=56_O:0xH7152=56_O:0xH7153=56_O:0xH7154=56_O:0xH7155=56_O:0xH7156=56_O:0xH7157=56_O:0xH7158=56_O:0xH7159=56_0xH715a=56_0xHffb5>d0xHffb5_0xHffb3=2"
+    },
+    {
+      "id": 18,
+      "title": "Bits of Fur",
+      "description": "Let Weird Ed find out what happened to his hamster.",
+      "points": 5,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_O:0xH714b=56_O:0xH714c=56_O:0xH714d=56_O:0xH714e=56_O:0xH714f=56_O:0xH7150=56_O:0xH7151=56_O:0xH7152=56_O:0xH7153=56_O:0xH7154=56_O:0xH7155=56_O:0xH7156=56_O:0xH7157=56_O:0xH7158=56_O:0xH7159=56_0xH715a=56_0xHffb5>d0xHffb5_0xHffb3=3"
+    },
+    {
+      "id": 19,
+      "title": "Band Members",
+      "description": "Get on the wrong side of Green Tentacle.",
+      "points": 5,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_O:0xH714b=56_O:0xH714c=56_O:0xH714d=56_O:0xH714e=56_O:0xH714f=56_O:0xH7150=56_O:0xH7151=56_O:0xH7152=56_O:0xH7153=56_O:0xH7154=56_O:0xH7155=56_O:0xH7156=56_O:0xH7157=56_O:0xH7158=56_O:0xH7159=56_0xH715a=56_0xHffb5>d0xHffb5_0xHffb3=4"
+    },
+    {
+      "id": 20,
+      "title": "Feed Me",
+      "description": "Get eaten by the man-eating plant.",
+      "points": 5,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_O:0xH714b=56_O:0xH714c=56_O:0xH714d=56_O:0xH714e=56_O:0xH714f=56_O:0xH7150=56_O:0xH7151=56_O:0xH7152=56_O:0xH7153=56_O:0xH7154=56_O:0xH7155=56_O:0xH7156=56_O:0xH7157=56_O:0xH7158=56_O:0xH7159=56_0xH715a=56_0xHffb5>d0xHffb5_0xHffb3=6"
+    },
+    {
+      "id": 21,
+      "title": "Five Mile Radius",
+      "description": "Lose the house in a meltdown or explosion.",
+      "points": 5,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_O:0xH714b=57_O:0xH714c=57_O:0xH714d=57_O:0xH714e=57_O:0xH714f=57_O:0xH7150=57_O:0xH7151=57_O:0xH7152=57_O:0xH7153=57_O:0xH7154=57_O:0xH7155=57_O:0xH7156=57_O:0xH7157=57_O:0xH7158=57_O:0xH7159=57_0xH715a=57_0xHffb5!=3"
+    },
+    {
+      "id": 22,
+      "title": "Zombiehood",
+      "description": "Lose all three kids.",
+      "points": 5,
+      "memaddr": "0xX4a1f=11076144_0xX3bff=821973949_0xHffb5=3_d0xHffb5=2"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Speedrun",
+      "description": "Fastest from a new game to rescuing Sandy, any ending.",
+      "format": "MILLISECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xX4a1f=11076144_0xX3bff=821973949_d0xHff7b=0_0xHff7b=1_0xHff79=0_0xHffb0=0_0xHffb5=0_0xHffb9=0::CAN:1=1S0xX4a1f!=11076144S0xX3bff!=821973949S0xHff7b=0SO:0xH714b=57_O:0xH714c=57_O:0xH714d=57_O:0xH714e=57_O:0xH714f=57_O:0xH7150=57_O:0xH7151=57_O:0xH7152=57_O:0xH7153=57_O:0xH7154=57_O:0xH7155=57_O:0xH7156=57_O:0xH7157=57_O:0xH7158=57_O:0xH7159=57_0xH715a=57::SUB:0xX4a1f=11076144_0xX3bff=821973949_O:0xH714b=58_O:0xH714c=58_O:0xH714d=58_O:0xH714e=58_O:0xH714f=58_O:0xH7150=58_O:0xH7151=58_O:0xH7152=58_O:0xH7153=58_O:0xH7154=58_O:0xH7155=58_O:0xH7156=58_O:0xH7157=58_O:0xH7158=58_O:0xH7159=58_0xH715a=58::VAL:C:1=1_M:1=1"
+    }
+  ],
+  "gameOver": "0xX4a1f=11076144_0xX3bff=821973949_O:0xH714b=57_O:0xH714c=57_O:0xH714d=57_O:0xH714e=57_O:0xH714f=57_O:0xH7150=57_O:0xH7151=57_O:0xH7152=57_O:0xH7153=57_O:0xH7154=57_O:0xH7155=57_O:0xH7156=57_O:0xH7157=57_O:0xH7158=57_O:0xH7159=57_O:0xH715a=57_O:0xH714b=58_O:0xH714c=58_O:0xH714d=58_O:0xH714e=58_O:0xH714f=58_O:0xH7150=58_O:0xH7151=58_O:0xH7152=58_O:0xH7153=58_O:0xH7154=58_O:0xH7155=58_O:0xH7156=58_O:0xH7157=58_O:0xH7158=58_O:0xH7159=58_0xH715a=58"
+}

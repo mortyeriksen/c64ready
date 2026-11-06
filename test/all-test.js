@@ -131,6 +131,7 @@ const TESTS = [
   'test/achievements/last-ninja-set-spec-test.js',
   'test/achievements/out-run-set-spec-test.js',
   'test/achievements/defender-of-the-crown-set-spec-test.js',
+  'test/achievements/maniac-mansion-set-spec-test.js',
   'test/achievements/engine-spec-test.js',
   'test/achievements/achievements-browser-test.js',
   'test/achievements/ach-toast-browser-test.js',

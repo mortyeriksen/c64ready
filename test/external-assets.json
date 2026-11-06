@@ -850,6 +850,14 @@
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
+  "maniac-mansion-crt": {
+   "description": "Maniac Mansion & Zak McKracken, OneLoad64 v5 extras EasyFlash cartridge (Maniac Mansion achievement set)",
+   "env": "C64_MANIAC_MANSION_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Extras/OtherCRTs/Maniac Mansion & Zak McKracken [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
   "paperboy-crunched-prg": {
    "description": "Paperboy (Elite 1986), the OneLoad64 v5 crunched PRG, MD5 3c5c6c6a901f174069fb2fe16dca3f45",
    "env": "C64_PAPERBOY_CRUNCHED_PRG",

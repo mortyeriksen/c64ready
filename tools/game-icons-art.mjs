@@ -653,6 +653,25 @@ export const GAME_ICON_ART = {
     '................',
     '................',
   ],
+  // The mansion on its hill under a full moon, its windows lit.
+  'maniac-mansion': [
+    '...........www..',
+    '.......d..wwwww.',
+    '......ddd.wwwww.',
+    '......ddd.wwwww.',
+    '.....ddddd.www..',
+    '.....bybyb......',
+    '..d..bbbbb..d...',
+    '.ddd.bybyb.ddd..',
+    'ddddddddddddddd.',
+    'bybybbbbbbbybyb.',
+    'bbbbbybbbybbbbb.',
+    'bybybbbbbbbybyb.',
+    'bbbbbbbnnbbbbbb.',
+    'GGGGGGGnnGGGGGGG',
+    'GGGGGGGGGGGGGGGG',
+    '................',
+  ],
   // A bucket of cement over a conveyor.
   'marios-cement-factory': [
     '................',

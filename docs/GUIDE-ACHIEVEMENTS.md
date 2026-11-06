@@ -160,6 +160,7 @@ every board.
 | Gribbly's Day Out | | yes | OneLoad64 v5: `Gribbly's Day Out.crt` |
 | IK+ | 13 | yes | OneLoad64 v5: `IK+.crt`, or the disk `IKplus.d64` |
 | Impossible Mission | 10 | yes | OneLoad64 v5: `Impossible Mission.crt` |
+| Maniac Mansion | 22 | fastest rescue | OneLoad64 v5 extras: `Maniac Mansion & Zak McKracken [EasyFlash].crt`, playing Maniac Mansion |
 | Mario's Cement Factory | 15 | Game A and Game B | c64cade's PRG, or `mario-cf131.prg` |
 | Mole Attack | | yes | OneLoad64 v5 extras: `Mole Attack.crt` (the official cartridge), or c64cade's PRG |
 | Munchy Worm | | yes | c64cade's `munchyworm_1_01.d64` |

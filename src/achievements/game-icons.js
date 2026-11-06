@@ -34,6 +34,7 @@ export const GAME_ICONS = new Set([
   'ik-plus',
   'impossible-mission',
   'last-ninja',
+  'maniac-mansion',
   'marios-cement-factory',
   'mole-attack',
   'munchy-worm',
