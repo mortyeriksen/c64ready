@@ -1,0 +1,168 @@
+{
+  "id": "last-ninja-3",
+  "title": "Last Ninja 3",
+  "url": "https://www.lemon64.com/game/last-ninja-3",
+  "hashes": [
+    {
+      "hash": "e27836fc9c9a26d234f7695354e3ab8c",
+      "label": "OneLoad64 v5 extras, EasyFlash cartridge (Last Ninja 3, The [EasyFlash].crt)"
+    }
+  ],
+  "notices": [
+    {
+      "id": 1,
+      "title": "Trainer on",
+      "text": "Nothing counts until you play without the unlimited lives trainer.",
+      "memaddr": "0xX0559=3823296992_0xX05a0=23855409_0xH03ff=1"
+    },
+    {
+      "id": 2,
+      "title": "Level skipped",
+      "text": "Nothing counts after the joystick level skip. Reset to play for real.",
+      "memaddr": "0xX0559=3823296992_0xX05a0=23855409_0xH0315=4"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "First Blood",
+      "description": "Score your first points.",
+      "points": 5,
+      "memaddr": "0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_d0xG0100=808464432_0xG0100>808464432"
+    },
+    {
+      "id": 2,
+      "title": "The Sword",
+      "description": "Pick up the sword.",
+      "points": 5,
+      "memaddr": "0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH0002>=1_d0xH0002=0"
+    },
+    {
+      "id": 3,
+      "title": "The Staff",
+      "description": "Pick up the staff.",
+      "points": 5,
+      "memaddr": "0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH0003>=1_d0xH0003=0"
+    },
+    {
+      "id": 4,
+      "title": "Nunchaku",
+      "description": "Make the nunchaku.",
+      "points": 10,
+      "memaddr": "0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH0004>=1_d0xH0004=0"
+    },
+    {
+      "id": 5,
+      "title": "Throwing Stars",
+      "description": "Pick up the shuriken.",
+      "points": 5,
+      "memaddr": "0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH0005>=1_d0xH0005=0"
+    },
+    {
+      "id": 6,
+      "title": "Second Wind",
+      "description": "Drink a potion for an extra life.",
+      "points": 10,
+      "memaddr": "0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH001d>d0xH001d"
+    },
+    {
+      "id": 7,
+      "title": "Way of the Warrior",
+      "description": "Raise your Bushido to the full.",
+      "points": 25,
+      "memaddr": "0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH001b=40_d0xH001b=39"
+    },
+    {
+      "id": 8,
+      "title": "Earth",
+      "description": "Beat the guardian of the Earth chamber, level 1.",
+      "points": 10,
+      "memaddr": "0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH001f=1_d0xH001f=0_0xH0315=3"
+    },
+    {
+      "id": 9,
+      "title": "Wind",
+      "description": "Beat the guardian of the Wind chamber, level 2.",
+      "points": 15,
+      "memaddr": "0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH001f=2_d0xH001f=1_0xH0315=3"
+    },
+    {
+      "id": 10,
+      "title": "Water",
+      "description": "Beat the guardian of the Water chamber, level 3.",
+      "points": 20,
+      "memaddr": "0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH001f=3_d0xH001f=2_0xH0315=3"
+    },
+    {
+      "id": 11,
+      "title": "Fire",
+      "description": "Beat the guardian of the Fire chamber, level 4.",
+      "points": 25,
+      "memaddr": "0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH001f=4_d0xH001f=3_0xH0315=3"
+    },
+    {
+      "id": 12,
+      "title": "Real Hatred Is Timeless",
+      "description": "Defeat the evil Shogun in the Void chamber, level 5.",
+      "points": 50,
+      "memaddr": "0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH001f=4_0xH00e3=12_0xH00fc!=0_0xH0315=0"
+    },
+    {
+      "id": 13,
+      "title": "Untouched Earth",
+      "description": "Complete the Earth chamber without losing a life.",
+      "points": 15,
+      "memaddr": "N:0xX0559=3823296992_N:0xX05a0=23855409_N:d0xX0559!=3823296992_0xH001f=0.1._R:0xH001d<d0xH001d_0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH001f=1_d0xH001f=0_0xH0315=3"
+    },
+    {
+      "id": 14,
+      "title": "Iron Ninja",
+      "description": "Defeat the Shogun without losing a life in the whole game.",
+      "points": 50,
+      "memaddr": "N:0xX0559=3823296992_N:0xX05a0=23855409_N:d0xX0559!=3823296992_0xH001f=0.1._R:0xH001d<d0xH001d_0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH001f=4_0xH00e3=12_0xH00fc!=0_0xH0315=0"
+    },
+    {
+      "id": 15,
+      "title": "Ten Thousand",
+      "description": "Score 10,000 points.",
+      "points": 5,
+      "memaddr": "0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xG0100>=808529968_d0xG0100<808529968",
+      "score": 10000
+    },
+    {
+      "id": 16,
+      "title": "Twenty-Five Thousand",
+      "description": "Score 25,000 points.",
+      "points": 10,
+      "memaddr": "0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xG0100>=808596784_d0xG0100<808596784",
+      "score": 25000
+    },
+    {
+      "id": 17,
+      "title": "Fifty Thousand",
+      "description": "Score 50,000 points.",
+      "points": 25,
+      "memaddr": "0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xG0100>=808792112_d0xG0100<808792112",
+      "score": 50000
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Hiscores",
+      "description": "Your score when the game ends.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xX0559=3823296992_0xX05a0=23855409_d0xX0559!=3823296992_0xH001f=0::CAN:0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH001d=0_d0xH001d=1_0xG0100=808464432::SUB:0xG0100>808464432S0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH001d=0_d0xH001d=1Sd0xX0559=3823296992_0xX0559!=3823296992_0xH001f=4_0xH00e3=12_0xH00fc!=0::VAL:0xL0100*100000_0xL0101*10000_0xL0102*1000_0xL0103*100_0xL0104*10_0xL0105"
+    },
+    {
+      "id": 2,
+      "title": "Speedrun",
+      "description": "Fastest from a new game to the Shogun defeated.",
+      "format": "MILLISECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xX0559=3823296992_0xX05a0=23855409_d0xX0559!=3823296992_0xH001f=0::CAN:0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH001d=0_d0xH001d=1::SUB:0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH001f=4_0xH00e3=12_0xH00fc!=0_0xH0315=0::VAL:C:1=1_M:1=1"
+    }
+  ],
+  "gameOver": "1=1S0xX0559=3823296992_0xX05a0=23855409_d0xX0559=3823296992_d0xX05a0=23855409_0xH001f<=4_0xH001d<=9_0xH001d=0_d0xH001d=1Sd0xX0559=3823296992_0xX0559!=3823296992_0xH001f=4_0xH00e3=12_0xH00fc!=0"
+}

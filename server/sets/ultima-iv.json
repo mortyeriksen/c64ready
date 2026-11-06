@@ -1,0 +1,304 @@
+{
+  "id": "ultima-iv",
+  "title": "Ultima IV: Quest of the Avatar",
+  "url": "https://www.lemon64.com/game/ultima-iv-quest-of-the-avatar",
+  "hashes": [
+    {
+      "hash": "b2f0dcc4dd75eea3ce99bdb63d7c07d0",
+      "label": "Ultima IV Remastered v2.2, EasyFlash cartridge (u4remastered.crt)"
+    }
+  ],
+  "notices": [
+    {
+      "id": 1,
+      "title": "Trainer on",
+      "text": "Nothing counts until you play with every trainer cheat set to No.",
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xH001b!=0S0xH48a1=76S0xH6500=56S0xH5518=56S0xH5551=13S0xH57cd=76S0xH66fc!=87S0xH424e!=247S0xH59cf!=33"
+    },
+    {
+      "id": 2,
+      "title": "Save game editor",
+      "text": "Nothing counts after the save game editor until a reset.",
+      "memaddr": "0xX080d=45423010_0xX0811=3394235037"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Rune of Honesty",
+      "description": "Find the rune of honesty.",
+      "points": 5,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xTab0d=1_d0xTab0d=0"
+    },
+    {
+      "id": 2,
+      "title": "Rune of Compassion",
+      "description": "Find the rune of compassion.",
+      "points": 5,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xSab0d=1_d0xSab0d=0"
+    },
+    {
+      "id": 3,
+      "title": "Rune of Valor",
+      "description": "Find the rune of valor.",
+      "points": 5,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xRab0d=1_d0xRab0d=0"
+    },
+    {
+      "id": 4,
+      "title": "Rune of Justice",
+      "description": "Find the rune of justice.",
+      "points": 5,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xQab0d=1_d0xQab0d=0"
+    },
+    {
+      "id": 5,
+      "title": "Rune of Sacrifice",
+      "description": "Find the rune of sacrifice.",
+      "points": 5,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xPab0d=1_d0xPab0d=0"
+    },
+    {
+      "id": 6,
+      "title": "Rune of Honor",
+      "description": "Find the rune of honor.",
+      "points": 5,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xOab0d=1_d0xOab0d=0"
+    },
+    {
+      "id": 7,
+      "title": "Rune of Spirituality",
+      "description": "Find the rune of spirituality.",
+      "points": 5,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xNab0d=1_d0xNab0d=0"
+    },
+    {
+      "id": 8,
+      "title": "Rune of Humility",
+      "description": "Find the rune of humility.",
+      "points": 5,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xMab0d=1_d0xMab0d=0"
+    },
+    {
+      "id": 9,
+      "title": "The Blue Stone",
+      "description": "Find the blue stone.",
+      "points": 10,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xTab0c=1_d0xTab0c=0"
+    },
+    {
+      "id": 10,
+      "title": "The Yellow Stone",
+      "description": "Find the yellow stone.",
+      "points": 10,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xSab0c=1_d0xSab0c=0"
+    },
+    {
+      "id": 11,
+      "title": "The Red Stone",
+      "description": "Find the red stone.",
+      "points": 10,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xRab0c=1_d0xRab0c=0"
+    },
+    {
+      "id": 12,
+      "title": "The Green Stone",
+      "description": "Find the green stone.",
+      "points": 10,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xQab0c=1_d0xQab0c=0"
+    },
+    {
+      "id": 13,
+      "title": "The Orange Stone",
+      "description": "Find the orange stone.",
+      "points": 10,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xPab0c=1_d0xPab0c=0"
+    },
+    {
+      "id": 14,
+      "title": "The Purple Stone",
+      "description": "Find the purple stone.",
+      "points": 10,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xOab0c=1_d0xOab0c=0"
+    },
+    {
+      "id": 15,
+      "title": "The White Stone",
+      "description": "Find the white stone.",
+      "points": 10,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xNab0c=1_d0xNab0c=0"
+    },
+    {
+      "id": 16,
+      "title": "The Black Stone",
+      "description": "Find the black stone.",
+      "points": 10,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xMab0c=1_d0xMab0c=0"
+    },
+    {
+      "id": 17,
+      "title": "The Bell of Courage",
+      "description": "Find the bell of courage.",
+      "points": 10,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xOab0e=1_d0xOab0e=0"
+    },
+    {
+      "id": 18,
+      "title": "The Book of Truth",
+      "description": "Find the book of truth.",
+      "points": 10,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xNab0e=1_d0xNab0e=0"
+    },
+    {
+      "id": 19,
+      "title": "The Candle of Love",
+      "description": "Find the candle of love.",
+      "points": 10,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xMab0e=1_d0xMab0e=0"
+    },
+    {
+      "id": 20,
+      "title": "The Silver Horn",
+      "description": "Find the silver horn.",
+      "points": 10,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xHab15=1_d0xHab15=0"
+    },
+    {
+      "id": 21,
+      "title": "The Wheel of the H.M.S. Cape",
+      "description": "Find the wheel from the H.M.S. Cape.",
+      "points": 10,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xHab16=1_d0xHab16=0"
+    },
+    {
+      "id": 22,
+      "title": "The Skull of Mondain",
+      "description": "Find the skull of Mondain the wizard.",
+      "points": 10,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xHab17=1_d0xHab17=0"
+    },
+    {
+      "id": 23,
+      "title": "Into the Abyss",
+      "description": "Cast the skull of Mondain into the abyss.",
+      "points": 25,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xHab17=255_d0xHab17=1"
+    },
+    {
+      "id": 24,
+      "title": "The Key of Truth",
+      "description": "Win the part of the key of truth.",
+      "points": 15,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xOab0f=1_d0xOab0f=0"
+    },
+    {
+      "id": 25,
+      "title": "The Key of Love",
+      "description": "Win the part of the key of love.",
+      "points": 15,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xNab0f=1_d0xNab0f=0"
+    },
+    {
+      "id": 26,
+      "title": "The Key of Courage",
+      "description": "Win the part of the key of courage.",
+      "points": 15,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xMab0f=1_d0xMab0f=0"
+    },
+    {
+      "id": 27,
+      "title": "The Key of Three Parts",
+      "description": "Hold all three parts of the key.",
+      "points": 25,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xHab0f=7_d0xHab0f!=7"
+    },
+    {
+      "id": 28,
+      "title": "Avatar of Honesty",
+      "description": "Achieve partial avatarhood in the virtue of honesty.",
+      "points": 25,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xHab00=0_d0xHab00=153"
+    },
+    {
+      "id": 29,
+      "title": "Avatar of Compassion",
+      "description": "Achieve partial avatarhood in the virtue of compassion.",
+      "points": 25,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xHab01=0_d0xHab01=153"
+    },
+    {
+      "id": 30,
+      "title": "Avatar of Valor",
+      "description": "Achieve partial avatarhood in the virtue of valor.",
+      "points": 25,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xHab02=0_d0xHab02=153"
+    },
+    {
+      "id": 31,
+      "title": "Avatar of Justice",
+      "description": "Achieve partial avatarhood in the virtue of justice.",
+      "points": 25,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xHab03=0_d0xHab03=153"
+    },
+    {
+      "id": 32,
+      "title": "Avatar of Sacrifice",
+      "description": "Achieve partial avatarhood in the virtue of sacrifice.",
+      "points": 25,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xHab04=0_d0xHab04=153"
+    },
+    {
+      "id": 33,
+      "title": "Avatar of Honor",
+      "description": "Achieve partial avatarhood in the virtue of honor.",
+      "points": 25,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xHab05=0_d0xHab05=153"
+    },
+    {
+      "id": 34,
+      "title": "Avatar of Spirituality",
+      "description": "Achieve partial avatarhood in the virtue of spirituality.",
+      "points": 25,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xHab06=0_d0xHab06=153"
+    },
+    {
+      "id": 35,
+      "title": "Avatar of Humility",
+      "description": "Achieve partial avatarhood in the virtue of humility.",
+      "points": 25,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xHab07=0_d0xHab07=153"
+    },
+    {
+      "id": 36,
+      "title": "A Companion",
+      "description": "Have a companion join you.",
+      "points": 5,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xH001f>=2_d0xH001f=1"
+    },
+    {
+      "id": 37,
+      "title": "The Eight Companions",
+      "description": "Travel with a party of eight.",
+      "points": 25,
+      "memaddr": "0xX0800=1275768140_0xX0804=2571897352_d0xX0800=1275768140_0xH001f=8_d0xH001f=7"
+    },
+    {
+      "id": 38,
+      "title": "The Codex of Ultimate Wisdom",
+      "description": "Reach the Codex and become the Avatar.",
+      "points": 100,
+      "memaddr": "0xX8800=2611137705_0xX9058=2727368780_0xH907d!=0_d0xH907d=0"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Fewest Turns",
+      "description": "The fewest turns to the Codex of Ultimate Wisdom.",
+      "format": "VALUE",
+      "lowerIsBetter": true,
+      "definition": "STA:0xX8800=2611137705_0xX9058=2727368780_d0xX9058!=2727368780::CAN:0xX8800!=2611137705::SUB:0xX8800=2611137705_0xX9058=2727368780_0xH907d!=0_d0xH907d=0::VAL:b0xH002c*1000000_b0xH002d*10000_b0xH002e*100_b0xH002f"
+    }
+  ],
+  "gameOver": "0xX8800=2611137705_0xX9058=2727368780_0xH907d!=0_d0xH907d=0"
+}

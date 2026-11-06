@@ -127,28 +127,32 @@
       "title": "Five Figures",
       "description": "Score 10,000 points.",
       "points": 5,
-      "memaddr": "0xH21B7=1_0xH0688=0_A:0xL00D9*10000_A:b0xH00D4*100_b0xH00CF>=1000"
+      "memaddr": "0xH21B7=1_0xH0688=0_A:0xL00D9*10000_A:b0xH00D4*100_b0xH00CF>=1000",
+      "score": 10000
     },
     {
       "id": 17,
       "title": "Fifty Grand",
       "description": "Score 50,000 points.",
       "points": 10,
-      "memaddr": "0xH21B7=1_0xH0688=0_A:0xL00D9*10000_A:b0xH00D4*100_b0xH00CF>=5000"
+      "memaddr": "0xH21B7=1_0xH0688=0_A:0xL00D9*10000_A:b0xH00D4*100_b0xH00CF>=5000",
+      "score": 50000
     },
     {
       "id": 18,
       "title": "Six Figures",
       "description": "Score 100,000 points.",
       "points": 25,
-      "memaddr": "0xH21B7=1_0xH0688=0_A:0xL00D9*10000_A:b0xH00D4*100_b0xH00CF>=10000"
+      "memaddr": "0xH21B7=1_0xH0688=0_A:0xL00D9*10000_A:b0xH00D4*100_b0xH00CF>=10000",
+      "score": 100000
     },
     {
       "id": 19,
       "title": "Doh's Nemesis",
       "description": "Score 250,000 points.",
       "points": 50,
-      "memaddr": "0xH21B7=1_0xH0688=0_A:0xL00D9*10000_A:b0xH00D4*100_b0xH00CF>=25000"
+      "memaddr": "0xH21B7=1_0xH0688=0_A:0xL00D9*10000_A:b0xH00D4*100_b0xH00CF>=25000",
+      "score": 250000
     }
   ],
   "gameOver": "0xH21B7=1_0xH0200=4_d0xH0200=0",

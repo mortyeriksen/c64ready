@@ -1,0 +1,126 @@
+{
+  "id": "armalyte",
+  "title": "Armalyte",
+  "url": "https://www.lemon64.com/game/armalyte",
+  "hashes": [
+    {
+      "hash": "8f7ab4669097f4193d74933483e71892",
+      "label": "OneLoad64 v5 MultiLoad64 EasyFlash cartridge (Armalyte (by $olo1870))"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "First Level",
+      "description": "Clear the first level.",
+      "points": 5,
+      "memaddr": "0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15_0xHb002=1_d0xHb002=0"
+    },
+    {
+      "id": 2,
+      "title": "Second Level",
+      "description": "Clear the second level.",
+      "points": 10,
+      "memaddr": "0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15_0xHb002=2_d0xHb002=1"
+    },
+    {
+      "id": 3,
+      "title": "Third Level",
+      "description": "Clear the third level.",
+      "points": 10,
+      "memaddr": "0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15_0xHb002=3_d0xHb002=2"
+    },
+    {
+      "id": 4,
+      "title": "Fourth Level",
+      "description": "Clear the fourth level.",
+      "points": 15,
+      "memaddr": "0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15_0xHb002=4_d0xHb002=3"
+    },
+    {
+      "id": 5,
+      "title": "Fifth Level",
+      "description": "Clear the fifth level.",
+      "points": 15,
+      "memaddr": "0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15_0xHb002=5_d0xHb002=4"
+    },
+    {
+      "id": 6,
+      "title": "Sixth Level",
+      "description": "Clear the sixth level.",
+      "points": 25,
+      "memaddr": "0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15_0xHb002=6_d0xHb002=5"
+    },
+    {
+      "id": 7,
+      "title": "Seventh Level",
+      "description": "Clear the seventh level.",
+      "points": 25,
+      "memaddr": "0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15_0xHb002=7_d0xHb002=6"
+    },
+    {
+      "id": 8,
+      "title": "Armalyte",
+      "description": "Clear all eight levels.",
+      "points": 50,
+      "memaddr": "0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15_0xHb002=8_d0xHb002=7"
+    },
+    {
+      "id": 9,
+      "title": "Flawless Start",
+      "description": "Clear the first level without losing a life.",
+      "points": 15,
+      "memaddr": "N:0xXae42=3383755437_N:0xHb005=3_N:d0xHb005=0_0xHb002=0.1._R:0xHb005<d0xHb005_0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15_0xHb002=1_d0xHb002=0"
+    },
+    {
+      "id": 10,
+      "title": "Extra Life",
+      "description": "Earn an extra life.",
+      "points": 5,
+      "memaddr": "0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15_0xHb005>d0xHb005_d0xHb005>=1"
+    },
+    {
+      "id": 11,
+      "title": "100,000",
+      "description": "Score 100,000 points.",
+      "points": 5,
+      "memaddr": "0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15S0xJb007>1S0xJb007=1_0xJb00a>=0",
+      "score": 100000
+    },
+    {
+      "id": 12,
+      "title": "500,000",
+      "description": "Score 500,000 points.",
+      "points": 10,
+      "memaddr": "0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15S0xJb007>5S0xJb007=5_0xJb00a>=0",
+      "score": 500000
+    },
+    {
+      "id": 13,
+      "title": "A Million",
+      "description": "Score 1,000,000 points.",
+      "points": 25,
+      "memaddr": "0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15S0xJb007>256S0xJb007=256_0xJb00a>=0",
+      "score": 1000000
+    },
+    {
+      "id": 14,
+      "title": "Top of the Table",
+      "description": "Score 5,000,000 points, the top score on the game's own table.",
+      "points": 50,
+      "memaddr": "0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15S0xJb007>1280S0xJb007=1280_0xJb00a>=0",
+      "score": 5000000
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Hiscores",
+      "description": "Your score when the game ends.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xXae42=3383755437_0xXae4c=2846884590_0xHb005=3_d0xHb005=0_0xHb002=0_0xJb007=0_0xJb00a=0::CAN:0=1::SUB:1=1S0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15_0xHb005=0_0xHb00d=0_d0xHb00d!=0S0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15_0xHb002=8_d0xHb002=7::VAL:0xHb007*10000000_0xHb008*1000000_0xHb009*100000_0xHb00a*10000_0xHb00b*1000_0xHb00c*100"
+    }
+  ],
+  "gameOver": "1=1S0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15_0xHb005=0_0xHb00d=0_d0xHb00d!=0S0xXae42=3383755437_0xXae4c=2846884590_d0xXae42=3383755437_0xHb002<=8_0xHb005<=15_0xHb002=8_d0xHb002=7"
+}

@@ -1,0 +1,103 @@
+{
+  "id": "ghostbusters",
+  "title": "Ghostbusters",
+  "url": "https://www.lemon64.com/game/ghostbusters",
+  "hashes": [
+    {
+      "hash": "7c3d49bd45472637b986274fe16fc058",
+      "label": "OneLoad64 v5 cartridge (Ghostbusters)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Ecto-1",
+      "description": "Buy the 1963 hearse.",
+      "points": 5,
+      "memaddr": "0xX746d=2852797093_0xX7471=2235046589_d0xX746d=2852797093_0xJ0051>0_0xH003a=12_d0xH003a!=12_d0xH003a=11_0xH005c=1"
+    },
+    {
+      "id": 2,
+      "title": "Built for Speed",
+      "description": "Buy the high-performance car.",
+      "points": 5,
+      "memaddr": "0xX746d=2852797093_0xX7471=2235046589_d0xX746d=2852797093_0xJ0051>0_0xH003a=12_d0xH003a!=12_d0xH003a=11_0xH005c=3"
+    },
+    {
+      "id": 3,
+      "title": "Who You Gonna Call?",
+      "description": "Trap your first ghost.",
+      "points": 5,
+      "memaddr": "0xX746d=2852797093_0xX7471=2235046589_d0xX746d=2852797093_0xJ0051>0_0xH003a=31_d0xH003a=31_0xJ0057>d0xJ0057"
+    },
+    {
+      "id": 4,
+      "title": "Ghost Hunter",
+      "description": "Trap 10 ghosts in one game.",
+      "points": 10,
+      "memaddr": "N:0xX746d=2852797093_N:0xH003a=11_R:d0xH003a!=11_N:0xX746d=2852797093_N:0xH003a=31_N:d0xH003a=31_0xJ0057>d0xJ0057.10."
+    },
+    {
+      "id": 5,
+      "title": "Ghost Master",
+      "description": "Trap 25 ghosts in one game.",
+      "points": 25,
+      "memaddr": "N:0xX746d=2852797093_N:0xH003a=11_R:d0xH003a!=11_N:0xX746d=2852797093_N:0xH003a=31_N:d0xH003a=31_0xJ0057>d0xJ0057.25."
+    },
+    {
+      "id": 6,
+      "title": "Marshmallow Averted",
+      "description": "Stop the Marshmallow Man with ghost bait and earn the mayor's award.",
+      "points": 10,
+      "memaddr": "0xX746d=2852797093_0xX7471=2235046589_d0xX746d=2852797093_0xJ0051>0_0xH003a=38_d0xH003a!=38"
+    },
+    {
+      "id": 7,
+      "title": "Ten Grand Profit",
+      "description": "Have $10,000 more than you started with.",
+      "points": 10,
+      "memaddr": "0xX746d=2852797093_0xX7471=2235046589_d0xX746d=2852797093_0xJ0051>0_A:b0xH0057*10000_A:b0xH0058*100_A:b0xH0059_B:b0xH0051*10000_B:b0xH0052*100_B:b0xH0053_0<=2147483647_A:b0xH0057*10000_A:b0xH0058*100_A:b0xH0059_B:b0xH0051*10000_B:b0xH0052*100_B:b0xH0053_0>=10000",
+      "score": 10000
+    },
+    {
+      "id": 8,
+      "title": "Fifty Grand Profit",
+      "description": "Have $50,000 more than you started with.",
+      "points": 25,
+      "memaddr": "0xX746d=2852797093_0xX7471=2235046589_d0xX746d=2852797093_0xJ0051>0_A:b0xH0057*10000_A:b0xH0058*100_A:b0xH0059_B:b0xH0051*10000_B:b0xH0052*100_B:b0xH0053_0<=2147483647_A:b0xH0057*10000_A:b0xH0058*100_A:b0xH0059_B:b0xH0051*10000_B:b0xH0052*100_B:b0xH0053_0>=50000",
+      "score": 50000
+    },
+    {
+      "id": 9,
+      "title": "In the Black",
+      "description": "End a game with more money than you started with.",
+      "points": 15,
+      "memaddr": "0xX746d=2852797093_0xX7471=2235046589_d0xX746d=2852797093_0xJ0051>0_0xH003a=49_d0xH003a!=49"
+    },
+    {
+      "id": 10,
+      "title": "The Portal Is Closed",
+      "description": "Get two Ghostbusters past the Marshmallow Man into Zuul.",
+      "points": 50,
+      "memaddr": "0xX746d=2852797093_0xX7471=2235046589_d0xX746d=2852797093_0xJ0051>0_0xH003a=54_d0xH003a!=54"
+    },
+    {
+      "id": 11,
+      "title": "Bustin' Makes Me Feel Good",
+      "description": "Close the portal without the Marshmallow Man ever doing damage.",
+      "points": 25,
+      "memaddr": "N:0xX746d=2852797093_N:0xH003a=11_d0xH003a!=11.1._R:0xH003a=37_0xX746d=2852797093_0xX7471=2235046589_d0xX746d=2852797093_0xJ0051>0_0xH003a=54_d0xH003a!=54"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Profit",
+      "description": "Your balance less your starting balance, when the game ends in profit.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xX746d=2852797093_0xX7471=2235046589_0xH003a=11_d0xH003a!=11::CAN:0xX746d=2852797093_0xX7471=2235046589_d0xX746d=2852797093_0xJ0051>0_0xH003a=45_d0xH003a!=45::SUB:0xX746d=2852797093_0xX7471=2235046589_d0xX746d=2852797093_0xJ0051>0_0xH003a=49_d0xH003a!=49::VAL:A:b0xH0057*10000_A:b0xH0058*100_B:b0xH0051*10000_B:b0xH0052*100_B:b0xH0053_M:b0xH0059"
+    }
+  ],
+  "gameOver": "1=1S0xX746d=2852797093_0xX7471=2235046589_d0xX746d=2852797093_0xJ0051>0_0xH003a=45_d0xH003a!=45S0xX746d=2852797093_0xX7471=2235046589_d0xX746d=2852797093_0xJ0051>0_0xH003a=49_d0xH003a!=49"
+}

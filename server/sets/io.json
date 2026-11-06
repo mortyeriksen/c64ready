@@ -1,0 +1,84 @@
+{
+  "id": "io",
+  "title": "IO",
+  "url": "https://www.lemon64.com/game/io",
+  "hashes": [
+    {
+      "hash": "791dd2c66bf9229670438ffac7548c78",
+      "label": "OneLoad64 v5 cartridge (IO - Into Oblivion)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Level One",
+      "description": "Complete the first level.",
+      "points": 10,
+      "memaddr": "0xX621d=2902741470_0xX61de=3171177470_0xH0451<=2_d0xH0451<=2_0xH0453=1_d0xH0453=0"
+    },
+    {
+      "id": 2,
+      "title": "Level Two",
+      "description": "Complete the second level.",
+      "points": 25,
+      "memaddr": "0xX621d=2902741470_0xX61de=3171177470_0xH0451<=2_d0xH0451<=2_0xH0453=2_d0xH0453=1"
+    },
+    {
+      "id": 3,
+      "title": "Level Three",
+      "description": "Complete the third level.",
+      "points": 25,
+      "memaddr": "0xX621d=2902741470_0xX61de=3171177470_0xH0451<=2_d0xH0451<=2_0xH0453=3_d0xH0453=2"
+    },
+    {
+      "id": 4,
+      "title": "Into Oblivion",
+      "description": "Complete all four levels.",
+      "points": 50,
+      "memaddr": "0xX621d=2902741470_0xX61de=3171177470_0xH0451<=2_d0xH0451<=2_0xH0453=4_d0xH0453=3"
+    },
+    {
+      "id": 5,
+      "title": "Ten Thousand",
+      "description": "Score 10,000 points.",
+      "points": 5,
+      "memaddr": "0xX621d=2902741470_0xX61de=3171177470_0xH0451<=2_d0xH0451<=2_0xJ044b>=65536_d0xJ044b<65536",
+      "score": 10000
+    },
+    {
+      "id": 6,
+      "title": "Twenty-Five Thousand",
+      "description": "Score 25,000 points.",
+      "points": 10,
+      "memaddr": "0xX621d=2902741470_0xX61de=3171177470_0xH0451<=2_d0xH0451<=2_0xJ044b>=151552_d0xJ044b<151552",
+      "score": 25000
+    },
+    {
+      "id": 7,
+      "title": "Fifty Thousand",
+      "description": "Score 50,000 points.",
+      "points": 25,
+      "memaddr": "0xX621d=2902741470_0xX61de=3171177470_0xH0451<=2_d0xH0451<=2_0xJ044b>=327680_d0xJ044b<327680",
+      "score": 50000
+    },
+    {
+      "id": 8,
+      "title": "A Hundred Thousand",
+      "description": "Score 100,000 points.",
+      "points": 50,
+      "memaddr": "0xX621d=2902741470_0xX61de=3171177470_0xH0451<=2_d0xH0451<=2_0xJ044b>=1048576_d0xJ044b<1048576",
+      "score": 100000
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Hiscores",
+      "description": "Your score when the game ends.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xX621d=2902741470_0xX61de=3171177470_0xH0451=2_d0xH0451!=2_0xJ044b=0_0xH0453=0::CAN:0xX621d=2902741470_0xX61de=3171177470_0xH0451=255_0xJ044b=0::SUB:d0xJ044b>0S0xX621d=2902741470_0xX61de=3171177470_0xH0451=255_d0xH0451=0S0xX621d=2902741470_0xX61de=3171177470_0xH0453=4_d0xH0453=3::VAL:b0xH044b*10000_b0xH044c*100_b0xH044d"
+    }
+  ],
+  "gameOver": "1=1S0xX621d=2902741470_0xX61de=3171177470_0xH0451=255_d0xH0451=0S0xX621d=2902741470_0xX61de=3171177470_0xH0453=4_d0xH0453=3"
+}

@@ -1,0 +1,174 @@
+{
+  "id": "elite",
+  "title": "Elite",
+  "url": "https://www.lemon64.com/game/elite",
+  "hashes": [
+    {
+      "hash": "ffce8e40f9a8a07a431119b0e94f6271",
+      "label": "OneLoad64 v5: Elite.crt"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "First Blood",
+      "description": "Destroy your first ship.",
+      "points": 5,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_d0xH04cb=0_d0x 04e0=0S0xH04cb>0S0x 04e0=1"
+    },
+    {
+      "id": 2,
+      "title": "Mostly Harmless",
+      "description": "Reach the combat rank of Mostly Harmless.",
+      "points": 5,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0x 04e0>=8_d0x 04e0<8_B:d0x 04e0_0x 04e0<=258"
+    },
+    {
+      "id": 3,
+      "title": "Poor",
+      "description": "Reach the combat rank of Poor.",
+      "points": 5,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0x 04e0>=16_d0x 04e0<16_B:d0x 04e0_0x 04e0<=258"
+    },
+    {
+      "id": 4,
+      "title": "Average",
+      "description": "Reach the combat rank of Average.",
+      "points": 10,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0x 04e0>=32_d0x 04e0<32_B:d0x 04e0_0x 04e0<=258"
+    },
+    {
+      "id": 5,
+      "title": "Above Average",
+      "description": "Reach the combat rank of Above Average.",
+      "points": 10,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0x 04e0>=64_d0x 04e0<64_B:d0x 04e0_0x 04e0<=258"
+    },
+    {
+      "id": 6,
+      "title": "Competent",
+      "description": "Reach the combat rank of Competent.",
+      "points": 25,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0x 04e0>=128_d0x 04e0<128_B:d0x 04e0_0x 04e0<=258"
+    },
+    {
+      "id": 7,
+      "title": "Dangerous",
+      "description": "Reach the combat rank of Dangerous.",
+      "points": 25,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0x 04e0>=512_d0x 04e0<512_B:d0x 04e0_0x 04e0<=258"
+    },
+    {
+      "id": 8,
+      "title": "Deadly",
+      "description": "Reach the combat rank of Deadly.",
+      "points": 50,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0x 04e0>=2560_d0x 04e0<2560_B:d0x 04e0_0x 04e0<=258"
+    },
+    {
+      "id": 9,
+      "title": "Elite",
+      "description": "Reach the combat rank of Elite.",
+      "points": 100,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0x 04e0>=6400_d0x 04e0<6400_B:d0x 04e0_0x 04e0<=258"
+    },
+    {
+      "id": 10,
+      "title": "Trader",
+      "description": "Have 1,000 credits.",
+      "points": 5,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0xG04a2>=10000_d0xG04a2<10000"
+    },
+    {
+      "id": 11,
+      "title": "Merchant",
+      "description": "Have 10,000 credits.",
+      "points": 10,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0xG04a2>=100000_d0xG04a2<100000"
+    },
+    {
+      "id": 12,
+      "title": "Tycoon",
+      "description": "Have 100,000 credits.",
+      "points": 25,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0xG04a2>=1000000_d0xG04a2<1000000"
+    },
+    {
+      "id": 13,
+      "title": "Beam Laser",
+      "description": "Fit a beam laser.",
+      "points": 10,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90S0xH4a9=143_d0xH4a9!=143S0xH4aa=143_d0xH4aa!=143S0xH4ab=143_d0xH4ab!=143S0xH4ac=143_d0xH4ac!=143"
+    },
+    {
+      "id": 14,
+      "title": "Military Laser",
+      "description": "Fit a military laser.",
+      "points": 25,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90S0xH4a9=151_d0xH4a9!=151S0xH4aa=151_d0xH4aa!=151S0xH4ab=151_d0xH4ab!=151S0xH4ac=151_d0xH4ac!=151"
+    },
+    {
+      "id": 15,
+      "title": "Docking Computer",
+      "description": "Fit a docking computer.",
+      "points": 10,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0xH4c5!=0_d0xH4c5=0"
+    },
+    {
+      "id": 16,
+      "title": "Galactic Hyperdrive",
+      "description": "Fit a galactic hyperdrive.",
+      "points": 10,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0xH4c6!=0_d0xH4c6=0"
+    },
+    {
+      "id": 17,
+      "title": "Another Galaxy",
+      "description": "Jump to another galaxy.",
+      "points": 25,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90Sd0xH04a8=0_0xH04a8=1Sd0xH04a8=1_0xH04a8=2Sd0xH04a8=2_0xH04a8=3Sd0xH04a8=3_0xH04a8=4Sd0xH04a8=4_0xH04a8=5Sd0xH04a8=5_0xH04a8=6Sd0xH04a8=6_0xH04a8=7Sd0xH04a8=7_0xH04a8=0"
+    },
+    {
+      "id": 18,
+      "title": "The Eighth Galaxy",
+      "description": "Reach the eighth galaxy.",
+      "points": 50,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0xH04a8=7_d0xH04a8=6"
+    },
+    {
+      "id": 19,
+      "title": "Constrictor",
+      "description": "Destroy the stolen Constrictor.",
+      "points": 50,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0xN0499=1_d0xN0499=0"
+    },
+    {
+      "id": 20,
+      "title": "Thargoid Plans",
+      "description": "Deliver the Thargoid plans.",
+      "points": 50,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0xO0499=1_0xP0499=1Sd0xO0499=0Sd0xP0499=0"
+    },
+    {
+      "id": 21,
+      "title": "Trouble with Trumbles",
+      "description": "Take a Trumble on board.",
+      "points": 10,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0x 04c9>0_d0x 04c9=0"
+    },
+    {
+      "id": 22,
+      "title": "Witchspace",
+      "description": "Mis-jump into witchspace.",
+      "points": 25,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0xH0482=255_d0xH0482=0"
+    },
+    {
+      "id": 23,
+      "title": "Fugitive",
+      "description": "Become a fugitive.",
+      "points": 10,
+      "memaddr": "0xX8481=1275366285_0xX73e8=2768545421_d0xX8481=1275366285_0xH0491>=65_0xH0491<=90_d0xH0491>=65_d0xH0491<=90_0xH04cd>=50_d0xH04cd<50"
+    }
+  ]
+}

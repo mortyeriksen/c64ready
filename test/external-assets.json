@@ -858,6 +858,158 @@
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
+  "eye-of-the-beholder-crt": {
+   "description": "Eye of the Beholder v1.00 (2022 C64 port), OneLoad64 v5 extras EasyFlash cartridge",
+   "env": "C64_EYE_OF_THE_BEHOLDER_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Extras/OtherCRTs/Eye of the Beholder - v1.00 [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "elite-crt": {
+   "description": "Elite (Firebird 1985), OneLoad64 v5 cartridge",
+   "env": "C64_ELITE_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Elite.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "prince-of-persia-crt": {
+   "description": "Prince of Persia v1.1 (2011 C64 port), OneLoad64 v5 extras EasyFlash cartridge",
+   "env": "C64_PRINCE_OF_PERSIA_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Extras/OtherCRTs/Prince of Persia (v1.1) [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "international-karate-side-1-crt": {
+   "description": "International Karate (System 3 1986) tape side 1, OneLoad64 v5 cartridge",
+   "env": "C64_INTERNATIONAL_KARATE_SIDE_1_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/International Karate (Side 1).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "international-karate-side-2-crt": {
+   "description": "International Karate (System 3 1986) tape side 2, OneLoad64 v5 cartridge",
+   "env": "C64_INTERNATIONAL_KARATE_SIDE_2_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/International Karate (Side 2).crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "international-karate-ultimate-crt": {
+   "description": "International Karate Ultimate Competition Edition (2018), OneLoad64 v5 extras EasyFlash cartridge",
+   "env": "C64_INTERNATIONAL_KARATE_ULTIMATE_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Extras/OtherCRTs/International Karate Ultimate [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "leaderboard-crt": {
+   "description": "Leaderboard Golf (Access 1986), OneLoad64 v5 cartridge",
+   "env": "C64_LEADERBOARD_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Leaderboard.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "hero-crt": {
+   "description": "H.E.R.O. (Activision 1984), OneLoad64 v5 cartridge",
+   "env": "C64_HERO_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/H.E.R.O.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "airborne-ranger-crt": {
+   "description": "Airborne Ranger +8 (MicroProse 1987), OneLoad64 v5 extras EasyFlash cartridge",
+   "env": "C64_AIRBORNE_RANGER_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Extras/OtherCRTs/Airborne Ranger [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "io-crt": {
+   "description": "IO - Into Oblivion (Firebird 1988), OneLoad64 v5 cartridge",
+   "env": "C64_IO_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/IO - Into Oblivion.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "last-ninja-3-crt": {
+   "description": "Last Ninja 3 (System 3 1991), OneLoad64 v5 extras EasyFlash cartridge",
+   "env": "C64_LAST_NINJA_3_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Extras/OtherCRTs/Last Ninja 3, The [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "bruce-lee-ii-crt": {
+   "description": "Bruce Lee II v1.9 (Bruno R. Marcos, C64 port by Jonas Hulten 2015), OneLoad64 v5 extras EasyFlash cartridge",
+   "env": "C64_BRUCE_LEE_II_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Extras/OtherCRTs/Bruce Lee II (v1.9) [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "ghostbusters-crt": {
+   "description": "Ghostbusters (Activision 1984), OneLoad64 v5 cartridge",
+   "env": "C64_GHOSTBUSTERS_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Ghostbusters.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "pitstop-ii-crt": {
+   "description": "Pitstop II (Epyx 1984), OneLoad64 v5 cartridge",
+   "env": "C64_PITSTOP_II_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Pitstop II.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "armalyte-crt": {
+   "description": "Armalyte (Thalamus 1988), OneLoad64 v5 MultiLoad64 EasyFlash cartridge",
+   "env": "C64_ARMALYTE_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/MultiLoad64/Armalyte (by $olo1870) [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "fist-ii-crt": {
+   "description": "Fist II - The Legend Continues (Melbourne House 1986), OneLoad64 v5 cartridge",
+   "env": "C64_FIST_II_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Fist II - The Legend Continues.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "neuromancer-crt": {
+   "description": "Neuromancer (Interplay 1988), OneLoad64 v5 extras EasyFlash cartridge",
+   "env": "C64_NEUROMANCER_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Extras/OtherCRTs/Neuromancer (Interplay 1988) [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "space-rogue-crt": {
+   "description": "Space Rogue (Origin 1989), OneLoad64 v5 extras EasyFlash cartridge",
+   "env": "C64_SPACE_ROGUE_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/Extras/OtherCRTs/Space Rogue [EasyFlash].crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "ultima-iv-crt": {
+   "description": "Ultima IV Remastered v2.2 (MagerValp and Genesis Project 2015), EasyFlash cartridge",
+   "env": "C64_ULTIMA_IV_CRT",
+   "paths": [
+    "~/projects/c64ready-workspace/assembly64/Ultima IV Remastered V2.2/U4Remastered-2.2/u4remastered.crt"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
   "paperboy-crunched-prg": {
    "description": "Paperboy (Elite 1986), the OneLoad64 v5 crunched PRG, MD5 3c5c6c6a901f174069fb2fe16dca3f45",
    "env": "C64_PAPERBOY_CRUNCHED_PRG",

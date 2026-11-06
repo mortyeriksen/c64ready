@@ -234,7 +234,22 @@ for (const [key, hash] of Object.entries(HASHES)) {
   ok('score tiers');
 }
 
-// 11. Player 2's turn counts for nothing: the set is player 1's.
+// 11. Each score tier's score is what the board posts for a game ending right at the tier: a
+//     post at or above it stays off the public wall until the tier is unlocked.
+{
+  const tiers = set.achievements.filter((a) => a.score !== undefined);
+  expect(tiers.map((a) => a.title).join() === ['Five Figures', 'Fifty Grand', 'Six Figures', "Doh's Nemesis"].join(), `the score tiers are the four points trophies (got ${tiers.map((a) => a.title).join()})`);
+  for (const a of tiers) {
+    activate(); menu(); start();
+    setScore(a.score); frames(3);
+    expect(has(a.title), `${a.title} unlocks at ${a.score}`);
+    gameOver();
+    expect(posted().at(-1) === a.score, `${a.title}: a game ending at the tier posts ${a.score} (got ${posted().join(',') || 'nothing'})`);
+  }
+  ok('score tiers match the board');
+}
+
+// 12. Player 2's turn counts for nothing: the set is player 1's.
 {
   activate(); menu(); start(); ram[PLAYER] = 1; frames(3);
   catchCapsule(11); setScore(60000); frames(3); clearRound();

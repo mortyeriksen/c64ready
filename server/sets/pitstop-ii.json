@@ -1,0 +1,134 @@
+{
+  "id": "pitstop-ii",
+  "title": "Pitstop II",
+  "url": "https://www.lemon64.com/game/pitstop-ii",
+  "hashes": [
+    {
+      "hash": "bf9e431c160e5268eb48b98d3fc4421a",
+      "label": "OneLoad64 v5 cartridge (Pitstop II)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Winner at Brands Hatch",
+      "description": "Beat the Epyx Robodriver at Brands Hatch, England.",
+      "points": 10,
+      "memaddr": "0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH61ee>=0xH0078_d0xH61ee<d0xH0078_0xH61ef<0xH0078_0xH039e=0_0xH039f=0"
+    },
+    {
+      "id": 2,
+      "title": "Winner at Hockenheim",
+      "description": "Beat the Epyx Robodriver at Hockenheim, Germany.",
+      "points": 10,
+      "memaddr": "0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH61ee>=0xH0078_d0xH61ee<d0xH0078_0xH61ef<0xH0078_0xH039e=0_0xH039f=1"
+    },
+    {
+      "id": 3,
+      "title": "Winner at Rouen-les-Essarts",
+      "description": "Beat the Epyx Robodriver at Rouen-les-Essarts, France.",
+      "points": 10,
+      "memaddr": "0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH61ee>=0xH0078_d0xH61ee<d0xH0078_0xH61ef<0xH0078_0xH039e=0_0xH039f=2"
+    },
+    {
+      "id": 4,
+      "title": "Winner at Sebring",
+      "description": "Beat the Epyx Robodriver at Sebring, Florida.",
+      "points": 10,
+      "memaddr": "0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH61ee>=0xH0078_d0xH61ee<d0xH0078_0xH61ef<0xH0078_0xH039e=0_0xH039f=3"
+    },
+    {
+      "id": 5,
+      "title": "Winner at Vallelunga",
+      "description": "Beat the Epyx Robodriver at Vallelunga, Rome.",
+      "points": 10,
+      "memaddr": "0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH61ee>=0xH0078_d0xH61ee<d0xH0078_0xH61ef<0xH0078_0xH039e=0_0xH039f=4"
+    },
+    {
+      "id": 6,
+      "title": "Winner at Watkins Glen",
+      "description": "Beat the Epyx Robodriver at Watkins Glen, New York.",
+      "points": 10,
+      "memaddr": "0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH61ee>=0xH0078_d0xH61ee<d0xH0078_0xH61ef<0xH0078_0xH039e=0_0xH039f=5"
+    },
+    {
+      "id": 7,
+      "title": "Semi-Pro",
+      "description": "Beat the Epyx Robodriver on SEMI-PRO.",
+      "points": 15,
+      "memaddr": "0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH61ee>=0xH0078_d0xH61ee<d0xH0078_0xH61ef<0xH0078_0xH039e=0_0xH03a1>=1"
+    },
+    {
+      "id": 8,
+      "title": "Pro",
+      "description": "Beat the Epyx Robodriver on PRO.",
+      "points": 25,
+      "memaddr": "0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH61ee>=0xH0078_d0xH61ee<d0xH0078_0xH61ef<0xH0078_0xH039e=0_0xH03a1=2"
+    },
+    {
+      "id": 9,
+      "title": "Endurance",
+      "description": "Beat the Epyx Robodriver in a nine-lap race.",
+      "points": 25,
+      "memaddr": "0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH61ee>=0xH0078_d0xH61ee<d0xH0078_0xH61ef<0xH0078_0xH039e=0_0xH03a0=2"
+    },
+    {
+      "id": 10,
+      "title": "Pro Endurance",
+      "description": "Beat the Epyx Robodriver in a nine-lap race on PRO.",
+      "points": 50,
+      "memaddr": "0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH61ee>=0xH0078_d0xH61ee<d0xH0078_0xH61ef<0xH0078_0xH039e=0_0xH03a0=2_0xH03a1=2"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Brands Hatch, 3 laps",
+      "description": "Fastest three-lap race at Brands Hatch, any difficulty.",
+      "format": "SECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH0078=3_0xH039f=0_0xH61ee=0_0xH61f2=0_0xH61f4=58_d0xH61f4=59::CAN:1=1S0xH0078!=3S0xX3c13!=3311529661::SUB:0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH61ee>=0xH0078_d0xH61ee<d0xH0078::VAL:A:0xH61f2*60_B:0xH61f4_M:59"
+    },
+    {
+      "id": 2,
+      "title": "Hockenheim, 3 laps",
+      "description": "Fastest three-lap race at Hockenheim, any difficulty.",
+      "format": "SECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH0078=3_0xH039f=1_0xH61ee=0_0xH61f2=0_0xH61f4=58_d0xH61f4=59::CAN:1=1S0xH0078!=3S0xX3c13!=3311529661::SUB:0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH61ee>=0xH0078_d0xH61ee<d0xH0078::VAL:A:0xH61f2*60_B:0xH61f4_M:59"
+    },
+    {
+      "id": 3,
+      "title": "Rouen-les-Essarts, 3 laps",
+      "description": "Fastest three-lap race at Rouen-les-Essarts, any difficulty.",
+      "format": "SECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH0078=3_0xH039f=2_0xH61ee=0_0xH61f2=0_0xH61f4=58_d0xH61f4=59::CAN:1=1S0xH0078!=3S0xX3c13!=3311529661::SUB:0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH61ee>=0xH0078_d0xH61ee<d0xH0078::VAL:A:0xH61f2*60_B:0xH61f4_M:59"
+    },
+    {
+      "id": 4,
+      "title": "Sebring, 3 laps",
+      "description": "Fastest three-lap race at Sebring, any difficulty.",
+      "format": "SECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH0078=3_0xH039f=3_0xH61ee=0_0xH61f2=0_0xH61f4=58_d0xH61f4=59::CAN:1=1S0xH0078!=3S0xX3c13!=3311529661::SUB:0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH61ee>=0xH0078_d0xH61ee<d0xH0078::VAL:A:0xH61f2*60_B:0xH61f4_M:59"
+    },
+    {
+      "id": 5,
+      "title": "Vallelunga, 3 laps",
+      "description": "Fastest three-lap race at Vallelunga, any difficulty.",
+      "format": "SECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH0078=3_0xH039f=4_0xH61ee=0_0xH61f2=0_0xH61f4=58_d0xH61f4=59::CAN:1=1S0xH0078!=3S0xX3c13!=3311529661::SUB:0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH61ee>=0xH0078_d0xH61ee<d0xH0078::VAL:A:0xH61f2*60_B:0xH61f4_M:59"
+    },
+    {
+      "id": 6,
+      "title": "Watkins Glen, 3 laps",
+      "description": "Fastest three-lap race at Watkins Glen, any difficulty.",
+      "format": "SECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH0078=3_0xH039f=5_0xH61ee=0_0xH61f2=0_0xH61f4=58_d0xH61f4=59::CAN:1=1S0xH0078!=3S0xX3c13!=3311529661::SUB:0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH61ee>=0xH0078_d0xH61ee<d0xH0078::VAL:A:0xH61f2*60_B:0xH61f4_M:59"
+    }
+  ],
+  "gameOver": "0xX3c13=3311529661_0xX3c0b=2841767678_0xH0078>=3_0xH0078<=9_d0xH0078=0xH0078_0xH039f<=5_0xH61ee>=0xH0078_d0xH61ee<d0xH0078"
+}

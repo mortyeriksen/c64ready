@@ -1,0 +1,175 @@
+{
+  "id": "airborne-ranger",
+  "title": "Airborne Ranger",
+  "url": "https://www.lemon64.com/game/airborne-ranger",
+  "hashes": [
+    {
+      "hash": "f0a023aa086382bd3382052220a000f7",
+      "label": "OneLoad64 v5 extras, EasyFlash cartridge (Airborne Ranger [EasyFlash].crt)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Destroy a Munitions Depot",
+      "description": "Achieve the goal of the mission \"Destroy a Munitions Depot\".",
+      "points": 10,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xH4347=0_d0xH4347=0_0xH4349=1_d0xH4349!=1"
+    },
+    {
+      "id": 2,
+      "title": "Steal a Code Book",
+      "description": "Achieve the goal of the mission \"Steal a Code Book\".",
+      "points": 10,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xH4347=1_d0xH4347=1_0xH4349=1_d0xH4349!=1"
+    },
+    {
+      "id": 3,
+      "title": "Disable Enemy Aircraft",
+      "description": "Achieve the goal of the mission \"Disable Enemy Aircraft\".",
+      "points": 10,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xH4347=2_d0xH4347=2_0xH4349=1_d0xH4349!=1"
+    },
+    {
+      "id": 4,
+      "title": "Capture an Enemy Officer",
+      "description": "Achieve the goal of the mission \"Capture an Enemy Officer\".",
+      "points": 10,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xH4347=3_d0xH4347=3_0xH4349=1_d0xH4349!=1"
+    },
+    {
+      "id": 5,
+      "title": "Cut a Pipeline",
+      "description": "Achieve the goal of the mission \"Cut a Pipeline\".",
+      "points": 10,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xH4347=4_d0xH4347=4_0xH4349=1_d0xH4349!=1"
+    },
+    {
+      "id": 6,
+      "title": "Knock Out Enemy Radar Array",
+      "description": "Achieve the goal of the mission \"Knock Out Enemy Radar Array\".",
+      "points": 10,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xH4347=5_d0xH4347=5_0xH4349=1_d0xH4349!=1"
+    },
+    {
+      "id": 7,
+      "title": "Disable SAM Site",
+      "description": "Achieve the goal of the mission \"Disable SAM Site\".",
+      "points": 10,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xH4347=6_d0xH4347=6_0xH4349=1_d0xH4349!=1"
+    },
+    {
+      "id": 8,
+      "title": "Liberate a P.O.W. Camp",
+      "description": "Achieve the goal of the mission \"Liberate a P.O.W. Camp\".",
+      "points": 10,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xH4347=7_d0xH4347=7_0xH4349=1_d0xH4349!=1"
+    },
+    {
+      "id": 9,
+      "title": "Photograph an Experimental Aircraft",
+      "description": "Achieve the goal of the mission \"Photograph an Experimental Aircraft\".",
+      "points": 10,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xH4347=8_d0xH4347=8_0xH4349=1_d0xH4349!=1"
+    },
+    {
+      "id": 10,
+      "title": "Free the Hostages",
+      "description": "Achieve the goal of the mission \"Free the Hostages\".",
+      "points": 10,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xH4347=9_d0xH4347=9_0xH4349=1_d0xH4349!=1"
+    },
+    {
+      "id": 11,
+      "title": "Create a Diversion",
+      "description": "Achieve the goal of the mission \"Create a Diversion\".",
+      "points": 10,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xH4347=10_d0xH4347=10_0xH4349=1_d0xH4349!=1"
+    },
+    {
+      "id": 12,
+      "title": "Delayed Sabotage",
+      "description": "Achieve the goal of the mission \"Delayed Sabotage\".",
+      "points": 10,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xH4347=11_d0xH4347=11_0xH4349=1_d0xH4349!=1"
+    },
+    {
+      "id": 13,
+      "title": "Sergeant",
+      "description": "Promote a veteran Ranger to Sergeant.",
+      "points": 10,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xX4f3b=4030942637_d0xX4f3b=4030942637_0xH4340<6_d0xH4340=0xH4340_I:0xH4340*89_0xH99b1<=11_I:0xH4340*89_d0xH99b1<=11_I:0xH4340*89_0xH99b2<=63_I:0xH4340*89_d0xH99b2<=63_I:0xH4340*89_0xH9968=32_I:0xH4340*89_d0xH9968=32_I:0xH4340*89_0xH99b1=2_I:0xH4340*89_d0xH99b1=1"
+    },
+    {
+      "id": 14,
+      "title": "Sergeant Major",
+      "description": "Promote a veteran Ranger to Sergeant Major.",
+      "points": 25,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xX4f3b=4030942637_d0xX4f3b=4030942637_0xH4340<6_d0xH4340=0xH4340_I:0xH4340*89_0xH99b1<=11_I:0xH4340*89_d0xH99b1<=11_I:0xH4340*89_0xH99b2<=63_I:0xH4340*89_d0xH99b2<=63_I:0xH4340*89_0xH9968=32_I:0xH4340*89_d0xH9968=32_I:0xH4340*89_0xH99b1=5_I:0xH4340*89_d0xH99b1=4"
+    },
+    {
+      "id": 15,
+      "title": "Captain",
+      "description": "Promote a veteran Ranger to Captain.",
+      "points": 25,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xX4f3b=4030942637_d0xX4f3b=4030942637_0xH4340<6_d0xH4340=0xH4340_I:0xH4340*89_0xH99b1<=11_I:0xH4340*89_d0xH99b1<=11_I:0xH4340*89_0xH99b2<=63_I:0xH4340*89_d0xH99b2<=63_I:0xH4340*89_0xH9968=32_I:0xH4340*89_d0xH9968=32_I:0xH4340*89_0xH99b1=8_I:0xH4340*89_d0xH99b1=7"
+    },
+    {
+      "id": 16,
+      "title": "Lieutenant Colonel",
+      "description": "Promote a veteran Ranger to Lieutenant Colonel.",
+      "points": 50,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xX4f3b=4030942637_d0xX4f3b=4030942637_0xH4340<6_d0xH4340=0xH4340_I:0xH4340*89_0xH99b1<=11_I:0xH4340*89_d0xH99b1<=11_I:0xH4340*89_0xH99b2<=63_I:0xH4340*89_d0xH99b2<=63_I:0xH4340*89_0xH9968=32_I:0xH4340*89_d0xH9968=32_I:0xH4340*89_0xH99b1=10_I:0xH4340*89_d0xH99b1=9"
+    },
+    {
+      "id": 17,
+      "title": "Colonel",
+      "description": "Promote a veteran Ranger to Colonel, on a campaign.",
+      "points": 50,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xX4f3b=4030942637_d0xX4f3b=4030942637_0xH4340<6_d0xH4340=0xH4340_I:0xH4340*89_0xH99b1<=11_I:0xH4340*89_d0xH99b1<=11_I:0xH4340*89_0xH99b2<=63_I:0xH4340*89_d0xH99b2<=63_I:0xH4340*89_0xH9968=32_I:0xH4340*89_d0xH9968=32_I:0xH4340*89_0xH99b1=11_I:0xH4340*89_d0xH99b1=10"
+    },
+    {
+      "id": 18,
+      "title": "Bronze Star",
+      "description": "Award a veteran Ranger the Bronze Star.",
+      "points": 10,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xX4f3b=4030942637_d0xX4f3b=4030942637_0xH4340<6_d0xH4340=0xH4340_I:0xH4340*89_0xH99b1<=11_I:0xH4340*89_d0xH99b1<=11_I:0xH4340*89_0xH99b2<=63_I:0xH4340*89_d0xH99b2<=63_I:0xH4340*89_0xH9968=32_I:0xH4340*89_d0xH9968=32_I:0xH4340*89_0xO99b2=1_I:0xH4340*89_d0xO99b2=0"
+    },
+    {
+      "id": 19,
+      "title": "Silver Star",
+      "description": "Award a veteran Ranger the Silver Star.",
+      "points": 25,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xX4f3b=4030942637_d0xX4f3b=4030942637_0xH4340<6_d0xH4340=0xH4340_I:0xH4340*89_0xH99b1<=11_I:0xH4340*89_d0xH99b1<=11_I:0xH4340*89_0xH99b2<=63_I:0xH4340*89_d0xH99b2<=63_I:0xH4340*89_0xH9968=32_I:0xH4340*89_d0xH9968=32_I:0xH4340*89_0xP99b2=1_I:0xH4340*89_d0xP99b2=0"
+    },
+    {
+      "id": 20,
+      "title": "Distinguished Service Cross",
+      "description": "Award a veteran Ranger the Distinguished Service Cross.",
+      "points": 50,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xX4f3b=4030942637_d0xX4f3b=4030942637_0xH4340<6_d0xH4340=0xH4340_I:0xH4340*89_0xH99b1<=11_I:0xH4340*89_d0xH99b1<=11_I:0xH4340*89_0xH99b2<=63_I:0xH4340*89_d0xH99b2<=63_I:0xH4340*89_0xH9968=32_I:0xH4340*89_d0xH9968=32_I:0xH4340*89_0xQ99b2=1_I:0xH4340*89_d0xQ99b2=0"
+    },
+    {
+      "id": 21,
+      "title": "Medal of Honor",
+      "description": "Award a veteran Ranger the Medal of Honor, on a campaign.",
+      "points": 100,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xX4f3b=4030942637_d0xX4f3b=4030942637_0xH4340<6_d0xH4340=0xH4340_I:0xH4340*89_0xH99b1<=11_I:0xH4340*89_d0xH99b1<=11_I:0xH4340*89_0xH99b2<=63_I:0xH4340*89_d0xH99b2<=63_I:0xH4340*89_0xH9968=32_I:0xH4340*89_d0xH9968=32_I:0xH4340*89_0xR99b2=1_I:0xH4340*89_d0xR99b2=0"
+    },
+    {
+      "id": 22,
+      "title": "Campaign Complete",
+      "description": "See a veteran Ranger through every mission of a campaign.",
+      "points": 50,
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341_d0xX7b38=93126825_0xX4f3b=4030942637_d0xX4f3b=4030942637_0xH4340<6_d0xH4340=0xH4340_I:0xH4340*89_0xH99b1<=11_I:0xH4340*89_d0xH99b1<=11_I:0xH4340*89_0xH99b2<=63_I:0xH4340*89_d0xH99b2<=63_I:0xH4340*89_0xH9968=32_I:0xH4340*89_d0xH9968=32_I:0xH4340*89_0xH99b3=0_I:0xH4340*89_d0xH99b3=1_0xH4349=1"
+    }
+  ],
+  "notices": [
+    {
+      "id": 1,
+      "title": "Trainer on",
+      "text": "Nothing counts until you play without the trainer menu's cheats.",
+      "memaddr": "0xX7b38=93126825_0xX7b3a=2373715341S0xX2dc5=1278093229S0xX2ec8=2838375085S0xXc78=2838375341S0xX8de=3459133357S0xX3c23=1613554861S0xH4637<=1_0xH4638<=1_0xH4639<=1_0xH463a<=1_0xH463b<=1_0xH463c<=1_0xH463d<=1_0xH463e<=1_A:0xH4637_A:0xH4638_A:0xH4639_A:0xH463a_A:0xH463b_A:0xH463c_A:0xH463d_0xH463e>=1"
+    }
+  ]
+}

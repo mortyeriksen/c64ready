@@ -1,0 +1,90 @@
+{
+  "id": "space-rogue",
+  "title": "Space Rogue",
+  "url": "https://www.lemon64.com/game/space-rogue",
+  "hashes": [
+    {
+      "hash": "c785d9663234fc9d6f16f78d48056b07",
+      "label": "OneLoad64 v5 extras, EasyFlash cartridge (Space Rogue [EasyFlash].crt)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Docking Privileges",
+      "description": "Dock at a starbase.",
+      "points": 5,
+      "memaddr": "0xX1870=10655816_0xX1874=1746440992_0xH0054<=4_d0xH0054<=4_0xH072a<=5_0xH0054=4_d0xH0054!=4_0xH062e=4"
+    },
+    {
+      "id": 2,
+      "title": "Hiathra",
+      "description": "Dock at Hiathra Starbase, the nearest to where the game begins.",
+      "points": 5,
+      "memaddr": "0xX1870=10655816_0xX1874=1746440992_0xH0054<=4_d0xH0054<=4_0xH072a<=5_0xH0054=4_d0xH0054!=4_0xH062e=4_0xH071e=13_0xH071f=19"
+    },
+    {
+      "id": 3,
+      "title": "Five Thousand Credits",
+      "description": "Have 5,000 credits.",
+      "points": 10,
+      "memaddr": "0xX1870=10655816_0xX1874=1746440992_0xH0054<=4_d0xH0054<=4_0xH072a<=5_0x 0728>=5000_d0x 0728<5000"
+    },
+    {
+      "id": 4,
+      "title": "Twenty Thousand Credits",
+      "description": "Have 20,000 credits.",
+      "points": 25,
+      "memaddr": "0xX1870=10655816_0xX1874=1746440992_0xH0054<=4_d0xH0054<=4_0xH072a<=5_0x 0728>=20000_d0x 0728<20000"
+    },
+    {
+      "id": 5,
+      "title": "Fifty Thousand Credits",
+      "description": "Have 50,000 credits.",
+      "points": 50,
+      "memaddr": "0xX1870=10655816_0xX1874=1746440992_0xH0054<=4_d0xH0054<=4_0xH072a<=5_0x 0728>=50000_d0x 0728<50000"
+    },
+    {
+      "id": 6,
+      "title": "Pesky",
+      "description": "Earn the repute of pesky.",
+      "points": 5,
+      "memaddr": "0xX1870=10655816_0xX1874=1746440992_0xH0054<=4_d0xH0054<=4_0xH072a<=5_0xH072a=1_d0xH072a=0"
+    },
+    {
+      "id": 7,
+      "title": "Fierce",
+      "description": "Earn the repute of fierce.",
+      "points": 10,
+      "memaddr": "0xX1870=10655816_0xX1874=1746440992_0xH0054<=4_d0xH0054<=4_0xH072a<=5_0xH072a=2_d0xH072a=1"
+    },
+    {
+      "id": 8,
+      "title": "Deadly",
+      "description": "Earn the repute of deadly.",
+      "points": 25,
+      "memaddr": "0xX1870=10655816_0xX1874=1746440992_0xH0054<=4_d0xH0054<=4_0xH072a<=5_0xH072a=3_d0xH072a=2"
+    },
+    {
+      "id": 9,
+      "title": "Ace",
+      "description": "Earn the repute of ace.",
+      "points": 25,
+      "memaddr": "0xX1870=10655816_0xX1874=1746440992_0xH0054<=4_d0xH0054<=4_0xH072a<=5_0xH072a=4_d0xH072a=3"
+    },
+    {
+      "id": 10,
+      "title": "Invincible",
+      "description": "Earn the repute of invincible.",
+      "points": 50,
+      "memaddr": "0xX1870=10655816_0xX1874=1746440992_0xH0054<=4_d0xH0054<=4_0xH072a<=5_0xH072a=5_d0xH072a=4"
+    },
+    {
+      "id": 11,
+      "title": "Ja-Karn",
+      "description": "Take the Manchi egg home.",
+      "points": 50,
+      "memaddr": "0xX7094=3372686765_d0xX7094=3372686765_0xX7098=1275318281_d0xX7098=1275318281_0xH071d=9_d0xH071d=9_0xH17e9=220_0xH17eb=7_d0xH17e9!=220"
+    }
+  ]
+}

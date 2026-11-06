@@ -1,0 +1,104 @@
+{
+  "id": "fist-ii",
+  "title": "Fist II: The Legend Continues",
+  "url": "https://www.lemon64.com/game/fist-2",
+  "hashes": [
+    {
+      "hash": "8a5cac13db064c573ea8f554c4382cd5",
+      "label": "OneLoad64 v5 cartridge (Fist II - The Legend Continues)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "First Victory",
+      "description": "Defeat an opponent.",
+      "points": 5,
+      "memaddr": "0xX3527=2902756590_0xX2ccd=2838311662_d0xX3527=2902756590_0xH2d32<=9_0xH048c>d0xH048c"
+    },
+    {
+      "id": 2,
+      "title": "Seasoned Fighter",
+      "description": "Defeat 10 opponents in one game.",
+      "points": 10,
+      "memaddr": "N:0xX3527=2902756590_R:0xH0451=1_N:0xX3527=2902756590_0xH048c>d0xH048c.10."
+    },
+    {
+      "id": 3,
+      "title": "Fist Master",
+      "description": "Defeat 30 opponents in one game.",
+      "points": 25,
+      "memaddr": "N:0xX3527=2902756590_R:0xH0451=1_N:0xX3527=2902756590_0xH048c>d0xH048c.30."
+    },
+    {
+      "id": 4,
+      "title": "Marked by the Warlord",
+      "description": "Defeat 30 opponents without meditating, and the Warlord sends his assassins.",
+      "points": 25,
+      "memaddr": "0xX3527=2902756590_0xX2ccd=2838311662_d0xX3527=2902756590_0xH2d32<=9_0xH048c>=30_d0xH048c<30"
+    },
+    {
+      "id": 5,
+      "title": "Sanctuary",
+      "description": "Find a temple and meditate.",
+      "points": 5,
+      "memaddr": "0xX3527=2902756590_0xX2ccd=2838311662_d0xX3527=2902756590_0xH2d32<=9_0xH046a=6_d0xH046a!=6"
+    },
+    {
+      "id": 6,
+      "title": "The First Trigram",
+      "description": "Learn the secret of a scroll.",
+      "points": 10,
+      "memaddr": "0xX3527=2902756590_0xX2ccd=2838311662_d0xX3527=2902756590_0xH2d32<=9_A:0xT0405_A:0xT0406_A:0xT0407_A:0xT0408_A:0xT0409_A:0xT040a_A:0xT040b_0xT040c>=1"
+    },
+    {
+      "id": 7,
+      "title": "Four Trigrams",
+      "description": "Learn the secrets of four scrolls.",
+      "points": 25,
+      "memaddr": "0xX3527=2902756590_0xX2ccd=2838311662_d0xX3527=2902756590_0xH2d32<=9_A:0xT0405_A:0xT0406_A:0xT0407_A:0xT0408_A:0xT0409_A:0xT040a_A:0xT040b_0xT040c>=4"
+    },
+    {
+      "id": 8,
+      "title": "The Eight Trigrams",
+      "description": "Learn the secrets of all eight scrolls.",
+      "points": 50,
+      "memaddr": "0xX3527=2902756590_0xX2ccd=2838311662_d0xX3527=2902756590_0xH2d32<=9_A:0xT0405_A:0xT0406_A:0xT0407_A:0xT0408_A:0xT0409_A:0xT040a_A:0xT040b_0xT040c>=8"
+    },
+    {
+      "id": 9,
+      "title": "5,000",
+      "description": "Score 5,000 points.",
+      "points": 5,
+      "memaddr": "0xX3527=2902756590_0xX2ccd=2838311662_d0xX3527=2902756590_0xH2d32<=9_0xHcc06>=1_0xHcc06<=10_0xHcc05<=10_0xHcc04<=10_0xHcc03<=10_0xHcc02<=10_0xHcc01<=10S0xJcc01>6S0xJcc01=6_0xJcc04>=65793",
+      "score": 5000
+    },
+    {
+      "id": 10,
+      "title": "10,000",
+      "description": "Score 10,000 points.",
+      "points": 10,
+      "memaddr": "0xX3527=2902756590_0xX2ccd=2838311662_d0xX3527=2902756590_0xH2d32<=9_0xHcc06>=1_0xHcc06<=10_0xHcc05<=10_0xHcc04<=10_0xHcc03<=10_0xHcc02<=10_0xHcc01<=10S0xJcc01>513S0xJcc01=513_0xJcc04>=65793",
+      "score": 10000
+    },
+    {
+      "id": 11,
+      "title": "25,000",
+      "description": "Score 25,000 points.",
+      "points": 25,
+      "memaddr": "0xX3527=2902756590_0xX2ccd=2838311662_d0xX3527=2902756590_0xH2d32<=9_0xHcc06>=1_0xHcc06<=10_0xHcc05<=10_0xHcc04<=10_0xHcc03<=10_0xHcc02<=10_0xHcc01<=10S0xJcc01>774S0xJcc01=774_0xJcc04>=65793",
+      "score": 25000
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Hiscores",
+      "description": "Your score when your last life is lost.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xX3527=2902756590_0xX2ccd=2838311662_0xH0451=0_0xH2d32=1_0xJcc01=0_0xJcc04=1S0xH2d32=1_d0xH2d32=0Sd0xH0451=1Sd0xJcc04!=1Sd0xJcc01!=0::CAN:0xX3527=2902756590_0xX2ccd=2838311662_0xH0451=1_d0xH0451!=1_d0xJcc01=0_d0xJcc04=1::SUB:0xX3527=2902756590_0xX2ccd=2838311662_0xH0451=1_d0xH0451!=1_d0xHcc06>=1_d0xHcc06<=10_d0xHcc05<=10_d0xHcc04<=10_d0xHcc03<=10_d0xHcc02<=10_d0xHcc01<=10Sd0xJcc01>0Sd0xJcc04>1::VAL:Q:d0xHcc06!=0_Q:d0xHcc05=0_B:1_M:d0xHcc06$Q:d0xHcc05!=0_Q:d0xHcc04=0_A:d0xHcc05*10_B:11_M:d0xHcc06$Q:d0xHcc04!=0_Q:d0xHcc03=0_A:d0xHcc04*100_A:d0xHcc05*10_B:111_M:d0xHcc06$Q:d0xHcc03!=0_Q:d0xHcc02=0_A:d0xHcc03*1000_A:d0xHcc04*100_A:d0xHcc05*10_B:1111_M:d0xHcc06$Q:d0xHcc02!=0_Q:d0xHcc01=0_A:d0xHcc02*10000_A:d0xHcc03*1000_A:d0xHcc04*100_A:d0xHcc05*10_B:11111_M:d0xHcc06$Q:d0xHcc01!=0_A:d0xHcc01*100000_A:d0xHcc02*10000_A:d0xHcc03*1000_A:d0xHcc04*100_A:d0xHcc05*10_B:111111_M:d0xHcc06"
+    }
+  ],
+  "gameOver": "0xX3527=2902756590_0xX2ccd=2838311662_0xH0451=1_d0xH0451!=1"
+}

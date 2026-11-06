@@ -1,0 +1,88 @@
+{
+  "id": "bruce-lee-ii",
+  "title": "Bruce Lee II",
+  "url": "https://www.c64-wiki.com/wiki/Bruce_Lee_II",
+  "hashes": [
+    {
+      "hash": "2ac6de2e6de337935154a1f0557b49fb",
+      "label": "OneLoad64 v5 extras, EasyFlash cartridge (Bruce Lee II (v1.9) [EasyFlash].crt)"
+    }
+  ],
+  "notices": [
+    {
+      "id": 1,
+      "title": "Trainer on",
+      "text": "Nothing counts until you play with INFINITE LIVES set to NO.",
+      "memaddr": "0xX3682=3493238445_0xX5d01=3372670125_0xH06dc=0_0xH3696!=0"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "First Lantern",
+      "description": "Take your first lantern.",
+      "points": 5,
+      "memaddr": "0xX3682=3493238445_0xX5d01=3372670125_d0xX3682=3493238445_0xH06dc=0_d0xH06dc=0_0xH0419<=35_0xH041c<=153_A:0xK0620_A:0xK0621_A:0xK0622_A:0xK0623_A:0xK0624_A:0xK0625_A:0xK0626_A:0xK0627_A:0xK0628_A:0xK0629_A:0xK062a_A:0xK062b_A:0xK062c_A:0xK062d_A:0xK062e_A:0xK062f_A:0xK0630_A:0xK0631_A:0xK0632_A:0xK0633_A:0xK0634_A:0xK0635_A:0xK0636_A:0xK0637_A:0xK0638_A:0xK0639_A:0xK063a_A:0xK063b_A:0xK063c_A:0xK063d_A:0xK063e_0xK063f<=240"
+    },
+    {
+      "id": 2,
+      "title": "Fifty Lanterns",
+      "description": "Take 50 lanterns in one game.",
+      "points": 10,
+      "memaddr": "0xX3682=3493238445_0xX5d01=3372670125_d0xX3682=3493238445_0xH06dc=0_d0xH06dc=0_0xH0419<=35_0xH041c<=153_A:0xK0620_A:0xK0621_A:0xK0622_A:0xK0623_A:0xK0624_A:0xK0625_A:0xK0626_A:0xK0627_A:0xK0628_A:0xK0629_A:0xK062a_A:0xK062b_A:0xK062c_A:0xK062d_A:0xK062e_A:0xK062f_A:0xK0630_A:0xK0631_A:0xK0632_A:0xK0633_A:0xK0634_A:0xK0635_A:0xK0636_A:0xK0637_A:0xK0638_A:0xK0639_A:0xK063a_A:0xK063b_A:0xK063c_A:0xK063d_A:0xK063e_0xK063f<=191"
+    },
+    {
+      "id": 3,
+      "title": "A Hundred Lanterns",
+      "description": "Take 100 lanterns in one game.",
+      "points": 25,
+      "memaddr": "0xX3682=3493238445_0xX5d01=3372670125_d0xX3682=3493238445_0xH06dc=0_d0xH06dc=0_0xH0419<=35_0xH041c<=153_A:0xK0620_A:0xK0621_A:0xK0622_A:0xK0623_A:0xK0624_A:0xK0625_A:0xK0626_A:0xK0627_A:0xK0628_A:0xK0629_A:0xK062a_A:0xK062b_A:0xK062c_A:0xK062d_A:0xK062e_A:0xK062f_A:0xK0630_A:0xK0631_A:0xK0632_A:0xK0633_A:0xK0634_A:0xK0635_A:0xK0636_A:0xK0637_A:0xK0638_A:0xK0639_A:0xK063a_A:0xK063b_A:0xK063c_A:0xK063d_A:0xK063e_0xK063f<=141"
+    },
+    {
+      "id": 4,
+      "title": "Extra Fall",
+      "description": "Find an extra fall.",
+      "points": 5,
+      "memaddr": "0xX3682=3493238445_0xX5d01=3372670125_d0xX3682=3493238445_0xH06dc=0_d0xH06dc=0_0xH0419<=35_0xH041c<=153_0xH041c>d0xH041c"
+    },
+    {
+      "id": 5,
+      "title": "The Deep of His Palace",
+      "description": "Reach the room where Tao-Bao keeps his prisoner.",
+      "points": 25,
+      "memaddr": "0xX3682=3493238445_0xX5d01=3372670125_d0xX3682=3493238445_0xH06dc=0_d0xH06dc=0_0xH0419<=35_0xH041c<=153_0xH0419=35_d0xH0419!=35"
+    },
+    {
+      "id": 6,
+      "title": "Return of the Dragon",
+      "description": "Defeat Tao-Bao and free Bruce Lee's sister.",
+      "points": 50,
+      "memaddr": "0xX3682=3493238445_0xX5d01=3372670125_0xH06dc=3_d0xH06dc=0"
+    },
+    {
+      "id": 7,
+      "title": "The Original Dragon",
+      "description": "Win on the ORIGINAL difficulty.",
+      "points": 25,
+      "memaddr": "0xX3682=3493238445_0xX5d01=3372670125_0xH06dc=3_d0xH06dc=0_0xH3697=0"
+    },
+    {
+      "id": 8,
+      "title": "Untouchable",
+      "description": "Win without losing a fall.",
+      "points": 50,
+      "memaddr": "N:0xX3682=3493238445_N:0xH06dc=0_N:d0xH06dc!=0_N:d0xH06dc!=2_0xH0419=6.1._R:0xH041c<d0xH041c_0xX3682=3493238445_0xX5d01=3372670125_0xH06dc=3_d0xH06dc=0"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Speedrun",
+      "description": "Fastest from a new game to defeating Tao-Bao.",
+      "format": "MILLISECS",
+      "lowerIsBetter": true,
+      "definition": "STA:0xX3682=3493238445_0xX5d01=3372670125_0xH06dc=0_d0xH06dc!=0_d0xH06dc!=2_0xH0419=6::CAN:0xX3682=3493238445_0xX5d01=3372670125_0xH06dc=1::SUB:0xX3682=3493238445_0xX5d01=3372670125_0xH06dc=3_d0xH06dc=0::VAL:C:1=1_M:1=1"
+    }
+  ],
+  "gameOver": "1=1S0xX3682=3493238445_0xX5d01=3372670125_0xH06dc=1_d0xH06dc=0S0xX3682=3493238445_0xX5d01=3372670125_0xH06dc=3_d0xH06dc=0"
+}

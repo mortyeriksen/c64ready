@@ -141,28 +141,32 @@
       "title": "Five Figures",
       "description": "Score 10,000 points.",
       "points": 5,
-      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_A:0xLC187*1000000_A:0xLC188*100000_A:0xLC189*10000_A:0xLC18A*1000_A:0xLC18B*100_A:0xLC18C*10_0xLC18D>=10000"
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_A:0xLC187*1000000_A:0xLC188*100000_A:0xLC189*10000_A:0xLC18A*1000_A:0xLC18B*100_A:0xLC18C*10_0xLC18D>=10000",
+      "score": 10000
     },
     {
       "id": 19,
       "title": "Fifty Grand",
       "description": "Score 50,000 points.",
       "points": 10,
-      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_A:0xLC187*1000000_A:0xLC188*100000_A:0xLC189*10000_A:0xLC18A*1000_A:0xLC18B*100_A:0xLC18C*10_0xLC18D>=50000"
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_A:0xLC187*1000000_A:0xLC188*100000_A:0xLC189*10000_A:0xLC18A*1000_A:0xLC18B*100_A:0xLC18C*10_0xLC18D>=50000",
+      "score": 50000
     },
     {
       "id": 20,
       "title": "Six Figures",
       "description": "Score 100,000 points.",
       "points": 25,
-      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_A:0xLC187*1000000_A:0xLC188*100000_A:0xLC189*10000_A:0xLC18A*1000_A:0xLC18B*100_A:0xLC18C*10_0xLC18D>=100000"
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_A:0xLC187*1000000_A:0xLC188*100000_A:0xLC189*10000_A:0xLC18A*1000_A:0xLC18B*100_A:0xLC18C*10_0xLC18D>=100000",
+      "score": 100000
     },
     {
       "id": 21,
       "title": "Arkanoid Ace",
       "description": "Score 250,000 points.",
       "points": 50,
-      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_A:0xLC187*1000000_A:0xLC188*100000_A:0xLC189*10000_A:0xLC18A*1000_A:0xLC18B*100_A:0xLC18C*10_0xLC18D>=250000"
+      "memaddr": "0xH0936<=9_0xH0938=0_0xHC18D>=48_0xHC18D<=57_A:0xLC187*1000000_A:0xLC188*100000_A:0xLC189*10000_A:0xLC18A*1000_A:0xLC18B*100_A:0xLC18C*10_0xLC18D>=250000",
+      "score": 250000
     }
   ],
   "gameOver": "0xH0936=153_d0xH0936!=153",

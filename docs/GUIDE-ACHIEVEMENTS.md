@@ -135,14 +135,17 @@ every board.
 | --- | --- | --- | --- |
 | 1943 | 14 | yes | OneLoad64 v5: `1943 - The Battle of Midway (J1).crt` |
 | Action Biker | 41 | yes | OneLoad64 v5: `Action Biker.crt` |
+| Airborne Ranger | 22 |  | OneLoad64 v5 extras: `Airborne Ranger [EasyFlash].crt`, with every trainer cheat set to NO |
 | Arkanoid | 21 | yes | OneLoad64 v5: `Arkanoid (J1).crt`, or its crunched and uncrunched programs |
 | Arkanoid: Revenge of Doh | 19 | yes | OneLoad64 v5: `Arkanoid - Revenge of Doh (J1).crt`, or its crunched and uncrunched programs |
+| Armalyte | 14 | yes | OneLoad64 v5 MultiLoad64: `Armalyte (by $olo1870) [EasyFlash].crt` |
 | Barbarian: The Ultimate Warrior | 10 | yes | OneLoad64 v5: both `Barbarian - The Ultimate Warrior (Side 1)` and `(Side 2)` cartridges, or their crunched and uncrunched programs |
 | Beach-Head | 10 | yes | OneLoad64 v5: `Beach-Head.crt` |
 | Blue Max | 16 | yes | OneLoad64 v5: `Blue Max.crt` |
 | Bomb Jack | 19 | yes | OneLoad64 v5: `Bomb Jack.crt` |
 | Boulder Dash | 11 | yes | OneLoad64 v5: `Boulder Dash (J1).crt` |
 | Bruce Lee | 10 | yes | OneLoad64 v5: `Bruce Lee (J1).crt` |
+| Bruce Lee II | 8 | the fastest win | OneLoad64 v5 extras: `Bruce Lee II (v1.9) [EasyFlash].crt`, with INFINITE LIVES set to NO |
 | Bubble Bobble | 14 | yes | OneLoad64 v5: `Bubble Bobble.crt` |
 | Buggy Boy | 12 | yes | OneLoad64 v5: `Buggy Boy.crt` |
 | Chuckie Egg | | yes | OneLoad64 v5: `Chuckie Egg.crt` |
@@ -151,28 +154,42 @@ every board.
 | Cybernoid | 13 | yes | OneLoad64 v5: `Cybernoid.crt` |
 | Cybernoid II | 10 | yes | OneLoad64 v5: `Cybernoid II.crt` |
 | Defender of the Crown | 12 |  | OneLoad64 v5 extras: `Defender of the Crown [EasyFlash].crt` |
+| Elite | 23 |  | OneLoad64 v5: `Elite.crt` |
+| Eye of the Beholder | 13 |  | OneLoad64 v5 extras: `Eye of the Beholder - v1.00 [EasyFlash].crt` |
+| Fist II: The Legend Continues | 11 | yes | OneLoad64 v5: `Fist II - The Legend Continues.crt` |
 | Forbidden Forest | 16 | yes | OneLoad64 v5: `Forbidden Forest.crt`, or c64cade's cartridge |
 | Galaga (Arlasoft) | | yes | OneLoad64 v5: `Galaga (Arlasoft - 2021).crt`, or c64cade's `galagaV106_FH.d64` |
+| Ghostbusters | 11 | the most profit | OneLoad64 v5: `Ghostbusters.crt` |
 | Ghosts 'n Goblins | 15 | yes | OneLoad64 v5: `Ghosts'n Goblins.crt` |
 | Ghosts 'n Goblins Arcade | 10 | yes | OneLoad64 v5 extras: `Ghosts'n Goblins Arcade [EasyFlash].crt`, or `GHOSTNGA.D64` |
 | Great Giana Sisters | 10 | yes | OneLoad64 v5: `Great Giana Sisters, The.crt` |
 | Green Beret | 14 | yes | OneLoad64 v5: `Green Beret.crt`, or its crunched and uncrunched programs |
 | Gribbly's Day Out | | yes | OneLoad64 v5: `Gribbly's Day Out.crt` |
+| H.E.R.O. | 8 |  | OneLoad64 v5: `H.E.R.O.crt` |
 | IK+ | 13 | yes | OneLoad64 v5: `IK+.crt`, or the disk `IKplus.d64` |
 | Impossible Mission | 10 | yes | OneLoad64 v5: `Impossible Mission.crt` |
+| International Karate | 11 | yes | OneLoad64 v5: `International Karate (Side 1).crt` or `International Karate (Side 2).crt` |
+| International Karate Ultimate | 11 | yes | OneLoad64 v5 extras: `International Karate Ultimate [EasyFlash].crt`, with no trainer |
+| IO | 8 | yes | OneLoad64 v5: `IO - Into Oblivion.crt` |
+| Last Ninja 3 | 17 | yes, and the fastest game | OneLoad64 v5 extras: `Last Ninja 3, The [EasyFlash].crt`, answering N to unlimited lives |
+| Leaderboard Golf | 9 | each course, professional | OneLoad64 v5: `Leaderboard.crt` |
 | Maniac Mansion | 22 | fastest rescue | OneLoad64 v5 extras: `Maniac Mansion & Zak McKracken [EasyFlash].crt`, playing Maniac Mansion |
 | Mario's Cement Factory | 15 | Game A and Game B | c64cade's PRG, or `mario-cf131.prg` |
 | Mole Attack | | yes | OneLoad64 v5 extras: `Mole Attack.crt` (the official cartridge), or c64cade's PRG |
 | Munchy Worm | | yes | c64cade's `munchyworm_1_01.d64` |
 | Nemesis | 22 | yes | OneLoad64 v5: `Nemesis.crt` |
+| Neuromancer | 11 |  | OneLoad64 v5 extras: `Neuromancer (Interplay 1988) [EasyFlash].crt` |
 | Out Run | 22 | five routes | OneLoad64 v5: `Out Run (Route A) (J1).crt` through Route E, or MultiLoad64: `Out Run (by $olo1870) [EasyFlash].crt` (select routes 1 to 5) |
-| Paperboy | 18 | yes | OneLoad64 v5: `Paperboy.crt`, or `AlternativeFormats/PRGs/Crunched/Paperboy.prg` or `AlternativeFormats/PRGs/Uncrunched/Paperboy.prg` |
 | Panther | | yes | OneLoad64 v5: `Panther.crt`, or c64cade's cartridge |
+| Paperboy | 18 | yes | OneLoad64 v5: `Paperboy.crt`, or `AlternativeFormats/PRGs/Crunched/Paperboy.prg` or `AlternativeFormats/PRGs/Uncrunched/Paperboy.prg` |
 | Paradroid | 11 | yes | OneLoad64 v5: `Paradroid.crt` |
 | Pirates! | 25 | most Pirate Points | OneLoad64 v5 extras: `Pirates! [EasyFlash].crt`, with every trainer cheat set to NO |
+| Pitstop II | 10 | fastest three laps of each track | OneLoad64 v5: `Pitstop II.crt`, with ONE driver against the Epyx Robodriver |
+| Prince of Persia | 18 | most time left | OneLoad64 v5 extras: `Prince of Persia (v1.1) [EasyFlash].crt` |
 | Rainbow Islands | 24 | yes | OneLoad64 v5 MultiLoad64: `Rainbow Islands (by $olo1870) [EasyFlash].crt`, or c64cade's copy |
 | Rambo First Blood Part II | 17 | yes | OneLoad64 v5: `Rambo - First Blood Part II.crt` |
 | Road Runner | | yes | OneLoad64 v5 MultiLoad64: `Road Runner (by $olo1870) [EasyFlash].crt` |
+| Space Rogue | 11 |  | OneLoad64 v5 extras: `Space Rogue [EasyFlash].crt` |
 | Spy vs. Spy | 18 | fastest escape, highest score | OneLoad64 v5 cartridge, crunched or uncrunched program, source tape, or C64PP First Star M4 disk dumps |
 | Spy vs. Spy II: The Island Caper | 18 | fastest submarine escape | OneLoad64 v5 cartridge, crunched or uncrunched program, source tape, or C64PP First Star disk dump |
 | Spy vs. Spy III: Arctic Antics | 16 | fastest rocket escape | OneLoad64 v5 cartridge, crunched or uncrunched program, source tape, or C64PP First Star PAL disk dump |
@@ -184,6 +201,7 @@ every board.
 | Thrust | | yes | OneLoad64 v5: `Thrust (J1).crt` |
 | Turrican | 17 | highest score, fastest world 1 | OneLoad64 v5 MultiLoad64: `Turrican (by $olo1870) [EasyFlash].crt` |
 | Turrican II: The Final Fight | 18 | highest score, fastest world 1 | OneLoad64 v5 MultiLoad64: `Turrican II (by $olo1870) [EasyFlash].crt` |
+| Ultima IV: Quest of the Avatar | 38 | fewest turns to the Codex | Ultima IV Remastered v2.2: `u4remastered.crt`, with every trainer cheat set to No |
 | Uridium | 22 | yes | OneLoad64 v5: `Uridium.crt` |
 | Vegetables Deluxe | | Shopping, Classic and Countdown | c64cade's `vegdlxnointro.prg` |
 | Wizball | 9 | yes | OneLoad64 v5: `Wizball.crt` |

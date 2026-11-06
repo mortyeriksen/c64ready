@@ -1,0 +1,90 @@
+{
+  "id": "neuromancer",
+  "title": "Neuromancer",
+  "url": "https://www.lemon64.com/game/neuromancer",
+  "hashes": [
+    {
+      "hash": "d9c339ecdf8c4ac823bd5b828c58c864",
+      "label": "OneLoad64 v5 extras, EasyFlash cartridge (Neuromancer (Interplay 1988) [EasyFlash].crt)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Out of the Chatsubo",
+      "description": "Leave the Chatsubo for the streets of Chiba City.",
+      "points": 5,
+      "memaddr": "0xX6180=2378379437_0xX5a96=2328047757_d0xX6180=2378379437_0xHc330<=57_d0xHc330<=57_0xHc330=1_d0xHc330=0"
+    },
+    {
+      "id": 2,
+      "title": "Paid in Full",
+      "description": "Pay Ratz the 46 credits for your spaghetti.",
+      "points": 5,
+      "memaddr": "0xX6180=2378379437_0xX5a96=2328047757_d0xX6180=2378379437_0xHc330<=57_d0xHc330<=57_0xHc13b=1_d0xHc13b=0"
+    },
+    {
+      "id": 3,
+      "title": "Your Deck Back",
+      "description": "Get your deck back from Shin.",
+      "points": 10,
+      "memaddr": "0xX6180=2378379437_0xX5a96=2328047757_d0xX6180=2378379437_0xHc330<=57_d0xHc330<=57_0xHc7c0=3_d0xHc7c0=255"
+    },
+    {
+      "id": 4,
+      "title": "A Thousand Credits",
+      "description": "Have 1,000 credits in cash.",
+      "points": 10,
+      "memaddr": "0xX6180=2378379437_0xX5a96=2328047757_d0xX6180=2378379437_0xHc330<=57_d0xHc330<=57_0xWc33a>=1000_d0xWc33a<1000"
+    },
+    {
+      "id": 5,
+      "title": "Ten Thousand Credits",
+      "description": "Have 10,000 credits in cash.",
+      "points": 25,
+      "memaddr": "0xX6180=2378379437_0xX5a96=2328047757_d0xX6180=2378379437_0xHc330<=57_d0xHc330<=57_0xWc33a>=10000_d0xWc33a<10000"
+    },
+    {
+      "id": 6,
+      "title": "Off to the Stars",
+      "description": "Reach the Chiba City spaceport.",
+      "points": 10,
+      "memaddr": "0xX6180=2378379437_0xX5a96=2328047757_d0xX6180=2378379437_0xHc330<=57_d0xHc330<=57_0xHc330=18_d0xHc330!=18"
+    },
+    {
+      "id": 7,
+      "title": "Freeside",
+      "description": "Arrive at the Freeside spacedock.",
+      "points": 25,
+      "memaddr": "0xX6180=2378379437_0xX5a96=2328047757_d0xX6180=2378379437_0xHc330<=57_d0xHc330<=57_0xHc330=28_d0xHc330!=28"
+    },
+    {
+      "id": 8,
+      "title": "Zion Cluster",
+      "description": "Visit the Rastafarian colony of Zion Cluster.",
+      "points": 25,
+      "memaddr": "0xX6180=2378379437_0xX5a96=2328047757_d0xX6180=2378379437_0xHc330<=57_d0xHc330<=57_0xHc330=10_d0xHc330!=10"
+    },
+    {
+      "id": 9,
+      "title": "Into the Vault",
+      "description": "Get inside the vault of Bank Gemeinschaft.",
+      "points": 25,
+      "memaddr": "0xX6180=2378379437_0xX5a96=2328047757_d0xX6180=2378379437_0xHc330<=57_d0xHc330<=57_0xHc330=46_d0xHc330!=46"
+    },
+    {
+      "id": 10,
+      "title": "Villa Straylight",
+      "description": "Enter Villa Straylight, home of the Tessier-Ashpool clan.",
+      "points": 50,
+      "memaddr": "0xX6180=2378379437_0xX5a96=2328047757_d0xX6180=2378379437_0xHc330<=57_d0xHc330<=57_0xHc330=21_d0xHc330!=21"
+    },
+    {
+      "id": 11,
+      "title": "Neuromancer",
+      "description": "Defeat Neuromancer.",
+      "points": 50,
+      "memaddr": "0xX189b=2904070126_d0xX189b=2904070126_0xX189f=147396759_d0xX189f=147396759_0xH1897=1_d0xH1897=0"
+    }
+  ]
+}

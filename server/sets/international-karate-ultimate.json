@@ -1,0 +1,113 @@
+{
+  "id": "international-karate-ultimate",
+  "title": "International Karate Ultimate",
+  "url": "https://www.lemon64.com/game/international-karate-ultimate-competition-edition",
+  "hashes": [
+    {
+      "hash": "69bc95b4757deb90592c3f29259aeda9",
+      "label": "OneLoad64 v5 extras, EasyFlash cartridge (International Karate Ultimate [EasyFlash].crt)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "First Bout",
+      "description": "Win your first bout.",
+      "points": 5,
+      "memaddr": "0xX2616=1414088791_0xH0045=1_0xH0046=0_d0xH0045=1_d0xH0046=0_0xH006b=2_d0xH006b=1"
+    },
+    {
+      "id": 2,
+      "title": "Yellow Belt",
+      "description": "Earn the yellow belt.",
+      "points": 10,
+      "memaddr": "0xX2616=1414088791_0xH0045=1_0xH0046=0_d0xH0045=1_d0xH0046=0_0xHad40=1_d0xHad40=0"
+    },
+    {
+      "id": 3,
+      "title": "Green Belt",
+      "description": "Earn the green belt.",
+      "points": 10,
+      "memaddr": "0xX2616=1414088791_0xH0045=1_0xH0046=0_d0xH0045=1_d0xH0046=0_0xHad40=2_d0xHad40=1"
+    },
+    {
+      "id": 4,
+      "title": "Blue Belt",
+      "description": "Earn the blue belt.",
+      "points": 25,
+      "memaddr": "0xX2616=1414088791_0xH0045=1_0xH0046=0_d0xH0045=1_d0xH0046=0_0xHad40=3_d0xHad40=2"
+    },
+    {
+      "id": 5,
+      "title": "Purple Belt",
+      "description": "Earn the purple belt.",
+      "points": 25,
+      "memaddr": "0xX2616=1414088791_0xH0045=1_0xH0046=0_d0xH0045=1_d0xH0046=0_0xHad40=4_d0xHad40=3"
+    },
+    {
+      "id": 6,
+      "title": "Brown Belt",
+      "description": "Earn the brown belt.",
+      "points": 50,
+      "memaddr": "0xX2616=1414088791_0xH0045=1_0xH0046=0_d0xH0045=1_d0xH0046=0_0xHad40=5_d0xHad40=4"
+    },
+    {
+      "id": 7,
+      "title": "Black Belt",
+      "description": "Earn the black belt.",
+      "points": 50,
+      "memaddr": "0xX2616=1414088791_0xH0045=1_0xH0046=0_d0xH0045=1_d0xH0046=0_0xHad40=6_d0xHad40=5"
+    },
+    {
+      "id": 8,
+      "title": "Ten Thousand",
+      "description": "Score 10,000 points.",
+      "points": 5,
+      "memaddr": "0xX2616=1414088791_0xH0045=1_0xH0046=0_d0xH0045=1_d0xH0046=0_0xJ0074>=65536_d0xJ0074<65536",
+      "score": 10000
+    },
+    {
+      "id": 9,
+      "title": "Thirty Thousand",
+      "description": "Score 30,000 points.",
+      "points": 10,
+      "memaddr": "0xX2616=1414088791_0xH0045=1_0xH0046=0_d0xH0045=1_d0xH0046=0_0xJ0074>=196608_d0xJ0074<196608",
+      "score": 30000
+    },
+    {
+      "id": 10,
+      "title": "Sixty Thousand",
+      "description": "Score 60,000 points.",
+      "points": 25,
+      "memaddr": "0xX2616=1414088791_0xH0045=1_0xH0046=0_d0xH0045=1_d0xH0046=0_0xJ0074>=393216_d0xJ0074<393216",
+      "score": 60000
+    },
+    {
+      "id": 11,
+      "title": "A Hundred Thousand",
+      "description": "Score 100,000 points.",
+      "points": 50,
+      "memaddr": "0xX2616=1414088791_0xH0045=1_0xH0046=0_d0xH0045=1_d0xH0046=0_0xJ0074>=1048576_d0xJ0074<1048576",
+      "score": 100000
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Hiscores",
+      "description": "Your score when a one-player game ends.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xX2616=1414088791_0xH0045=1_d0xH0045=0_0xH0046=0::CAN:0xH0046=1::SUB:0xX2616=1414088791_0xH0045=0_d0xH0045=1_0xH0046=0_d0xJ0074>0::VAL:b0xH0074*10000_b0xH0075*100_b0xH0076"
+    }
+  ],
+  "notices": [
+    {
+      "id": 1,
+      "title": "Trainer on",
+      "text": "Nothing counts until you play without the infinite time trainer.",
+      "memaddr": "0xX2616=1414088791_0xH0bb1=234"
+    }
+  ],
+  "gameOver": "0xX2616=1414088791_0xH0045=0_d0xH0045=1_0xH0046=0"
+}

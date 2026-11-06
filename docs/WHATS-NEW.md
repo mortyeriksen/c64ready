@@ -30,8 +30,20 @@ The version you are running is shown at the bottom of the About dialog.
 - **Out Run.** Eight more trophies.
 - **Commando and Commando Arcade.** A speedrun board for the first area.
 - **New sets.** Arkanoid, Arkanoid: Revenge of Doh, Green Beret, the Spy vs. Spy
-  trilogy, Turrican, Turrican II, Pirates! and Maniac Mansion, with a speedrun
-  to rescuing Sandy.
+  trilogy, Turrican, Turrican II, Pirates!, Maniac Mansion, Eye of the Beholder,
+  Elite, Prince of Persia, International Karate, International Karate Ultimate,
+  Leaderboard Golf, H.E.R.O., Airborne Ranger, IO, Last Ninja 3, Bruce Lee II,
+  Ghostbusters, Pitstop II, Armalyte, Fist II: The Legend Continues,
+  Neuromancer, Space Rogue and Ultima IV Remastered. Maniac Mansion has a
+  speedrun to rescuing Sandy, Prince of Persia a board for the most time left,
+  Leaderboard Golf a board for each course, Last Ninja 3 and Bruce Lee II a
+  speedrun to the end, Ghostbusters a board for the most profit, Pitstop II a
+  board for each track, and Ultima IV a board for the fewest turns to the Codex.
+  Airborne Ranger, Last Ninja 3, Bruce Lee II and Ultima IV notice a trainer
+  cheat and stop counting.
+- **Neuromancer and Space Rogue.** Neuromancer's last trophy is awarded when
+  Neuromancer is defeated. Space Rogue gains a trophy for taking the Manchi egg
+  home to Ja-Karn. Invincible remains the repute rank.
 - **Load a game from its page.** When a game's file is in your library, its
   page under GAMES has a play button that loads it.
 - **Game icons in colour.** Every game has a new, more detailed pixel icon in
