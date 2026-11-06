@@ -1232,6 +1232,7 @@
   --ach-ink: var(--amber);
   position: absolute;
   z-index: 20;
+  box-sizing: border-box;
   width: max-content;
   border: max(1px, 0.13em) solid color-mix(in srgb, var(--ach-ink) 70%, transparent);
   border-radius: 0.4em;
@@ -1282,11 +1283,16 @@
 }
 .ach-hud-in {
   position: relative;
+  box-sizing: border-box;
+  height: 100%;
   display: grid;
   gap: 0.55em;
   padding: 0.45em 0.55em;
   align-items: center;
   justify-items: center;
+  /* The HUD is the box dragged out: its contents sit in the middle of it. */
+  align-content: center;
+  justify-content: center;
 }
 .ach-hud-id { grid-area: id; display: flex; gap: 0.55em; align-items: center; }
 .ach-hud-icon {

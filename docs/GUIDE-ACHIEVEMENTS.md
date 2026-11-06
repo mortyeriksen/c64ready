@@ -103,7 +103,8 @@ shows a trophy HUD: a slot per achievement and the next player to pass, on
 a running speedrun when there is one. Its trophy button shows and hides it.
 
 - **Drag** it anywhere. It snaps to the edges and the center.
-- **Drag its corner** to reshape it: a bar, a box or a column, down to a pill.
+- **Drag its corner** to resize it. It follows the pointer, and the trophies
+  rearrange to fill it: a bar, a box or a column, down to a pill.
   Phones and tablets get the bar, the slim column and the pill, with the HUD
   off at first.
 - **⟲** turns it, **◐** fades it while you play, **✕** hides it.

@@ -1,6 +1,6 @@
 // The trophy HUD in the vibes view (src/achievements/hud.js) in a browser,
 // against a stub engine with a loaded game: its button shows and hides it,
-// the shape it is dragged to picks the layout and it fits inside that shape,
+// it takes the box its corner is dragged to, its contents arranged to fit it,
 // it stays in the view and snaps to its edges, phones and tablets start
 // without it and get only the bar, the slim column and the pill, the chase
 // follows a running score at most once a frame, an unlock fills its slot, and a
@@ -86,13 +86,13 @@ const shown = (page) => page.evaluate(() => !document.querySelector('.ach-hud').
 const layoutOf = (page) => page.evaluate(() => document.querySelector('.ach-hud').dataset.layout);
 
 try {
-  // 1. The pure rules: the layout by shape, slots across, the chase.
+  // 1. The pure rules: the arrangements, slots across, the chase.
   const rules = await (await openPage()).page.evaluate(() => {
     const m = window.mod;
-    const shapes = [20, 6, 4, 2.4, 1.5, 1, 0.6, 0.35, 0.1];
     return {
-      desktop: shapes.map((a) => m.layoutFor(a, false)),
-      compact: [...new Set(shapes.map((a) => m.layoutFor(a, true)))],
+      desktop: m.arrangements(14, false),
+      compact: m.arrangements(14, true),
+      big: m.arrangements(41, false),
       pills: [m.pillFor(3), m.pillFor(0.3)],
       cols14: ['row', 'row2', 'box', 'col2', 'col1'].map((l) => m.slotColumns(l, 14)),
       cols41: ['row', 'row2', 'col1'].map((l) => m.slotColumns(l, 41)),
@@ -102,8 +102,13 @@ try {
       parsed: [m.parseHudState('nonsense', false), m.parseHudState('{"fx":3,"fade":true}', true)],
     };
   });
-  expect(JSON.stringify(rules.desktop) === JSON.stringify(['row', 'row', 'row2', 'row2', 'box', 'box', 'col2', 'col2', 'col1']), `wide is a bar, then rows, a box, two columns, one column (${rules.desktop})`);
-  expect(rules.compact.every((l) => ['row', 'col1'].includes(l)), `a phone gets only the bar and the slim column (${rules.compact})`);
+  const rowsOf = (n, [, c]) => Math.ceil(n / c);
+  const layouts = (list) => [...new Set(list.map(([l]) => l))].sort().join();
+  expect(layouts(rules.desktop) === 'box,col1,col2,row,row2', `a computer gets the bar, rows, a box and columns (${layouts(rules.desktop)})`);
+  expect(layouts(rules.compact) === 'col1,row', `a phone gets only the bar and the slim column (${layouts(rules.compact)})`);
+  const shapeOk = (n, a) => ({ row: rowsOf(n, a) <= 2, row2: rowsOf(n, a) >= 2, box: rowsOf(n, a) >= 2 && a[1] >= 3, col2: a[1] >= 2 && a[1] <= 3, col1: a[1] <= 2 })[a[0]];
+  expect(rules.desktop.every((a) => shapeOk(14, a)) && rules.big.every((a) => shapeOk(41, a)), 'a bar is one or two rows, a box at least three across, a column one to three across');
+  expect(rules.desktop.some(([l, c]) => l === 'row' && c === 14) && rules.desktop.some(([l, c]) => l === 'col1' && c === 1), 'a set can lie in one row or stand in one column');
   expect(rules.pills.join() === 'pill-row,pill-col', 'a pill lies or stands as its shape does');
   expect(rules.cols14.join() === '14,7,7,2,1', `14 slots: one row, two rows, a box of 7, two columns, one (${rules.cols14})`);
   expect(rules.cols41.join() === '21,14,2', `a big set takes more rows or columns (${rules.cols41})`);
@@ -165,9 +170,9 @@ try {
   expect(l.now.trim() === 'BEST' && l.value === '034600', 'when the game ends, back to the best');
   ok('the chase');
 
-  // 4. The shape picks the layout, and it fits inside it, in the view.
+  // 4. The HUD is the box stored, its contents fitting inside it: a bar when wide, a column when tall.
   const fits = [];
-  for (const [bw, bh, want] of [[0.64, 0.05, 'row'], [0.3, 0.09, 'row2'], [0.2, 0.15, 'box'], [0.11, 0.26, 'col2'], [0.035, 0.5, 'col1'], [0.1, 0.02, 'pill-row']]) {
+  for (const [bw, bh, want] of [[0.64, 0.05, 'row'], [0.3, 0.09, 'row'], [0.2, 0.15, 'box'], [0.11, 0.26, 'col'], [0.035, 0.5, 'col'], [0.1, 0.02, 'pill']]) {
     await page.evaluate(([w, h]) => {
       const s = JSON.parse(localStorage.getItem('c64emu.achHud'));
       localStorage.setItem('c64emu.achHud', JSON.stringify({ ...s, bw: w, bh: h }));
@@ -180,10 +185,16 @@ try {
     const r = await box(p2.page, '.ach-hud');
     const lay = await layoutOf(p2.page);
     fits.push(`${want}:${lay}`);
-    expect(lay === want, `a ${bw} by ${bh} shape is a ${want} (got ${lay})`);
+    expect(lay.startsWith(want), `a ${bw} by ${bh} shape is a ${want} (got ${lay})`);
     // At the smallest font it can be no smaller.
     const smallest = await p2.page.evaluate(() => parseFloat(document.querySelector('.ach-hud').style.fontSize) <= 6);
-    expect(smallest || (r.w <= bw * 1400 + 1 && r.h <= bh * 1400 + 1), `the ${want} fits inside its shape (${Math.round(r.w)}x${Math.round(r.h)} in ${Math.round(bw * 1400)}x${Math.round(bh * 1400)})`);
+    expect(smallest || (Math.abs(r.w - bw * 1400) < 1 && Math.abs(r.h - bh * 1400) < 1), `the ${lay} takes its box (${Math.round(r.w)}x${Math.round(r.h)} for ${Math.round(bw * 1400)}x${Math.round(bh * 1400)})`);
+    const spill = await p2.page.evaluate(() => {
+      const h = document.querySelector('.ach-hud').getBoundingClientRect();
+      return [...document.querySelectorAll('.ach-hud-in > *, .ach-hud-slot')].filter((e) => e.offsetParent).map((e) => e.getBoundingClientRect())
+        .filter((c) => c.left < h.left - 0.5 || c.top < h.top - 0.5 || c.right > h.right + 0.5 || c.bottom > h.bottom + 0.5).length;
+    });
+    expect(spill === 0, `the ${lay}'s contents fit inside it (${spill} spill out)`);
     expect(r.x >= 0 && r.y >= 0 && r.r <= 1400 && r.b <= 900, `the ${want} is inside the view`);
     await p2.context.close();
   }
@@ -213,8 +224,17 @@ try {
   const g = await box(d.page, '.ach-hud-resize');
   await d.page.mouse.move(g.x + 4, g.y + 4);
   await d.page.mouse.down();
-  await d.page.mouse.move(g.x - 800, g.y + 60, { steps: 12 });
-  await wait(d.page, 50);
+  // The dragged corner stays under the pointer all the way.
+  const behind = [];
+  const h0 = await box(d.page, '.ach-hud'), gx = h0.x - (g.x + 4), gy = h0.y - (g.y + 4);
+  for (let i = 1; i <= 12; i++) {
+    const px = g.x + 4 - (800 * i) / 12, py = g.y + 4 + (60 * i) / 12;
+    await d.page.mouse.move(px, py);
+    await d.page.evaluate(() => new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res))));
+    const h = await box(d.page, '.ach-hud');
+    const off = Math.max(Math.abs(h.x - (px + gx)), Math.abs(h.y - (py + gy)));
+    if (off > 1.5 && h.y > 18 + 1) behind.push(`${Math.round(px)},${Math.round(py)}: ${off.toFixed(1)}px`);
+  }
   const midLayout = await layoutOf(d.page);
   const outlines = await d.page.locator('.ach-hud-box').count();
   await d.page.mouse.up();
@@ -222,6 +242,7 @@ try {
   r = await box(d.page, '.ach-hud');
   expect(midLayout === 'row' || midLayout === 'row2', `dragged wide and flat it becomes a bar (${midLayout})`);
   expect(outlines === 0, 'no outline is drawn while reshaping');
+  expect(behind.length === 0, `the corner follows the pointer (${behind.join(', ')})`);
   expect(Math.abs(r.r - (1400 - 18)) < 2 && Math.abs(r.b - (900 - 18)) < 2, 'the opposite corner stays put');
   ok('reshaping by the corner');
 

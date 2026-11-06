@@ -3,8 +3,8 @@
 // src/achievements/hud.js — the trophy HUD in the vibes view, for play: a slot
 // per achievement of the loaded game, and a chase of the next player up its
 // board. The view's HUD button shows and hides it. It drags anywhere, snapping
-// to the edges and center lines. Dragged by its corner it reshapes, the toast's
-// way: the shape dragged out picks the layout and the font size fits it. An unlock's trophy flies
+// to the edges and center lines. Dragged by its corner it takes the box dragged
+// out, its contents arranged and sized to fill it best. An unlock's trophy flies
 // from its toast into its slot. Phones and tablets start without it and get
 // the bar, the slim column and the pill. Kept in the browser.
 //
@@ -23,7 +23,7 @@ export const COMPACT_LAYOUTS = Object.freeze(['row', 'col1', 'pill-row', 'pill-c
 export const COMPACT_QUERY = '(max-width: 680px), (pointer: coarse)';
 /** Below this font size, in CSS pixels, the slots no longer read and the HUD is a pill. */
 export const PILL_BELOW = 7.5;
-export const FONT_MAX = 24;
+export const FONT_MAX = 48;
 /** Margin from the view's edges, as its buttons'; and the room the button column takes on the left. */
 const MARGIN = 18, BUTTONS = 74;
 const SNAP = 12;
@@ -42,10 +42,27 @@ export function challengeFx(a, now) {
 }
 
 /** A box's layout by its width over its height. */
-export function layoutFor(aspect, compact = false) {
-  if (compact) return aspect >= 1.5 ? 'row' : 'col1';
-  return aspect >= 6 ? 'row' : aspect >= 2.4 ? 'row2' : aspect >= 1 ? 'box' : aspect >= 0.35 ? 'col2' : 'col1';
+/**
+ * The arrangements a set of `n` slots can take, as [layout, slots across]: a bar of one or two
+ * rows, more rows beside the game, a box, two or three columns, one or two. Phones and tablets
+ * get only the bar and the slim column.
+ */
+export function arrangements(n, compact = false) {
+  const out = [];
+  if (n <= 0) return out;
+  const across = [...new Set(Array.from({ length: n }, (_, i) => Math.ceil(n / (i + 1))))];
+  for (const c of across) {
+    const rows = Math.ceil(n / c);
+    if (rows <= 2) out.push(['row', c]);
+    if (!compact && rows >= 2 && rows <= 6) out.push(['row2', c]);
+    if (!compact && rows >= 2 && c >= 3) out.push(['box', c]);
+    if (!compact && c >= 2 && c <= 3) out.push(['col2', c]);
+    if (c <= 2) out.push(['col1', c]);
+  }
+  return out;
 }
+/** An arrangement is kept while it fills the box this well, against the best: a drag does not flicker. */
+const KEEP = 0.9;
 export const pillFor = (aspect) => (aspect >= 1 ? 'pill-row' : 'pill-col');
 
 /** Slots across in a layout for a set of `n`: more rows, or columns, for a big set. */
@@ -366,23 +383,49 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
   let framed = false;
   function paintFrame() { framed = false; paintChase(true); }
 
-  // ── Layout: the box's shape picks it, the font size fits it ───────────
+  // ── Layout: the HUD is the box drawn, its contents the arrangement that fills it best ──
   function bounds() {
     const W = area.clientWidth, H = area.clientHeight;
     return { W, H, left: Math.min(BUTTONS, W / 4), top: MARGIN, right: W - MARGIN, bottom: H - MARGIN };
   }
-  function measureAs(layoutName, n, bw, bh) {
-    hud.dataset.layout = layoutName;
-    inner.style.setProperty('--ach-hud-cols', String(slotColumns(layoutName, n)));
-    hud.style.fontSize = '10px';
-    return 10 * Math.min(bw / hud.offsetWidth, bh / hud.offsetHeight);
+  // Every arrangement's size at 10px, which scales with the font, measured on an unseen copy so the
+  // HUD's own effects keep running. A reshape measures once, as it starts.
+  let sizes = null;
+  function measure() {
+    const n = game?.achievements.length ?? 0;
+    const copy = hud.cloneNode(true), copyIn = copy.querySelector('.ach-hud-in');
+    copy.hidden = false;
+    copy.style.cssText = 'visibility:hidden;left:0;top:0;width:max-content;height:auto;font-size:10px';
+    area.append(copy);
+    const out = [];
+    for (const [layoutName, cols] of [...arrangements(n, compact()), ['pill-row', 0], ['pill-col', 0]]) {
+      copy.dataset.layout = layoutName;
+      copyIn.style.setProperty('--ach-hud-cols', String(cols));
+      out.push({ layout: layoutName, cols, w: copy.offsetWidth, h: copy.offsetHeight });
+    }
+    copy.remove();
+    return out;
   }
+  let shownAs = null, fitW = 0, fitH = 0;
+  /** Fits the HUD to a `bw` by `bh` box. Returns whether the layout changed; fitW and fitH hold its size. */
   function fit(bw, bh) {
-    const aspect = bw / bh, n = game?.achievements.length ?? 0;
+    const list = sizes ?? measure();
     const before = hud.dataset.layout;
-    let f = measureAs(n ? layoutFor(aspect, compact()) : pillFor(aspect), n, bw, bh);
-    if (n && f < PILL_BELOW) f = measureAs(pillFor(aspect), n, bw, bh);
-    hud.style.fontSize = `${clamp(f, 6, FONT_MAX).toFixed(2)}px`;
+    const scale = (a) => Math.min(bw / a.w, bh / a.h);
+    let best = null;
+    for (const a of list) if (!a.layout.startsWith('pill') && (!best || scale(a) > scale(best))) best = a;
+    const kept = best && list.find((a) => a.layout === shownAs?.layout && a.cols === shownAs?.cols);
+    if (kept && scale(kept) >= scale(best) * KEEP) best = kept;
+    if (!best || 10 * scale(best) < PILL_BELOW) best = list.find((a) => a.layout === pillFor(bw / bh));
+    shownAs = best;
+    const f = clamp(10 * scale(best) * 0.97, 6, FONT_MAX);
+    fitW = Math.max(bw, (best.w * f) / 10);
+    fitH = Math.max(bh, (best.h * f) / 10);
+    hud.dataset.layout = best.layout;
+    inner.style.setProperty('--ach-hud-cols', String(best.cols));
+    hud.style.fontSize = `${f.toFixed(2)}px`;
+    hud.style.width = `${fitW.toFixed(1)}px`;
+    hud.style.height = `${fitH.toFixed(1)}px`;
     return before !== hud.dataset.layout;
   }
   function place() {
@@ -539,7 +582,13 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
     e.preventDefault();
     const c = hud.dataset.corner;
     const ar = area.getBoundingClientRect();
-    size = { c, ax: hud.offsetLeft + (c[1] === 'l' ? hud.offsetWidth : 0), ay: hud.offsetTop + (c[0] === 't' ? hud.offsetHeight : 0), ox: ar.left, oy: ar.top, b: bounds(), x: e.clientX, y: e.clientY, raf: 0, id: e.pointerId };
+    const w = hud.offsetWidth, h = hud.offsetHeight, L = c[1] === 'l', T = c[0] === 't';
+    const ax = hud.offsetLeft + (L ? w : 0), ay = hud.offsetTop + (T ? h : 0);
+    // Where in the grip it was taken: the corner keeps that much from the pointer.
+    const kx = e.clientX - ar.left - (L ? ax - w : ax + w), ky = e.clientY - ar.top - (T ? ay - h : ay + h);
+    size = { c, ax, ay, ox: ar.left + kx, oy: ar.top + ky, b: bounds(), x: e.clientX, y: e.clientY, raf: 0, id: e.pointerId };
+    sizes = measure();
+    fit(w, h);
     corner.setPointerCapture(e.pointerId);
     hud.classList.add('is-resizing');
     hideTip();
@@ -551,11 +600,11 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
     const b = size.b, L = size.c[1] === 'l', T = size.c[0] === 't';
     const bw = clamp(Math.abs(size.x - size.ox - size.ax), 24, Math.max(24, L ? size.ax - b.left : b.right - size.ax));
     const bh = clamp(Math.abs(size.y - size.oy - size.ay), 24, Math.max(24, T ? size.ay - b.top : b.bottom - size.ay));
-    S.bw = bw / b.W;
-    S.bh = bh / b.W;
     const changed = fit(bw, bh);
-    hud.style.left = `${L ? size.ax - hud.offsetWidth : size.ax}px`;
-    hud.style.top = `${T ? size.ay - hud.offsetHeight : size.ay}px`;
+    S.bw = fitW / b.W;
+    S.bh = fitH / b.W;
+    hud.style.left = `${L ? size.ax - fitW : size.ax}px`;
+    hud.style.top = `${T ? size.ay - fitH : size.ay}px`;
     if (changed) redraw(0);
   }
   corner.addEventListener('pointermove', (e) => {
@@ -569,6 +618,7 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
     cancelAnimationFrame(size.raf);
     reshape();
     size = null;
+    sizes = null;
     hud.classList.remove('is-resizing');
     share(hud.offsetLeft, hud.offsetTop);
     place();
