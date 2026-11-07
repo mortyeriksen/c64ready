@@ -37,7 +37,8 @@ const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), 'c64acct-'));
 const dbPath = path.join(dbDir, 'c64ready.db');
 let db = openDatabase(dbPath);
 // One trusted proxy, so each request's X-Forwarded-For address is the one counted.
-let accounts = createAccounts({ db, origins: [ORIGIN], trustProxy: 1, now: () => clock, blockedWords: ['badword'] });
+const deletedIds = [];
+let accounts = createAccounts({ db, origins: [ORIGIN], trustProxy: 1, now: () => clock, blockedWords: ['badword'], onDeleted: (id) => deletedIds.push(id) });
 const server = http.createServer((req, res) => { if (!accounts.handleRequest(req, res)) res.writeHead(404).end(); });
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const base = `http://127.0.0.1:${server.address().port}`;
@@ -208,13 +209,33 @@ const first = await register('Alice', alice);
 }
 {
   const l = await login(alice, first.credId);
+  // Everything an account can have: a badge, results, activity, plays, logins, a demo mark.
+  const uid = l.body.user.id;
+  const MARK = Buffer.from('BADGE-OF-ALICE-0123456789');
+  const badge = Buffer.concat([Buffer.from('89504e470d0a1a0a0000000d49484452000000080000000808020000', 'hex'), MARK]);
+  db.prepare("UPDATE users SET avatar = ?, avatar_type = 'image/png', avatar_at = 1 WHERE id = ?").run(badge, uid);
+  db.prepare("INSERT INTO unlocks (user_id, game_id, achievement_id, hardcore, unlocked_at) VALUES (?, 'g', 1, 1, 1)").run(uid);
+  db.prepare("INSERT INTO lb_entries (user_id, game_id, leaderboard_id, value, hardcore, submitted_at) VALUES (?, 'g', 1, 5, 1, 1)").run(uid);
+  db.prepare("INSERT INTO activity (at, user_id, game_id, kind, ref, value) VALUES (1, ?, 'g', 'unlock', 1, NULL)").run(uid);
+  db.prepare("INSERT INTO plays (user_id, game_id, started_at, seen_at) VALUES (?, 'g', 1, 1)").run(uid);
+  db.prepare("INSERT INTO logins (user_id, at, kind, ok) VALUES (?, 1, 'signin', 1)").run(uid);
+  db.prepare('INSERT INTO demo_players (user_id) VALUES (?)').run(uid);
   const del = await api('DELETE', '/api/me', { token: l.body.token });
   expect(del.status === 200, 'an account can be deleted by its owner');
   expect((await api('GET', '/api/me', { token: l.body.token })).status === 401, 'its sessions go with it');
   expect((await login(alice, first.credId)).status === 401, 'and its passkeys');
+  // No table keeps a row of it: every one with a user_id, found from the schema.
+  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map((t) => t.name)
+    .filter((t) => db.prepare(`PRAGMA table_info(${t})`).all().some((c) => c.name === 'user_id'));
+  const left = tables.filter((t) => db.prepare(`SELECT COUNT(*) AS n FROM ${t} WHERE user_id = ?`).get(uid).n);
+  expect(tables.length >= 8 && left.length === 0 && !db.prepare('SELECT 1 FROM users WHERE id = ?').get(uid), `and every row of its, in all ${tables.length} tables with one (left: ${left.join(', ') || 'none'})`);
+  // Nor its badge, anywhere in the files: deleted content is overwritten and the log emptied.
+  const inFiles = [dbPath, `${dbPath}-wal`].filter((f) => fs.existsSync(f) && fs.readFileSync(f).includes(MARK));
+  expect(inFiles.length === 0, `its badge is gone from the database files (${inFiles.map((f) => path.basename(f)).join(', ') || 'none'})`);
+  expect(deletedIds.includes(uid), 'and the chat is told, to let it go');
   const again = await register('Alice', authenticator());
   expect(again.verify.status === 200, 'the name is free again');
-  ok('deleting an account removes its passkeys and sessions');
+  ok('deleting an account removes everything of it: passkeys, sessions, results, badge');
 }
 
 // 6. Origins, CORS and limits.

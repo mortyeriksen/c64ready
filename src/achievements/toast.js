@@ -186,7 +186,7 @@ export function createAchToasts({ host, ms = ACH_TOAST_MS }) {
       num.textContent = t.score.format(t.score.value);
       title.append(num);
     }
-    title.setAttribute('aria-label', t.score ? `${heading}${t.score.format(t.score.value)}` : t.title);
+    title.setAttribute('aria-label', t.score ? `${heading}${t.score.format(t.score.value).trim()}` : t.title);
     words.append(title);
     const text = document.createElement('span');
     text.className = 'ach-toast-text';
@@ -222,7 +222,8 @@ export function createAchToasts({ host, ms = ACH_TOAST_MS }) {
     const x = document.createElement('button');
     x.className = 'ach-toast-x';
     x.setAttribute('aria-label', 'Dismiss');
-    x.textContent = '✕';
+    // Drawn, not a character: the toast's font has no ✕, and finding one stalls the first toast.
+    x.innerHTML = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2l6 6M8 2L2 8"/></svg>';
     x.addEventListener('click', () => (pinned ? pinned.onClose() : leave()));
     const bar = document.createElement('i');
     bar.className = 'ach-toast-time';

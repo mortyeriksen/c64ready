@@ -33,6 +33,7 @@ import crypto from 'node:crypto';
 import { clientAddress, addressKey, isLoopbackOrigin, Admission } from './address.mjs';
 import { LIMITS, cleanName, isReservedNick, wordFilter } from './protocol.mjs';
 import { b64url, verifyRegistration, verifyAssertion } from './webauthn.mjs';
+import { forgetDeleted } from './db.mjs';
 
 export const ACCOUNT_DEFAULTS = Object.freeze({
   challengeMs: 5 * 60_000,
@@ -129,12 +130,13 @@ export function imageInfo(b) {
  * @param {number} [o.trustProxy]  as for the chat
  * @param {string[]} [o.blockedWords]
  * @param {() => number} [o.now]
+ * @param {(id: number) => void} [o.onDeleted]  an account its owner deleted: the chat lets it go
  * @param {{ get: (key: string) => object|null }} [o.bans]  banned addresses (server/bans.mjs): only public reading
  * @param {(api: object) => object} [o.extend]  more routes on the same API: given
  *   { db, now, log, HttpError, requireUser, optionalUser }, returns a route map
  *   like the one below (keys "METHOD /path", with :params)
  */
-export function createAccounts({ db, origins = [], allowLoopback = false, trustProxy = 0, blockedWords = [], now = Date.now, log = () => {}, limits = {}, extend = null, bans = null }) {
+export function createAccounts({ db, origins = [], allowLoopback = false, trustProxy = 0, blockedWords = [], now = Date.now, log = () => {}, limits = {}, extend = null, bans = null, onDeleted = () => {} }) {
   const L = { ...ACCOUNT_DEFAULTS, ...limits };
   const words = wordFilter(blockedWords);
   const challenges = new Map();   // challengeId → { challenge, kind, name?, handle?, userId?, recoveryHash?, expiresAt }
@@ -476,7 +478,9 @@ export function createAccounts({ db, origins = [], allowLoopback = false, trustP
     },
     'DELETE /api/me'(body, req) {
       const user = requireConfirmed(req);
-      q.deleteUser.run(user.id);   // passkeys and sessions go with it (ON DELETE CASCADE)
+      q.deleteUser.run(user.id);   // everything of the account's goes with it (ON DELETE CASCADE)
+      forgetDeleted(db);
+      onDeleted(user.id);
       log(`account deleted: ${user.name}`);
       return { ok: true };
     },

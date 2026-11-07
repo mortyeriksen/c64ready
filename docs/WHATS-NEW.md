@@ -46,6 +46,9 @@ The version you are running is shown at the bottom of the About dialog.
   home to Ja-Karn. Invincible remains the repute rank.
 - **Load a game from its page.** When a game's file is in your library, its
   page under GAMES has a play button that loads it.
+- **Your games from a folder.** The 💾 button in GAMES looks through a folder
+  of your own files and adds every game with achievements it finds to the
+  library.
 - **Game icons in colour.** Every game has a new, more detailed pixel icon in
   colour: in the games list, at the top of a game's page, in the chat, on the
   trophy HUD and on the toast for a finished set.

@@ -3,8 +3,8 @@
 // src/achievements/attract.js — attract mode, centered over the whole window:
 // the page dimmed behind it, or the vibes view while that is open. When a game
 // ends (its set's game over, or else its score posted), its high-score screen cycles the
-// way an arcade cabinet's does between games: each board, Trophy Hunters and the
-// player's trophies, a page at a time. It switches on like a CRT, a page's
+// way an arcade cabinet's does between games: the board played and every other the
+// player has a result on, Trophy Hunters and the player's trophies, a page at a time. It switches on like a CRT, a page's
 // title cycles the C64's colours over raster bars, and its rows are PRINTed a
 // character at a time. The pages turn on their own wherever the pointer rests,
 // and the bars under it pick one. Space continues, as do the next game, ✕ and a
@@ -52,12 +52,14 @@ export function fameRows(top, user, limit = ROWS) {
 }
 
 /**
- * The pages for a game: after a game, the board just played and no other, as
- * OutRun's route A without the other routes; opened from the GAME tab, every
- * board. Then Trophy Hunters and the trophies when it has achievements.
+ * The pages for a game: after a game, the board just played, then every other
+ * board the player has a result on (a finished speedrun, a score); opened from
+ * the GAME tab, every board. Then Trophy Hunters and the trophies when it has
+ * achievements.
  */
 export function attractPages(game, { boards = new Map(), fame = null, played = null } = {}) {
-  const shown = played != null ? game.leaderboards.filter((l) => l.id === played) : game.leaderboards;
+  const shown = played == null ? game.leaderboards
+    : [...game.leaderboards.filter((l) => l.id === played), ...game.leaderboards.filter((l) => l.id !== played && boards.get(l.id)?.me?.rank != null)];
   const pages = shown.map((l) => ({ kind: 'board', board: l, standings: boards.get(l.id) ?? null }));
   if (game.achievements.length) {
     if (fame?.entries?.length) pages.push({ kind: 'fame', top: fame });
@@ -389,10 +391,13 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
    * mode, and a posted score opens it, unless the set says when its game is over.
    */
   function leaderboardEvent(e) {
+    // A running score comes every frame and is no news here: the game is read only for a start or a post.
+    if (e.type !== 'started' && e.type !== 'submitted') return;
     const g = engine()?.game;
-    if (e.type === 'started' || e.type === 'submitted') { last = e; lastGame = g?.hash ?? null; }
+    last = e;
+    lastGame = g?.hash ?? null;
     if (e.type === 'started') { cancel(); if (root) close(); return; }
-    if (e.type === 'submitted' && ready() && !g?.gameOver) schedule(e);
+    if (ready() && !g?.gameOver) schedule(e);
   }
   /** The set's game over (engine onGameOver): attract mode opens on the board last played, if any. */
   function gameOver() {

@@ -70,12 +70,19 @@ another device, good for 10 minutes. If every device is lost, set a new hash.
   their account, passkeys, games and scores, activity, and login history with
   IP address and browser (kept 90 days). Its actions (sign out everywhere,
   rename, remove the badge, remove a score, clear a game's results, remove
-  one line of the activity while the result stays, delete) ask for a reason,
+  one line of the activity while the result stays, delete: the account with
+  everything of it, badge included) ask for a reason,
   which goes in the chat log. **ban** on a login or the
   last IP bans that address (an IPv6 address by its /64) for up to 30 days:
   it can still read what is public, but cannot chat, sign in, sign up,
   recover or post results, and a session from it is signed out. Bans are kept
   in the database, so they outlast a restart, and the Live tab lists them.
+- **Games:** every game with a set, filterable, with its trophies, boards,
+  players, unlocks, scores, flagged results and when it was last played. A
+  game's page lists each board's scores, placed as the public boards place
+  them (flagged and softcore ones listed without a place), and each trophy
+  with who unlocked it and when. **remove** on a score or an unlock asks for a
+  reason, removes it with its line in the activity, and goes in the chat log.
 - **To review** (on the Overview): results the fair-play checks flagged, kept
   out of public view: posted without the game open, many unlocks at once, a
   score seconds after the game was opened, over a board's `max` (`min` where
@@ -83,8 +90,9 @@ another device, good for 10 minutes. If every device is lost, set a new hash.
   last clears by itself when those milestones arrive. **Approve** lets one count, **Clear** removes
   it, and both go in the chat log. The dev server skips these checks.
 - **Demo players** (on the Overview): *Add 50 demo players* makes 50 accounts
-  with new random names, early and mid-game unlocks in every game and five
-  moderate scores on every board, spread over the last six weeks. Each press
+  with new random names and pixel-sprite badges, early and mid-game unlocks in
+  every game and five moderate scores on every board, spread over the last six
+  weeks. Each press
   adds 50 more. *Remove all demo players* deletes them with everything they
   did. Demo accounts have no passkey, so no one can sign in as one.
 - **Live:** the channel, under the name C64 READY, with **Online users**.

@@ -176,10 +176,19 @@ const MIGRATIONS = [
 /** The schema version a fully migrated database records. */
 export const SCHEMA_VERSION = MIGRATIONS.length;
 
+/**
+ * After an account is deleted: the write-ahead log is checkpointed and emptied, so the earlier
+ * copies of its pages (its badge, its results) go from the log as well as the database.
+ */
+export function forgetDeleted(db) {
+  try { db.exec('PRAGMA wal_checkpoint(TRUNCATE)'); } catch { /* busy: the next checkpoint takes them */ }
+}
+
 /** Opens (creating if needed) the database at `path`, or in memory for ':memory:'. */
 export function openDatabase(path) {
   const db = new DatabaseSync(path);
-  db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 2000;');
+  // secure_delete: what is deleted (a removed account's badge, its results) is overwritten, not left in free pages.
+  db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 2000; PRAGMA secure_delete = ON;');
   const version = db.prepare('PRAGMA user_version').get().user_version;
   for (let v = version; v < MIGRATIONS.length; v++) {
     db.exec('BEGIN');

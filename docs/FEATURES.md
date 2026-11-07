@@ -329,6 +329,8 @@ Each of the two ports is assignable independently, with a **SWAP PORTS** button:
 - **The Achievements window**: the loaded game's progress, everyone's latest
   unlocks, every game and player profiles. It opens when such a game loads, and
   floats, docks or shares the screen in fullscreen.
+- **Your games from a folder**: GAMES finds every game with achievements in a
+  folder of your own files and adds it to the library.
 - **Trophy HUD in Retro Vibes**: your trophies and the next player to pass, in
   a bar, column or pill you place anywhere.
 - **Challenges out for now**: a challenge trophy you can no longer earn this

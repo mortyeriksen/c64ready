@@ -4,10 +4,13 @@
 // early and mid-game unlocks in every game and five moderate scores on every board, spread over the
 // last six weeks, so the game pages, boards and activity show something to look at. Each batch has
 // new random names, so batches add up. Every demo account is listed in demo_players and removed
-// with it in one go. A demo account has no passkey: no one can sign in as it.
+// with it in one go. A demo account has no passkey: no one can sign in as it. Each has a badge of
+// its own: a symmetric 8x8 sprite in C64 colours.
 
 import crypto from 'node:crypto';
+import zlib from 'node:zlib';
 import { nameKey } from './accounts.mjs';
+import { forgetDeleted } from './db.mjs';
 
 const DAY = 24 * 3600_000;
 const SPAN = 42 * DAY;          // the batch's history: the last six weeks
@@ -44,42 +47,88 @@ const BOARDS = {
   'spy-vs-spy/2': { lo: 2000, hi: 8000, step: 10, needs: ['Embassy Level 1'] },
   'pirates/1': { lo: 30, hi: 70, step: 1, needs: ['Commissioned', 'Ashore for Good'] },
   'prince-of-persia/1': { lo: 5, hi: 20, step: 1, needs: ['A Sword at Last', 'Deeper', 'The Skeleton', 'The Palace', 'Through the Mirror', 'The Fat Guard', 'Free Fall', 'The Mouse', 'Royal Halls', 'Deeper Still', 'Into the Dark', 'The Shadow', 'Tower of Jaffar', 'The Vizier Falls', 'Happily Ever After'] },
-  // Fewest is best: times, moves, strokes and turns.
-  'bruce-lee-ii/1': { lo: 150000, hi: 270000, step: 1, needs: ['First Lantern', 'The Deep of His Palace', 'Return of the Dragon'] },
-  'commando/2': { lo: 9000, hi: 18000, step: 1, needs: ['Knock Knock', 'Breakthrough'] },
-  'commando-arcade/2': { lo: 9000, hi: 18000, step: 1, needs: ['Off the Truck'] },
-  'hitchhikers-guide/1': { lo: 350, hi: 600, step: 1, needs: ['Hundred Points', 'Two Hundred', 'Three Hundred', 'Mostly Harmless'] },
-  'zork-i/1': { lo: 400, hi: 700, step: 1, needs: ['Breaking and Entering', 'Hundred Points', 'Two Hundred', 'Three Hundred', 'Master Adventurer'] },
-  'last-ninja-3/2': { lo: 180000, hi: 360000, step: 1, needs: ['First Blood', 'Earth', 'Wind', 'Water', 'Fire', 'Real Hatred Is Timeless'] },
-  'last-ninja/1': { lo: 18000, hi: 48000, step: 1, needs: ['First Blood', 'Into the Wilderness'] },
-  'last-ninja/2': { lo: 18000, hi: 48000, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens'] },
-  'last-ninja/3': { lo: 18000, hi: 48000, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens', 'Into the Dungeons'] },
-  'last-ninja/4': { lo: 18000, hi: 48000, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens', 'Into the Dungeons', 'The Palace'] },
-  'last-ninja/5': { lo: 18000, hi: 48000, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens', 'Into the Dungeons', 'The Palace', 'Inner Sanctum'] },
-  'last-ninja/6': { lo: 18000, hi: 48000, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens', 'Into the Dungeons', 'The Palace', 'Inner Sanctum', 'The Final Duel', 'The Sacred Scrolls'] },
-  'leaderboard/1': { lo: 70, hi: 82, step: 1, needs: ['First Hole', 'Eighteen Holes'] },
-  'leaderboard/2': { lo: 70, hi: 82, step: 1, needs: ['First Hole', 'Eighteen Holes'] },
-  'leaderboard/3': { lo: 70, hi: 82, step: 1, needs: ['First Hole', 'Eighteen Holes'] },
-  'leaderboard/4': { lo: 70, hi: 82, step: 1, needs: ['First Hole', 'Eighteen Holes'] },
-  'maniac-mansion/1': { lo: 240000, hi: 540000, step: 1, needs: ['The Old Mansion', 'Sandy Rescued'] },
-  'pitstop-ii/1': { lo: 150, hi: 210, step: 1 },
-  'pitstop-ii/2': { lo: 150, hi: 210, step: 1 },
-  'pitstop-ii/3': { lo: 150, hi: 210, step: 1 },
-  'pitstop-ii/4': { lo: 150, hi: 210, step: 1 },
-  'pitstop-ii/5': { lo: 150, hi: 210, step: 1 },
-  'pitstop-ii/6': { lo: 150, hi: 210, step: 1 },
-  'spy-vs-spy/1': { lo: 9000, hi: 24000, step: 1, needs: ['Embassy Infiltration', 'Embassy Level 1'] },
-  'spy-vs-spy-ii/1': { lo: 15000, hi: 36000, step: 1, needs: ['Island Landfall', 'Island Level 1'] },
-  'spy-vs-spy-iii/1': { lo: 15000, hi: 36000, step: 1, needs: ['Arctic Arrival', 'Arctic Level 1'] },
-  'turrican/2': { lo: 48000, hi: 90000, step: 1, needs: ['Touchdown', 'First World Down'] },
-  'turrican-ii/2': { lo: 48000, hi: 90000, step: 1, needs: ['Boots on the Ground', 'First World Down'] },
-  'ultima-iv/1': { lo: 60000, hi: 120000, step: 1, needs: ['*'] },
+  // Fewest is best: times, moves, strokes and turns, as an ordinary player does them (about twice a good
+  // run's), so a player can beat the demo players.
+  'bruce-lee-ii/1': { lo: 300000, hi: 540000, step: 1, needs: ['First Lantern', 'The Deep of His Palace', 'Return of the Dragon'] },
+  'commando/2': { lo: 18000, hi: 36000, step: 1, needs: ['Knock Knock', 'Breakthrough'] },
+  'commando-arcade/2': { lo: 18000, hi: 36000, step: 1, needs: ['Off the Truck'] },
+  'hitchhikers-guide/1': { lo: 600, hi: 1100, step: 1, needs: ['Hundred Points', 'Two Hundred', 'Three Hundred', 'Mostly Harmless'] },
+  'zork-i/1': { lo: 700, hi: 1300, step: 1, needs: ['Breaking and Entering', 'Hundred Points', 'Two Hundred', 'Three Hundred', 'Master Adventurer'] },
+  'last-ninja-3/2': { lo: 1500000, hi: 2700000, step: 1, needs: ['First Blood', 'Earth', 'Wind', 'Water', 'Fire', 'Real Hatred Is Timeless'] },
+  'last-ninja/1': { lo: 36000, hi: 72000, step: 1, needs: ['First Blood', 'Into the Wilderness'] },
+  'last-ninja/2': { lo: 36000, hi: 72000, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens'] },
+  'last-ninja/3': { lo: 36000, hi: 72000, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens', 'Into the Dungeons'] },
+  'last-ninja/4': { lo: 36000, hi: 72000, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens', 'Into the Dungeons', 'The Palace'] },
+  'last-ninja/5': { lo: 36000, hi: 72000, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens', 'Into the Dungeons', 'The Palace', 'Inner Sanctum'] },
+  'last-ninja/6': { lo: 36000, hi: 72000, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens', 'Into the Dungeons', 'The Palace', 'Inner Sanctum', 'The Final Duel', 'The Sacred Scrolls'] },
+  'leaderboard/1': { lo: 78, hi: 96, step: 1, needs: ['First Hole', 'Eighteen Holes'] },
+  'leaderboard/2': { lo: 78, hi: 96, step: 1, needs: ['First Hole', 'Eighteen Holes'] },
+  'leaderboard/3': { lo: 78, hi: 96, step: 1, needs: ['First Hole', 'Eighteen Holes'] },
+  'leaderboard/4': { lo: 78, hi: 96, step: 1, needs: ['First Hole', 'Eighteen Holes'] },
+  'maniac-mansion/1': { lo: 900000, hi: 1800000, step: 1, needs: ['The Old Mansion', 'Sandy Rescued'] },
+  'pitstop-ii/1': { lo: 200, hi: 300, step: 1 },
+  'pitstop-ii/2': { lo: 200, hi: 300, step: 1 },
+  'pitstop-ii/3': { lo: 200, hi: 300, step: 1 },
+  'pitstop-ii/4': { lo: 200, hi: 300, step: 1 },
+  'pitstop-ii/5': { lo: 200, hi: 300, step: 1 },
+  'pitstop-ii/6': { lo: 200, hi: 300, step: 1 },
+  'spy-vs-spy/1': { lo: 18000, hi: 42000, step: 1, needs: ['Embassy Infiltration', 'Embassy Level 1'] },
+  'spy-vs-spy-ii/1': { lo: 30000, hi: 66000, step: 1, needs: ['Island Landfall', 'Island Level 1'] },
+  'spy-vs-spy-iii/1': { lo: 30000, hi: 66000, step: 1, needs: ['Arctic Arrival', 'Arctic Level 1'] },
+  'turrican/2': { lo: 72000, hi: 120000, step: 1, needs: ['Touchdown', 'First World Down'] },
+  'turrican-ii/2': { lo: 72000, hi: 120000, step: 1, needs: ['Boots on the Ground', 'First World Down'] },
+  'ultima-iv/1': { lo: 120000, hi: 240000, step: 1, needs: ['*'] },
 };
 
 const ADJECTIVES = ['Pixel', 'Retro', 'Turbo', 'Sprite', 'Raster', 'Cosmic', 'Silent', 'Rapid', 'Lucky', 'Neon', 'Brave', 'Quiet', 'Crimson', 'Amber', 'Silver',
   'Frosty', 'Hyper', 'Mighty', 'Clever', 'Wild', 'Dusty', 'Shadow', 'Golden', 'Stormy', 'Jolly', 'Sly', 'Swift', 'Iron', 'Velvet', 'Atomic'];
 const NOUNS = ['Joystick', 'Kernal', 'Datasette', 'Byte', 'Pilot', 'Ninja', 'Wizard', 'Rover', 'Comet', 'Falcon', 'Badger', 'Otter', 'Raven', 'Viking', 'Ranger',
   'Rocket', 'Tiger', 'Llama', 'Gecko', 'Panda', 'Moose', 'Hacker', 'Coder', 'Gamer', 'Racer', 'Knight', 'Pirate', 'Druid', 'Robot', 'Yeti'];
+
+// The C64's colours (Pepto's palette), and pairs that read apart: a sprite's colour against its ground.
+const C64 = [[0, 0, 0], [255, 255, 255], [104, 55, 43], [112, 164, 178], [111, 61, 134], [88, 141, 67], [53, 40, 121], [184, 199, 111],
+  [111, 79, 37], [67, 57, 0], [154, 103, 89], [68, 68, 68], [108, 108, 108], [154, 210, 132], [108, 94, 181], [149, 149, 149]];
+const luma = ([r, g, b]) => 0.299 * r + 0.587 * g + 0.114 * b;
+const GRID = 10, SCALE = 6;   // the 8x8 sprite with a cell of ground around it, 60x60 pixels
+
+/** A PNG of `w` x `h` RGB pixels (rows of 3 bytes each). */
+function png(w, h, rgb) {
+  const chunk = (type, data) => {
+    const out = Buffer.alloc(12 + data.length);
+    out.writeUInt32BE(data.length, 0);
+    out.write(type, 4, 'latin1');
+    data.copy(out, 8);
+    out.writeUInt32BE(zlib.crc32(out.subarray(4, 8 + data.length)), 8 + data.length);
+    return out;
+  };
+  const head = Buffer.alloc(13);
+  head.writeUInt32BE(w, 0); head.writeUInt32BE(h, 4);
+  head[8] = 8; head[9] = 2;   // 8 bits a channel, RGB
+  const raw = Buffer.alloc(h * (1 + w * 3));
+  for (let y = 0; y < h; y++) rgb.copy(raw, y * (1 + w * 3) + 1, y * w * 3, (y + 1) * w * 3);
+  return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', head), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+}
+
+/** A badge: an 8x8 sprite mirrored left to right, in one or two C64 colours on a ground that sets it off. */
+export function demoBadge(random = Math.random) {
+  const pick = (list) => list[Math.floor(random() * list.length)];
+  const ground = pick(C64);
+  const apart = C64.filter((c) => Math.abs(luma(c) - luma(ground)) > 70);
+  const ink = pick(apart), ink2 = random() < 0.4 ? pick(apart.filter((c) => c !== ink)) ?? ink : ink;
+  const cells = [];
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 4; x++) {
+    const v = random() < 0.5 ? 0 : random() < 0.25 ? 2 : 1;
+    cells[y * 8 + x] = v; cells[y * 8 + 7 - x] = v;
+  }
+  const side = GRID * SCALE, rgb = Buffer.alloc(side * side * 3);
+  for (let py = 0; py < side; py++) for (let px = 0; px < side; px++) {
+    const x = Math.floor(px / SCALE) - 1, y = Math.floor(py / SCALE) - 1;
+    const v = x >= 0 && x < 8 && y >= 0 && y < 8 ? cells[y * 8 + x] : 0;
+    const c = v === 0 ? ground : v === 1 ? ink : ink2;
+    rgb[(py * side + px) * 3] = c[0]; rgb[(py * side + px) * 3 + 1] = c[1]; rgb[(py * side + px) * 3 + 2] = c[2];
+  }
+  return png(side, side, rgb);
+}
 
 /**
  * @param {object} o
@@ -91,7 +140,7 @@ export function createDemoPlayers({ db, now = Date.now, random = Math.random }) 
   const q = {
     count: db.prepare('SELECT COUNT(*) AS n FROM demo_players'),
     nameTaken: db.prepare('SELECT 1 FROM users WHERE name_key = ?'),
-    addUser: db.prepare('INSERT INTO users (name, name_key, handle, created_at) VALUES (?, ?, ?, ?)'),
+    addUser: db.prepare("INSERT INTO users (name, name_key, handle, created_at, avatar, avatar_type, avatar_at) VALUES (?, ?, ?, ?, ?, 'image/png', ?)"),
     mark: db.prepare('INSERT INTO demo_players (user_id) VALUES (?)'),
     games: db.prepare('SELECT id FROM games ORDER BY id'),
     achievements: db.prepare('SELECT id, title, score_at FROM achievements WHERE game_id = ? ORDER BY sort'),
@@ -135,7 +184,7 @@ export function createDemoPlayers({ db, now = Date.now, random = Math.random }) 
       for (let i = 0; i < count; i++) {
         const name = newName();
         const joined = Math.round(between(t0, t1 - 3 * DAY));
-        const id = Number(q.addUser.run(name, nameKey(name), crypto.randomBytes(16), joined).lastInsertRowid);
+        const id = Number(q.addUser.run(name, nameKey(name), crypto.randomBytes(16), joined, demoBadge(random), joined).lastInsertRowid);
         q.mark.run(id);
         players.push({ id, joined, weight: 0.3 + random() });
         added.players++;
@@ -202,7 +251,11 @@ export function createDemoPlayers({ db, now = Date.now, random = Math.random }) 
   return {
     populate,
     /** Removes every demo player, and all they unlocked, scored and did. */
-    remove() { return { removed: Number(q.remove.run().changes) }; },
+    remove() {
+      const removed = Number(q.remove.run().changes);
+      forgetDeleted(db);
+      return { removed };
+    },
     count: () => q.count.get().n,
   };
 }

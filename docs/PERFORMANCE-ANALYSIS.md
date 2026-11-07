@@ -166,9 +166,20 @@ in the browser or `NAME=0` in Node harnesses.
   IK+ merges its still, opaque scenery per material (`mergeStatic`), and the
   swaying maple within itself: about 170 draws a frame instead of 390, and half
   the per-draw uniform garbage. Its shadow maps refresh at 10 Hz (`shadowHz`),
-  since only that slow sway moves a caster. The screen provider
+  since only that slow sway moves a caster. Its motion is a small function per
+  part, the time passed in a typed array, so V8 inlines the three.js setters
+  and boxes no numbers: about 13 bytes a frame, from about 260. The screen provider
   reuses its descriptor, and Starry pools its meteor geometry
   and material. See [Retro Vibes](RETROVIBES-ARCHITECTURE.md) §§4–5.
+- **Trophy HUD and toasts.** A running score is painted at most once per
+  display frame and writes only what changed. The engine's `game` is a fresh
+  snapshot on every read, so nothing on a per-frame path reads it: attract
+  mode looks at the game only when a board starts or a score is posted. The HUD's arrangements are
+  measured on an unseen copy, and again only when what it holds changes size.
+  Laying it out reads nothing back: the view's size comes from its
+  ResizeObserver and the HUD's own from the fit. The toast draws its close
+  button, since a character missing from its font cost the first toast a
+  system font search of several milliseconds.
 - **Foggy Spotlight's extra passes.** Smoke and contact shadows are built only
   off low-power devices, and the fog switch turns the smoke off. The smoke
   marches at most 800 px wide and the occlusion runs at half resolution with 8

@@ -192,6 +192,22 @@ try {
   await admin.locator('#player-rows tr', { hasText: NICK }).click();
   await admin.locator('#player-detail h2', { hasText: NICK }).waitFor({ timeout: 10_000 });
   expect(await injected(admin, '#tab-players') === 0, 'and neither the list nor a player\'s page turns a payload into an element');
+  // The Games tab: a game whose title, trophy and board are payloads, with the attacker's score and unlock.
+  const nickId = db.prepare('SELECT id FROM users WHERE name = ?').get(NICK).id;
+  db.prepare("INSERT INTO games (id, title, source) VALUES ('evil-game', ?, NULL)").run(TOPIC);
+  db.prepare("INSERT INTO achievements (game_id, id, title, description, points, memaddr, sort) VALUES ('evil-game', 1, ?, ?, 5, '0=1', 0)").run(PAYLOADS[0], PAYLOADS[1]);
+  db.prepare("INSERT INTO leaderboards (game_id, id, title, description, format, lower_is_better, definition, sort) VALUES ('evil-game', 1, ?, 'x', 'SCORE', 0, 'x', 0)").run(PAYLOADS[2]);
+  db.prepare("INSERT INTO unlocks (user_id, game_id, achievement_id, hardcore, unlocked_at) VALUES (?, 'evil-game', 1, 1, ?)").run(nickId, Date.now());
+  db.prepare("INSERT INTO lb_entries (user_id, game_id, leaderboard_id, value, hardcore, submitted_at, flag) VALUES (?, 'evil-game', 1, 4200, 1, ?, ?)").run(nickId, Date.now(), PAYLOADS[3]);
+  await admin.click('.tab[data-tab="games"]');
+  await admin.locator('#game-rows tr').first().waitFor({ timeout: 10_000 });
+  expect((await admin.locator('#game-rows').innerText()).includes(TOPIC), 'the games list shows a payload title as text');
+  await admin.locator('#game-rows tr', { hasText: TOPIC }).click();
+  await admin.locator('#game-detail h2', { hasText: TOPIC }).waitFor({ timeout: 10_000 });
+  await admin.locator('#game-detail button', { hasText: 'unlocked' }).first().click();
+  const gameText = await admin.locator('#game-detail').textContent();
+  expect(gameText.includes(NICK) && gameText.includes(PAYLOADS[0]) && gameText.includes(PAYLOADS[2]) && gameText.includes('4,200'), 'a game\'s page lists its scores and who unlocked its trophies, payloads as text');
+  expect(await injected(admin, '#tab-games') === 0, 'and neither the games list nor a game\'s page turns a payload into an element');
   await admin.click('.tab[data-tab="live"]');
   await admin.locator('#room-list .room-item').first().waitFor({ timeout: 10_000 });
   await admin.waitForTimeout(500);

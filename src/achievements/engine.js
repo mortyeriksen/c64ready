@@ -30,6 +30,9 @@ import { createGamesApi } from './api.js';
  * @param {(e: object) => void} [o.onChallenge]    { achievement, state: 'live'|'out' }: a challenge (trigger marked T:) can be earned, or no longer
  * @param {() => void} [o.onSessionLost]           the server no longer knows the session (401): the account should be checked again
  */
+// A score's leading zeros as no-break spaces, by how many: made once.
+const BLANKS = Array.from({ length: 16 }, (_, i) => '\u00a0'.repeat(i));
+
 export function createAchievementEngine({ account, base, fetchImpl = (...a) => fetch(...a), loadRc = loadRcheevos, onChange = () => {}, onUnlock = () => {}, onLeaderboard = () => {}, onNotice = () => {}, onGameOver = () => {}, onChallenge = () => {}, onSoftcore = () => {}, onSessionLost = () => {}, log = (...a) => console.warn(...a) } = {}) {
   let rc = null, rcLoading = null;
   let game = null;               // { hash, id, title, files, achievements, leaderboards, notices, gameOver, notice, unlocked: Map id → when }
@@ -423,6 +426,18 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
     /** A file's hash, as a loaded file is hashed to find its game, or null. */
     hash: (bytes) => getRc().then((r) => r.hash(bytes)),
     /** A value in its leaderboard's format, as rcheevos writes it. */
-    format(value, format) { return rc ? rc.formatValue(value, format) : String(value); },
+    /**
+     * A value as shown. A score's leading zeros (rcheevos pads it to six digits) become no-break
+     * spaces, as wide as a digit in the fonts it is shown in, so columns of scores stay lined up.
+     * In a sentence, trim it.
+     */
+    format(value, format) {
+      const text = rc ? rc.formatValue(value, format) : String(value);
+      if (format !== 'SCORE') return text;
+      // A running score comes every frame: the zeros are counted, the blanks made once.
+      let z = 0;
+      while (z < text.length - 1 && text.charCodeAt(z) === 48 && text.charCodeAt(z + 1) >= 48 && text.charCodeAt(z + 1) <= 57) z++;
+      return z ? BLANKS[z] + text.slice(z) : text;
+    },
   };
 }

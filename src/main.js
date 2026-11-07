@@ -2600,14 +2600,14 @@ achievements = createAchievementEngine({
     const line = !signedIn ? ''
       : !result ? 'Posted when the server is back.'
       : result.flagged ? 'Being checked before it goes on the board.'
-      : outcome === 'plain' ? `Your best is ${format(result.best)}, rank ${result.rank}.`
+      : outcome === 'plain' ? `Your best is ${format(result.best).trim()}, rank ${result.rank}.`
       : outcome === 'top' ? ''
       // A server that does not yet say the old best gets the plainer line.
       : !('previous' in result) ? `New best! Rank ${result.rank}.`
       : prev == null ? `First score on the board. Rank ${result.rank}.`
-      : stillTop ? `New best! Was ${format(prev)}. Still #1.`
-      : wasRank === result.rank ? `New best! Was ${format(prev)}. Still rank ${result.rank}.`
-      : `New best! Was ${format(prev)}.`;
+      : stillTop ? `New best! Was ${format(prev).trim()}. Still #1.`
+      : wasRank === result.rank ? `New best! Was ${format(prev).trim()}. Still rank ${result.rank}.`
+      : `New best! Was ${format(prev).trim()}.`;
     _achToasts.show({
       kind: 'score', title, text: line && mode ? `${mode}. ${line}` : line,
       score: { value, format, outcome, from: prev ?? null, rankFrom: wasRank ?? null, rank: result?.rank ?? null, stillTop, topTitle },

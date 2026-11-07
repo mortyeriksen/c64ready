@@ -296,7 +296,7 @@ export function activityItem(ctx, x, withGame) {
   const what = x.kind === 'unlock'
     ? [playerLink(ctx, x.user), ' unlocked ', h('b', {}, x.achievement.title), ...inGame]
     // A game's one Hiscores goes unnamed: "scored 034600 in Commando". Others are named: "on Hiscores (Game A)", "on Fewest Moves".
-    : [playerLink(ctx, x.user), ' scored ', h('b', {}, ctx.format(x.value, x.leaderboard.format)), x.leaderboard.title === 'Hiscores' ? '' : ` on ${x.leaderboard.title}`, ...inGame];
+    : [playerLink(ctx, x.user), ' scored ', h('b', {}, ctx.format(x.value, x.leaderboard.format).trim()), x.leaderboard.title === 'Hiscores' ? '' : ` on ${x.leaderboard.title}`, ...inGame];
   return h('li', { class: `ach-event achievements-activity-item is-${x.kind}` },
     tile(ctx, x.user),
     h('span', { class: 'ach-event-text achievements-activity-text' }, ...what),
@@ -377,13 +377,50 @@ export async function renderGames(el, ctx) {
     show(true);
     // The guide says how to ask for a game, or add one. A new tab keeps the game running here.
     const missing = h('a', { class: 'achievements-link ach-games-missing', href: '/docs/guide-achievements.html#missing-a-game', target: '_blank', rel: 'noopener' }, 'Missing a game?');
-    el.replaceChildren(h('div', { class: 'ach-games-bar' }, field, missing), count, list);
+    el.replaceChildren(h('div', { class: 'ach-games-bar' }, field, folderButton(ctx, count), missing), count, list);
     if (field.value) { pushEscapeLayer(layer); layered = true; }
     // Shown again as it was (the window keeps the list): text in the filter claims Esc again.
     el._shown = () => { if (field.value) { pushEscapeLayer(layer); layered = true; } };
   } catch (e) {
     if (gen === el._gen) el.replaceChildren(failed(e));
   }
+}
+
+/**
+ * The 💾 button: a folder of the player's own files, looked through for every game here, and each
+ * version found put into the LOAD library. `status` says how it goes and what it added.
+ */
+function folderButton(ctx, status) {
+  if (!ctx.importFolder) return null;
+  const input = h('input', { type: 'file', webkitdirectory: true, multiple: true, hidden: true });
+  const btn = h('button', {
+    type: 'button', class: 'ach-info-btn ach-games-folder', title: 'Add your games from a folder to the library', 'aria-label': 'Add your games from a folder to the library',
+    on: { click: () => input.click() },
+  }, '💾');
+  input.addEventListener('change', async () => {
+    const files = input.files;
+    if (!files?.length) return;
+    btn.disabled = true;
+    status.textContent = `Looking through ${files.length.toLocaleString()} files…`;
+    try {
+      // The names each version may go by come only now: the list GAMES shows does without them.
+      const { games } = await ctx.api.gamesWithLabels();
+      const r = await ctx.importFolder(files, games, ({ checked, of }) => {
+        if (of) status.textContent = `Checking ${Math.min(checked + 1, of)} of ${of} files named like a game…`;
+      });
+      const titles = [...new Set(r.added.map((a) => a.title))];
+      const full = r.full ? ` ${r.full} more left out: the library is full.` : '';
+      status.textContent = r.added.length
+        ? `Added ${r.added.length} ${r.added.length === 1 ? 'file' : 'files'} to the library, for ${titles.join(', ')}.${full}`
+        : r.games.length ? `The library has every game found there already (${r.games.length}).${full}` : 'No game here was found in that folder.';
+    } catch (e) {
+      status.textContent = `The folder could not be read: ${e.message}`;
+    } finally {
+      btn.disabled = false;
+      input.value = '';
+    }
+  });
+  return h('span', { class: 'ach-games-folder-wrap' }, btn, input);
 }
 
 /**
@@ -492,7 +529,7 @@ export async function renderProfile(el, ctx, id) {
         return h('div', { class: 'ach-played' },
           h('h4', { class: 'ach-played-title' }, gameLink(ctx, g)),
           ...(g.total ? [meter((g.ids ?? []).map((aid) => mine.has(aid))), progress(g.unlocked, g.total, g.points, g.totalPoints)] : []),
-          ...g.scores.map((x) => h('div', { class: 'ach-best' }, h('span', {}, x.title), h('span', {}, `${ctx.format(x.value, x.format)}, ${ordinal(x.rank)}`))));
+          ...g.scores.map((x) => h('div', { class: 'ach-best' }, h('span', {}, x.title), h('span', {}, `${ctx.format(x.value, x.format).trim()}, ${ordinal(x.rank)}`))));
       }) : [note('No achievements yet.')]));
   } catch (e) {
     if (gen === el._gen) el.replaceChildren(failed(e));

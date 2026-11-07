@@ -9,6 +9,7 @@ import { openDatabase } from '../../server/db.mjs';
 import { loadSets } from '../../server/games.mjs';
 import { createDemoPlayers } from '../../server/demo-players.mjs';
 import { createAdminData } from '../../server/admin-data.mjs';
+import { imageInfo, ACCOUNT_DEFAULTS as LIMITS } from '../../server/accounts.mjs';
 
 let testNo = 0, failing = 0, current = [];
 function expect(cond, msg) { if (!cond) current.push(msg); }
@@ -56,6 +57,11 @@ const boards = all('SELECT game_id, id, lower_is_better FROM leaderboards');
   expect(flagged === 0, `nothing flagged or softcore (${flagged})`);
   const games = one('SELECT COUNT(DISTINCT game_id) AS n FROM achievements').n, played = one('SELECT COUNT(DISTINCT game_id) AS n FROM unlocks u JOIN demo_players d ON d.user_id = u.user_id').n;
   expect(played === games, `every game with a set has demo unlocks (${played} of ${games})`);
+  // Each has a badge, as a player's picture is: a PNG, JPEG or WebP the server serves, within its size.
+  const pics = all('SELECT u.avatar, u.avatar_type, u.avatar_at FROM users u JOIN demo_players d ON d.user_id = u.id');
+  const bad = pics.filter((p) => { const i = p.avatar && imageInfo(Buffer.from(p.avatar)); return !i || i.type !== p.avatar_type || i.width > LIMITS.pictureSide || i.height > LIMITS.pictureSide || p.avatar.length > LIMITS.maxPictureBytes || !p.avatar_at; });
+  expect(pics.length === 50 && bad.length === 0, `every demo player has a badge a player could have set (${bad.length} of ${pics.length} not)`);
+  expect(new Set(pics.map((p) => Buffer.from(p.avatar).toString('base64'))).size >= 45, 'and the badges differ');
   ok('a batch of 50 players, five scores on every board');
 }
 
@@ -113,10 +119,14 @@ const boards = all('SELECT game_id, id, lower_is_better FROM leaderboards');
   expect(names.filter((n) => !before.has(n)).length === 50, 'the second batch has new names');
   const b = boards[0];
   expect(one('SELECT COUNT(*) AS n FROM lb_entries e JOIN demo_players d ON d.user_id = e.user_id WHERE e.game_id = ? AND e.leaderboard_id = ?', b.game_id, b.id).n === 10, 'ten demo scores on a board');
+  const ids = all('SELECT user_id FROM demo_players').map((x) => x.user_id);
   const r = demo.remove();
   expect(r.removed === 100 && demo.count() === 0, `all 100 removed (${r.removed})`);
   const left = one(`SELECT (SELECT COUNT(*) FROM users) + (SELECT COUNT(*) FROM unlocks) + (SELECT COUNT(*) FROM lb_entries) + (SELECT COUNT(*) FROM plays) AS n`).n;
   expect(left === 3, `only the real player, their unlock and score remain (${left} rows)`);
+  const tables = all("SELECT name FROM sqlite_master WHERE type = 'table'").map((t) => t.name).filter((t) => all(`PRAGMA table_info(${t})`).some((c) => c.name === 'user_id'));
+  const stray = tables.filter((t) => ids.some((id) => one(`SELECT 1 AS x FROM ${t} WHERE user_id = ?`, id)));
+  expect(stray.length === 0 && !ids.some((id) => one('SELECT 1 AS x FROM users WHERE id = ?', id)), `no row of a removed demo player is left, badges included (${stray.join(', ') || 'none'})`);
   expect(one('SELECT COUNT(*) AS n FROM activity').n === 0, 'no activity left');
   ok('batches add up, and remove takes them all');
 }

@@ -3,13 +3,15 @@
 // server/admin-data.mjs — the admin console's view of the players: an overview,
 // every registered player, one player's details (account, passkeys, progress,
 // activity, login history with addresses), the admin's actions on them, the
-// results the fair-play checks flagged for review, demo players to add and
-// remove, and a copy of the whole database to download.
+// games with each board's scores and who unlocked each trophy, the results the
+// fair-play checks flagged for review, demo players to add and remove, and a
+// copy of the whole database to download.
 // It reads and writes the accounts and games database; the chat server serves
 // it under /admin/api behind the admin's login (server/chat.mjs).
 
 import { addressKey } from './address.mjs';
 import { createDemoPlayers } from './demo-players.mjs';
+import { forgetDeleted } from './db.mjs';
 
 const ACTIVE_MS = 5 * 60_000;   // "active now": the app used within this long
 const PLAYING_MS = 30 * 60_000;  // "playing X": an unlock or best in X within this long
@@ -79,6 +81,24 @@ export function createAdminData({ db, accounts, bans = null, now = Date.now }) {
     oneActivity: db.prepare('SELECT game_id, kind, ref FROM activity WHERE id = ? AND user_id = ?'),
     dropOneActivity: db.prepare('DELETE FROM activity WHERE id = ? AND user_id = ?'),
     remove: db.prepare('DELETE FROM users WHERE id = ?'),
+    dropUnlockActivity: db.prepare("DELETE FROM activity WHERE user_id = ? AND game_id = ? AND kind = 'unlock' AND ref = ?"),
+    // The games, each with its numbers; one game's boards, scores, trophies and who unlocked them.
+    games: db.prepare(`SELECT g.id, g.title,
+        (SELECT COUNT(*) FROM achievements WHERE game_id = g.id) AS trophies,
+        (SELECT COUNT(*) FROM leaderboards WHERE game_id = g.id) AS boards,
+        (SELECT COUNT(*) FROM (SELECT user_id FROM unlocks WHERE game_id = g.id UNION SELECT user_id FROM lb_entries WHERE game_id = g.id)) AS players,
+        (SELECT COUNT(*) FROM unlocks WHERE game_id = g.id) AS unlocks,
+        (SELECT COUNT(*) FROM lb_entries WHERE game_id = g.id) AS scores,
+        (SELECT COUNT(*) FROM unlocks WHERE game_id = g.id AND flag IS NOT NULL) + (SELECT COUNT(*) FROM lb_entries WHERE game_id = g.id AND flag IS NOT NULL) AS flagged,
+        (SELECT MAX(at) FROM activity WHERE game_id = g.id) AS last
+      FROM games g ORDER BY g.title COLLATE NOCASE`),
+    game: db.prepare('SELECT id, title, url FROM games WHERE id = ?'),
+    boards: db.prepare('SELECT id, title, format, lower_is_better FROM leaderboards WHERE game_id = ? ORDER BY sort'),
+    entries: db.prepare(`SELECT e.leaderboard_id AS board, e.user_id, u.name, e.value, e.hardcore, e.flag, e.submitted_at, d.user_id IS NOT NULL AS demo
+      FROM lb_entries e JOIN users u ON u.id = e.user_id LEFT JOIN demo_players d ON d.user_id = e.user_id WHERE e.game_id = ?`),
+    trophies: db.prepare('SELECT id, title, description, points FROM achievements WHERE game_id = ? ORDER BY sort'),
+    unlockers: db.prepare(`SELECT x.achievement_id AS trophy, x.user_id, u.name, x.unlocked_at, x.hardcore, x.flag, d.user_id IS NOT NULL AS demo
+      FROM unlocks x JOIN users u ON u.id = x.user_id LEFT JOIN demo_players d ON d.user_id = x.user_id WHERE x.game_id = ? ORDER BY x.unlocked_at, x.user_id`),
   };
   // The players list: each player with their numbers, sorted and searched as asked.
   const listSql = (sort, dir) => db.prepare(`SELECT u.id, u.name, u.created_at, u.avatar_at,
@@ -157,6 +177,40 @@ export function createAdminData({ db, accounts, bans = null, now = Date.now }) {
         activity: this.activity(id),
       };
     },
+    /** Every game with a set: its trophies and boards, how many played, unlocked and scored, flagged results, and when last played. */
+    games() {
+      return { games: q.games.all().map((g) => ({ id: g.id, title: g.title, trophies: g.trophies, boards: g.boards, players: g.players, unlocks: g.unlocks, scores: g.scores, flagged: g.flagged, last: g.last })) };
+    },
+    /**
+     * One game: each board's scores, best first (fewest first where fewer is better), with their places
+     * as the public boards count them, and each trophy with who unlocked it and when. Flagged and
+     * softcore results are listed too, without a place.
+     */
+    game(id) {
+      const g = q.game.get(String(id));
+      if (!g) throw Object.assign(new Error('no such game'), { status: 404 });
+      const entries = q.entries.all(g.id);
+      const boards = q.boards.all(g.id).map((b) => {
+        const low = !!b.lower_is_better;
+        const rows = entries.filter((e) => e.board === b.id).sort((x, y) => (low ? x.value - y.value : y.value - x.value) || x.submitted_at - y.submitted_at);
+        // Equal values share a place; only results that count in public have one.
+        let place = 0, last = null, counted = 0;
+        return {
+          id: b.id, title: b.title, format: b.format, lowerIsBetter: low,
+          entries: rows.map((e) => {
+            const counts = !!e.hardcore && e.flag == null;
+            if (counts) { counted++; if (e.value !== last) { place = counted; last = e.value; } }
+            return { user: { id: e.user_id, name: e.name, demo: !!e.demo }, value: e.value, at: e.submitted_at, rank: counts ? place : null, flag: e.flag, softcore: !e.hardcore };
+          }),
+        };
+      });
+      const unlocks = q.unlockers.all(g.id);
+      const trophies = q.trophies.all(g.id).map((a) => ({
+        id: a.id, title: a.title, description: a.description, points: a.points,
+        unlocks: unlocks.filter((x) => x.trophy === a.id).map((x) => ({ user: { id: x.user_id, name: x.name, demo: !!x.demo }, at: x.unlocked_at, flag: x.flag, softcore: !x.hardcore })),
+      }));
+      return { id: g.id, title: g.title, url: g.url, boards, trophies };
+    },
     /** A player's login history, newest first, a page at a time (before: the last id seen). */
     logins(id, before = Number.MAX_SAFE_INTEGER) {
       const rows = q.logins.all(id, before, PAGE + 1);
@@ -170,8 +224,8 @@ export function createAdminData({ db, accounts, bans = null, now = Date.now }) {
     /**
      * The admin's actions. Each returns what to log: signout, rename (to
      * PlayerN, which the player can change by making a new account name… or
-     * keep), picture, score (one board's best), results (a game's), entry (one
-     * line of the activity, the result itself kept), delete.
+     * keep), picture, score (one board's best), unlock (one trophy), results (a
+     * game's), entry (one line of the activity, the result itself kept), delete.
      */
     /** A consistent copy of the whole database, written to `file` while the server runs (SQLite's VACUUM INTO). */
     snapshot(file) {
@@ -199,7 +253,7 @@ export function createAdminData({ db, accounts, bans = null, now = Date.now }) {
       if (row.hardcore) q.feed.run(row.at, user, game, kind, ref, kind === 'score' ? row.value : null);
       return { did: `flagged ${kind} approved (${game} ${ref})` };
     },
-    act(id, action, { game = null, board = null, entry = null } = {}) {
+    act(id, action, { game = null, board = null, achievement = null, entry = null } = {}) {
       const u = user(id);
       switch (action) {
         case 'signout':
@@ -219,6 +273,11 @@ export function createAdminData({ db, accounts, bans = null, now = Date.now }) {
           q.dropScore.run(id, game, board);
           q.dropScoreActivity.run(id, game, board);
           return { did: `best score removed (${game} board ${board})`, name: u.name };
+        case 'unlock':
+          if (typeof game !== 'string' || !Number.isInteger(achievement)) throw Object.assign(new Error('which trophy?'), { status: 400 });
+          if (!q.dropUnlock.run(id, game, achievement).changes) throw Object.assign(new Error('no such unlock'), { status: 404 });
+          q.dropUnlockActivity.run(id, game, achievement);
+          return { did: `unlock removed (${game} trophy ${achievement})`, name: u.name };
         case 'results':
           if (typeof game !== 'string') throw Object.assign(new Error('which game?'), { status: 400 });
           db.exec('BEGIN');
@@ -233,6 +292,7 @@ export function createAdminData({ db, accounts, bans = null, now = Date.now }) {
         }
         case 'delete':
           q.remove.run(id);
+          forgetDeleted(db);
           return { did: 'account deleted', name: u.name };
         default:
           throw Object.assign(new Error('no such action'), { status: 400 });

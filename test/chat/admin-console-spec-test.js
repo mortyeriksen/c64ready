@@ -138,6 +138,11 @@ async function signUp(name, from, agent) {
   const v = await call('POST', '/api/auth/register/verify', { body: { challengeId: o.body.challengeId, credential: made.cred }, origin: 'https://c64ready.com', from, agent });
   return { id: v.body.user.id, token: v.body.token, credId: made.id };
 }
+// Rows of these accounts left in any table with a user_id, found from the schema: none after a delete.
+const leftOf = (ids) => db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map((t) => t.name)
+  .filter((t) => db.prepare(`PRAGMA table_info(${t})`).all().some((c) => c.name === 'user_id'))
+  .filter((t) => ids.some((id) => db.prepare(`SELECT 1 FROM ${t} WHERE user_id = ?`).get(id)));
+
 const MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
 const WIN = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
 const ann = await signUp('Ann', '203.0.113.5', MAC);
@@ -221,6 +226,8 @@ db.prepare("INSERT INTO activity (at, user_id, game_id, kind, ref, value) VALUES
   expect(db.prepare('SELECT name FROM users WHERE id = ?').get(bob.id).name === `Player${bob.id}`, 'rename gives a plain name');
   await actOn(bob.id, 'delete', { reason: 'asked to' });
   expect((await call('GET', `/admin/api/players/${bob.id}`, { cookie })).status === 404, 'delete removes the account');
+  const bobLeft = leftOf([bob.id]);
+  expect(bobLeft.length === 0 && !db.prepare('SELECT 1 FROM users WHERE id = ?').get(bob.id), `and every row of it, badge included (left in: ${bobLeft.join(', ') || 'none'})`);
   await chatLog.flush();
   const reviews = readLog().filter((e) => e.ev === 'admin' && e.action.startsWith('review-')).map((e) => e.action);
   expect(reviews.join() === 'review-approve,review-clear', `each review is logged too (got ${reviews})`);
@@ -298,6 +305,44 @@ db.prepare("INSERT INTO activity (at, user_id, game_id, kind, ref, value) VALUES
   await chatLog.flush();
   expect(readLog().some((e) => e.ev === 'admin' && e.action === 'demo-add') && readLog().some((e) => e.ev === 'admin' && e.action === 'demo-remove'), 'both are logged');
   ok('demo players come and go from the console');
+}
+
+// 7f. Games: each with its numbers; one game's scores, placed as the public boards place them
+//     (fewest first on a board of times, equal times sharing a place, a flagged one listed without),
+//     and who unlocked each trophy. An unlock is removed with a reason, its activity line with it.
+{
+  db.prepare("INSERT INTO games (id, title, source) VALUES ('race', 'Race', NULL)").run();
+  db.prepare("INSERT INTO achievements (game_id, id, title, description, points, memaddr, sort) VALUES ('race', 1, 'Lap', 'A lap.', 5, '0=1', 0)").run();
+  db.prepare("INSERT INTO leaderboards (game_id, id, title, description, format, lower_is_better, definition, sort) VALUES ('race', 1, 'Time', 'x', 'MILLISECS', 1, 'x', 0)").run();
+  const racer = (name, n) => Number(db.prepare('INSERT INTO users (name, name_key, handle, created_at) VALUES (?, ?, ?, ?)').run(name, name.toLowerCase(), Buffer.from([0xee, n]), clock).lastInsertRowid);
+  const [dot, eve, fay, gil] = [racer('Dot', 1), racer('Eve', 2), racer('Fay', 3), racer('Gil', 4)];
+  const entry = db.prepare("INSERT INTO lb_entries (user_id, game_id, leaderboard_id, value, hardcore, submitted_at, flag) VALUES (?, 'race', 1, ?, 1, ?, ?)");
+  entry.run(dot, 3000, clock, null); entry.run(eve, 2500, clock, null); entry.run(fay, 2500, clock + 1, null); entry.run(gil, 2000, clock, 'a score just after the game was opened');
+  for (const uid of [dot, eve]) {
+    db.prepare("INSERT INTO unlocks (user_id, game_id, achievement_id, hardcore, unlocked_at) VALUES (?, 'race', 1, 1, ?)").run(uid, clock);
+    db.prepare("INSERT INTO activity (at, user_id, game_id, kind, ref, value) VALUES (?, ?, 'race', 'unlock', 1, NULL)").run(clock, uid);
+  }
+  expect((await call('GET', '/admin/api/games')).status === 401, 'the games need a signed-in console');
+  const race = (await call('GET', '/admin/api/games', { cookie })).body.games.find((g) => g.id === 'race');
+  expect(race && race.trophies === 1 && race.boards === 1 && race.players === 4 && race.unlocks === 2 && race.scores === 4 && race.flagged === 1,
+    `a game is listed with its trophies, boards, players, unlocks, scores and flagged results (${JSON.stringify(race)})`);
+  const g = (await call('GET', '/admin/api/games/race', { cookie })).body;
+  const rows = g.boards[0].entries.map((e) => `${e.user.name}:${e.rank ?? '-'}`).join(',');
+  expect(rows === 'Gil:-,Eve:1,Fay:1,Dot:3', `fewest first, equal times share a place, the next takes the place after them, a flagged one has none (${rows})`);
+  expect(g.boards[0].entries[0].flag === 'a score just after the game was opened', 'and the flag says why');
+  expect(g.trophies[0].title === 'Lap' && g.trophies[0].unlocks.map((x) => x.user.name).sort().join() === 'Dot,Eve', 'each trophy lists who unlocked it');
+  expect((await call('GET', '/admin/api/games/nope', { cookie })).status === 404, 'an unknown game is not found');
+  const unlock = (uid, body, opts = {}) => call('POST', `/admin/api/players/${uid}/unlock`, { cookie, body, ...opts });
+  expect((await unlock(dot, { game: 'race', achievement: 1 })).status === 400, 'removing an unlock needs a reason');
+  expect((await unlock(dot, { game: 'race', achievement: 1, reason: 'x' }, { origin: 'https://evil.example' })).status === 403, 'and must come from the console itself');
+  expect((await unlock(dot, { game: 'race', achievement: 1, reason: 'trainer' })).status === 200, 'an unlock is removed');
+  const left = db.prepare("SELECT user_id FROM unlocks WHERE game_id = 'race'").all().map((r) => r.user_id);
+  const lines = db.prepare("SELECT user_id FROM activity WHERE game_id = 'race' AND kind = 'unlock'").all().map((r) => r.user_id);
+  expect(left.join() === String(eve) && lines.join() === String(eve), 'with its activity line, the other player\'s kept');
+  expect((await unlock(dot, { game: 'race', achievement: 1, reason: 'again' })).status === 404, 'an unlock already gone is not found');
+  await chatLog.flush();
+  expect(readLog().some((e) => e.ev === 'admin' && e.action === 'unlock' && e.uid === dot && e.reason === 'trainer'), 'it is logged, with the reason');
+  ok('games: listed, their scores placed and trophies unlocked, and an unlock removed');
 }
 
 // 8. Logins older than 90 days go.

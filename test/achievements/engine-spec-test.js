@@ -505,6 +505,19 @@ const settle = () => new Promise((r) => setTimeout(r, 50));
   ok('challenges: live, out, and an unlock is not a failure');
 }
 
+// A score's padding shows as blanks a digit wide, so a column of scores keeps its width; a time
+// and a plain value show as rcheevos writes them.
+{
+  await engine.load();
+  const B = '\u00a0';
+  expect(engine.format(34600, 'SCORE') === `${B}34600`, `a score's leading zero is a no-break space (${JSON.stringify(engine.format(34600, 'SCORE'))})`);
+  expect(engine.format(7, 'SCORE') === `${B.repeat(5)}7` && engine.format(0, 'SCORE') === `${B.repeat(5)}0`, 'every leading zero, but never the last digit');
+  expect([7, 34600, 123456].every((v) => engine.format(v, 'SCORE').length === 6), 'every score keeps its six-character width');
+  expect(engine.format(123456, 'SCORE') === '123456', 'a full-width score is as it was');
+  expect(engine.format(4512, 'MILLISECS') === '0:45.12' && engine.format(42, 'VALUE') === '42', `a time and a plain value are as rcheevos writes them (${engine.format(4512, 'MILLISECS')})`);
+  ok('a score shows its padding as blanks');
+}
+
 accounts.close();
 server.close();
 fs.rmSync(sets, { recursive: true, force: true });

@@ -70,6 +70,7 @@ const accounts = db
       blockedWords: list(env.CHAT_BLOCKED_WORDS),
       log: (t) => console.log(t),
       bans,
+      onDeleted: (uid) => chat.dropAccount(uid),
     })
   : null;
 if (!accounts) console.warn('accounts are off, and with them the chat: set CHAT_DATA_DIR to a persistent directory');

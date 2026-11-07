@@ -294,6 +294,14 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
   }
   const gotPoints = () => (game?.achievements ?? NONE).filter(isGot).reduce((t, a) => t + (a.points || 0), 0);
 
+  // Standings are fetched only while the HUD is in sight. A new game, another account or a
+  // posted score marks a board's out of date, and they are fetched when it shows.
+  const stale = new Set();   // board ids
+  function freshen() {
+    if (!game || !stale.size || !onScreen()) return;
+    for (const id of stale) { const l = boardOf(id); if (l) loadStandings(l); }
+    stale.clear();
+  }
   async function loadStandings(l) {
     const e = engine();
     if (!e || !l) return;
@@ -369,7 +377,7 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
     const key = entry ?? text;
     if (key === shownWho) return;
     shownWho = key;
-    write(who, entry ? `NEXT ${entry.name} ${formatted(entry.value)} · ` : text);
+    write(who, entry ? `NEXT ${entry.name} ${formatted(entry.value).trim()} · ` : text);
     gapBox.hidden = !entry;
   }
   // Scaled, never sized: a step of 1/500 or more is written, so no layout.
@@ -384,13 +392,20 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
   function paintFrame() { framed = false; paintChase(true); }
 
   // ── Layout: the HUD is the box drawn, its contents the arrangement that fills it best ──
+  // The view's size, from its ResizeObserver: laying out reads nothing back.
+  let areaW = 0, areaH = 0;
   function bounds() {
-    const W = area.clientWidth, H = area.clientHeight;
+    const W = areaW || area.clientWidth, H = areaH || area.clientHeight;
     return { W, H, left: Math.min(BUTTONS, W / 4), top: MARGIN, right: W - MARGIN, bottom: H - MARGIN };
   }
   // Every arrangement's size at 10px, which scales with the font, measured on an unseen copy so the
-  // HUD's own effects keep running. A reshape measures once, as it starts.
-  let sizes = null;
+  // HUD's own effects keep running. Measured again only when what it holds changes size.
+  let sizes = null, sizesKey = '', fontsLoaded = 0;
+  function arrangementSizes() {
+    const key = `${game?.hash}|${game?.achievements.length}|${compact()}|${hud.dataset.chase}|${boardName.hidden}|${pts.textContent.length}|${fontsLoaded}`;
+    if (key !== sizesKey) { sizes = measure(); sizesKey = key; }
+    return sizes;
+  }
   function measure() {
     const n = game?.achievements.length ?? 0;
     const copy = hud.cloneNode(true), copyIn = copy.querySelector('.ach-hud-in');
@@ -408,28 +423,36 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
   }
   let shownAs = null, fitW = 0, fitH = 0;
   /** Fits the HUD to a `bw` by `bh` box. Returns whether the layout changed; fitW and fitH hold its size. */
+  // A reshape fits once per display frame: one pass over the arrangements, and the layout and
+  // columns written only when they change.
+  let shownCols = -1;
   function fit(bw, bh) {
-    const list = sizes ?? measure();
+    const list = arrangementSizes();
     const before = hud.dataset.layout;
-    const scale = (a) => Math.min(bw / a.w, bh / a.h);
-    let best = null;
-    for (const a of list) if (!a.layout.startsWith('pill') && (!best || scale(a) > scale(best))) best = a;
-    const kept = best && list.find((a) => a.layout === shownAs?.layout && a.cols === shownAs?.cols);
-    if (kept && scale(kept) >= scale(best) * KEEP) best = kept;
-    if (!best || 10 * scale(best) < PILL_BELOW) best = list.find((a) => a.layout === pillFor(bw / bh));
+    const pillName = pillFor(bw / bh);
+    let best = null, bestScale = 0, kept = null, keptScale = 0, pill = null;
+    for (let i = 0; i < list.length; i++) {
+      const a = list[i], scale = Math.min(bw / a.w, bh / a.h);
+      if (a.layout === pillName) pill = a;
+      if (a.cols === 0) continue;   // a pill
+      if (!best || scale > bestScale) { best = a; bestScale = scale; }
+      if (shownAs && a.layout === shownAs.layout && a.cols === shownAs.cols) { kept = a; keptScale = scale; }
+    }
+    if (kept && keptScale >= bestScale * KEEP) { best = kept; bestScale = keptScale; }
+    if (!best || 10 * bestScale < PILL_BELOW) { best = pill; bestScale = Math.min(bw / pill.w, bh / pill.h); }
     shownAs = best;
-    const f = clamp(10 * scale(best) * 0.97, 6, FONT_MAX);
+    const f = clamp(10 * bestScale * 0.97, 6, FONT_MAX);
     fitW = Math.max(bw, (best.w * f) / 10);
     fitH = Math.max(bh, (best.h * f) / 10);
-    hud.dataset.layout = best.layout;
-    inner.style.setProperty('--ach-hud-cols', String(best.cols));
+    if (before !== best.layout) hud.dataset.layout = best.layout;
+    if (shownCols !== best.cols) { shownCols = best.cols; inner.style.setProperty('--ach-hud-cols', String(best.cols)); }
     hud.style.fontSize = `${f.toFixed(2)}px`;
     hud.style.width = `${fitW.toFixed(1)}px`;
     hud.style.height = `${fitH.toFixed(1)}px`;
-    return before !== hud.dataset.layout;
+    return before !== best.layout;
   }
   function place() {
-    const b = bounds(), w = hud.offsetWidth, h = hud.offsetHeight;
+    const b = bounds(), w = fitW, h = fitH;
     const left = b.left + S.fx * Math.max(0, b.right - b.left - w);
     const top = b.top + S.fy * Math.max(0, b.bottom - b.top - h);
     hud.style.left = `${left}px`;
@@ -446,10 +469,12 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
     S.fy = fh > 0 ? clamp((top - b.top) / fh, 0, 1) : 0.5;
   }
   function layout() {
-    if (!onScreen() || !area.clientWidth) return false;
-    const W = area.clientWidth;
+    if (!onScreen()) return false;
+    const W = bounds().W;
+    if (!W) return false;
     const changed = fit(S.bw * W, S.bh * W);
     place();
+    freshen();
     return changed;
   }
   // Slots clack back in one by one, the rest drawn in a few raster lines at a time.
@@ -587,7 +612,6 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
     // Where in the grip it was taken: the corner keeps that much from the pointer.
     const kx = e.clientX - ar.left - (L ? ax - w : ax + w), ky = e.clientY - ar.top - (T ? ay - h : ay + h);
     size = { c, ax, ay, ox: ar.left + kx, oy: ar.top + ky, b: bounds(), x: e.clientX, y: e.clientY, raf: 0, id: e.pointerId };
-    sizes = measure();
     fit(w, h);
     corner.setPointerCapture(e.pointerId);
     hud.classList.add('is-resizing');
@@ -618,7 +642,6 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
     cancelAnimationFrame(size.raf);
     reshape();
     size = null;
-    sizes = null;
     hud.classList.remove('is-resizing');
     share(hud.offsetLeft, hud.offsetTop);
     place();
@@ -800,13 +823,15 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
       }
     }
     // A new game, or another account: its own entry is told apart from the others'.
-    if (game && (changed || signedInAs)) for (const l of game.leaderboards) loadStandings(l);
+    if (changed) stale.clear();
+    if (game && (changed || signedInAs)) for (const l of game.leaderboards) stale.add(l.id);
     if (game) {
       paintSlots();
       if (performance.now() > counting) pts.textContent = String(gotPoints());
       paintChase(false);
     }
     sync(false);
+    freshen();
     if (changed && onScreen()) { layout(); redraw(0); }
   }
   /** An unlock (engine onUnlock): its toast is showing, or about to. */
@@ -838,7 +863,7 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
       return;
     }
     running.delete(id);
-    if (type === 'submitted') { const l = boardOf(id); if (l) loadStandings(l); }
+    if (type === 'submitted') { stale.add(id); freshen(); }
     if (board?.id !== id) return;
     // The board followed ended: the latest started of those still running takes over, a time first.
     const after = boardInPlay(game.leaderboards, running.keys());
@@ -849,10 +874,15 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
   }
 
   // The view's size changed, or it opened: lay out again.
-  new ResizeObserver(() => { if (!drag && !size) layout(); }).observe(area);
+  new ResizeObserver((entries) => {
+    const r = entries[entries.length - 1].contentRect;
+    areaW = r.width;
+    areaH = r.height;
+    if (!drag && !size) layout();
+  }).observe(area);
   mq?.addEventListener?.('change', () => { if (onScreen()) layout(); });
   // The C64 face arriving changes every measure.
-  globalThis.document?.fonts?.addEventListener?.('loadingdone', () => { if (!drag && !size) layout(); });
+  globalThis.document?.fonts?.addEventListener?.('loadingdone', () => { fontsLoaded++; if (!drag && !size) layout(); });
 
   return { refresh, unlocked, leaderboardEvent, element: hud };
 }

@@ -754,53 +754,73 @@ export const scene = {
       g.userData.ikFish = fish;
     },
     animate(g, t) {
-      if (g.userData.reflection) g.userData.reflection.time = t;
-      if (g.userData.ikWater) g.userData.ikWater.material.uniforms['time'].value = t * 0.36;
-      if (g.userData.ikTree) g.userData.ikTree.rotation.z = Math.sin(t * 0.42) * 0.012;
-      const birds = g.userData.ikBirds;
-      if (birds) for (let i = 0; i < birds.length; i++) {   // indexed: no per-frame iterator alloc
-        const o = birds[i];
-        o.bird.position.set(((o.x0 + t * o.sp) % 130) - 65, o.y + Math.sin(t * 0.7 + o.ph) * 0.6, o.z);
-        o.bird.rotation.z = Math.sin(t * 0.5 + o.ph) * 0.18;          // gentle banking
-        const flap = Math.sin(t * o.fl + o.ph) * 0.38 + 0.18;         // slow, restrained wingbeats
-        o.wl.rotation.x = flap; o.wr.rotation.x = -flap;
-      }
-      const fish = g.userData.ikFish;
-      if (fish) {
-        const p = ((t % 7.5) - 5.6) / 1.15;              // brief arc once per cycle
-        fish.visible = p >= 0 && p <= 1;
-        if (fish.visible) {
-          fish.position.set(5.5 - p * 3.2, Math.sin(p * Math.PI) * 2.4 - 0.35, -30);
-          fish.rotation.z = Math.atan2(Math.cos(p * Math.PI) * Math.PI * 2.4, -3.2) - Math.PI / 2;
-        }
-      }
-      const rings = g.userData.ikRings;
-      if (rings) for (let i = 0; i < rings.length; i++) {   // indexed: no per-frame iterator alloc
-        const o = rings[i];
-        const q = (t * o.sp + o.ph) % 1;
-        o.mesh.scale.setScalar(o.r0 + q * o.r1);
-        o.mesh.material.opacity = o.a * (1 - q) * Math.min(1, q * 7);   // fade in fast, out slow
-      }
-      const foam = g.userData.ikFoam;
-      if (foam) { foam[0].offset.x = t * 0.006; foam[1].offset.x = -t * 0.004; }
-      const splashes = g.userData.ikSplashes;
-      if (splashes) for (let i = 0; i < splashes.length; i++) {
-        const o = splashes[i];
-        const q = ((t % 7.5) - o.t0) / 0.9;                  // 0.9s ring life after the crossing
-        const on = q >= 0 && q <= 1;
-        o.mesh.visible = on;
-        if (on) { o.mesh.scale.setScalar(0.25 + q * 1.5); o.mesh.material.opacity = 0.5 * (1 - q); }
-      }
-      const leaves = g.userData.ikLeaves;
-      if (leaves) for (let i = 0; i < leaves.length; i++) {   // indexed: no per-frame iterator alloc
-        const o = leaves[i];
-        const p = (t * o.sp + o.ph) % 1;                 // 0 = canopy, 1 = pavement
-        o.leaf.position.set(
-          o.x0 + Math.sin((t + o.ph * 9) * 1.7) * 0.5,
-          o.y0 - p * (o.y0 - 0.2),
-          o.z0 + Math.cos((t + o.ph * 7) * 1.2) * 0.35,
-        );
-        o.leaf.rotation.set(t * 2.3 + o.ph * 6, o.ph * 6, t * 1.9 + o.ph * 3);
-      }
+      const u = g.userData;
+      if (u.reflection) u.reflection.time = t;
+      clock[0] = t;
+      if (u.ikWater) waterTime(u.ikWater.material.uniforms.time);
+      if (u.ikTree) swayTree(u.ikTree);
+      if (u.ikBirds) flyBirds(u.ikBirds);
+      if (u.ikFish) jumpFish(u.ikFish);
+      if (u.ikRings) spreadRings(u.ikRings);
+      if (u.ikFoam) driftFoam(u.ikFoam);
+      if (u.ikSplashes) splash(u.ikSplashes);
+      if (u.ikLeaves) dropLeaves(u.ikLeaves);
     },
 };
+
+// The scene's motion, a small function per part: each is optimized on its own, so the three.js
+// setters it calls are inlined and no number is boxed on the way to them. The time reaches them
+// through a typed array, as a number argument would be boxed too.
+const clock = new Float64Array(1);
+function waterTime(uniform) { uniform.value = clock[0] * 0.36; }
+function swayTree(tree) { tree.rotation.z = Math.sin(clock[0] * 0.42) * 0.012; }
+function flyBirds(birds) {
+  const t = clock[0];
+  for (let i = 0; i < birds.length; i++) {   // indexed: no per-frame iterator alloc
+    const o = birds[i];
+    o.bird.position.set(((o.x0 + t * o.sp) % 130) - 65, o.y + Math.sin(t * 0.7 + o.ph) * 0.6, o.z);
+    o.bird.rotation.z = Math.sin(t * 0.5 + o.ph) * 0.18;          // gentle banking
+    const flap = Math.sin(t * o.fl + o.ph) * 0.38 + 0.18;         // slow, restrained wingbeats
+    o.wl.rotation.x = flap; o.wr.rotation.x = -flap;
+  }
+}
+function jumpFish(fish) {
+  const p = ((clock[0] % 7.5) - 5.6) / 1.15;              // brief arc once per cycle
+  fish.visible = p >= 0 && p <= 1;
+  if (!fish.visible) return;
+  fish.position.set(5.5 - p * 3.2, Math.sin(p * Math.PI) * 2.4 - 0.35, -30);
+  fish.rotation.z = Math.atan2(Math.cos(p * Math.PI) * Math.PI * 2.4, -3.2) - Math.PI / 2;
+}
+function spreadRings(rings) {
+  const t = clock[0];
+  for (let i = 0; i < rings.length; i++) {
+    const o = rings[i];
+    const q = (t * o.sp + o.ph) % 1;
+    o.mesh.scale.setScalar(o.r0 + q * o.r1);
+    o.mesh.material.opacity = o.a * (1 - q) * Math.min(1, q * 7);   // fade in fast, out slow
+  }
+}
+function driftFoam(foam) { foam[0].offset.x = clock[0] * 0.006; foam[1].offset.x = -clock[0] * 0.004; }
+function splash(splashes) {
+  const t = clock[0];
+  for (let i = 0; i < splashes.length; i++) {
+    const o = splashes[i];
+    const q = ((t % 7.5) - o.t0) / 0.9;                  // 0.9s ring life after the crossing
+    const on = q >= 0 && q <= 1;
+    o.mesh.visible = on;
+    if (on) { o.mesh.scale.setScalar(0.25 + q * 1.5); o.mesh.material.opacity = 0.5 * (1 - q); }
+  }
+}
+function dropLeaves(leaves) {
+  const t = clock[0];
+  for (let i = 0; i < leaves.length; i++) {
+    const o = leaves[i];
+    const p = (t * o.sp + o.ph) % 1;                 // 0 = canopy, 1 = pavement
+    o.leaf.position.set(
+      o.x0 + Math.sin((t + o.ph * 9) * 1.7) * 0.5,
+      o.y0 - p * (o.y0 - 0.2),
+      o.z0 + Math.cos((t + o.ph * 7) * 1.2) * 0.35,
+    );
+    o.leaf.rotation.set(t * 2.3 + o.ph * 6, o.ph * 6, t * 1.9 + o.ph * 3);
+  }
+}

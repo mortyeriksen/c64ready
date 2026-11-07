@@ -621,6 +621,8 @@
 .ach-games-missing {
   font-size: 0.78rem;
 }
+.ach-games-folder-wrap { display: contents; }
+.ach-games-folder:disabled { opacity: 0.5; cursor: progress; }
 
 .ach-games-count {
   margin-bottom: 10px;
@@ -1039,6 +1041,7 @@
   font: inherit;
   line-height: 1;
 }
+.ach-toast-x svg { display: block; width: 0.7em; height: 0.7em; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
 .ach-toast-x:hover { color: var(--text-bright); }
 
 /* The time left drains along the bottom. Pointing at the toast holds it. */
@@ -1697,7 +1700,8 @@
   user-select: text;
   -webkit-user-select: text;
 }
-.ach-hud-card .ach-hud-in { justify-items: stretch; padding: 0.55em 0.65em 0.65em; }
+/* The card is as wide as the window, not a box dragged out: its contents span it. */
+.ach-hud-card .ach-hud-in { height: auto; justify-items: stretch; justify-content: normal; align-content: normal; padding: 0.55em 0.65em 0.65em; }
 .ach-hud-card .ach-hud-words { flex: 1; min-width: 0; }
 .ach-hud-card .ach-hud-title {
   display: block;
@@ -1711,7 +1715,6 @@
 .ach-hud.ach-hud-card[data-layout] .ach-hud-slots { justify-self: stretch; grid-template-columns: repeat(var(--ach-hud-cols, 7), minmax(0, 1fr)); }
 .ach-hud-card .ach-hud-slot { width: auto; height: auto; aspect-ratio: 1; }
 .ach-hud-card .ach-hud-slot:hover { transform: none; }
-.ach-hud-card .ach-hud-chase { width: auto; }
 /* In the window the next one is marked, and holds still. */
 .ach-hud-card .ach-hud-slot.is-next::after { animation: none; }
 .ach-hud-card .ach-info-btn { font-size: 1rem; }

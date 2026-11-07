@@ -10,7 +10,7 @@
 //   POST /api/games/:hash/unlocks                     { achievementId, hardcore } → { ok, new, flagged? }
 //   POST /api/games/:hash/leaderboards/:id/entries    { value, hardcore }         → { best, rank, improved, previous, previousRank, players, flagged? } or { softcore }
 //   GET  /api/games/:hash/leaderboards/:id[?limit=N]  → { leaderboard, entries, players, me }
-//   GET  /api/games                                   → { games }  every game with a set, its file hashes, how far players got,
+//   GET  /api/games[?labels=1]                        → { games }  every game with a set, its file hashes (and with labels=1 their labels), how far players got,
 //                                                        and with a session the account's own progress and last play (`mine`)
 //   GET  /api/activity[?before=ID]                    → { items, more }  everyone's unlocks and new bests, newest first
 //   GET  /api/games/:hash/activity[?before=ID]        → { items, more }  one game's
@@ -394,10 +394,13 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser, fair
       };
     },
     'GET /api/games'(body, req) {
+      // Each file's hash, and when asked, alike in order, its label: the names a player's own copy may go by.
+      const labels = queryInt(req, 'labels', 0, 0, 1) === 1;
+      const filesOf = (id) => { const f = q.files.all(id); return { hashes: f.map((x) => x.hash), ...(labels ? { labels: f.map((x) => x.label ?? '') } : {}) }; };
       const user = optionalUser(req);
       const mine = new Map(user ? games.mine.all(user.id, user.id).map((r) => [r.game_id, { unlocked: r.unlocked, points: r.points, last: r.last }]) : []);
       return { games: games.list.all().map((g) => ({
-        id: g.id, title: g.title, hash: g.hash, hashes: q.files.all(g.id).map((f) => f.hash),
+        id: g.id, title: g.title, hash: g.hash, ...filesOf(g.id),
         achievements: g.achievements, points: g.points, leaderboards: g.leaderboards, players: g.players, last: g.last,
         ...(user ? { mine: mine.get(g.id) ?? { unlocked: 0, points: 0 } } : {}),
       })) };

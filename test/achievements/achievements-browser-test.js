@@ -101,7 +101,7 @@ try {
   expect(/^0 \/ \d+ pts · 0 of 22$/.test(summary), `with the points and the count unlocked (got "${summary}")`);
   expect(await game.locator('.ach-hud-card .ach-hud-slot').count() === 22 && await game.locator('.ach-hud-card .ach-hud-slot.is-got').count() === 0, 'and a HUD slot per achievement, none lit');
   expect(await game.locator('.ach-hud-card .ach-hud-slot.is-next').count() === 1 && await game.locator('.ach-trophies li.is-next').count() === 1, 'the next one to get is marked, in the HUD and in the list');
-  expect(await game.locator('.ach-hud-card .ach-hud-chase').count() === 1, 'and the chase of the board');
+  expect(await game.locator('.ach-hud-card .ach-hud-chase').count() === 0, 'and no chase: the board\'s high scores are right under it');
   const head = await game.locator('.ach-screen:not(.ach-fame) .ach-screen-head span').allTextContents();
   expect(head.length === 1 && head[0] === 'Hiscores', `and its high-score screen, headed HISCORES alone, since the game is named above it (got ${JSON.stringify(head)})`);
   await game.locator('.ach-screen-foot', { hasText: /NO SCORES YET|PLAYER/ }).first().waitFor({ timeout: 10_000 });
@@ -157,7 +157,7 @@ try {
   const rows = await feed.locator('.achievements-activity-item .achievements-activity-text').allTextContents();
   expect(rows.some((r) => /^Pilot unlocked Zinc in Uridium$/.test(r)), `the feed shows the unlock (got ${JSON.stringify(rows)})`);
   expect(await feed.locator('.ach-event.is-unlock .ach-pts').first().textContent() === '+5', 'with its points');
-  expect(rows.some((r) => /^Pilot scored 012345 in Uridium$/.test(r)), 'and the new best, in the leaderboard\'s format');
+  expect(rows.some((r) => /^Pilot scored 12345 in Uridium$/.test(r)), 'and the new best, in the leaderboard\'s format, without the padding a column keeps in a sentence');
   await feed.locator('.achievements-scope', { hasText: 'URIDIUM' }).click();
   await page.waitForFunction(() => [...document.querySelectorAll('#achievements-activity .achievements-activity-text')].every((r) => !r.textContent.includes(' in Uridium')), null, { timeout: 10_000 }).catch(() => {});
   const scoped = await feed.locator('.achievements-activity-text').allTextContents();
@@ -171,7 +171,7 @@ try {
   const profile = await detail.textContent();
   expect(/ 5 points\./.test(profile) && /1 of 22 unlocked5 of \d+ points/.test(profile), `the profile counts the points and the game's progress (got "${profile}")`);
   expect(await detail.locator('.ach-meter span.is-lit').count() === 1, 'the meter lights the one unlocked');
-  expect(/Hiscores012345, 1st/.test(profile), 'and the best score with its rank');
+  expect(/Hiscores12345, 1st/.test(profile), 'and the best score with its rank, without its padding');
   expect(await detail.locator('.achievements-back').textContent() === '‹ Activity', 'the way back names the tab it returns to');
   await detail.locator('.achievements-back').click();
   expect(await detail.isHidden() && await feed.isVisible(), 'Back returns to the feed');
@@ -205,6 +205,26 @@ try {
   await page.keyboard.press('Escape');
   expect(await filter.inputValue() === '' && await gamesTab.locator('.ach-games li').count() === all, 'Esc clears the filter and shows every game again');
   expect(await page.locator('#online-window').isVisible(), 'without closing the window');
+  // The 💾 button: a folder of the player's own files. The game in it is added to the library, an
+  // unrelated file is not, and a second look finds it there already.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'c64-games-'));
+  fs.mkdirSync(path.join(dir, 'Arcade'));
+  fs.copyFileSync(uridium, path.join(dir, 'Arcade', path.basename(uridium)));
+  fs.writeFileSync(path.join(dir, 'notes.prg'), Buffer.from([1, 8, 0, 0]));
+  await page.evaluate(async () => (await import('/src/media/library.js')).libClear());
+  const folderBtn = gamesTab.locator('button.ach-games-folder');
+  expect(await folderBtn.isVisible() && /folder/i.test(await folderBtn.getAttribute('aria-label')), 'GAMES has a button to add games from a folder');
+  const countText = () => gamesTab.locator('.ach-games-count').textContent();
+  await gamesTab.locator('.ach-games-folder-wrap input[type=file]').setInputFiles(dir);
+  await page.waitForFunction(() => /^(Added|The library|No game)/.test(document.querySelector('#achievements-games .ach-games-count')?.textContent ?? ''), null, { timeout: 15000 }).catch(() => {});
+  const saved = await page.evaluate(async () => (await (await import('/src/media/library.js')).libList()).map((e) => e.name));
+  expect(/^Added 1 file to the library, for Uridium\.$/.test(await countText()) && saved.length === 1 && saved[0] === path.basename(uridium),
+    `a folder with the game adds its file to the library (${await countText()} ${JSON.stringify(saved)})`);
+  await page.evaluate(() => { document.querySelector('#achievements-games .ach-games-count').textContent = ''; });
+  await gamesTab.locator('.ach-games-folder-wrap input[type=file]').setInputFiles(dir);
+  await page.waitForFunction(() => /^(Added|The library|No game)/.test(document.querySelector('#achievements-games .ach-games-count')?.textContent ?? ''), null, { timeout: 15000 }).catch(() => {});
+  expect(/^The library has every game found there already \(1\)\.$/.test(await countText()), `a second look adds nothing (${await countText()})`);
+  fs.rmSync(dir, { recursive: true, force: true });
   const order = await gamesTab.locator('.ach-card .ach-games-title').allTextContents();
   const rest = order.slice(1);
   expect(/Uridium/.test(order[0] ?? ''), `the loaded game comes first (got ${order[0]})`);

@@ -16,9 +16,9 @@ import { pushEscapeLayer, popEscapeLayer } from '../ui/escape-stack.js';
 import { confirmDialog } from '../ui/dialogs.js';
 import { floatingWindow, resizeHandles, fillsScreen } from '../ui/floating-window.js';
 import { LIMITS } from '../../server/protocol.mjs';
-import { findInLibrary } from '../achievements/library-match.js';
+import { findInLibrary, importFolder } from '../achievements/library-match.js';
 import { h, renderActivity, renderGames, renderGamePage, renderProfile, highScoreScreen, playerChip, hallOfFame, attractButton, refreshButton } from '../achievements/browse.js';
-import { hudCard, trophyCards, boardsShown, boardChased } from '../achievements/hud-card.js';
+import { hudCard, trophyCards, boardsShown } from '../achievements/hud-card.js';
 import { boardInPlay } from '../achievements/hud.js';
 
 const TABS = ['game', 'activity', 'chat', 'games', 'account'];
@@ -89,8 +89,8 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
   let top = null;              // the loaded game's Trophy Hunters
   let loadingStandings = false;
   const live = new Map();      // leaderboard id → the running score while a game is on, the latest started last
-  // GAME's live parts, found once as it draws: the HUD card, the board it chases, the board in play and its NOW cell.
-  let card = null, chasedId = null, playingId = null;
+  // GAME's live parts, found once as it draws: the board in play and its NOW cell.
+  let playingId = null;
   const liveCells = new Map();   // board id → its NOW cell, while it runs
   let tab = null;              // the tab chosen in this session; until then, by what is loaded
   let detail = [];             // profiles and game pages opened over the tab, newest last
@@ -168,6 +168,8 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     fromLibrary: engine?.hash && loadFromLibrary
       ? (game) => findInLibrary(game, engine.hash).then((id) => (id == null ? null : () => loadFromLibrary(id)))
       : null,
+    // A folder of the player's own files: each version of a game with a set goes into the library.
+    importFolder: engine?.hash ? (files, games, progress) => importFolder(files, games, engine.hash, progress) : null,
   };
 
   const handles = resizeHandles();
@@ -371,12 +373,9 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     const shown = boardsShown(game.leaderboards, [...live.keys()], playingId);
     const st = (id) => (standingsOf === game.hash ? standings.get(id) ?? null : null);
     const topFive = (s) => (s ? { ...s, entries: s.entries.slice(0, 5) } : null);
-    // The HUD on top chases the board in play, else one the player has a score on, else the first.
-    const chased = boardChased(game.leaderboards, playingId, (id) => !!st(id)?.me);
-    chasedId = chased?.id ?? null;
-    card = hudCard({
-      game, board: chased, standings: chased ? st(chased.id) : null, live: chased ? live.get(chased.id) ?? null : null,
-      meId: account.user?.id ?? null, format: ctx.format,
+    // The HUD on top: the game and its trophies. Its boards follow it.
+    const card = hudCard({
+      game,
       buttons: [attract ? attractButton(attract) : null, refreshButton(() => { dataGen++; return Promise.all([loadStandings(), engine.refreshChecks().catch(() => {})]); })].filter(Boolean),
     });
     gameEl.replaceChildren(...[
@@ -443,7 +442,8 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     if (user && acct.code) {
       body = [h('p', { class: 'achievements-signed-in' }, 'Signed in as ', h('strong', {}, user.name)), codePanel()];
     } else if (user) {
-      loadPasskeys();
+      // Fetched only for the ACCOUNT tab in sight: a closed window loads nothing.
+      if (!win.hidden && currentTab() === 'account' && !detail.length) loadPasskeys();
       const list = acct.passkeysFor === user.id ? acct.passkeys : null;
       body = [
         h('p', { class: 'achievements-signed-in' }, 'Signed in as ', h('strong', {}, user.name)),
@@ -592,9 +592,8 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
         // A board starting draws the tab again, with the board in play on top.
         const cell = liveCells.get(id);
         if (type === 'started' || !had || !cell) { renderGame(); return; }
-        // The hot path: the NOW cell's text and the card's chase, written in place.
+        // The hot path: the NOW cell's text, written in place.
         cell.firstChild.data = ctx.format(value, leaderboard.format);
-        if (id === chasedId) card.live(value);
         return;
       }
       live.delete(leaderboard.id);

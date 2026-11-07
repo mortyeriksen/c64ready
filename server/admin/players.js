@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
-// server/admin/players.js — the console's Overview and Players tabs, its
+// server/admin/players.js — the console's Overview, Players and Games tabs, its
 // devices (admin passkeys) and sign-out, over /admin/api and /admin/auth
 // (server/chat.mjs, server/admin.mjs). Everything a player wrote is set as
 // text, never as HTML.
@@ -44,9 +44,10 @@ async function api(path, body) {
 // ── Tabs ───────────────────────────────────────────────────────────────────
 function showTab(name) {
   for (const t of document.querySelectorAll('.tab')) t.setAttribute('aria-pressed', String(t.dataset.tab === name));
-  for (const n of ['overview', 'players', 'live']) $(`tab-${n}`).hidden = n !== name;
+  for (const n of ['overview', 'players', 'games', 'live']) $(`tab-${n}`).hidden = n !== name;
   if (name === 'overview') renderOverview();
   if (name === 'players') loadPlayers();
+  if (name === 'games') loadGames();
   if (location.hash.slice(1).split('/')[0] !== name) history.replaceState(null, '', `#${name}`);
 }
 for (const t of document.querySelectorAll('.tab')) t.addEventListener('click', () => showTab(t.dataset.tab));
@@ -283,6 +284,109 @@ async function openPlayer(id) {
   box.replaceChildren(head, facts, actions, el('h2', 'Passkeys'), keys, el('h2', 'Games'), games, el('h2', 'Logins'), logins, el('h2', 'Activity'), activity);
 }
 
+// ── Games ─────────────────────────────────────────────────────────────────
+// A board's value as players see it: times in their units, scores grouped.
+function shown(v, format) {
+  const clock = (cs) => { const m = Math.floor(cs / 6000), s = Math.floor(cs / 100) % 60; return `${m}:${String(s).padStart(2, '0')}.${String(cs % 100).padStart(2, '0')}`; };
+  switch (format) {
+    case 'MILLISECS': return clock(v);
+    case 'FRAMES': return clock(Math.round((v * 100) / 60));
+    case 'SECS': case 'TIME': return clock(v * 100).slice(0, -3);
+    case 'MINUTES': return `${v} min`;
+    default: return Number(v).toLocaleString();
+  }
+}
+// A result that does not count in public: why.
+const unplaced = (r) => (r.flag ? `flagged: ${r.flag}` : r.softcore ? 'softcore' : '');
+const who = (u) => { const b = playerLink(u); if (u.demo) b.append(el('span', ' demo', 'meta')); return b; };
+let allGames = [], pickedGame = null;
+async function loadGames() {
+  try { allGames = (await api('/admin/api/games')).games; } catch (e) { $('game-rows').replaceChildren(el('tr', e.message, 'bad')); return; }
+  listGames();
+}
+function listGames() {
+  const words = $('game-search').value.toLowerCase().split(/\s+/).filter(Boolean);
+  const games = allGames.filter((g) => words.every((w) => g.title.toLowerCase().includes(w)));
+  $('game-rows').replaceChildren(...games.map((g) => {
+    const tr = el('tr', null, g.id === pickedGame ? 'is-picked' : null);
+    tr.append(el('td', g.title), el('td', String(g.trophies)), el('td', String(g.boards)), el('td', String(g.players)), el('td', String(g.unlocks)), el('td', String(g.scores)),
+      el('td', String(g.flagged || ''), g.flagged ? 'bad' : null), el('td', ago(g.last)));
+    tr.addEventListener('click', () => openGame(g.id));
+    return tr;
+  }));
+  $('game-info').textContent = `${games.length} of ${allGames.length} games`;
+}
+$('game-search').addEventListener('input', listGames);
+// Removes one result of a player's from the game, after a reason for the log.
+async function removeResult(gameId, u, action, what, extra) {
+  const reason = prompt(`Remove ${what} of ${u.name}? Give a reason for the log.`, '');
+  if (!reason?.trim()) return;
+  try {
+    await api(`/admin/api/players/${u.id}/${action}`, { reason, game: gameId, ...extra });
+    openGame(gameId);
+    loadGames();
+  } catch (e) { alert(e.message); }
+}
+async function openGame(id) {
+  pickedGame = id;
+  for (const r of document.querySelectorAll('#game-rows tr')) r.classList.toggle('is-picked', false);
+  const box = $('game-detail');
+  box.replaceChildren(el('p', 'Loading…', 'meta'));
+  let g;
+  try { g = await api(`/admin/api/games/${encodeURIComponent(id)}`); } catch (e) { if (pickedGame === id) box.replaceChildren(el('p', e.message, 'bad')); return; }
+  if (pickedGame !== id) return;
+  history.replaceState(null, '', `#games/${id}`);
+  listGames();
+  const head = el('div');
+  head.append(el('h2', g.title), el('span', `id ${g.id}, ${g.trophies.length} trophies, ${g.boards.length} boards`, 'meta'));
+  const parts = [head];
+  for (const b of g.boards) {
+    parts.push(el('h2', `${b.title} (${b.entries.length})`));
+    if (!b.entries.length) { parts.push(el('p', 'No scores yet.', 'meta')); continue; }
+    const t = el('table', null, 'table');
+    const hr = el('tr');
+    for (const h of ['#', 'Player', b.lowerIsBetter ? 'Time' : 'Score', 'When', '', '']) hr.append(el('th', h));
+    const thead = el('thead'); thead.append(hr);
+    const tbody = el('tbody');
+    for (const e of b.entries) {
+      const tr = el('tr');
+      const name = el('td'); name.append(who(e.user));
+      const remove = el('td');
+      remove.append(btn('remove', () => removeResult(g.id, e.user, 'score', `the ${b.title} score ${shown(e.value, b.format)}`, { board: b.id }), 'danger'));
+      tr.append(el('td', e.rank ?? '–'), name, el('td', shown(e.value, b.format)), el('td', when(e.at)), el('td', unplaced(e), e.flag ? 'bad' : 'meta'), remove);
+      tbody.append(tr);
+    }
+    t.append(thead, tbody);
+    parts.push(t);
+  }
+  parts.push(el('h2', 'Trophies'));
+  // Each trophy, and who unlocked it behind its count.
+  for (const a of g.trophies) {
+    const card = el('div', null, 'card trophy');
+    const top = el('div', null, 'row');
+    const list = el('table', null, 'table');
+    list.hidden = true;
+    const toggle = btn(`${a.unlocks.length} unlocked`, () => { list.hidden = !list.hidden; toggle.setAttribute('aria-expanded', String(!list.hidden)); }, 'link');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.disabled = !a.unlocks.length;
+    top.append(el('strong', a.title), el('span', `${a.points} points`, 'meta'), toggle);
+    const tbody = el('tbody');
+    for (const x of a.unlocks) {
+      const tr = el('tr');
+      const name = el('td'); name.append(who(x.user));
+      const remove = el('td');
+      remove.append(btn('remove', () => removeResult(g.id, x.user, 'unlock', `"${a.title}"`, { achievement: a.id }), 'danger'));
+      tr.append(name, el('td', when(x.at)), el('td', unplaced(x), x.flag ? 'bad' : 'meta'), remove);
+      tbody.append(tr);
+    }
+    list.append(tbody);
+    card.append(top, el('p', a.description, 'meta'), list);
+    parts.push(card);
+  }
+  if (!g.trophies.length) parts.push(el('p', 'This game has no trophies.', 'meta'));
+  box.replaceChildren(...parts);
+}
+
 // ── Devices and sign-out ──────────────────────────────────────────────────
 async function showDevices() {
   const d = $('devices');
@@ -309,5 +413,6 @@ $('btn-signout').addEventListener('click', async () => { await api('/admin/auth/
 
 // The tab, and player, in the address.
 const [tab, id] = location.hash.slice(1).split('/');
-showTab(['overview', 'players', 'live'].includes(tab) ? tab : 'overview');
+showTab(['overview', 'players', 'games', 'live'].includes(tab) ? tab : 'overview');
 if (tab === 'players' && /^\d+$/.test(id ?? '')) openPlayer(Number(id));
+if (tab === 'games' && id) openGame(decodeURIComponent(id));

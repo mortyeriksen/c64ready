@@ -52,8 +52,7 @@ instead.
 The **GAME** tab shows:
 
 - **The trophy HUD**, as in [Retro Vibes](#trophies-in-retro-vibes): a slot per
-  achievement with the next one marked, your points, and the chase of the next
-  player to pass.
+  achievement with the next one marked, and your points.
 - **The high-score screens**, in the game's own style, with your row
   highlighted. Equal scores share a place. While you play, only the boards in
   play show, such as OutRun's route A, with a speedrun on top.
@@ -121,8 +120,10 @@ comes back when you can try again.
 ### Attract mode
 
 When a game ends, its high-score screen fills the window and cycles the board
-you played, Trophy Hunters and your trophies, as an arcade does between
-games. OutRun on route A shows route A, not the other routes. A game without a
+you played, every other board you have a result on (your finished speedruns
+and your score), Trophy Hunters and your trophies, as an arcade does between
+games. OutRun on route A shows route A first, then the other routes you have
+finished. A game without a
 score, such as The Last Ninja, shows it at its GAME OVER. Click the bars
 under it to pick a page. Press **Space** to continue, or play again or click
 beside it.
@@ -235,6 +236,12 @@ game's page on [Lemon64](https://www.lemon64.com) in a new window. When one of
 those versions is in your **LOAD LIB** library, a **▷** button beside it loads
 the game.
 
+**💾** beside the filter adds your own games to the library: pick a folder, and
+every file in it or its subfolders that is a version of a game with
+achievements goes into **LOAD LIB**. Only files named like one of the games are
+read, and a game already in the library is not added twice. When the library
+is full, the rest are left out, so nothing you keep there is pushed out.
+
 ![Commando Arcade's page under GAMES, before the game is loaded: its icon and title with the ▷ button that loads it from the library beside the i button, then its progress and high scores.](/guide/achievements-game-page.webp)
 
 ![The GAMES tab docked on the right of the app: a row for each game, with its pixel icon, its title, your count and a meter of your progress.](/guide/achievements-games.webp)
@@ -332,7 +339,8 @@ password manager keeps it.
 - **SIGN IN WITH PASSKEY** uses a passkey on this device, or one from your
   phone.
 - **SIGN OUT** signs this browser out. **DELETE ACCOUNT** deletes the account
-  with its achievements and scores, and frees the name.
+  with its badge, achievements, scores and activity, signs it out of the chat,
+  and frees the name.
 
 ### Your badge
 
@@ -373,7 +381,8 @@ The server keeps your username and badge, the public half of each passkey, a
 fingerprint of your recovery code (not the code), your sessions, and your
 achievements, scores and activity. Each sign-in, recovery and sign-out is
 logged with your IP address and browser for 90 days, readable only by the
-admin. Deleting the account deletes all of it.
+admin. Deleting the account deletes all of it, and what is deleted is
+overwritten in the server's database, not left behind in it.
 
 In the chat, your name is visible while you are connected, and your messages
 go to everyone and to the admin. The admin sees a short code made from your IP

@@ -1,10 +1,9 @@
 // The GAME tab's rules (src/achievements/hud-card.js): while boards are played
 // those running show, OutRun on route A shows route A alone, and Commando's
 // high score and area 1 speedrun both show, the time on top; with none in play
-// every board shows. The HUD on top chases the board in play, else the
-// first the player has a score on, else the first. The gap to the next player is
+// every board shows. The gap to the next player is
 // a time on a board of times, as the HUD in Retro Vibes shows it too.
-import { boardsShown, boardChased } from '../../src/achievements/hud-card.js';
+import { boardsShown } from '../../src/achievements/hud-card.js';
 import { gapText, boardInPlay } from '../../src/achievements/hud.js';
 import { loadRcheevos } from '../../src/achievements/rcheevos.js';
 
@@ -37,12 +36,6 @@ expect(boardInPlay(routes, [1, 3]) === 3, 'of two scores, the latest started');
 expect(boardInPlay(routes, []) === null, 'none running, none in play');
 ok('a speedrun and a high score at once');
 
-const scored = (set) => (id) => set.has(id);
-expect(boardChased(routes, 3, scored(new Set([1])))?.id === 3, 'the HUD chases the board in play, a score elsewhere or not');
-expect(boardChased(routes, null, scored(new Set([4, 2])))?.id === 2, 'with none in play, the first board the player has a score on');
-expect(boardChased(routes, null, scored(new Set()))?.id === 1, 'with no score anywhere, the first board');
-expect(boardChased([], null, scored(new Set())) === null, 'a game without boards has nothing to chase');
-ok('the board the HUD chases');
 
 const rc = await loadRcheevos();
 const fmt = (f) => (v) => rc.formatValue(v, f);

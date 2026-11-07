@@ -594,8 +594,8 @@ export function createChatServer({
       req.on('error', reject);
     });
   }
-  const ACTIONS = new Set(['signout', 'rename', 'picture', 'score', 'results', 'entry', 'delete']);
-  /** The console's players API: GET overview, players, a player, their logins and activity; POST an action. */
+  const ACTIONS = new Set(['signout', 'rename', 'picture', 'score', 'unlock', 'results', 'entry', 'delete']);
+  /** The console's players API: GET overview, players, a player, their logins and activity, the games and a game; POST an action. */
   async function adminApi(req, res, path, url, sameOrigin) {
     if (!adminData) { apiJson(res, 404, { error: 'no accounts on this server' }); return; }
     const int = (v, d = 0) => (v != null && v !== '' && Number.isSafeInteger(Number(v)) ? Number(v) : d);
@@ -636,6 +636,9 @@ export function createChatServer({
         const p = url.searchParams;
         return apiJson(res, 200, adminData.players({ search: p.get('search') ?? '', sort: p.get('sort') ?? 'joined', dir: p.get('dir') ?? 'desc', page: int(p.get('page')), online: onlineUids() }));
       }
+      if (req.method === 'GET' && path === '/admin/api/games') return apiJson(res, 200, adminData.games());
+      const gm = /^\/admin\/api\/games\/([a-z0-9-]{1,64})$/.exec(path);
+      if (req.method === 'GET' && gm) return apiJson(res, 200, adminData.game(gm[1]));
       if (req.method === 'GET' && m && !m[2]) return apiJson(res, 200, { ...adminData.player(Number(m[1])), online: onlineUids().includes(Number(m[1])) });
       if (req.method === 'GET' && m && (m[2] === 'logins' || m[2] === 'activity')) return apiJson(res, 200, adminData[m[2]](Number(m[1]), int(url.searchParams.get('before'), Number.MAX_SAFE_INTEGER)));
       // An address, banned or let back in from a player's page.
@@ -665,7 +668,7 @@ export function createChatServer({
         const reason = typeof body.reason === 'string' ? cleanText(body.reason, 200) : null;
         if (!reason) return apiJson(res, 400, { error: 'a reason is needed' });
         const id = Number(m[1]);
-        const out = adminData.act(id, m[2], { game: body.game, board: body.board, entry: body.entry });
+        const out = adminData.act(id, m[2], { game: body.game, board: body.board, achievement: body.achievement, entry: body.entry });
         if (['signout', 'rename', 'delete'].includes(m[2])) dropAccount(id);
         record({ ev: 'admin', action: m[2], uid: id, name: out.name, did: out.did, reason });
         return apiJson(res, 200, { ok: true, did: out.did });
@@ -761,6 +764,8 @@ export function createChatServer({
       return serveAdmin(req, res, path);
     },
     tick,
+    /** An account deleted elsewhere (by its owner): its sessions leave the chat. */
+    dropAccount,
     stats: () => ({ sessions: sessions.size, connections: conns.size, rooms: rooms.size }),
     close() {
       if (timer) clearInterval(timer);

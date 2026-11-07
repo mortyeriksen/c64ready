@@ -98,7 +98,7 @@ const chatDevPlugin = {
     loadSets(db, path.join(path.dirname(fileURLToPath(import.meta.url)), 'server', 'sets'), info);
     const bans = createBans({ db });
     // No fair-play flags on the dev server: guide shots and local play post results straight away.
-    const accounts = createAccounts({ db, allowLoopback: true, extend: (ctx) => gameRoutes({ ...ctx, fairPlay: false }), log: info, bans });
+    const accounts = createAccounts({ db, allowLoopback: true, extend: (ctx) => gameRoutes({ ...ctx, fairPlay: false }), log: info, bans, onDeleted: (uid) => chat.dropAccount(uid) });
     const adminPasskeys = createAdminPasskeys({ db });
     const chat = createChatServer({
       allowLoopback: true,

@@ -190,6 +190,9 @@ const open = (who, hash = HASH) => api('GET', `/api/games/${hash}`, { token: who
   expect(!('url' in (await api('GET', `/api/games/${OTHER}`)).body.game), 'a game whose set has no url carries none');
   expect(demo.hash === HASH && demo.achievements === 2 && demo.points === 15 && demo.leaderboards === 2, 'with the first hash of the set, and the size of the set');
   expect(JSON.stringify(demo.hashes) === JSON.stringify([HASH, HASH2]), 'and every file hash it is for, so the app can match files itself');
+  expect(!('labels' in demo), 'without the labels, which only a folder import asks for');
+  const labelled = (await api('GET', '/api/games?labels=1')).body.games.find((g) => g.id === 'demo');
+  expect(Array.isArray(labelled.labels) && labelled.labels.length === labelled.hashes.length, 'asked for, a label for each hash, the names a player\'s copy may go by');
   expect(demo.players === 2 && body.games[0].players === 0, `and how many have played (got ${demo.players})`);
   expect(body.games.every((g) => !('mine' in g)), 'signed out, it carries no progress of anyone\'s');
   const signed = (await api('GET', '/api/games', { token: ann.token })).body.games;

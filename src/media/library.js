@@ -41,8 +41,8 @@ const EXPORT_VERSION = 1;
 // Storage budget. IndexedDB quota is large (typically a sizeable fraction of
 // free disk), so this is a self-imposed cap to keep the library tidy rather than
 // a hard limit we expect to bump into. Real bytes — no base64/UTF-16 multiplier.
-const MAX_TOTAL_BYTES = 512 * 1024 * 1024;   // 512 MB across all blobs
-const MAX_ENTRIES     = 500;                 // hard cap on cached file count
+export const MAX_TOTAL_BYTES = 512 * 1024 * 1024;   // 512 MB across all blobs
+export const MAX_ENTRIES     = 500;                 // hard cap on cached file count
 
 // ── Old localStorage layout (read once, for migration) ──────────────────────
 const OLD_INDEX_KEY   = 'c64emu.lib.index';

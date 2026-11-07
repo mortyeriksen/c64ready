@@ -1,7 +1,7 @@
 // Attract mode (src/achievements/attract.js) in a browser, against a stub
 // engine: a posted score opens it once the score's toast has gone, centered
 // over the whole window (the vibes view while open, else the page), it shows
-// the board just played and no other (OutRun's route C, not its other routes),
+// the board just played, then every other board the player has a result on,
 // the pages turn on their own even with the pointer resting on it, an unlock
 // soon after the post (the game plays on) calls it off, a set with a
 // game over opens it then and not on a posted score, and Space
@@ -97,7 +97,8 @@ try {
     const tenth = m.boardRows({ entries, me: { rank: 10, value: 91 } }, { id: 10 });
     const none = m.boardRows({ entries, me: null }, null);
     const fame = m.fameRows({ entries: entries.map((e) => ({ ...e, points: e.value, complete: e.rank === 1 })), me: { rank: 20, points: 1 } }, { id: 99, name: 'Me' });
-    const boards = new Map([[1, { entries }], [2, { entries: [] }], [3, { entries: [] }]]);
+    const boards = new Map([[1, { entries, me: { rank: 3, value: 98 } }], [2, { entries: [] }], [3, { entries: [] }]]);
+    const mineToo = new Map([...boards, [3, { entries, me: { rank: 5, value: 96 } }]]);
     const g = { leaderboards: [{ id: 1 }, { id: 2 }, { id: 3 }], achievements: [{}] };
     return {
       inTop: inTop.length, inTopMe: inTop.filter((r) => r?.me).length,
@@ -107,6 +108,8 @@ try {
       fame: fame.map((r) => (r ? (r.me ? 'me' : r.rank) : 'gap')).join(','), star: fame[0].complete,
       pages: m.attractPages(g, { boards, fame: { entries }, played: 3 }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
       anyTime: m.attractPages(g, { boards, fame: { entries } }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
+      both: m.attractPages(g, { boards: mineToo, fame: { entries }, played: 3 }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
+      onlyPlayed: m.attractPages(g, { boards: new Map([[3, { entries: [] }]]), played: 3 }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
       noAch: m.attractPages({ leaderboards: [{ id: 1 }], achievements: [] }, { boards, played: 1 }).map((p) => p.kind).join(','),
       noScores: m.attractPages({ leaderboards: [{ id: 2 }, { id: 3 }], achievements: [{}] }, { boards }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
     };
@@ -116,7 +119,9 @@ try {
   expect(rules.below === '1,2,3,4,5,6,7,8,gap,me14', `further down: the top eight, a gap and their own row at the end (${rules.below})`);
   expect(rules.none === 10, 'signed out, the top ten');
   expect(rules.fame === '1,2,3,4,5,6,7,8,gap,me' && rules.star, `Trophy Hunters the same way, a star for a finished set (${rules.fame})`);
-  expect(rules.pages === 'b3,fame,trophies', `after a game, the board just played and no other, then Trophy Hunters and the trophies (${rules.pages})`);
+  expect(rules.pages === 'b3,b1,fame,trophies', `after a game, the board just played, then the others with a result of the player's, then Trophy Hunters and the trophies (${rules.pages})`);
+  expect(rules.both === 'b3,b1,fame,trophies', `the board played comes first, a result there or not, and the rest keep the set's order (${rules.both})`);
+  expect(rules.onlyPlayed === 'b3,trophies', `with no other result, only the board played (${rules.onlyPlayed})`);
   expect(rules.anyTime === 'b1,b2,b3,fame,trophies', `opened from the GAME tab, every board (${rules.anyTime})`);
   expect(rules.noAch === 'board', 'a game with only a board has only its page');
   expect(rules.noScores === 'b2,b3,trophies', `boards with no scores yet show too, to say so (${rules.noScores})`);
@@ -240,7 +245,7 @@ try {
   expect(await isOpen(page), 'game over opens it');
   await wait(page, 600);
   const over = await page.evaluate(() => ({ pages: document.querySelectorAll('.ach-attract-page').length, title: document.querySelector('.ach-attract-title')?.getAttribute('aria-label'), you: !!document.querySelector('.ach-attract-row.is-you') }));
-  expect(over.pages === 3 && over.title === 'Route A', `on the board last played, then Trophy Hunters and trophies (${over.pages} pages, first ${over.title})`);
+  expect(over.pages === 4 && over.title === 'Route A', `on the board last played, then the route the player has a score on, Trophy Hunters and trophies (${over.pages} pages, first ${over.title})`);
   expect(!over.you, 'no score of the player\'s under a board not posted to');
   await page.evaluate(() => { window.attract.close(); window.engine.game = window.G; });
   await wait(page, 400);

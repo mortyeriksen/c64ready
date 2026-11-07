@@ -17,6 +17,7 @@
     <nav class="tabs" aria-label="Console">
       <button type="button" class="tab" data-tab="overview" aria-pressed="true">Overview</button>
       <button type="button" class="tab" data-tab="players" aria-pressed="false">Players</button>
+      <button type="button" class="tab" data-tab="games" aria-pressed="false">Games</button>
       <button type="button" class="tab" data-tab="live" aria-pressed="false">Live</button>
     </nav>
     <span class="top-right"><span class="stats" id="stats">connecting…</span> <a href="/admin/logs">Logs</a>
@@ -31,6 +32,14 @@
       <div class="row pager"><button type="button" id="page-prev">‹ Previous</button><span class="meta" id="page-info"></span><button type="button" id="page-next">Next ›</button></div>
     </section>
     <section class="player-detail" id="player-detail" aria-live="polite"><p class="meta">Pick a player.</p></section>
+  </main>
+  <main class="page players" id="tab-games" aria-label="Games" hidden>
+    <section class="player-list">
+      <input id="game-search" class="search" type="search" placeholder="Filter games" aria-label="Filter games" autocomplete="off">
+      <table class="table"><thead><tr><th>Game</th><th>Trophies</th><th>Boards</th><th>Players</th><th>Unlocks</th><th>Scores</th><th>Flagged</th><th>Last played</th></tr></thead><tbody id="game-rows"></tbody></table>
+      <p class="meta" id="game-info"></p>
+    </section>
+    <section class="player-detail" id="game-detail" aria-live="polite"><p class="meta">Pick a game.</p></section>
   </main>
   <dialog id="devices" class="devices"><h2>Admin passkeys</h2><ul id="device-list" class="list"></ul><p id="device-key" class="key"></p>
     <div class="row"><button type="button" id="btn-add-device">Add a device</button><button type="button" id="btn-close-devices">Close</button></div></dialog>

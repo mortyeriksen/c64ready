@@ -25,6 +25,8 @@ export function createGamesApi({ base, account, fetchImpl = (...a) => fetch(...a
     request,
     game: (hash) => request('GET', `/games/${hash}`),
     games: () => request('GET', '/games'),
+    /** The games with each file's label too: only a folder import needs them. */
+    gamesWithLabels: () => request('GET', '/games?labels=1'),
     leaderboard: (hash, id, limit) => request('GET', `/games/${hash}/leaderboards/${id}${q({ limit })}`),
     /** A game's Trophy Hunters: its players by achievement points, and the account's own place. */
     top: (hash, limit) => request('GET', `/games/${hash}/top${q({ limit })}`),
