@@ -223,5 +223,36 @@ const hex4 = (n) => (n < 0 ? 'nowhere' : `$${n.toString(16).toUpperCase().padSta
   ok('the routine behind the ILOAD vector is trap-served');
 }
 
+// ── Rule: $F4A5 is the LOAD routine only while the KERNAL ROM is visible ──
+// A program that banks the KERNAL out owns that address as RAM. With a disk
+// mounted and true-drive emulation off, arriving there must execute the RAM
+// byte, not the load trap (which would vector through the SEARCHING message
+// at $F5AF).
+{
+  const m = new C64Machine();
+  m.loadROMs({ kernal: rom(ROMS[0]), basic: rom(ROMS[1]), charRom: rom(ROMS[2]) });
+  m.setTrueDrive(false);
+  m.setD64(createPRGDisk('TARGET', FILE));
+  m.reset();
+  for (let f = 0; f < 3; f++) m.runFrame();
+  m.cpu.I = 1;
+  m.mem.cpuDDR = 0x2F;
+  m.mem.write(0x01, 0x35);
+  m.mem.ram[0xBA] = 8;
+  m.mem.ram[0xF4A5] = 0x4C; // JMP $F4A5 — a tight loop, if the CPU actually runs it
+  m.mem.ram[0xF4A6] = 0xA5;
+  m.mem.ram[0xF4A7] = 0xF4;
+  m.mem.ram[0xF5AF] = 0x02; // JAM, where the trap would send a hijacked call
+  m.cpu.instructionCyclesRemaining = 0;
+  m.cpu.microOpHead = 0;
+  m.cpu.microOpLen = 0;
+  m.cpu.pc = 0xF4A5;
+  m.runFrame();
+  const pc = m.cpu.pc & 0xFFFF;
+  expect(!m.cpu.halted && pc >= 0xF4A5 && pc <= 0xF4A7,
+    `RAM at $F4A5 with the KERNAL banked out runs as code (halted=${m.cpu.halted}, PC=$${pc.toString(16)})`);
+  ok('a banked-out KERNAL leaves $F4A5 to the program');
+}
+
 if (failed) { console.error(`\n${failed} failure(s)`); process.exit(1); }
 console.log('kernal load-trap address spec: PASS');

@@ -1093,6 +1093,13 @@ export class C64Machine {
     return null;
   }
 
+  // True when a fetch at `addr` would read KERNAL ROM. With HIRAM clear,
+  // $E000-$FFFF is the program's own RAM, which the load and serial traps
+  // must leave alone.
+  _cpuSeesKernal(addr) {
+    return this.mem._readPageArr[(addr >>> 8) & 0xFF] === this.mem._kernal;
+  }
+
   // Does the loaded KERNAL keep its jump table and default LOAD vector where
   // the documentation puts them? Checked once per ROM image. The traps, and
   // the jumps into the ROM's own message routines, rely on that layout.
@@ -2088,13 +2095,15 @@ export class C64Machine {
     this._masterPhase = 'cpu';
     const trapDisk =
       (this.cpu.atInstructionBoundary() && !cpuBlocked
-        && (this.cpu.pc === 0xFFD5 || (this.cpu.pc === KERNAL_LOAD_ROUTINE && this._kernalIsStock())))
+        && (this.cpu.pc === 0xFFD5 || this.cpu.pc === KERNAL_LOAD_ROUTINE)
+        && this._cpuSeesKernal(this.cpu.pc)
+        && (this.cpu.pc === 0xFFD5 || this._kernalIsStock()))
         ? this._loadTrapDisk()
         : null;
     if (trapDisk) {
       this._trapLoad(trapDisk);
     } else if (!cpuBlocked && this.cpu.pc >= SERIAL_TALK && this.cpu.pc <= SERIAL_ACPTR
-        && this.cpu.atInstructionBoundary() && this._serialTrap(this.cpu.pc)) {
+        && this.cpu.atInstructionBoundary() && this._cpuSeesKernal(this.cpu.pc) && this._serialTrap(this.cpu.pc)) {
       // Answered by a virtual drive; the call has returned.
     } else if (!cpuBlocked) {
       this.cpu.clock();
