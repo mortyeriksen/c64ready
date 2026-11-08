@@ -31,6 +31,7 @@ import { resolveParams, readOverrides, logoTuning, LOGO_TUNING_VARS, CRT_STORAGE
 import { createCrtPanel } from './ui/crt-panel.js';
 import sidWorkletUrl   from './sid/sid-worklet.js?worker&url';
 import { registerSW }  from 'virtual:pwa-register';
+import { watchForUpdates } from './sw-update-checks.js';
 import {
   machine, c64, loader, sidNode, running, _pristineBoot, _hasBeenReady,
   setMachine, setLoader, setSidNode, setRunning, setPristineBoot, setHasBeenReady,
@@ -3251,19 +3252,12 @@ const updateSW = registerSW({
   onOfflineReady() {
     _pwaToast('Ready to run offline.', null, null, 4000);
   },
-  // Check for a new deployed build every 10 minutes AND whenever the app
-  // returns to the foreground — background timers are suspended while the PWA
-  // sits idle, so the interval alone can miss a deploy. registration.update()
-  // re-fetches sw.js; the browser only fires onNeedRefresh when the script
-  // actually changed, so an extra check is a no-op otherwise. Skipped while
-  // offline. `r` is undefined in dev (SW disabled), so guard for it.
+  // Look for a new deployed build at start, every 10 minutes and whenever the
+  // app comes back to the front (sw-update-checks.js). registration.update()
+  // re-fetches sw.js, and the browser fires onNeedRefresh only when it changed.
+  // `r` is undefined in dev (SW disabled).
   onRegisteredSW(_swUrl, r) {
-    if (!r) return;
-    const check = () => { if (navigator.onLine) r.update(); };
-    setInterval(check, _SW_UPDATE_INTERVAL_MS);
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') check();
-    });
+    if (r) watchForUpdates(r, { every: _SW_UPDATE_INTERVAL_MS });
   },
 });
 

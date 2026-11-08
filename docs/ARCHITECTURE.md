@@ -82,6 +82,8 @@ SID synthesis. They communicate through one lock-free
 WAV import also uses a temporary worker (`src/media/wav-import-worker.js`) for
 decoding and repair, with a main-thread fallback if the worker cannot start.
 The service worker (`src/sw.js`) handles offline caching and app updates.
+`src/sw-update-checks.js` sets when the app looks for a newer one: at start, on
+a timer and each time the app comes back to the front.
 
 ---
 

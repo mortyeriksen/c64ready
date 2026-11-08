@@ -70,8 +70,9 @@ fills the browser window and follows your selected theme. See the
 ![The "New version available." toast: the message, a Reload button, and a Later… button.](/guide/update-toast.webp)
 
 C64 READY. is a Progressive Web App, so it refreshes itself in the background.
-When a newer version has been downloaded and is ready to run, a toast appears at
-the bottom of the screen:
+It looks for a newer version when it starts, every ten minutes, and each time
+you come back to it. When one has been downloaded and is ready to run, a toast
+appears at the bottom of the screen:
 
 | Button | What it does |
 | --- | --- |

@@ -27,6 +27,7 @@ import { fileURLToPath } from 'url';
 const TESTS = [
   'test/monitor-browser-test.js',
   'test/monitor-spec-test.js',
+  'test/sw-update-checks-spec-test.js',
   'test/monitor-screen-usage-test.js',
   'test/monitor-live-code-test.js',
   'test/monitor-live-video-test.js',

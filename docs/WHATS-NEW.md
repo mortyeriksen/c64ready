@@ -44,7 +44,8 @@ The version you are running is shown at the bottom of the About dialog.
   scores.
 - **Fixes.** The Last Ninja's Stepping Stones and Dragon's Breath unlock,
   Neuromancer's last trophy comes when Neuromancer is defeated, and an Exploding
-  Fist score counts when you lose.
+  Fist score counts when you lose. The app installed from Safari on a Mac now
+  finds a new version when you open it or switch back to it.
 
 ## 2026.11.2 — November 3, 2026
 
