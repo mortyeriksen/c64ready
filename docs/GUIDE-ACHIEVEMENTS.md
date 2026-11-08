@@ -52,8 +52,8 @@ instead.
 The **GAME** tab shows:
 
 - **The trophy HUD**, as in [Retro Vibes](#trophies-in-retro-vibes): a slot per
-  achievement with the next one marked, and your points. A line under the slots
-  names the next one, what it takes and its points.
+  achievement with the next one marked, and your points. Under the slots, the
+  next one's name, what it takes and its points.
 - **The high-score screens**, in the game's own style, with your row
   highlighted. Equal scores share a place. While you play, only the boards in
   play show, such as OutRun's route A, with a speedrun on top.

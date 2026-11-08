@@ -15,6 +15,8 @@ import { ordinal } from './browse.js';
 
 /** How long each page shows. */
 export const PAGE_MS = 7000;
+/** Every page's rows are typed out within this, however few frames the browser draws. */
+const TYPE_MS = 3500;
 /** It waits for the score's toast to go, but no longer than this. */
 const SETTLE_MS = 12000;
 /**
@@ -289,9 +291,10 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
   // No place yet (being checked, or not on the board yet): two dashes.
   const place = (rank) => (rank == null ? '--' : ordinal(rank).toUpperCase());
 
-  // Rows PRINTed a character a frame behind a blinking cursor. One prebound
-  // step appends one character (a cached one-letter string) to a text node:
-  // nothing is allocated per character, only a row's elements as it starts.
+  // Rows PRINTed behind a blinking cursor, a character a frame, or more when
+  // frames are few: every page is typed out within TYPE_MS. One prebound step
+  // appends characters (cached one-letter strings) to a text node: nothing is
+  // allocated per character, only a row's elements as it starts.
   // The cursor is the typed cell's ::after: moving it inserts no node, which
   // would have the page's body:has() rules restyle the whole page.
   let typing = null, typingCell = null;
@@ -311,7 +314,9 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
       done();
       return;
     }
-    typing = { body, lines, my, done, li: 0, ci: 0, k: 0, row: null };
+    let total = 0;
+    for (const line of lines) if (line) for (const c of line.cells) total += c.length;
+    typing = { body, lines, my, done, li: 0, ci: 0, k: 0, row: null, start: performance.now(), total, typed: 0 };
     requestAnimationFrame(step);
   }
   function startRow(body, line) {
@@ -331,6 +336,8 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
   function step() {
     const t = typing;
     if (!t || t.my !== gen) { typing = null; typeIn(null); return; }
+    // At least one character this frame, and as many as keep the page on time.
+    let budget = Math.max(1, Math.ceil(((performance.now() - t.start) / TYPE_MS) * t.total) - t.typed);
     while (t.li < t.lines.length) {
       const line = t.lines[t.li];
       if (!t.row) { t.row = startRow(t.body, line); t.ci = 0; t.k = 0; }
@@ -339,7 +346,9 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
       if (t.k < text.length) {
         const node = t.row.cells[t.ci];
         node.appendData(text[t.k++]);
+        t.typed++;
         typeIn(node.parentNode);
+        if (--budget > 0) continue;
         requestAnimationFrame(step);
         return;
       }

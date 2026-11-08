@@ -1718,22 +1718,21 @@
 /* In the window the next one is marked, and holds still. */
 .ach-hud-card .ach-hud-slot.is-next::after { animation: none; }
 .ach-hud-card .ach-info-btn { font-size: 1rem; }
-/* The next one to get, one line under the slots: its name, what it takes and its points. What it takes is cut short first, then the name. */
+/* The next one to get, under the slots: its name and what it takes, wrapped beside the tag, the points at the end. */
 .ach-hud-upnext {
   grid-area: chase;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 0.6em;
   align-items: baseline;
-  min-width: 0;
   margin: 0;
   padding-top: 0.55em;
   border-top: 1px dashed color-mix(in srgb, var(--ach-ink) 35%, transparent);
   color: var(--text);
-  white-space: nowrap;
 }
 .ach-hud-upnext-k { color: var(--ach-hud-cyan); font: 0.75em 'PetMe64', 'Share Tech Mono', monospace; letter-spacing: 0.12em; }
-.ach-hud-upnext b { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--text-bright); font-weight: normal; }
-.ach-hud-upnext-d { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.ach-hud-upnext-t { overflow-wrap: anywhere; }
+.ach-hud-upnext b { color: var(--text-bright); font-weight: normal; }
 .ach-hud-upnext-p { color: var(--ach-ink); }
 
 /* Every trophy, a toast in miniature: unlocked in amber, locked dashed, the next in the info colour. */

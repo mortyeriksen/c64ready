@@ -20,7 +20,7 @@ The version you are running is shown at the bottom of the About dialog.
   time powers down and is stamped OUT until you can try again. Fifteen games
   have them.
 - **A new GAME tab.** The Achievements window opens with the trophy HUD from
-  Retro Vibes and a line telling the next trophy to get. While you play only
+  Retro Vibes and the next trophy to get, in full. While you play only
   the boards in play show, a speedrun on top.
 - **The Last Ninja.** New trophies, a speedrun board for every level, and
   attract mode. Stepping Stones and Dragon's Breath now

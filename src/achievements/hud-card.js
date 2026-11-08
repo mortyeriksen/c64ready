@@ -2,7 +2,7 @@
 // Copyright © 2026 Morten Øien Eriksen
 // src/achievements/hud-card.js — the trophy HUD as a card at the head of the
 // Achievements window's GAME tab: the vibes HUD's game block, a slot per
-// achievement and the next one on a line (the boards are listed under it), in the HUD's own classes
+// achievement and the next one under them (the boards are listed under it), in the HUD's own classes
 // (hud.js, styles-achievements.css), so a player knows it from the 3D view.
 // And every trophy under the boards as a toast in miniature.
 
@@ -47,10 +47,10 @@ export function hudCard({ game, buttons = [] }) {
       return h('span', { class: `ach-hud-slot${a.unlocked ? ' is-got' : ''}${i === next ? ' is-next' : ''}${FX_CLASS[fx]}`, style: fxDelay(a, fx, now), title: `${a.title}: ${a.description} (${a.points})` }, String(i + 1));
     })) : null;
 
-  // The next one to get, on one line under the slots.
+  // The next one to get, under the slots: its name and what it takes, wrapped, and its points.
   const up = list[next];
-  const upNext = up ? h('p', { class: 'ach-hud-upnext', title: `${up.title}: ${up.description} (${up.points})` },
-    h('span', { class: 'ach-hud-upnext-k' }, 'NEXT'), h('b', {}, up.title), h('span', { class: 'ach-hud-upnext-d' }, up.description),
+  const upNext = up ? h('p', { class: 'ach-hud-upnext' },
+    h('span', { class: 'ach-hud-upnext-k' }, 'NEXT'), h('span', { class: 'ach-hud-upnext-t' }, h('b', {}, up.title), ' ', up.description),
     h('span', { class: 'ach-hud-upnext-p' }, `+${up.points}`)) : null;
 
   const el = h('section', { class: 'ach-hud ach-hud-card', 'data-layout': 'box', 'data-chase': 'off', 'data-slots': list.length ? 'on' : 'off', 'aria-label': `${game.title}: trophies` },

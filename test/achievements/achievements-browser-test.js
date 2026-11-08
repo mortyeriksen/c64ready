@@ -103,9 +103,11 @@ try {
   expect(await game.locator('.ach-hud-card .ach-hud-slot.is-next').count() === 1 && await game.locator('.ach-trophies li.is-next').count() === 1, 'the next one to get is marked, in the HUD and in the list');
   const firstTitle = await game.locator('.ach-trophies li.is-next b').first().textContent();
   const upNext = await game.locator('.ach-hud-card .ach-hud-upnext').textContent().catch(() => '');
-  expect(upNext.startsWith(`NEXT${firstTitle}`) && /\+\d+$/.test(upNext), `and under the slots one line with the next one's name, what it takes and its points (got "${upNext}")`);
+  expect(upNext.startsWith(`NEXT${firstTitle} `) && /\+\d+$/.test(upNext), `and under the slots the next one's name, what it takes and its points (got "${upNext}")`);
   const fits = await game.locator('.ach-hud-card').evaluate((c) => {
-    const inside = () => { const r = c.getBoundingClientRect(), l = c.querySelector('.ach-hud-upnext').getBoundingClientRect(); return l.left >= r.left && l.right <= r.right + 0.5; };
+    // Inside the card, and all of it shown: wrapped, never cut short.
+    const inside = () => { const r = c.getBoundingClientRect(), l = c.querySelector('.ach-hud-upnext').getBoundingClientRect(), t = c.querySelector('.ach-hud-upnext-t');
+      return l.left >= r.left && l.right <= r.right + 0.5 && t.scrollWidth <= t.clientWidth && getComputedStyle(t).textOverflow !== 'ellipsis'; };
     const wide = inside();
     const name = c.querySelector('.ach-hud-upnext b'), was = name.textContent;
     c.style.width = '220px'; name.textContent = 'A Very Long Trophy Name Indeed';
@@ -113,7 +115,7 @@ try {
     c.style.width = ''; name.textContent = was;
     return wide && narrow;
   });
-  expect(fits, 'the line stays inside the card, a long name in a narrow one too');
+  expect(fits, 'it stays inside the card and shows in full, wrapped, a long name in a narrow one too');
   expect(await game.locator('.ach-hud-card .ach-hud-chase').count() === 0, 'and no chase: the board\'s high scores are right under it');
   const head = await game.locator('.ach-screen:not(.ach-fame) .ach-screen-head span').allTextContents();
   expect(head.length === 1 && head[0] === 'Hiscores', `and its high-score screen, headed HISCORES alone, since the game is named above it (got ${JSON.stringify(head)})`);

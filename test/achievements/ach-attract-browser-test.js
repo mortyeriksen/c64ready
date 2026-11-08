@@ -182,6 +182,20 @@ try {
   const clipped = await page.evaluate(() => { const t = document.querySelector('.ach-attract-tube').getBoundingClientRect(), c = document.querySelector('.ach-attract-count').getBoundingClientRect(); return c.bottom > t.bottom; });
   expect(!clipped, 'every row fits on the screen, the player count under them included');
   expect(rows.some((r) => r.startsWith('is-you') && r.includes('NEW BEST') && r.includes('030000')), `the score just played, a new best (${rows.at(-1)})`);
+  // At ten frames a second the page is still typed out within half its time.
+  const slow = await page.evaluate(async () => {
+    const raf = window.requestAnimationFrame;
+    window.requestAnimationFrame = (f) => setTimeout(() => f(performance.now()), 100);
+    window.attract.open(window.posted);
+    const t0 = performance.now();
+    const until = (cond) => new Promise((r) => { const look = () => (cond() || performance.now() - t0 > 6000 ? r() : setTimeout(look, 20)); look(); });
+    await until(() => !document.querySelector('.ach-attract-count'));   // the page drawn again
+    await until(() => document.querySelector('.ach-attract-count'));    // and typed out
+    const ms = performance.now() - t0;
+    window.requestAnimationFrame = raf;
+    return { ms: Math.round(ms), rows: document.querySelectorAll('.ach-attract-row').length };
+  });
+  expect(slow.ms < 4500 && slow.rows === rows.length, `at ten frames a second every row is still typed out in time (${JSON.stringify(slow)})`);
   ok('the board\'s rows');
 
   // 4. The pages turn on their own, past the empty routes.
@@ -229,6 +243,19 @@ try {
   await page.evaluate(() => window.attract.open(window.posted));
   await wait(page, 300);
   expect(await page.evaluate(() => !!document.querySelector('#model-viewer-overlay > .ach-attract')), 'in the vibes view while it is open');
+  // The vibes view draws fewer frames: at ten a second its page is still typed out in time.
+  const slowVibes = await page.evaluate(async () => {
+    const raf = window.requestAnimationFrame;
+    window.requestAnimationFrame = (f) => setTimeout(() => f(performance.now()), 100);
+    window.attract.open(window.posted);
+    const t0 = performance.now();
+    const until = (cond) => new Promise((r) => { const look = () => (cond() || performance.now() - t0 > 6000 ? r() : setTimeout(look, 20)); look(); });
+    await until(() => !document.querySelector('#model-viewer-overlay .ach-attract-count'));
+    await until(() => document.querySelector('#model-viewer-overlay .ach-attract-count'));
+    window.requestAnimationFrame = raf;
+    return { ms: Math.round(performance.now() - t0), rows: document.querySelectorAll('#model-viewer-overlay .ach-attract-row').length };
+  });
+  expect(slowVibes.ms < 4500 && slowVibes.rows === rows.length, `and at ten frames a second its rows are typed out in time there too (${JSON.stringify(slowVibes)})`);
   await page.evaluate(() => { document.getElementById('model-viewer-overlay').hidden = true; });
   await wait(page, 400);
   expect(!(await isOpen(page)), 'closing the view ends it');
