@@ -6,6 +6,14 @@
     {
       "hash": "228d147421640b3b602144271e328aa3",
       "label": "OneLoad64 v5 cartridge (Way of the Exploding Fist, The.crt)"
+    },
+    {
+      "hash": "0c76915ef88e189df0e445f703e4074b",
+      "label": "OneLoad64 v5 crunched program (Way of the Exploding Fist, The.prg)"
+    },
+    {
+      "hash": "81fb5d349a2ad97afcecd46e34ad2f3f",
+      "label": "OneLoad64 v5 uncrunched program (Way of the Exploding Fist, The.prg)"
     }
   ],
   "achievements": [
@@ -18,48 +26,83 @@
     },
     {
       "id": 2,
+      "title": "Second Dan",
+      "description": "Reach 2nd dan.",
+      "points": 5,
+      "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xH00AF=2_d0xH00AF=1"
+    },
+    {
+      "id": 3,
       "title": "Third Dan",
       "description": "Reach 3rd dan.",
       "points": 10,
       "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xH00AF=3_d0xH00AF=2"
     },
     {
-      "id": 3,
+      "id": 4,
+      "title": "Fourth Dan",
+      "description": "Reach 4th dan.",
+      "points": 10,
+      "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xH00AF=4_d0xH00AF=3"
+    },
+    {
+      "id": 5,
       "title": "Fifth Dan",
       "description": "Reach 5th dan.",
       "points": 10,
       "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xH00AF=5_d0xH00AF=4"
     },
     {
-      "id": 4,
+      "id": 6,
+      "title": "Sixth Dan",
+      "description": "Reach 6th dan.",
+      "points": 10,
+      "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xH00AF=6_d0xH00AF=5"
+    },
+    {
+      "id": 7,
       "title": "Seventh Dan",
       "description": "Reach 7th dan.",
       "points": 25,
       "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xH00AF=7_d0xH00AF=6"
     },
     {
-      "id": 5,
+      "id": 8,
+      "title": "Eighth Dan",
+      "description": "Reach 8th dan.",
+      "points": 25,
+      "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xH00AF=8_d0xH00AF=7"
+    },
+    {
+      "id": 9,
+      "title": "Ninth Dan",
+      "description": "Reach 9th dan.",
+      "points": 25,
+      "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xH00AF=9_d0xH00AF=8"
+    },
+    {
+      "id": 10,
       "title": "Tenth Dan",
       "description": "Reach 10th dan, the top of the ladder.",
       "points": 25,
       "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xH00AF=10_d0xH00AF=9"
     },
     {
-      "id": 6,
+      "id": 11,
       "title": "Matador",
       "description": "Defeat the charging bull.",
       "points": 10,
       "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xH00C2=128_d0xH00C2=0"
     },
     {
-      "id": 7,
+      "id": 12,
       "title": "Unblemished",
       "description": "Win a contest without conceding a point.",
       "points": 10,
       "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0ST:0xH00B5=1_T:d0xH00B5=2_d0xH008B=0ST:0xH00AF>d0xH00AF_d0xH008B=0"
     },
     {
-      "id": 8,
+      "id": 13,
       "title": "Rising Star",
       "description": "Score 10,000 points.",
       "points": 5,
@@ -67,7 +110,7 @@
       "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xHCC31<58_0xHCC32<58_0xHCC33<58_0xHCC34<58_A:0xLCC31*1000_A:0xLCC32*100_A:0xLCC33*10_0xLCC34>=100"
     },
     {
-      "id": 9,
+      "id": 14,
       "title": "Exploding Fist",
       "description": "Score 25,000 points.",
       "points": 10,
@@ -75,7 +118,7 @@
       "memaddr": "N:0xH00AE=0_N:0xH0065=0_N:d0xH0065=1_N:0xH00AF=0_0xH00B5=2.1._0xH00AE=0_0xH0065=0_0xHCC31<58_0xHCC32<58_0xHCC33<58_0xHCC34<58_A:0xLCC31*1000_A:0xLCC32*100_A:0xLCC33*10_0xLCC34>=250"
     },
     {
-      "id": 10,
+      "id": 15,
       "title": "Grand Master",
       "description": "Score 50,000 points.",
       "points": 25,
@@ -90,7 +133,7 @@
       "description": "Your best score against the computer.",
       "format": "SCORE",
       "lowerIsBetter": false,
-      "definition": "STA:0xH00AE=0_0xH0065=0_d0xH0065=1_0xH00AF=0_0xH00B5=2::CAN:0xH00AE!=0::SUB:0xH00AE=0_0xH0065=1_d0xH0065=0_d0xHCC31<58_d0xHCC32<58_d0xHCC33<58_d0xHCC34<58Sd0xLCC31>0Sd0xLCC32>0Sd0xLCC33>0Sd0xLCC34>0::VAL:d0xLCC31*100000_d0xLCC32*10000_d0xLCC33*1000_d0xLCC34*100"
+      "definition": "STA:0xH00AE=0_0xH0065=0_d0xH0065=1_0xH00AF=0_0xH00B5=2::CAN:0xH00AE!=0::SUB:0xH00AE=0S0xH0065=0_0xH005A=1_d0xHCC35=48_d0xHCC36=48_0xHCC36!=48_d0xHCC31<58_d0xHCC32<58_d0xHCC33<58_d0xHCC34<58_A:d0xLCC31_A:d0xLCC32_A:d0xLCC33_d0xLCC34>0S0xH0065=1_d0xH0065=0_d0xHCC31<58_d0xHCC32<58_d0xHCC33<58_d0xHCC34<58_A:d0xLCC31_A:d0xLCC32_A:d0xLCC33_d0xLCC34>0::VAL:d0xLCC31*100000_d0xLCC32*10000_d0xLCC33*1000_d0xLCC34*100"
     }
   ]
 }

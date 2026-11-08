@@ -606,6 +606,22 @@
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
+  "exploding-fist-prg-crunched": {
+   "description": "The Way of the Exploding Fist (Melbourne House 1985), the OneLoad64 v5 crunched program, MD5 0c76915ef88e189df0e445f703e4074b",
+   "env": "C64_EXPLODING_FIST_PRG_CRUNCHED",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Crunched/Way of the Exploding Fist, The.prg"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
+  "exploding-fist-prg-uncrunched": {
+   "description": "The Way of the Exploding Fist (Melbourne House 1985), the OneLoad64 v5 uncrunched program, MD5 81fb5d349a2ad97afcecd46e34ad2f3f",
+   "env": "C64_EXPLODING_FIST_PRG_UNCRUNCHED",
+   "paths": [
+    "~/projects/c64ready-workspace/c64media/OneLoad64-Games-Collection-v5/AlternativeFormats/PRGs/Uncrunched/Way of the Exploding Fist, The.prg"
+   ],
+   "note": "Commercial game \u2014 bring your own; not distributed with this repo"
+  },
   "super-mario-bros-64-crt": {
    "description": "Super Mario Bros 64 (ZeroPaige 2019), the OneLoad64 v5 cartridge, MD5 1c08be698922fdd0505d9d84ff4b63f6: the release its own-design achievement set targets",
    "env": "C64_SUPER_MARIO_BROS_64_CRT",
