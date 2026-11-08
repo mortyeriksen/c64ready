@@ -93,7 +93,8 @@ another device, good for 10 minutes. If every device is lost, set a new hash.
 - **Demo players** (on the Overview): *Add 50 demo players* makes 50 accounts
   with new random names and pixel-sprite badges, early and mid-game unlocks in
   every game and five moderate scores on every board, spread over the last six
-  weeks. Each press
+  weeks. A demo high score matches the player's trophies in that game: higher
+  the further they got, and short of the game's second score trophy. Each press
   adds 50 more. *Remove all demo players* deletes them with everything they
   did. Demo accounts have no passkey, so no one can sign in as one.
 - **Live:** the channel, under the name C64 READY, with **Online users**.

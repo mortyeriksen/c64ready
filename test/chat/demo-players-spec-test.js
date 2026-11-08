@@ -75,6 +75,29 @@ const boards = all('SELECT game_id, id, lower_is_better FROM leaderboards');
   ok('scores come with their milestones');
 }
 
+// 2b. A high score fits the player's trophies: short of the game's second score milestone, which is
+// past early and mid-game, and higher for a player further through the game.
+{
+  const over = all(`SELECT e.game_id, e.value, (SELECT score_at FROM achievements a WHERE a.game_id = e.game_id AND a.score_at IS NOT NULL ORDER BY score_at LIMIT 1 OFFSET 1) AS second
+      FROM lb_entries e JOIN demo_players d ON d.user_id = e.user_id JOIN leaderboards l ON l.game_id = e.game_id AND l.id = e.leaderboard_id AND l.lower_is_better = 0`)
+    .filter((r) => r.second != null && r.value >= r.second);
+  expect(over.length === 0, `scores at or past the second score milestone: ${over.slice(0, 5).map((r) => `${r.game_id} ${r.value} (${r.second})`).join(', ')}`);
+  const fist = one("SELECT MAX(e.value) AS hi FROM lb_entries e JOIN demo_players d ON d.user_id = e.user_id WHERE e.game_id = 'exploding-fist'").hi;
+  expect(fist < 25000, `The Way of the Exploding Fist's demo scores stay under 25,000, its second score trophy (best ${fist})`);
+  // Progress: the early and mid-game trophies (not score milestones) a player has in the game.
+  const progress = (uid, game) => one(`SELECT COUNT(*) AS n FROM unlocks u JOIN achievements a ON a.game_id = u.game_id AND a.id = u.achievement_id
+      WHERE u.user_id = ? AND u.game_id = ? AND a.score_at IS NULL`, uid, game).n;
+  let higher = 0, lower = 0;
+  for (const b of boards.filter((x) => !x.lower_is_better)) {
+    const rows = all('SELECT e.user_id, e.value FROM lb_entries e JOIN demo_players d ON d.user_id = e.user_id WHERE e.game_id = ? AND e.leaderboard_id = ? ORDER BY e.value', b.game_id, b.id);
+    if (rows.length < 2) continue;
+    const top = progress(rows.at(-1).user_id, b.game_id), bottom = progress(rows[0].user_id, b.game_id);
+    if (top > bottom) higher++; else if (top < bottom) lower++;
+  }
+  expect(higher >= 4 * lower, `on a board, the best demo score goes with more of the game's trophies than the lowest (${higher} boards so, ${lower} the other way)`);
+  ok('high scores fit the trophies');
+}
+
 // 3. A result only a finished stage can post comes with that stage: the Codex, the princess, Sandy.
 {
   for (const [game, board, title] of [['ultima-iv', 1, 'The Codex of Ultimate Wisdom'], ['prince-of-persia', 1, 'Happily Ever After'], ['maniac-mansion', 1, 'Sandy Rescued'],

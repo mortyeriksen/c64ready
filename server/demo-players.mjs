@@ -19,7 +19,8 @@ const EARLY = 0.55;             // the share of a set, from its start, that coun
 
 // A board's moderate values, lo to hi in steps of `step`, and the achievements a result there
 // implies (by title; '*' every achievement in the set). Boards not listed here that keep a high
-// score take theirs from the game's score milestones; MILLISECS is hundredths of a second.
+// score take theirs from the game's score milestones; MILLISECS is hundredths of a second. A high
+// score goes as far into its range as the player has got through the early and mid-game trophies.
 const BOARDS = {
   'action-biker/1': { lo: 5000, hi: 40000, step: 10 },
   'chuckie-egg/1': { lo: 10000, hi: 60000, step: 10 },
@@ -39,8 +40,8 @@ const BOARDS = {
   'road-runner/1': { lo: 10000, hi: 60000, step: 10 },
   'stix/1': { lo: 5000, hi: 40000, step: 10 },
   'thrust/1': { lo: 5000, hi: 30000, step: 10 },
-  'turrican/1': { lo: 50000, hi: 300000, step: 10 },
-  'turrican-ii/1': { lo: 50000, hi: 300000, step: 10 },
+  'turrican/1': { lo: 20000, hi: 120000, step: 10 },
+  'turrican-ii/1': { lo: 20000, hi: 120000, step: 10 },
   'vegetables-deluxe/1': { lo: 1000, hi: 10000, step: 10 },
   'vegetables-deluxe/2': { lo: 1000, hi: 10000, step: 10 },
   'vegetables-deluxe/3': { lo: 1000, hi: 10000, step: 10 },
@@ -164,13 +165,18 @@ export function createDemoPlayers({ db, now = Date.now, random = Math.random }) 
     throw new Error('no free demo name');
   }
 
-  /** A board's moderate value range: its entry in BOARDS, or for a high score, from the game's milestones. */
+  /**
+   * A board's moderate value range: its entry in BOARDS, or for a high score, from the game's
+   * milestones: up to three times the first, and short of the second, which is past early and mid-game.
+   */
   function range(game, board, milestones) {
     const listed = BOARDS[`${game}/${board.id}`];
     if (listed) return listed;
     if (board.lower_is_better || !milestones.length) return null;
-    const lo = Math.max(1, Math.round(milestones[0] * 0.4)), hi = Math.round(milestones[Math.min(2, milestones.length - 1)] * 1.1);
-    return { lo, hi, step: hi >= 1000 ? 10 : 1 };
+    const lo = Math.max(1, Math.round(milestones[0] * 0.4)), step = milestones[0] >= 1000 ? 10 : 1;
+    let hi = milestones[0] * 3;
+    if (milestones.length > 1) hi = Math.min(hi, milestones[1] - step);
+    return { lo, hi: Math.floor(hi / step) * step, step };
   }
 
   /** Adds `count` demo players. Returns how many players, unlocks and scores it added. */
@@ -197,16 +203,23 @@ export function createDemoPlayers({ db, now = Date.now, random = Math.random }) 
         const byTitle = new Map(achs.map((a) => [a.title, a]));
         const milestones = achs.filter((a) => a.score_at != null).sort((a, b) => a.score_at - b.score_at);
         const pool = achs.slice(0, Math.max(1, Math.ceil(achs.length * EARLY))).filter((a) => a.score_at == null);
-        const plan = new Map();   // player → { unlocks: Set<achievement>, scores: [{ board, value }] }
-        const of = (p) => { if (!plan.has(p)) plan.set(p, { unlocks: new Set(), scores: [] }); return plan.get(p); };
+        // player → { reach: how far into the pool, unlocks: Set<achievement>, scores: [{ board, value }] }
+        const plan = new Map();
+        const of = (p) => {
+          if (!plan.has(p)) plan.set(p, { reach: pool.length && 1 + Math.floor(random() * pool.length), unlocks: new Set(), scores: [] });
+          return plan.get(p);
+        };
         for (const board of q.boards.all(game)) {
           const r = range(game, board, milestones.map((m) => m.score_at));
           if (!r) continue;
           const chosen = new Set();
           while (chosen.size < Math.min(PER_BOARD, players.length)) chosen.add(weighted());
           for (const p of chosen) {
-            const value = Math.round(between(r.lo, r.hi) / r.step) * r.step;
             const mine = of(p);
+            // A high score as far up its range as the player's progress, give or take; a time anywhere in it.
+            const share = pool.length ? (mine.reach / pool.length) * between(0.7, 1) : random();
+            const value = board.lower_is_better ? Math.round(between(r.lo, r.hi) / r.step) * r.step
+              : Math.min(r.hi, Math.round((r.lo + (r.hi - r.lo) * share) / r.step) * r.step);
             mine.scores.push({ board, value });
             for (const t of r.needs ?? []) for (const a of t === '*' ? achs : [byTitle.get(t)]) if (a) mine.unlocks.add(a);
             if (!board.lower_is_better) for (const m of milestones) if (m.score_at <= value) mine.unlocks.add(m);
@@ -216,8 +229,7 @@ export function createDemoPlayers({ db, now = Date.now, random = Math.random }) 
         for (let i = 0; i < extra; i++) of(weighted());
         for (const [p, mine] of plan) {
           // Early and mid-game: a run from the set's start, a few skipped along the way.
-          const reach = pool.length && 1 + Math.floor(random() * pool.length);
-          for (let i = 0; i < reach; i++) if (i === 0 || random() < 0.75) mine.unlocks.add(pool[i]);
+          for (let i = 0; i < mine.reach; i++) if (i === 0 || random() < 0.75) mine.unlocks.add(pool[i]);
           // The play's span: some days after joining, then unlocks in set order, scores after them,
           // at random times within it.
           const start = Math.round(between(p.joined, t1 - DAY));
