@@ -14,48 +14,37 @@ The version you are running is shown at the bottom of the About dialog.
 - **Trophies in Retro Vibes.** A HUD with the game's trophies and the next
   player to pass, to keep up while you play. Drag it anywhere and shape it into
   a bar, a column or a pill.
-- **Attract mode.** When a game ends, its high scores, Trophy Hunters and trophies
-  cycle across the window, as on an arcade cabinet.
-- **Challenges out for now.** A challenge trophy you can no longer earn this
-  time powers down and is stamped OUT until you can try again. Fifteen games
-  have them.
-- **A new GAME tab.** The Achievements window opens with the trophy HUD from
-  Retro Vibes and the next trophy to get, in full. While you play only
-  the boards in play show, a speedrun on top.
-- **The Last Ninja.** New trophies, a speedrun board for every level, and
-  attract mode. Stepping Stones and Dragon's Breath now
-  unlock.
-- **Commando Arcade, Ghosts 'n Goblins Arcade and IK+.** Their disk versions
-  now share the cartridges' trophies and high scores.
-- **Out Run.** Eight more trophies.
-- **The Way of the Exploding Fist.** A trophy for every dan, and your score now
-  goes on the board when you lose.
+- **A new GAME tab.** The Achievements window opens with the same HUD and the
+  next trophy to get. While you play, only the boards in play show, a speedrun
+  on top.
+- **Attract mode.** When a game ends, its high scores, Trophy Hunters and
+  trophies cycle across the screen, as on an arcade cabinet.
+- **Challenges.** A challenge trophy you can no longer earn this time powers
+  down and is stamped OUT until you can try again. Fifteen games have them.
 - **Play first, sign in later.** Trophies and scores earned before you sign in
-  now count on the boards once you do, instead of waiting for review.
-- **Commando and Commando Arcade.** A speedrun board for the first area.
+  count once you do.
+- **Your games from a folder.** The 💾 button in GAMES looks through a folder
+  of your own files and adds every game with achievements to the library.
+- **Load a game from its page.** A game in your library has a play button on
+  its page under GAMES.
+- **Game icons in colour.** Every game has a new, more detailed pixel icon in
+  colour.
 - **New sets.** Arkanoid, Arkanoid: Revenge of Doh, Green Beret, the Spy vs. Spy
   trilogy, Turrican, Turrican II, Pirates!, Maniac Mansion, Eye of the Beholder,
   Elite, Prince of Persia, International Karate, International Karate Ultimate,
   Leaderboard Golf, H.E.R.O., Airborne Ranger, IO, Last Ninja 3, Bruce Lee II,
   Ghostbusters, Pitstop II, Armalyte, Fist II: The Legend Continues,
-  Neuromancer, Space Rogue and Ultima IV Remastered. Maniac Mansion has a
-  speedrun to rescuing Sandy, Prince of Persia a board for the most time left,
-  Leaderboard Golf a board for each course, Last Ninja 3 and Bruce Lee II a
-  speedrun to the end, Ghostbusters a board for the most profit, Pitstop II a
-  board for each track, and Ultima IV a board for the fewest turns to the Codex.
-  Airborne Ranger, Last Ninja 3, Bruce Lee II and Ultima IV notice a trainer
-  cheat and stop counting.
-- **Neuromancer and Space Rogue.** Neuromancer's last trophy is awarded when
-  Neuromancer is defeated. Space Rogue gains a trophy for taking the Manchi egg
-  home to Ja-Karn. Invincible remains the repute rank.
-- **Load a game from its page.** When a game's file is in your library, its
-  page under GAMES has a play button that loads it.
-- **Your games from a folder.** The 💾 button in GAMES looks through a folder
-  of your own files and adds every game with achievements it finds to the
-  library.
-- **Game icons in colour.** Every game has a new, more detailed pixel icon in
-  colour: in the games list, at the top of a game's page, in the chat, on the
-  trophy HUD and on the toast for a finished set.
+  Neuromancer, Space Rogue and Ultima IV Remastered, many with speedruns and
+  high-score boards of their own.
+- **More in the sets you know.** The Last Ninja has new trophies and a speedrun
+  for every level, Out Run eight more trophies, The Way of the Exploding Fist a
+  trophy for every dan, Space Rogue a trophy for taking the Manchi egg home, and
+  Commando a speedrun for the first area. The disk versions of Commando Arcade,
+  Ghosts 'n Goblins Arcade and IK+ share their cartridges' trophies and high
+  scores.
+- **Fixes.** The Last Ninja's Stepping Stones and Dragon's Breath unlock,
+  Neuromancer's last trophy comes when Neuromancer is defeated, and an Exploding
+  Fist score counts when you lose.
 
 ## 2026.11.2 — November 3, 2026
 
