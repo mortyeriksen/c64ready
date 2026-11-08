@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 // src/achievements/hud-card.js — the trophy HUD as a card at the head of the
-// Achievements window's GAME tab: the vibes HUD's game block and a slot per
-// achievement (the boards are listed under it), in the HUD's own classes
+// Achievements window's GAME tab: the vibes HUD's game block, a slot per
+// achievement and the next one on a line (the boards are listed under it), in the HUD's own classes
 // (hud.js, styles-achievements.css), so a player knows it from the 3D view.
 // And every trophy under the boards as a toast in miniature.
 
@@ -21,7 +21,7 @@ export function boardsShown(leaderboards, runningIds = [], playingId = null) {
   return [...on.filter((l) => l.id === playingId), ...on.filter((l) => l.id !== playingId)];
 }
 /**
- * The HUD card for `game`: its icon, title and points, and a slot per achievement.
+ * The HUD card for `game`: its icon, title and points, a slot per achievement, and the next one to get.
  * @param {object} o
  * @param {object} o.game          the engine's snapshot
  * @param {HTMLElement[]} [o.buttons]  on the game's line: attract mode, refresh
@@ -47,8 +47,14 @@ export function hudCard({ game, buttons = [] }) {
       return h('span', { class: `ach-hud-slot${a.unlocked ? ' is-got' : ''}${i === next ? ' is-next' : ''}${FX_CLASS[fx]}`, style: fxDelay(a, fx, now), title: `${a.title}: ${a.description} (${a.points})` }, String(i + 1));
     })) : null;
 
+  // The next one to get, on one line under the slots.
+  const up = list[next];
+  const upNext = up ? h('p', { class: 'ach-hud-upnext', title: `${up.title}: ${up.description} (${up.points})` },
+    h('span', { class: 'ach-hud-upnext-k' }, 'NEXT'), h('b', {}, up.title), h('span', { class: 'ach-hud-upnext-d' }, up.description),
+    h('span', { class: 'ach-hud-upnext-p' }, `+${up.points}`)) : null;
+
   const el = h('section', { class: 'ach-hud ach-hud-card', 'data-layout': 'box', 'data-chase': 'off', 'data-slots': list.length ? 'on' : 'off', 'aria-label': `${game.title}: trophies` },
-    h('div', { class: 'ach-hud-in' }, id, slots));
+    h('div', { class: 'ach-hud-in' }, id, slots, upNext));
   el.style.setProperty('--ach-hud-trophy', iconMask(KIND_ICONS.unlock));
 
   return { el };
