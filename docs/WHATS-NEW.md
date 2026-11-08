@@ -28,6 +28,8 @@ The version you are running is shown at the bottom of the About dialog.
 - **Commando Arcade, Ghosts 'n Goblins Arcade and IK+.** Their disk versions
   now share the cartridges' trophies and high scores.
 - **Out Run.** Eight more trophies.
+- **Play first, sign in later.** Trophies and scores earned before you sign in
+  now count on the boards once you do, instead of waiting for review.
 - **Commando and Commando Arcade.** A speedrun board for the first area.
 - **New sets.** Arkanoid, Arkanoid: Revenge of Doh, Green Beret, the Spy vs. Spy
   trilogy, Turrican, Turrican II, Pirates!, Maniac Mansion, Eye of the Beholder,

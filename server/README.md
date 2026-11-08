@@ -87,7 +87,8 @@ another device, good for 10 minutes. If every device is lost, set a new hash.
   out of public view: posted without the game open, many unlocks at once, a
   score seconds after the game was opened, over a board's `max` (`min` where
   fewer is better) from its set, or past `score` milestones not unlocked. The
-  last clears by itself when those milestones arrive. **Approve** lets one count, **Clear** removes
+  last clears by itself when those milestones arrive. Results earned signed
+  out and posted on signing in skip the many-at-once and seconds-after checks. **Approve** lets one count, **Clear** removes
   it, and both go in the chat log. The dev server skips these checks.
 - **Demo players** (on the Overview): *Add 50 demo players* makes 50 accounts
   with new random names and pixel-sprite badges, early and mid-game unlocks in

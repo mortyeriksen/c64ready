@@ -112,13 +112,22 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
     const mine = unsaved.filter(isMine);
     if (!mine.length) return;
     for (const e of mine) unsaved.splice(unsaved.indexOf(e), 1);
+    const opened = new Set();
     for (let i = 0; i < mine.length; i++) {
       // The account changed while these were posted: the rest wait for their own account.
       if (account.user?.id !== uid) { mine.slice(i).forEach(keepUnsaved); return; }
       const e = mine[i];
+      // The game opened as this account first, so the server has it in play; its answer is fetched again after.
+      if (!opened.has(e.hash)) {
+        opened.add(e.hash);
+        await lookup(e.hash);
+        lookups.delete(e.hash);
+        if (account.user?.id !== uid) { mine.slice(i).forEach(keepUnsaved); return; }
+      }
       try {
-        if (e.kind === 'unlock') await call('POST', `/games/${e.hash}/unlocks`, { achievementId: e.id, hardcore: e.hardcore === true });
-        else await call('POST', `/games/${e.hash}/leaderboards/${e.id}/entries`, { value: e.value, hardcore: e.hardcore === true });
+        // `held`: earned before, so it comes in a run, just after the game was opened.
+        if (e.kind === 'unlock') await call('POST', `/games/${e.hash}/unlocks`, { achievementId: e.id, hardcore: e.hardcore === true, held: true });
+        else await call('POST', `/games/${e.hash}/leaderboards/${e.id}/entries`, { value: e.value, hardcore: e.hardcore === true, held: true });
       } catch (err) {
         // Kept while the server is out of reach or the session is gone; any other refusal is final.
         if (retryable(err)) keepUnsaved(e);

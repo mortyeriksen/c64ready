@@ -1701,7 +1701,7 @@
   -webkit-user-select: text;
 }
 /* The card is as wide as the window, not a box dragged out: its contents span it. */
-.ach-hud-card .ach-hud-in { height: auto; justify-items: stretch; justify-content: normal; align-content: normal; padding: 0.55em 0.65em 0.65em; }
+.ach-hud-card .ach-hud-in { grid-template-columns: minmax(0, 1fr); height: auto; justify-items: stretch; justify-content: normal; align-content: normal; padding: 0.55em 0.65em 0.65em; }
 .ach-hud-card .ach-hud-words { flex: 1; min-width: 0; }
 .ach-hud-card .ach-hud-title {
   display: block;
@@ -1711,9 +1711,9 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* The slots across the card's width (over the box shape's centring). */
-.ach-hud.ach-hud-card[data-layout] .ach-hud-slots { justify-self: stretch; grid-template-columns: repeat(var(--ach-hud-cols, 7), minmax(0, 1fr)); }
-.ach-hud-card .ach-hud-slot { width: auto; height: auto; aspect-ratio: 1; }
+/* The slots across the card's width (over the box shape's centring): as many as fit a row, the rest wrapped. */
+.ach-hud.ach-hud-card[data-layout] .ach-hud-slots { justify-self: stretch; grid-template-columns: repeat(auto-fill, minmax(3em, 1fr)); }
+.ach-hud-card .ach-hud-slot { width: auto; min-width: 0; height: auto; aspect-ratio: 1; }
 .ach-hud-card .ach-hud-slot:hover { transform: none; }
 /* In the window the next one is marked, and holds still. */
 .ach-hud-card .ach-hud-slot.is-next::after { animation: none; }

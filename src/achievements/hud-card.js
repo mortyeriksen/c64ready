@@ -8,7 +8,7 @@
 
 import { KIND_ICONS, iconMask, drawGameIcon } from './toast.js';
 import { gameIconUrl } from './game-icons.js';
-import { slotColumns, challengeFx, challengeSince, FX_CLASS, FX_GOING_OUT, FX_BACK } from './hud.js';
+import { challengeFx, challengeSince, FX_CLASS, FX_GOING_OUT, FX_BACK } from './hud.js';
 import { h, ago } from './browse.js';
 
 // A slot or card built again mid-effect carries on where it was.
@@ -50,7 +50,6 @@ export function hudCard({ game, buttons = [] }) {
   const el = h('section', { class: 'ach-hud ach-hud-card', 'data-layout': 'box', 'data-chase': 'off', 'data-slots': list.length ? 'on' : 'off', 'aria-label': `${game.title}: trophies` },
     h('div', { class: 'ach-hud-in' }, id, slots));
   el.style.setProperty('--ach-hud-trophy', iconMask(KIND_ICONS.unlock));
-  if (slots) el.style.setProperty('--ach-hud-cols', String(slotColumns('box', list.length)));
 
   return { el };
 }

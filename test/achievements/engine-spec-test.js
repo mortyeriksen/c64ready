@@ -274,6 +274,8 @@ const settle = () => new Promise((r) => setTimeout(r, 50));
   r2[0x10] = 1; e2.frame(r2); r2[0x10] = 2; e2.frame(r2);
   await settle();
   expect(got.length === 1 && got[0].signedIn === false, 'an unlock signed out is shown');
+  r2[0x12] = 1; r2[0x11] = 30; e2.frame(r2); e2.frame(r2); r2[0x11] = 70; e2.frame(r2); r2[0x12] = 0; e2.frame(r2);   // a finished run, 70
+  await settle();
   const fresh = Number(db.prepare('INSERT INTO users (name, name_key, handle, created_at) VALUES (?, ?, ?, ?)').run('Bea', 'bea', crypto.randomBytes(16), Date.now()).lastInsertRowid);
   const t2 = crypto.randomBytes(32).toString('base64url');
   db.prepare('INSERT INTO sessions (token_hash, user_id, created_at, expires_at, last_seen_at) VALUES (?, ?, ?, ?, ?)').run(crypto.createHash('sha256').update(t2).digest('hex'), fresh, Date.now(), Date.now() + 1e9, Date.now());
@@ -281,6 +283,10 @@ const settle = () => new Promise((r) => setTimeout(r, 50));
   await e2.accountChanged();
   const saved = db.prepare("SELECT achievement_id FROM unlocks WHERE user_id = ? AND game_id = 'demo'").all(fresh).map((x) => x.achievement_id);
   expect(JSON.stringify(saved) === '[1]', `signing in posts what was earned signed out (got ${JSON.stringify(saved)})`);
+  const flag = db.prepare("SELECT flag FROM unlocks WHERE user_id = ? AND game_id = 'demo'").get(fresh)?.flag;
+  expect(flag == null, `with the game open, so it is not held for review as posted without the game open (flag: ${flag})`);
+  const score = db.prepare("SELECT value, flag FROM lb_entries WHERE user_id = ? AND game_id = 'demo'").get(fresh);
+  expect(score?.value === 70 && score.flag == null, `and so is the score of a run finished signed out, on the board (got ${JSON.stringify(score)})`);
   expect(e2.game.achievements.find((a) => a.id === 1)?.unlocked, 'and it stays unlocked');
 
   // A sign-in's answer applies only to the game it was asked for.

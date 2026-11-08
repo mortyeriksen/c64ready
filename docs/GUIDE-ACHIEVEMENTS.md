@@ -61,7 +61,7 @@ The **GAME** tab shows:
 
 A notification tells you when you unlock one. When a game ends, your score is
 posted and the leaderboard keeps your best. Signed out, you see unlocks, and
-they are saved when you sign in on this page.
+they and your scores are saved when you sign in on this page.
 
 Some games notice a trainer or cheat, such as unlimited lives, and C64 READY.
 says so when it is on.

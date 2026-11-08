@@ -42,6 +42,8 @@ const POST_RATE = 0.5, POST_BURST = 10;
 const SCORE_QUIET_MS = 5 * 60_000;
 // Fair play: a play is the account's use of a game, a new one after this long away. Results
 // posted with no play, many unlocks at once, or a score just after the game was opened are flagged.
+// Results earned signed out (`held`) are posted together on signing in, just after the game is opened
+// as the account: only the first applies to them.
 const PLAY_GAP_MS = 6 * 3600_000;
 const BURST = 5, BURST_MS = 3000;
 const EARLY_SCORE_MS = 20_000;
@@ -306,10 +308,11 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser, fair
       if (!a) throw new HttpError(404, 'no such achievement');
       const t = now();
       const hardcore = body.hardcore === true;
-      // Odd, not refused: kept for the player, out of public view until an admin approves it.
+      // Odd, not refused: kept for the player, out of public view until an admin approves it. One
+      // earned signed out (`held`) comes in a run with the others on signing in.
       const flag = !fairPlay ? null
         : !playing(user, g, t) ? 'posted without the game open'
-        : q.recentUnlocks.get(user.id, g.id, t - BURST_MS).n >= BURST - 1 ? 'many unlocks at once'
+        : body.held !== true && q.recentUnlocks.get(user.id, g.id, t - BURST_MS).n >= BURST - 1 ? 'many unlocks at once'
         : null;
       const added = q.unlock.run(user.id, g.id, id, hardcore ? 1 : 0, t, flag).changes > 0;
       // Only what counts in public goes in the activity feed.
@@ -342,7 +345,7 @@ export function gameRoutes({ db, now, HttpError, requireUser, optionalUser, fair
         const play = q.play.get(user.id, g.id);
         flag = !fairPlay ? null
           : !playing(user, g, t, play) ? 'posted without the game open'
-          : value !== 0 && t - play.started_at < EARLY_SCORE_MS ? 'a score just after the game was opened'
+          : value !== 0 && body.held !== true && t - play.started_at < EARLY_SCORE_MS ? 'a score just after the game was opened'
           : lb.max_value != null && value > lb.max_value ? "over the board's limit"
           : lb.min_value != null && value < lb.min_value ? "under the board's limit"
           : !lb.lower_is_better && q.missed.get(g.id, value, user.id).n ? MILESTONES_FLAG

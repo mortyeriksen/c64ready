@@ -360,6 +360,20 @@ const open = (who, hash = HASH) => api('GET', `/api/games/${hash}`, { token: who
   const burst = [];
   for (const id of [1, 2, 11, 12, 13]) burst.push((await raw(ivy, 'unlocks', { achievementId: id, hardcore: true })).body.flagged === true);
   expect(burst.join() === 'false,false,false,false,true', `the fifth unlock within three seconds is flagged (got ${burst})`);
+  // Earned signed out (`held`), posted in a run on signing in, just after the game opened as the account.
+  const jo = account('Jo'), kit = account('Kit');
+  const heldCold = await raw(kit, 'leaderboards/1/entries', { value: 3000, hardcore: true, held: true });
+  expect(heldCold.body.flagged === true && flagOf('lb_entries', kit) === 'posted without the game open', 'a held result still needs the game open');
+  await open(jo);
+  const run = [];
+  for (const id of [1, 2, 11, 12, 13]) run.push((await raw(jo, 'unlocks', { achievementId: id, hardcore: true, held: true })).body.flagged === true);
+  expect(run.every((f) => !f), `held unlocks posted together are not many unlocks at once (got ${run})`);
+  const heldScore = await raw(jo, 'leaderboards/1/entries', { value: 3000, hardcore: true, held: true });
+  expect(!heldScore.body.flagged && (await boardNames()).includes('Jo'), 'and a held score just after the game opened goes on the board');
+  db.prepare("UPDATE leaderboards SET max_value = 100000 WHERE game_id = 'demo' AND id = 1").run();
+  const heldHuge = await raw(jo, 'leaderboards/1/entries', { value: 2_000_000, hardcore: true, held: true });
+  expect(heldHuge.body.flagged === true && flagOf('lb_entries', jo) === "over the board's limit", "while the board's limit applies to it");
+  db.prepare("UPDATE leaderboards SET max_value = NULL WHERE game_id = 'demo'").run();
   db.prepare("DELETE FROM achievements WHERE game_id = 'demo' AND id > 10").run();
   ok('fair play: softcore results stay private, odd results are flagged');
 }
