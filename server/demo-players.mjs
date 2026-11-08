@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 // server/demo-players.mjs — demo players for the admin console: a batch of made-up accounts with
-// early and mid-game unlocks in every game and five moderate scores on every board, spread over the
+// early and mid-game unlocks in every game, most of them only the first few, and five moderate
+// scores on every board (two where the result needs a finished game), spread over the
 // last six weeks, so the game pages, boards and activity show something to look at. Each batch has
 // new random names, so batches add up. Every demo account is listed in demo_players and removed
 // with it in one go. A demo account has no passkey: no one can sign in as it. Each has a badge of
@@ -15,6 +16,7 @@ import { forgetDeleted } from './db.mjs';
 const DAY = 24 * 3600_000;
 const SPAN = 42 * DAY;          // the batch's history: the last six weeks
 const PER_BOARD = 5;            // scores a batch adds to each board
+const PER_LATE_BOARD = 2;       // and to a board whose result needs late-game trophies: few finish a game
 const EARLY = 0.55;             // the share of a set, from its start, that counts as early and mid-game
 
 // A board's moderate values, lo to hi in steps of `step`, and the achievements a result there
@@ -48,36 +50,36 @@ const BOARDS = {
   'spy-vs-spy/2': { lo: 2000, hi: 8000, step: 10, needs: ['Embassy Level 1'] },
   'pirates/1': { lo: 30, hi: 70, step: 1, needs: ['Commissioned', 'Ashore for Good'] },
   'prince-of-persia/1': { lo: 5, hi: 20, step: 1, needs: ['A Sword at Last', 'Deeper', 'The Skeleton', 'The Palace', 'Through the Mirror', 'The Fat Guard', 'Free Fall', 'The Mouse', 'Royal Halls', 'Deeper Still', 'Into the Dark', 'The Shadow', 'Tower of Jaffar', 'The Vizier Falls', 'Happily Ever After'] },
-  // Fewest is best: times, moves, strokes and turns, as an ordinary player does them (about twice a good
-  // run's), so a player can beat the demo players.
-  'bruce-lee-ii/1': { lo: 300000, hi: 540000, step: 1, needs: ['First Lantern', 'The Deep of His Palace', 'Return of the Dragon'] },
-  'commando/2': { lo: 18000, hi: 36000, step: 1, needs: ['Knock Knock', 'Breakthrough'] },
-  'commando-arcade/2': { lo: 18000, hi: 36000, step: 1, needs: ['Off the Truck'] },
+  // Fewest is best: times, moves, strokes and turns, as an ordinary player does them, so a player can
+  // beat the demo players. Times are about 1.4 times a good run's, moves, strokes and turns about twice.
+  'bruce-lee-ii/1': { lo: 210000, hi: 378000, step: 1, needs: ['First Lantern', 'The Deep of His Palace', 'Return of the Dragon'] },
+  'commando/2': { lo: 12600, hi: 25200, step: 1, needs: ['Knock Knock', 'Breakthrough'] },
+  'commando-arcade/2': { lo: 12600, hi: 25200, step: 1, needs: ['Off the Truck'] },
   'hitchhikers-guide/1': { lo: 600, hi: 1100, step: 1, needs: ['Hundred Points', 'Two Hundred', 'Three Hundred', 'Mostly Harmless'] },
   'zork-i/1': { lo: 700, hi: 1300, step: 1, needs: ['Breaking and Entering', 'Hundred Points', 'Two Hundred', 'Three Hundred', 'Master Adventurer'] },
-  'last-ninja-3/2': { lo: 1500000, hi: 2700000, step: 1, needs: ['First Blood', 'Earth', 'Wind', 'Water', 'Fire', 'Real Hatred Is Timeless'] },
-  'last-ninja/1': { lo: 36000, hi: 72000, step: 1, needs: ['First Blood', 'Into the Wilderness'] },
-  'last-ninja/2': { lo: 36000, hi: 72000, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens'] },
-  'last-ninja/3': { lo: 36000, hi: 72000, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens', 'Into the Dungeons'] },
-  'last-ninja/4': { lo: 36000, hi: 72000, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens', 'Into the Dungeons', 'The Palace'] },
-  'last-ninja/5': { lo: 36000, hi: 72000, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens', 'Into the Dungeons', 'The Palace', 'Inner Sanctum'] },
-  'last-ninja/6': { lo: 36000, hi: 72000, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens', 'Into the Dungeons', 'The Palace', 'Inner Sanctum', 'The Final Duel', 'The Sacred Scrolls'] },
+  'last-ninja-3/2': { lo: 1050000, hi: 1890000, step: 1, needs: ['First Blood', 'Earth', 'Wind', 'Water', 'Fire', 'Real Hatred Is Timeless'] },
+  'last-ninja/1': { lo: 25200, hi: 50400, step: 1, needs: ['First Blood', 'Into the Wilderness'] },
+  'last-ninja/2': { lo: 25200, hi: 50400, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens'] },
+  'last-ninja/3': { lo: 25200, hi: 50400, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens', 'Into the Dungeons'] },
+  'last-ninja/4': { lo: 25200, hi: 50400, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens', 'Into the Dungeons', 'The Palace'] },
+  'last-ninja/5': { lo: 25200, hi: 50400, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens', 'Into the Dungeons', 'The Palace', 'Inner Sanctum'] },
+  'last-ninja/6': { lo: 25200, hi: 50400, step: 1, needs: ['First Blood', 'Into the Wilderness', 'Palace Gardens', 'Into the Dungeons', 'The Palace', 'Inner Sanctum', 'The Final Duel', 'The Sacred Scrolls'] },
   'leaderboard/1': { lo: 78, hi: 96, step: 1, needs: ['First Hole', 'Eighteen Holes'] },
   'leaderboard/2': { lo: 78, hi: 96, step: 1, needs: ['First Hole', 'Eighteen Holes'] },
   'leaderboard/3': { lo: 78, hi: 96, step: 1, needs: ['First Hole', 'Eighteen Holes'] },
   'leaderboard/4': { lo: 78, hi: 96, step: 1, needs: ['First Hole', 'Eighteen Holes'] },
-  'maniac-mansion/1': { lo: 900000, hi: 1800000, step: 1, needs: ['The Old Mansion', 'Sandy Rescued'] },
-  'pitstop-ii/1': { lo: 200, hi: 300, step: 1 },
-  'pitstop-ii/2': { lo: 200, hi: 300, step: 1 },
-  'pitstop-ii/3': { lo: 200, hi: 300, step: 1 },
-  'pitstop-ii/4': { lo: 200, hi: 300, step: 1 },
-  'pitstop-ii/5': { lo: 200, hi: 300, step: 1 },
-  'pitstop-ii/6': { lo: 200, hi: 300, step: 1 },
-  'spy-vs-spy/1': { lo: 18000, hi: 42000, step: 1, needs: ['Embassy Infiltration', 'Embassy Level 1'] },
-  'spy-vs-spy-ii/1': { lo: 30000, hi: 66000, step: 1, needs: ['Island Landfall', 'Island Level 1'] },
-  'spy-vs-spy-iii/1': { lo: 30000, hi: 66000, step: 1, needs: ['Arctic Arrival', 'Arctic Level 1'] },
-  'turrican/2': { lo: 72000, hi: 120000, step: 1, needs: ['Touchdown', 'First World Down'] },
-  'turrican-ii/2': { lo: 72000, hi: 120000, step: 1, needs: ['Boots on the Ground', 'First World Down'] },
+  'maniac-mansion/1': { lo: 630000, hi: 1260000, step: 1, needs: ['The Old Mansion', 'Sandy Rescued'] },
+  'pitstop-ii/1': { lo: 140, hi: 210, step: 1 },
+  'pitstop-ii/2': { lo: 140, hi: 210, step: 1 },
+  'pitstop-ii/3': { lo: 140, hi: 210, step: 1 },
+  'pitstop-ii/4': { lo: 140, hi: 210, step: 1 },
+  'pitstop-ii/5': { lo: 140, hi: 210, step: 1 },
+  'pitstop-ii/6': { lo: 140, hi: 210, step: 1 },
+  'spy-vs-spy/1': { lo: 12600, hi: 29400, step: 1, needs: ['Embassy Infiltration', 'Embassy Level 1'] },
+  'spy-vs-spy-ii/1': { lo: 21000, hi: 46200, step: 1, needs: ['Island Landfall', 'Island Level 1'] },
+  'spy-vs-spy-iii/1': { lo: 21000, hi: 46200, step: 1, needs: ['Arctic Arrival', 'Arctic Level 1'] },
+  'turrican/2': { lo: 50400, hi: 84000, step: 1, needs: ['Touchdown', 'First World Down'] },
+  'turrican-ii/2': { lo: 50400, hi: 84000, step: 1, needs: ['Boots on the Ground', 'First World Down'] },
   'ultima-iv/1': { lo: 120000, hi: 240000, step: 1, needs: ['*'] },
 };
 
@@ -202,18 +204,21 @@ export function createDemoPlayers({ db, now = Date.now, random = Math.random }) 
         const achs = q.achievements.all(game);
         const byTitle = new Map(achs.map((a) => [a.title, a]));
         const milestones = achs.filter((a) => a.score_at != null).sort((a, b) => a.score_at - b.score_at);
-        const pool = achs.slice(0, Math.max(1, Math.ceil(achs.length * EARLY))).filter((a) => a.score_at == null);
+        const cut = Math.max(1, Math.ceil(achs.length * EARLY));   // achievements from here on are late-game
+        const pool = achs.slice(0, cut).filter((a) => a.score_at == null);
         // player → { reach: how far into the pool, unlocks: Set<achievement>, scores: [{ board, value }] }
         const plan = new Map();
         const of = (p) => {
-          if (!plan.has(p)) plan.set(p, { reach: pool.length && 1 + Math.floor(random() * pool.length), unlocks: new Set(), scores: [] });
+          // Most players stop after the first few; fewer get far (the chance falls off as a square).
+          if (!plan.has(p)) plan.set(p, { reach: pool.length && 1 + Math.floor(random() ** 2 * pool.length), unlocks: new Set(), scores: [] });
           return plan.get(p);
         };
         for (const board of q.boards.all(game)) {
           const r = range(game, board, milestones.map((m) => m.score_at));
           if (!r) continue;
+          const late = (r.needs ?? []).some((t) => t === '*' || achs.indexOf(byTitle.get(t)) >= cut);
           const chosen = new Set();
-          while (chosen.size < Math.min(PER_BOARD, players.length)) chosen.add(weighted());
+          while (chosen.size < Math.min(late ? PER_LATE_BOARD : PER_BOARD, players.length)) chosen.add(weighted());
           for (const p of chosen) {
             const mine = of(p);
             // A high score as far up its range as the player's progress, give or take; a time anywhere in it.

@@ -44,14 +44,23 @@ db.prepare("INSERT INTO lb_entries (user_id, game_id, leaderboard_id, value, har
 
 const boards = all('SELECT game_id, id, lower_is_better FROM leaderboards');
 
-// 1. A batch: 50 players, five scores on every board, nothing flagged, all of it hardcore.
+// 1. A batch: 50 players, five scores on every board, two where the result needs late-game trophies,
+// nothing flagged, all of it hardcore.
 {
   const r = demo.populate(50);
   expect(r.players === 50 && demo.count() === 50, `50 demo players (added ${r.players}, counted ${demo.count()})`);
-  expect(r.scores === boards.length * 5, `${boards.length * 5} scores (got ${r.scores})`);
-  for (const b of boards) {
-    const n = one('SELECT COUNT(*) AS n FROM lb_entries e JOIN demo_players d ON d.user_id = e.user_id WHERE e.game_id = ? AND e.leaderboard_id = ?', b.game_id, b.id).n;
-    expect(n === 5, `${b.game_id} board ${b.id} has 5 demo scores (got ${n})`);
+  const counts = boards.map((b) => one('SELECT COUNT(*) AS n FROM lb_entries e JOIN demo_players d ON d.user_id = e.user_id WHERE e.game_id = ? AND e.leaderboard_id = ?', b.game_id, b.id).n);
+  expect(r.scores === counts.reduce((a, n) => a + n, 0) && counts.every((n) => n === 5 || n === 2), `five or two scores on every board (got ${[...new Set(counts)]})`);
+  // A late-game trophy: past the first 55% of its set, not a score milestone.
+  const lateTrophies = (uid, game) => one(`SELECT COUNT(*) AS n FROM unlocks u JOIN achievements a ON a.game_id = u.game_id AND a.id = u.achievement_id
+      WHERE u.user_id = ? AND u.game_id = ? AND a.score_at IS NULL AND a.sort >= (SELECT CAST(COUNT(*) * 0.55 + 0.999 AS INTEGER) FROM achievements x WHERE x.game_id = a.game_id)`, uid, game).n;
+  const two = boards.filter((b, i) => counts[i] === 2);
+  const notLate = two.filter((b) => all('SELECT e.user_id FROM lb_entries e JOIN demo_players d ON d.user_id = e.user_id WHERE e.game_id = ? AND e.leaderboard_id = ?', b.game_id, b.id)
+    .some((e) => !lateTrophies(e.user_id, b.game_id)));
+  expect(two.length >= 5 && !notLate.length, `the boards with two are those whose result needs late-game trophies (${two.length} boards, ${notLate.map((b) => `${b.game_id}/${b.id}`).join(', ') || 'each poster has one'})`);
+  for (const [game, board, n] of [['ultima-iv', 1, 2], ['prince-of-persia', 1, 2], ['commando', 2, 5], ['exploding-fist', 1, 5]]) {
+    const got = counts[boards.findIndex((b) => b.game_id === game && b.id === board)];
+    expect(got === n, `${game} board ${board} has ${n} demo scores (got ${got})`);
   }
   const flagged = one('SELECT (SELECT COUNT(*) FROM unlocks WHERE flag IS NOT NULL OR hardcore = 0) + (SELECT COUNT(*) FROM lb_entries WHERE flag IS NOT NULL OR hardcore = 0) AS n').n;
   expect(flagged === 0, `nothing flagged or softcore (${flagged})`);
@@ -115,6 +124,14 @@ const boards = all('SELECT game_id, id, lower_is_better FROM leaderboards');
       WHERE a.score_at IS NULL AND a.sort >= (SELECT CAST(COUNT(*) * 0.55 + 0.999 AS INTEGER) FROM achievements x WHERE x.game_id = u.game_id)
       AND NOT EXISTS (SELECT 1 FROM lb_entries e WHERE e.user_id = u.user_id AND e.game_id = u.game_id)`);
   expect(late.length === 0, `late unlocks without a score: ${late.slice(0, 5).map((l) => `${l.game_id} ${l.title}`).join(', ')}`);
+  // Most players stop after the first few: in half the games played, a fifth of the set or less.
+  const shares = all(`SELECT COUNT(*) * 1.0 / (SELECT COUNT(*) FROM achievements a WHERE a.game_id = u.game_id) AS s
+      FROM unlocks u JOIN demo_players d ON d.user_id = u.user_id GROUP BY u.user_id, u.game_id`).map((r) => r.s).sort((a, b) => a - b);
+  const median = shares[Math.floor(shares.length / 2)];
+  expect(median <= 0.2, `half the games a demo player plays end at a fifth of the set or less (median ${median.toFixed(2)})`);
+  const whole = one(`SELECT COUNT(*) AS n FROM (SELECT u.game_id, COUNT(*) AS c FROM unlocks u JOIN demo_players d ON d.user_id = u.user_id GROUP BY u.user_id, u.game_id) x
+      WHERE x.c = (SELECT COUNT(*) FROM achievements a WHERE a.game_id = x.game_id)`).n;
+  expect(whole <= 3, `hardly anyone has a whole set (${whole})`);
   ok('early and mid-game unlocks');
 }
 
