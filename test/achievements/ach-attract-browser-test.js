@@ -109,6 +109,11 @@ try {
       pages: m.attractPages(g, { boards, fame: { entries }, played: 3 }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
       anyTime: m.attractPages(g, { boards, fame: { entries } }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
       both: m.attractPages(g, { boards: mineToo, fame: { entries }, played: 3 }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
+      checking: m.attractPages(g, { boards: new Map([...boards, [2, { entries, me: { rank: null, value: 40, checking: true } }]]), played: 3 }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
+      postedHere: m.attractPages(g, { boards: new Map([[3, { entries: [] }]]), played: 3, posted: new Map([[2, 77]]) }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
+      heldPage: m.attractPages(g, { boards: new Map([[3, { entries: [] }]]), played: 3, posted: new Map([[2, 77], [3, 50]]) }).filter((p) => p.kind === 'board').map((p) => p.held).join(','),
+      checkingRow: m.boardRows({ entries, me: { rank: null, value: 40, checking: true } }, { id: 99, name: 'Me' }).map((r) => (r ? (r.me ? `me${r.rank ?? '-'}:${r.value}` : r.rank) : 'gap')).join(','),
+      heldRow: m.boardRows({ entries, me: null }, null, 10, 77).map((r) => (r ? (r.me ? `${r.name}${r.rank ?? '-'}:${r.value}` : r.rank) : 'gap')).join(','),
       onlyPlayed: m.attractPages(g, { boards: new Map([[3, { entries: [] }]]), played: 3 }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
       noAch: m.attractPages({ leaderboards: [{ id: 1 }], achievements: [] }, { boards, played: 1 }).map((p) => p.kind).join(','),
       noScores: m.attractPages({ leaderboards: [{ id: 2 }, { id: 3 }], achievements: [{}] }, { boards }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
@@ -121,6 +126,11 @@ try {
   expect(rules.fame === '1,2,3,4,5,6,7,8,gap,me' && rules.star, `Trophy Hunters the same way, a star for a finished set (${rules.fame})`);
   expect(rules.pages === 'b3,b1,fame,trophies', `after a game, the board just played, then the others with a result of the player's, then Trophy Hunters and the trophies (${rules.pages})`);
   expect(rules.both === 'b3,b1,fame,trophies', `the board played comes first, a result there or not, and the rest keep the set's order (${rules.both})`);
+  expect(rules.checking === 'b3,b1,b2,trophies', `a result being checked is the player's result too (${rules.checking})`);
+  expect(rules.postedHere === 'b3,b2,trophies', `and so is one posted on this page, signed out too, before the server has it (${rules.postedHere})`);
+  expect(rules.heldPage === ',77', `a board posted to on this page carries that score, not the one played, which has it under (${rules.heldPage})`);
+  expect(rules.checkingRow === '1,2,3,4,5,6,7,8,gap,me-:40', `a result being checked ends the board as the player's own row, with no place (${rules.checkingRow})`);
+  expect(rules.heldRow === '1,2,3,4,5,6,7,8,gap,YOU-:77', `and so does a score the board does not have yet (${rules.heldRow})`);
   expect(rules.onlyPlayed === 'b3,trophies', `with no other result, only the board played (${rules.onlyPlayed})`);
   expect(rules.anyTime === 'b1,b2,b3,fame,trophies', `opened from the GAME tab, every board (${rules.anyTime})`);
   expect(rules.noAch === 'board', 'a game with only a board has only its page');

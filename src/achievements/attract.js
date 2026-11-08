@@ -30,14 +30,17 @@ const topRows = (entries, mine, own, limit) => (own && !entries.slice(0, limit).
 
 /**
  * A board's rows, best first: the top `limit`, or when the player is further
- * down, two fewer, a gap (null) and their own row at the end.
+ * down, two fewer, a gap (null) and their own row at the end. Their own is
+ * there too while it has no place (rank null): being checked, or `held`, a
+ * score posted on this page the board does not have yet.
  */
-export function boardRows(st, user, limit = ROWS) {
+export function boardRows(st, user, limit = ROWS, held = null) {
   const entries = st?.entries ?? [];
   const mine = (e) => user?.id != null && e.user?.id === user.id;
-  const own = st?.me?.rank != null;
+  const me = st?.me ?? (held != null ? { rank: null, value: held } : null);
+  const own = me != null;
   const rows = entries.slice(0, topRows(entries, mine, own, limit)).map((e) => ({ rank: e.rank, name: e.user?.name ?? e.name ?? '?', value: e.value, me: mine(e) }));
-  if (own && !rows.some((r) => r.me)) rows.push(null, { rank: st.me.rank, name: user?.name ?? 'YOU', value: st.me.value, me: true });
+  if (own && !rows.some((r) => r.me)) rows.push(null, { rank: me.rank ?? null, name: user?.name ?? 'YOU', value: me.value, me: true });
   return rows;
 }
 
@@ -53,14 +56,17 @@ export function fameRows(top, user, limit = ROWS) {
 
 /**
  * The pages for a game: after a game, the board just played, then every other
- * board the player has a result on (a finished speedrun, a score); opened from
- * the GAME tab, every board. Then Trophy Hunters and the trophies when it has
- * achievements.
+ * board the player has a result on (a finished speedrun, a score): on the board,
+ * being checked, or posted here this session (`posted`: board id → best value, signed out too); opened
+ * from the GAME tab, every board. Then Trophy Hunters and the trophies when it
+ * has achievements.
  */
-export function attractPages(game, { boards = new Map(), fame = null, played = null } = {}) {
+export function attractPages(game, { boards = new Map(), fame = null, played = null, posted = null } = {}) {
+  const mine = (id) => boards.get(id)?.me != null || !!posted?.has(id);
   const shown = played == null ? game.leaderboards
-    : [...game.leaderboards.filter((l) => l.id === played), ...game.leaderboards.filter((l) => l.id !== played && boards.get(l.id)?.me?.rank != null)];
-  const pages = shown.map((l) => ({ kind: 'board', board: l, standings: boards.get(l.id) ?? null }));
+    : [...game.leaderboards.filter((l) => l.id === played), ...game.leaderboards.filter((l) => l.id !== played && mine(l.id))];
+  // The board played has the score just posted under it already.
+  const pages = shown.map((l) => ({ kind: 'board', board: l, standings: boards.get(l.id) ?? null, held: l.id === played ? null : posted?.get(l.id) ?? null }));
   if (game.achievements.length) {
     if (fame?.entries?.length) pages.push({ kind: 'fame', top: fame });
     pages.push({ kind: 'trophies' });
@@ -94,6 +100,8 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
   let pages = [], page = -1, gen = 0, game = null, posted = null;
   let waiting = 0;                 // the settle timer, while waiting for the score's toast to go
   let last = null, lastGame = null;   // the board news of the game in play: the board played, and its score when posted
+  let postedGame = null;
+  const postedIds = new Map();        // the boards of that game a hardcore score was posted to on this page → the best
   let cycling = 0, cycleStep = 0, letters = null, shown = null;   // the title's colour cycle: half-steps, and each letter's colour
   const timers = new Set();
   const later = (ms, fn) => { const t = setTimeout(() => { timers.delete(t); fn(); }, ms); timers.add(t); return t; };
@@ -153,7 +161,7 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
     if (gen !== my || host() !== where) return;
     game = g;
     posted = e;
-    pages = attractPages(g, { boards, fame, played: e?.leaderboard?.id ?? null });
+    pages = attractPages(g, { boards, fame, played: e?.leaderboard?.id ?? null, posted: postedGame === g.hash ? postedIds : null });
     if (!pages.length) return;
     // The board just played comes first.
     const first = Math.max(0, pages.findIndex((p) => p.kind === 'board' && p.board.id === e?.leaderboard?.id));
@@ -264,8 +272,8 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
     const user = me();
     const fmt = (v) => engine()?.format(v, p.board?.format) ?? String(v);
     const lines = p.kind === 'board'
-      ? boardRows(p.standings, user).map((r) => (r ? { cls: rowClass(r), cells: [ordinal(r.rank).toUpperCase(), r.name, fmt(r.value)] } : null))
-      : fameRows(p.top, user).map((r) => (r ? { cls: rowClass(r), cells: [ordinal(r.rank).toUpperCase(), r.name, `${r.points} PTS`], star: r.complete } : null));
+      ? boardRows(p.standings, user, ROWS, p.held).map((r) => (r ? { cls: rowClass(r), cells: [place(r.rank), r.name, fmt(r.value)] } : null))
+      : fameRows(p.top, user).map((r) => (r ? { cls: rowClass(r), cells: [place(r.rank), r.name, `${r.points} PTS`], star: r.complete } : null));
     if (p.kind === 'board' && posted?.type === 'submitted' && posted.leaderboard?.id === p.board.id) {
       // The score just played, under the board.
       const tag = posted.softcore ? ' SOFTCORE' : posted.result?.improved ? ' NEW BEST!' : '';
@@ -277,7 +285,9 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
       if (players) body.append(el('div', 'ach-attract-count', players === 1 ? '1 PLAYER' : `${players} PLAYERS`));
     });
   }
-  const rowClass = (r) => `${r.rank <= 3 ? `is-podium is-rank-${r.rank}` : 'is-rest'}${r.me ? ' is-me' : ''}`;
+  const rowClass = (r) => `${r.rank != null && r.rank <= 3 ? `is-podium is-rank-${r.rank}` : 'is-rest'}${r.me ? ' is-me' : ''}`;
+  // No place yet (being checked, or not on the board yet): two dashes.
+  const place = (rank) => (rank == null ? '--' : ordinal(rank).toUpperCase());
 
   // Rows PRINTed a character a frame behind a blinking cursor. One prebound
   // step appends one character (a cached one-letter string) to a text node:
@@ -397,6 +407,11 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
     last = e;
     lastGame = g?.hash ?? null;
     if (e.type === 'started') { cancel(); if (root) close(); return; }
+    if (!e.softcore && e.leaderboard) {
+      if (postedGame !== lastGame) { postedGame = lastGame; postedIds.clear(); }
+      const id = e.leaderboard.id, was = postedIds.get(id);
+      if (was == null || (e.leaderboard.lowerIsBetter ? e.value < was : e.value > was)) postedIds.set(id, e.value);
+    }
     if (ready() && !g?.gameOver) schedule(e);
   }
   /** The set's game over (engine onGameOver): attract mode opens on the board last played, if any. */
