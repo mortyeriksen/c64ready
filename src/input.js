@@ -65,9 +65,9 @@ new MutationObserver(updateKeyboardFocusHint).observe(document.body, { attribute
 
 // A mouse or touch click on a button, or a pick from a menu, hands the keyboard
 // back to the screen, so typing straight after clicking LOAD or POWER reaches
-// the C64. That holds in the floating windows (the Achievements window) too:
-// only their text fields keep the keyboard, and the chat's message row, whose
-// buttons belong to its field. Focus moved by the keyboard stays where it was
+// the C64. That holds in Retro Vibes too, and in the floating windows (the
+// Achievements window), where only text fields keep the keyboard, and the
+// chat's message row, whose buttons belong to its field. Focus moved by the keyboard stays where it was
 // put. Modal dialogs keep their own focus.
 let _lastInputPointer = false;
 document.addEventListener('pointerdown', () => { _lastInputPointer = true; }, true);
@@ -76,9 +76,12 @@ const _giveBackKeyboard = (target) => {
   if (!_lastInputPointer || !target?.closest) return;
   const floating = target.closest('.float-window');
   if (floating ? target.closest('.chat-compose') : target.closest('[role="dialog"], dialog, .modal-backdrop, .mb-overlay')) return;
-  if (!floating && !target.closest('.main-wrap, body > header')) return;
+  if (!floating && !target.closest('.main-wrap, body > header, .model-viewer-overlay')) return;
   if (target.matches('input:not([type="checkbox"]):not([type="file"]), textarea') || target.isContentEditable) return;
   canvas.focus({ preventScroll: true });
+  // Retro Vibes is fullscreen, and the screen outside it cannot take focus:
+  // the page then has the keyboard, which is the C64's too.
+  if (document.activeElement !== canvas) document.activeElement?.blur?.();
 };
 // A click on a dropdown opens it, so it keeps focus (a dropdown inside a label
 // is still a dropdown): picking from it hands the keyboard back on change.

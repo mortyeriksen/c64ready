@@ -45,7 +45,8 @@ The version you are running is shown at the bottom of the About dialog.
 - **Fixes.** The Last Ninja's Stepping Stones and Dragon's Breath unlock,
   Neuromancer's last trophy comes when Neuromancer is defeated, and an Exploding
   Fist score counts when you lose. The app installed from Safari on a Mac now
-  finds a new version when you open it or switch back to it.
+  finds a new version when you open it or switch back to it. After a click on a
+  Retro Vibes button, the keyboard goes straight back to the C64.
 
 ## 2026.11.2 — November 3, 2026
 
