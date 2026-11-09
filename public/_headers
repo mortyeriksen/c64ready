@@ -5,9 +5,16 @@
 # available"). vite.config.js / serve.json only cover dev/preview/`serve`, so a
 # real host (Netlify) needs this. Vite copies public/ verbatim into dist/, so
 # this lands at dist/_headers automatically.
+# Cross-Origin-Resource-Policy lets a cross-origin isolated page (the itch.io
+# embed) frame the app: under its COEP a frame needs this header. It cannot name
+# origins, so frame-ancestors limits framing to the app itself and itch.io (its
+# pages and the itch.zone host its embeds run on). src/sw.js copies these onto
+# the pages it serves from its cache.
 /*
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: cross-origin
+  Content-Security-Policy: frame-ancestors 'self' https://itch.io https://*.itch.io https://*.itch.zone
   Permissions-Policy: gamepad=(self)
 
 # Vite content-hashes everything under /assets/ (e.g. index-1CMMbpkA.js), so the
