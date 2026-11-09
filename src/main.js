@@ -3335,6 +3335,12 @@ function _installDismissed() {
   try { return localStorage.getItem(_INSTALL_DISMISS_KEY) === '1'; } catch { return false; }
 }
 
+// In a frame (the itch.io embed) the browser installs the page around it, not
+// this app, so the card stays away there.
+function _inFrame() {
+  try { return window.self !== window.top; } catch { return true; }
+}
+
 function _removeInstallCard() {
   document.querySelector('.pwa-install')?.remove();
 }
@@ -3416,7 +3422,7 @@ function _showInstallCard(mode) {
 // before this module ran, or arrive later via 'c64-install-available'.
 function _maybeShowPromptCard() {
   _installPrompt = window.__c64InstallPrompt || _installPrompt;
-  if (!_installPrompt || _isInstalled() || _installDismissed()) return;
+  if (!_installPrompt || _isInstalled() || _installDismissed() || _inFrame()) return;
   _showInstallCard('prompt');          // upgrades a manual card if one is showing
 }
 _maybeShowPromptCard();
@@ -3444,7 +3450,7 @@ window.addEventListener('appinstalled', () => {
 // later fires. While the first-visit splash covers the page, hold the card
 // until it's dismissed — one pitch at a time.
 function _maybeShowManualCard() {
-  if (_isInstalled() || _installDismissed()) return;
+  if (_isInstalled() || _installDismissed() || _inFrame()) return;
   if (_installPrompt || window.__c64InstallPrompt) return;   // prompt path owns it
   if (document.querySelector('.pwa-install')) return;
   _showInstallCard('manual');

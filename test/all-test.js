@@ -66,6 +66,7 @@ const TESTS = [
   'test/disk-queue-browser-test.js',
   'test/close-button-browser-test.js',
   'test/vibes-keyboard-focus-browser-test.js',
+  'test/install-card-frame-browser-test.js',
   'test/device-install-trust-browser-test.js',
   'test/vic2/vic2-graphics-foreground-spec-test.js',
   'test/vic2/vic2-collision-overlay-spec-test.js',
