@@ -61,14 +61,14 @@ export function fameRows(top, user, limit = ROWS) {
  * board the player has a result on (a finished speedrun, a score): on the board,
  * being checked, or posted here this session (`posted`: board id → best value, signed out too); opened
  * from the GAME tab, every board. Then Trophy Hunters and the trophies when it
- * has achievements.
+ * has achievements. `scored`: the board played had a score posted, shown under it.
  */
-export function attractPages(game, { boards = new Map(), fame = null, played = null, posted = null } = {}) {
+export function attractPages(game, { boards = new Map(), fame = null, played = null, scored = true, posted = null } = {}) {
   const mine = (id) => boards.get(id)?.me != null || !!posted?.has(id);
   const shown = played == null ? game.leaderboards
     : [...game.leaderboards.filter((l) => l.id === played), ...game.leaderboards.filter((l) => l.id !== played && mine(l.id))];
-  // The board played has the score just posted under it already.
-  const pages = shown.map((l) => ({ kind: 'board', board: l, standings: boards.get(l.id) ?? null, held: l.id === played ? null : posted?.get(l.id) ?? null }));
+  // The board played has the score just posted under it already, when one was.
+  const pages = shown.map((l) => ({ kind: 'board', board: l, standings: boards.get(l.id) ?? null, held: l.id === played && scored ? null : posted?.get(l.id) ?? null }));
   if (game.achievements.length) {
     if (fame?.entries?.length) pages.push({ kind: 'fame', top: fame });
     pages.push({ kind: 'trophies' });
@@ -134,7 +134,8 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
       if (!where || playsOn(since)) return;
       const busy = document.querySelector('.ach-toast:not(.ach-toast-out):not(.ach-toast-placing)');
       if (busy && performance.now() < until) { waiting = setTimeout(look, 400); return; }
-      open(e);
+      // A set's game over comes in the frame before its scores: one posted meanwhile is the news.
+      open(last?.type === 'submitted' && lastGame === engine()?.game?.hash ? last : e);
     };
     waiting = setTimeout(look, GRACE_MS);
   }
@@ -163,7 +164,7 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
     if (gen !== my || host() !== where) return;
     game = g;
     posted = e;
-    pages = attractPages(g, { boards, fame, played: e?.leaderboard?.id ?? null, posted: postedGame === g.hash ? postedIds : null });
+    pages = attractPages(g, { boards, fame, played: e?.leaderboard?.id ?? null, scored: e?.type === 'submitted', posted: postedGame === g.hash ? postedIds : null });
     if (!pages.length) return;
     // The board just played comes first.
     const first = Math.max(0, pages.findIndex((p) => p.kind === 'board' && p.board.id === e?.leaderboard?.id));

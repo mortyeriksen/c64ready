@@ -89,6 +89,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
   let top = null;              // the loaded game's Trophy Hunters
   let loadingStandings = false;
   const live = new Map();      // leaderboard id → the running score while a game is on, the latest started last
+  const held = new Map();      // `${game hash} ${board id}` → the best score of this page the board does not have yet
   // GAME's live parts, found once as it draws: the board in play and its NOW cell.
   let playingId = null;
   const liveCells = new Map();   // board id → its NOW cell, while it runs
@@ -385,7 +386,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
         : game.softcore ? h('p', { class: 'ach-notice', role: 'status' }, `Softcore: ${game.softcore}. Nothing counts in public until a reset.`) : null,
       account.user ? null : h('p', { class: 'achievements-note ach-signin-note' }, 'Signed out: sign in to keep what you unlock. ',
         h('button', { type: 'button', class: 'achievements-link', on: { click: () => selectTab('account') } }, 'Sign in')),
-      ...shown.map((l) => highScoreScreen(ctx, game.title, l, topFive(st(l.id)), live.get(l.id) ?? null)),
+      ...shown.map((l) => highScoreScreen(ctx, game.title, l, topFive(st(l.id)), live.get(l.id) ?? null, held.get(`${game.hash} ${l.id}`) ?? null)),
       game.achievements.length ? hallOfFame(ctx, game.title, standingsOf === game.hash ? top : null) : null,
       ...(game.achievements.length ? [h('h4', { class: 'ach-h' }, 'Trophies'), trophyCards(game.achievements, (a) => a.unlockedAt, (a) => a.checking)] : []),
     ].filter(Boolean));
@@ -583,7 +584,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
      * running score, shown live; canceled clears it; submitted clears it and
      * fetches the standings (and the activity) again.
      */
-    leaderboardEvent({ type, leaderboard, value }) {
+    leaderboardEvent({ type, leaderboard, value, result, softcore }) {
       if (type === 'started' || type === 'updated') {
         const id = leaderboard.id, had = live.has(id);
         if (type === 'started') live.delete(id);   // the latest started goes last
@@ -597,6 +598,12 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
         return;
       }
       live.delete(leaderboard.id);
+      // A score the board does not have yet (signed out, or waiting to be posted): kept to show as the reader's own.
+      const hash = engine?.game?.hash;
+      if (type === 'submitted' && !softcore && result == null && hash) {
+        const key = `${hash} ${leaderboard.id}`, was = held.get(key);
+        if (was == null || (leaderboard.lowerIsBetter ? value < was : value > was)) held.set(key, value);
+      }
       if (type === 'submitted') dataGen++;
       if (win.hidden || detail.length) return;
       if (type === 'submitted') showView();

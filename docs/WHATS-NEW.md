@@ -46,7 +46,8 @@ The version you are running is shown at the bottom of the About dialog.
   Neuromancer's last trophy comes when Neuromancer is defeated, and an Exploding
   Fist score counts when you lose. The app installed from Safari on a Mac now
   finds a new version when you open it or switch back to it. After a click on a
-  Retro Vibes button, the keyboard goes straight back to the C64.
+  Retro Vibes button, the keyboard goes straight back to the C64. A score you
+  play before signing in shows on the GAME tab and in attract mode right away.
 
 ## 2026.11.2 — November 3, 2026
 

@@ -112,6 +112,7 @@ try {
       checking: m.attractPages(g, { boards: new Map([...boards, [2, { entries, me: { rank: null, value: 40, checking: true } }]]), played: 3 }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
       postedHere: m.attractPages(g, { boards: new Map([[3, { entries: [] }]]), played: 3, posted: new Map([[2, 77]]) }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
       heldPage: m.attractPages(g, { boards: new Map([[3, { entries: [] }]]), played: 3, posted: new Map([[2, 77], [3, 50]]) }).filter((p) => p.kind === 'board').map((p) => p.held).join(','),
+      heldUnscored: m.attractPages(g, { boards: new Map([[3, { entries: [] }]]), played: 3, scored: false, posted: new Map([[3, 50]]) }).filter((p) => p.kind === 'board').map((p) => p.held).join(','),
       checkingRow: m.boardRows({ entries, me: { rank: null, value: 40, checking: true } }, { id: 99, name: 'Me' }).map((r) => (r ? (r.me ? `me${r.rank ?? '-'}:${r.value}` : r.rank) : 'gap')).join(','),
       heldRow: m.boardRows({ entries, me: null }, null, 10, 77).map((r) => (r ? (r.me ? `${r.name}${r.rank ?? '-'}:${r.value}` : r.rank) : 'gap')).join(','),
       onlyPlayed: m.attractPages(g, { boards: new Map([[3, { entries: [] }]]), played: 3 }).map((p) => p.kind === 'board' ? `b${p.board.id}` : p.kind).join(','),
@@ -129,6 +130,7 @@ try {
   expect(rules.checking === 'b3,b1,b2,trophies', `a result being checked is the player's result too (${rules.checking})`);
   expect(rules.postedHere === 'b3,b2,trophies', `and so is one posted on this page, signed out too, before the server has it (${rules.postedHere})`);
   expect(rules.heldPage === ',77', `a board posted to on this page carries that score, not the one played, which has it under (${rules.heldPage})`);
+  expect(rules.heldUnscored === '50', `the board played carries its held score when the game ended before its score came (${rules.heldUnscored})`);
   expect(rules.checkingRow === '1,2,3,4,5,6,7,8,gap,me-:40', `a result being checked ends the board as the player's own row, with no place (${rules.checkingRow})`);
   expect(rules.heldRow === '1,2,3,4,5,6,7,8,gap,YOU-:77', `and so does a score the board does not have yet (${rules.heldRow})`);
   expect(rules.onlyPlayed === 'b3,trophies', `with no other result, only the board played (${rules.onlyPlayed})`);
@@ -287,6 +289,22 @@ try {
   await page.evaluate(() => { window.attract.close(); window.engine.game = window.G; });
   await wait(page, 400);
   ok('a set with a game over');
+
+  // 6c. A set's game over comes in the frame before its scores: the score posted in that frame is
+  //     the news, and lies under its board.
+  await page.evaluate(() => {
+    window.engine.game = { ...window.G, gameOver: true };
+    window.attract.leaderboardEvent({ type: 'started', leaderboard: window.G.leaderboards[0], value: 0 });
+    window.attract.gameOver();
+    window.attract.leaderboardEvent({ ...window.posted, leaderboard: window.G.leaderboards[0] });
+  });
+  await page.waitForFunction(() => window.attract.isOpen(), null, { timeout: 5000 }).catch(() => {});
+  await page.waitForFunction(() => !!document.querySelector('.ach-attract-row.is-you'), null, { timeout: 5000 }).catch(() => {});
+  const then = await page.evaluate(() => ({ title: document.querySelector('.ach-attract-title')?.getAttribute('aria-label'), you: !!document.querySelector('.ach-attract-row.is-you') }));
+  expect(then.title === 'Route A' && then.you, `on the board, the score posted just after game over under it (${JSON.stringify(then)})`);
+  await page.evaluate(() => { window.attract.close(); window.engine.game = window.G; });
+  await wait(page, 400);
+  ok('game over just before the score');
 
   // 7. With achievements off, nothing.
   await page.evaluate(() => { window.engine.enabled = false; window.attract.leaderboardEvent(window.posted); });

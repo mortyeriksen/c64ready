@@ -217,20 +217,24 @@ const rankCell = (rank) => h('span', { class: 'ach-rank' }, rank == null ? '' : 
 /**
  * A leaderboard as the game's own high-score screen: the top rows, then the
  * reader's own row in reverse video when it is further down. While a game is
- * on, `live` is its running score, shown in a NOW row at the bottom.
+ * on, `live` is its running score, shown in a NOW row at the bottom. `held` is
+ * a score of the reader's from this page the board does not have yet (played
+ * signed out, or waiting to be posted): their row, without a place, until it does.
  */
-export function highScoreScreen(ctx, gameTitle, board, standings, live = null) {
+export function highScoreScreen(ctx, gameTitle, board, standings, live = null, held = null) {
   const me = ctx.me();
   const entries = standings?.entries ?? [];
-  const row = (rank, user, value, isMe) => h('li', { class: `${rankRow(rank, isMe)}${rank == null ? ' is-checking' : ''}` },
+  const row = (rank, user, value, isMe, note = rank == null && isMe ? ' (check)' : null) => h('li', { class: `${rankRow(rank, isMe)}${rank == null ? ' is-checking' : ''}` },
     rankCell(rank),
     h('span', { class: 'ach-screen-name' }, user?.id != null ? h('button', { type: 'button', class: 'ach-screen-link', on: { click: () => ctx.go({ type: 'profile', id: user.id }) } }, user.name) : user?.name ?? '',
-      rank == null && isMe ? h('span', { class: 'ach-checking' }, ' (check)') : null),
+      note ? h('span', { class: 'ach-checking' }, note) : null),
     h('span', {}, ctx.format(value, board.format)),
     isMe ? h('span', { class: 'sr-only' }, ' (you)') : null);
   const rows = entries.map((e) => row(e.rank, e.user ?? { name: e.name }, e.value, !!me && e.user?.id === me.id));
   const mineShown = me && entries.some((e) => e.user?.id === me.id);
-  if (standings?.me && !mineShown) rows.push(h('li', { class: 'ach-screen-gap', 'aria-hidden': 'true' }, '...'), row(standings.me.checking ? null : standings.me.rank, me, standings.me.value, true));
+  const gap = () => (rows.length ? [h('li', { class: 'ach-screen-gap', 'aria-hidden': 'true' }, '...')] : []);
+  if (standings?.me && !mineShown) rows.push(...gap(), row(standings.me.checking ? null : standings.me.rank, me, standings.me.value, true));
+  else if (held != null && standings && !standings.me && !mineShown) rows.push(...gap(), row(null, me ?? { name: 'YOU' }, held, true, me ? ' (saving)' : ' (sign in)'));
   const players = standings?.players ?? entries.length;
   const now = live == null ? null : h('p', { class: 'ach-screen-live', 'data-board': String(board.id), 'aria-live': 'off' },
     h('span', {}, 'NOW'), h('span', {}, me?.name ?? 'YOU'), h('span', { class: 'ach-screen-live-value' }, ctx.format(live, board.format)));
@@ -239,7 +243,7 @@ export function highScoreScreen(ctx, gameTitle, board, standings, live = null) {
   return h('section', { class: 'ach-screen', 'aria-label': `${gameTitle}: ${board.title}` },
     h('div', { class: 'ach-screen-head' }, h('span', {}, heading)),
     standings == null ? h('p', { class: 'ach-screen-foot' }, 'LOADING...')
-      : entries.length ? h('ol', {}, rows) : h('p', { class: 'ach-screen-foot' }, 'NO SCORES YET'),
+      : rows.length ? h('ol', {}, rows) : h('p', { class: 'ach-screen-foot' }, 'NO SCORES YET'),
     now,
     standings && entries.length ? h('p', { class: 'ach-screen-foot' }, players === 1 ? '1 PLAYER' : `${players} PLAYERS`) : null);
 }
