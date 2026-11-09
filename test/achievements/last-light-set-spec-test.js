@@ -128,11 +128,11 @@ for (const [key, label] of [['last-light-d64', 'the release disk']]) {
   ok('the pause unlocks nothing');
 }
 
-// 6. The sword and the first of each member of the Order struck down.
+// 6. The first of each member of the Order struck down.
 {
   start();
   ram[WEAPON] = 1; frames(2);
-  expect(has('The Dawnblade'), 'picking up the sword unlocks The Dawnblade');
+  expect(unlocked().length === 0, 'picking up the sword alone unlocks nothing');
   for (const [type, title] of [[0, 'Blade Against Blade'], [2, 'Stop, Thief!'], [1, 'Ring Breaker'], [3, "Warden's Fall"]]) {
     ram[ORD_TYPE] = type; ram[ORD_STATE] = 0; frames(2);
     expect(!has(title), `${title} waits for the strike`);
@@ -143,29 +143,30 @@ for (const [key, label] of [['last-light-d64', 'the release disk']]) {
   }
   const others = set.achievements.filter((a) => ['Blade Against Blade', 'Stop, Thief!', 'Ring Breaker', "Warden's Fall"].includes(a.title));
   expect(others.every((a) => unlocked().filter((id) => id === a.id).length === 1), 'each unlocks once');
-  ok('the sword and the first of each enemy struck down');
+  ok('the first of each enemy struck down');
 }
 
-// 7. The bell trophies: a clean climb, a stride streak, a chain of x4, 100 bells.
+// 7. The bell trophies: five clean climbs, a chain of x4, 100 bells. A stride streak is none.
 {
   start();
-  ram[CLEAN] = 1; ram[STREAK] = 31; ram[CHAIN_N] = 3; frames(2);
-  expect(has('Clean Climb'), 'a clean climb counted unlocks Clean Climb');
-  expect(!has('In Stride') && !has('Bell Chain'), 'a streak of 31 and a chain of x3 are not yet');
-  ram[STREAK] = 32; ram[CHAIN_N] = 4; frames(2);
-  expect(has('In Stride') && has('Bell Chain'), 'a streak of 32 treads and a chain of x4 unlock theirs');
+  for (let n = 1; n <= 4; n++) { ram[CLEAN] = n; frames(2); }
+  ram[STREAK] = 40; ram[CHAIN_N] = 3; frames(2);
+  expect(!has('Clean Climber') && !has('Bell Chain'), 'four clean climbs and a chain of x3 are not yet');
+  expect(unlocked().length === 0, 'nor is a stride streak');
+  ram[CLEAN] = 5; ram[CHAIN_N] = 4; frames(2);
+  expect(has('Clean Climber') && has('Bell Chain'), 'the fifth clean climb and a chain of x4 unlock theirs');
   setBells(99); frames(2);
   expect(!has('A Hundred Bells'), '99 bells is not yet a hundred');
   setBells(100); frames(2);
   expect(has('A Hundred Bells'), 'the hundredth bell unlocks A Hundred Bells');
-  ok('a clean climb, a streak, a chain and 100 bells');
+  ok('five clean climbs, a chain and 100 bells');
 }
 
 // 8. Sunna's letters and the ninth life.
 {
   start();
   ram[LETTERS] = 0x04; frames(2);
-  expect(has("A Letter from Sunna") && !has('All Her Letters'), 'one letter unlocks the first, not all five');
+  expect(unlocked().length === 0, 'one letter unlocks nothing');
   ram[LETTERS] = 0x1f; ram[LIVES] = 8; frames(2);
   expect(has('All Her Letters'), 'all five bits unlock All Her Letters');
   expect(!has('Nine Lives'), 'eight lives is not nine');
