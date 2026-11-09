@@ -21,7 +21,7 @@ const EARLY = 0.55;             // the share of a set, from its start, that coun
 
 // A board's moderate values, lo to hi in steps of `step`, and the achievements a result there
 // implies (by title; '*' every achievement in the set). Boards not listed here that keep a high
-// score take theirs from the game's score milestones; MILLISECS is hundredths of a second. A high
+// score in points take theirs from the game's score milestones; MILLISECS is hundredths of a second. A high
 // score goes as far into its range as the player has got through the early and mid-game trophies.
 const BOARDS = {
   'action-biker/1': { lo: 5000, hi: 40000, step: 10 },
@@ -31,6 +31,8 @@ const BOARDS = {
   'green-beret/1': { lo: 10000, hi: 50000, step: 10 },
   'gribblys-day-out/1': { lo: 500, hi: 6000, step: 10 },
   'impossible-mission/1': { lo: 4000, hi: 25000, step: 10 },
+  'last-light/2': { lo: 40, hi: 400, step: 1 },
+  'last-light/3': { lo: 3, hi: 40, step: 1 },
   'mole-attack/1': { lo: 500, hi: 5000, step: 10 },
   'munchy-worm/1': { lo: 300, hi: 3000, step: 10 },
   'out-run/1': { lo: 400000, hi: 1600000, step: 10 },
@@ -168,13 +170,14 @@ export function createDemoPlayers({ db, now = Date.now, random = Math.random }) 
   }
 
   /**
-   * A board's moderate value range: its entry in BOARDS, or for a high score, from the game's
-   * milestones: up to three times the first, and short of the second, which is past early and mid-game.
+   * A board's moderate value range: its entry in BOARDS, or for a high score in points, from the
+   * game's milestones: up to three times the first, and short of the second, which is past early and
+   * mid-game. Another board (a height, a count) has none without its entry.
    */
   function range(game, board, milestones) {
     const listed = BOARDS[`${game}/${board.id}`];
     if (listed) return listed;
-    if (board.lower_is_better || !milestones.length) return null;
+    if (board.lower_is_better || board.format !== 'SCORE' || !milestones.length) return null;
     const lo = Math.max(1, Math.round(milestones[0] * 0.4)), step = milestones[0] >= 1000 ? 10 : 1;
     let hi = milestones[0] * 3;
     if (milestones.length > 1) hi = Math.min(hi, milestones[1] - step);
@@ -227,7 +230,7 @@ export function createDemoPlayers({ db, now = Date.now, random = Math.random }) 
               : Math.min(r.hi, Math.round((r.lo + (r.hi - r.lo) * share) / r.step) * r.step);
             mine.scores.push({ board, value });
             for (const t of r.needs ?? []) for (const a of t === '*' ? achs : [byTitle.get(t)]) if (a) mine.unlocks.add(a);
-            if (!board.lower_is_better) for (const m of milestones) if (m.score_at <= value) mine.unlocks.add(m);
+            if (!board.lower_is_better && board.format === 'SCORE') for (const m of milestones) if (m.score_at <= value) mine.unlocks.add(m);
           }
         }
         const extra = 3 + Math.floor(random() * 6);

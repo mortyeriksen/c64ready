@@ -74,10 +74,10 @@ const boards = all('SELECT game_id, id, lower_is_better FROM leaderboards');
   ok('a batch of 50 players, five scores on every board');
 }
 
-// 2. Every high score comes with every score milestone at or below it, so it shows in public.
+// 2. Every high score in points comes with every score milestone at or below it, so it shows in public.
 {
   const missing = all(`SELECT e.user_id, e.game_id, e.value, a.id AS ach FROM lb_entries e JOIN demo_players d ON d.user_id = e.user_id
-      JOIN leaderboards l ON l.game_id = e.game_id AND l.id = e.leaderboard_id AND l.lower_is_better = 0
+      JOIN leaderboards l ON l.game_id = e.game_id AND l.id = e.leaderboard_id AND l.lower_is_better = 0 AND l.format = 'SCORE'
       JOIN achievements a ON a.game_id = e.game_id AND a.score_at IS NOT NULL AND a.score_at <= e.value
       WHERE NOT EXISTS (SELECT 1 FROM unlocks u WHERE u.user_id = e.user_id AND u.game_id = e.game_id AND u.achievement_id = a.id)`);
   expect(missing.length === 0, `scores past milestones not unlocked: ${missing.slice(0, 5).map((m) => `${m.game_id} ${m.value} needs #${m.ach}`).join(', ')}`);
@@ -88,11 +88,14 @@ const boards = all('SELECT game_id, id, lower_is_better FROM leaderboards');
 // past early and mid-game, and higher for a player further through the game.
 {
   const over = all(`SELECT e.game_id, e.value, (SELECT score_at FROM achievements a WHERE a.game_id = e.game_id AND a.score_at IS NOT NULL ORDER BY score_at LIMIT 1 OFFSET 1) AS second
-      FROM lb_entries e JOIN demo_players d ON d.user_id = e.user_id JOIN leaderboards l ON l.game_id = e.game_id AND l.id = e.leaderboard_id AND l.lower_is_better = 0`)
+      FROM lb_entries e JOIN demo_players d ON d.user_id = e.user_id JOIN leaderboards l ON l.game_id = e.game_id AND l.id = e.leaderboard_id AND l.lower_is_better = 0 AND l.format = 'SCORE'`)
     .filter((r) => r.second != null && r.value >= r.second);
   expect(over.length === 0, `scores at or past the second score milestone: ${over.slice(0, 5).map((r) => `${r.game_id} ${r.value} (${r.second})`).join(', ')}`);
   const fist = one("SELECT MAX(e.value) AS hi FROM lb_entries e JOIN demo_players d ON d.user_id = e.user_id WHERE e.game_id = 'exploding-fist'").hi;
   expect(fist < 25000, `The Way of the Exploding Fist's demo scores stay under 25,000, its second score trophy (best ${fist})`);
+  // A board that is not in points (a height, a count) is no score: the game's score trophies do not set it.
+  const ll = (id) => one(`SELECT MAX(e.value) AS hi FROM lb_entries e JOIN demo_players d ON d.user_id = e.user_id WHERE e.game_id = 'last-light' AND e.leaderboard_id = ?`, id).hi;
+  expect(ll(2) <= 400 && ll(3) <= 40, `Last Light's demo heights stay at most 400 and its bells at most 40, not its 10,000-point trophy (best ${ll(2)} and ${ll(3)})`);
   // Progress: the early and mid-game trophies (not score milestones) a player has in the game.
   const progress = (uid, game) => one(`SELECT COUNT(*) AS n FROM unlocks u JOIN achievements a ON a.game_id = u.game_id AND a.id = u.achievement_id
       WHERE u.user_id = ? AND u.game_id = ? AND a.score_at IS NULL`, uid, game).n;
