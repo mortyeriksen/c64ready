@@ -53,12 +53,14 @@ The chat connects only once you open it. The chat server logs messages with your
 
 ## About the author
 
-Hi, I'm Morten (RetroMorty). Back in the 90s I ran with the PC demo scene in the group **Twilight Zone**; under **Twilight Zone Software** we built the game [Interpose](https://www.facebook.com/interposegame), where I was project manager and programmer, years that left me fluent in x86 assembly and passingly dangerous in C64 assembly. In 2000 I founded [Enonic](https://www.enonic.com), where I'm still CEO today.
+Hi, I'm Morten (RetroMorty). In the 90s I was part of the PC demo scene in the group **Twilight Zone**. As **Twilight Zone Software** we made the game [Interpose](https://www.facebook.com/interposegame), where I was project manager and programmer. Those years left me fluent in x86 assembly and comfortable enough in C64 assembly to get into trouble. In 2000 I founded [Enonic](https://www.enonic.com), where I'm still CEO.
 
-The love never left: three C64s, a Commodore 1084S monitor, and a good stash of games and joysticks are always within reach. C64 READY. is my love letter to the machine and the scene that started it all.
+The love never left. Three C64s, a Commodore 1084S monitor and a good stash of games and joysticks are always within reach.
 
-Follow C64 READY. on [Facebook](https://www.facebook.com/c64ready) and [YouTube](https://www.youtube.com/@c64ready), contact me on [LinkedIn](https://www.linkedin.com/in/morten/), or email [mortyeriksen@gmail.com](mailto:mortyeriksen@gmail.com).
+Follow C64 READY. on [Facebook](https://www.facebook.com/c64ready) and [YouTube](https://www.youtube.com/@c64ready). Reach me on [LinkedIn](https://www.linkedin.com/in/morten/) or at [mortyeriksen@gmail.com](mailto:mortyeriksen@gmail.com).
+
+C64 READY. is my love letter to the machine and the scene that started it all.
 
 ## License and source
 
-C64 READY. is free software under the [GNU General Public License, version 3 or later](/docs/license.html), distributed without warranty; see the GPL for copying and modification rights. The [full source](https://github.com/mortyeriksen/c64ready) lives on GitHub, and the third-party credits, licenses, and trademark disclaimer are collected in the [notice](/docs/notice.html).
+C64 READY. is free software under the [GNU General Public License, version 3 or later](/docs/license.html), distributed without warranty. See the GPL for copying and modification rights. The [full source](https://github.com/mortyeriksen/c64ready) lives on GitHub, and the third-party credits, licenses, and trademark disclaimer are collected in the [notice](/docs/notice.html).
