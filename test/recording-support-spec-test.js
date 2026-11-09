@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   recordingSupported, recordingBrowserSupported, needsDirectFinish, recordingEndStatus,
-  CAPTURE_PRESETS, DEFAULT_CAPTURE_PRESET, capturePreset, nextCapturePreset,
+  CAPTURE_PRESETS, DEFAULT_CAPTURE_PRESET, capturePreset, nextCapturePreset, screenCaptureAllowed,
 } from '../src/recording-support.js';
 
 const getDisplayMedia = () => {};
@@ -114,4 +114,14 @@ console.log('ok  - capture-loss teardown decision');
   assert.equal(id, ids[0], 'and wraps to the first');
   assert.equal(nextCapturePreset('nonsense'), ids[0], 'an unknown id starts over from the first');
   console.log('ok  - capture presets resolve and cycle');
+}
+
+// Screen capture in a frame (the itch.io embed): only when the pages around it allow display-capture.
+{
+  const policy = (allowed) => ({ allowsFeature: (f) => f === 'display-capture' && allowed });
+  assert.equal(screenCaptureAllowed({ inFrame: false, policy: policy(false) }), true, 'the app as the page can always capture');
+  assert.equal(screenCaptureAllowed({ inFrame: true, policy: policy(true) }), true, 'in a frame that allows display-capture it can');
+  assert.equal(screenCaptureAllowed({ inFrame: true, policy: policy(false) }), false, 'in a frame that does not, it cannot');
+  assert.equal(screenCaptureAllowed({ inFrame: true, policy: undefined }), false, 'in a frame of a browser that cannot say, it is taken not to');
+  console.log('ok  - screen capture in a frame follows the frame\'s policy');
 }

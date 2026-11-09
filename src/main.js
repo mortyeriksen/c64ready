@@ -69,7 +69,7 @@ import { SoftKeyboardInsertState } from './input-key-ownership.js';
 import { CAPTURE_PRESETS, DEFAULT_CAPTURE_PRESET, capturePreset, nextCapturePreset }
   from './recording-support.js';
 import {
-  initRecorder, recorderAudioClockActive, setRecorderAudioPaused,
+  initRecorder, recorderAudioClockActive, setRecorderAudioPaused, recordingAvailable,
 } from './recorder.js';
 import { splashIsOpen } from './ui/splash.js';
 import { initPanelOrder } from './ui/panel-order.js';
@@ -1868,7 +1868,7 @@ async function _powerOn() {
   setStatus('Running', 'running');
   resetBtn.disabled = false;
   pauseBtn.disabled = false;
-  if (recordBtn) recordBtn.disabled = false;   // recording needs a running machine (live audio graph)
+  if (recordBtn) recordBtn.disabled = !recordingAvailable();   // a running machine (live audio graph), where recording works
   prgBtn.disabled   = false;
   if (pasteBtn) pasteBtn.disabled = false;
   if (d64Btn) d64Btn.disabled = false;

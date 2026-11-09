@@ -21,12 +21,11 @@
 // recording. The button stays visible elsewhere, where a click explains which
 // browser APIs are missing.
 
-import { confirmDialog } from './ui/dialogs.js';
 import { createRecorderAudioBridge } from './recorder-audio-bridge.js';
 import { remuxFragmentedMp4 } from './mp4-remux.js';
 import { needsDirectFinish, recordingEndStatus } from './recording-support.js';
 import { capturePreset, DEFAULT_CAPTURE_PRESET } from './recording-support.js';
-import { recordingSupported } from './recording-support.js';
+import { recordingSupported, screenCaptureAllowed } from './recording-support.js';
 
 // Preferred container/codec, most specific first. Baseline H.264 (42E01E) is
 // the most broadly playable; the plain entries are fallbacks. An empty result
@@ -78,14 +77,9 @@ function supported() {
   return recordingSupported();
 }
 
-function showUnsupported() {
-  confirmDialog(
-    'Recording works in desktop Chrome (and other Chromium browsers) and desktop '
-    + 'Safari. Other browsers are excluded on purpose: they either lack the '
-    + 'screen-capture and media-recording APIs, or produce a file this app cannot '
-    + 'vouch for.',
-    { title: 'Recording is not supported here', okLabel: 'OK', okOnly: true },
-  );
+/** Whether this page can record: a supported browser, and screen capture allowed where it runs (not in an embed that forbids it). */
+export function recordingAvailable() {
+  return supported() && screenCaptureAllowed();
 }
 
 // Local timestamp as YYYY-MM-DD_HH-MM-SS for the download filename.
@@ -106,6 +100,7 @@ function setButtonState(isRec) {
     : '<span class="rec-dot" aria-hidden="true">●</span> RECORD';
   btn.title = isRec
     ? 'Stop recording and save the .mp4 file'
+    : !recordingAvailable() ? 'Recording not supported'
     : 'Record the browser window with sound to an .mp4 file';
 }
 
@@ -473,12 +468,12 @@ export function initRecorder(opts = {}) {
   btn = document.getElementById('btn-record');
   if (!btn) return;
 
-  // The button stays visible everywhere so the feature is discoverable; a click
-  // in an unsupported browser explains the required APIs instead of recording.
+  // Where recording cannot work (another browser, or an embed without screen
+  // capture) the button stays disabled, its tooltip saying why.
   setButtonState(false);
   btn.addEventListener('click', () => {
     if (recording) { stop(); return; }
-    if (!supported()) { showUnsupported(); return; }
+    if (!recordingAvailable()) return;
     start();
   });
 }

@@ -37,6 +37,17 @@ export function recordingSupported({
     && recordingBrowserSupported(userAgent);
 }
 
+// Screen capture inside a frame (the itch.io embed) works only when every page
+// around it allows display-capture. Chromium says whether it does; a browser that
+// cannot say is taken not to, as the page around it decides.
+export function screenCaptureAllowed({
+  inFrame = (() => { try { return globalThis.self !== globalThis.top; } catch { return true; } })(),
+  policy = globalThis.document?.permissionsPolicy ?? globalThis.document?.featurePolicy,
+} = {}) {
+  if (!inFrame) return true;
+  return typeof policy?.allowsFeature === 'function' ? policy.allowsFeature('display-capture') : false;
+}
+
 // Does stop() have to run the teardown itself?
 //
 // Normally MediaRecorder.stop() is enough: its onstop runs finish(), which saves
