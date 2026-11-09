@@ -34,8 +34,8 @@ The version you are running is shown at the bottom of the About dialog.
   Elite, Prince of Persia, International Karate, International Karate Ultimate,
   Leaderboard Golf, H.E.R.O., Airborne Ranger, IO, Last Ninja 3, Bruce Lee II,
   Ghostbusters, Pitstop II, Armalyte, Fist II: The Legend Continues,
-  Neuromancer, Space Rogue and Ultima IV Remastered, many with speedruns and
-  high-score boards of their own.
+  Neuromancer, Space Rogue, Ultima IV Remastered and Last Light: Stairway to
+  Heaven, many with speedruns and high-score boards of their own.
 - **More in the sets you know.** The Last Ninja has new trophies and a speedrun
   for every level, Out Run eight more trophies, The Way of the Exploding Fist a
   trophy for every dan, Space Rogue a trophy for taking the Manchi egg home, and

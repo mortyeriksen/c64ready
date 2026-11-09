@@ -622,6 +622,14 @@
    ],
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
+  "last-light-d64": {
+   "description": "Last Light: Stairway to Heaven (RetroMorty), the release disk, MD5 bbfdfdd6eae28702c571f01bb7a9c399",
+   "env": "C64_LAST_LIGHT_D64",
+   "paths": [
+    "~/projects/stair/build/lastlight.d64"
+   ],
+   "note": "Built from the Last Light repository with make"
+  },
   "super-mario-bros-64-crt": {
    "description": "Super Mario Bros 64 (ZeroPaige 2019), the OneLoad64 v5 cartridge, MD5 1c08be698922fdd0505d9d84ff4b63f6: the release its own-design achievement set targets",
    "env": "C64_SUPER_MARIO_BROS_64_CRT",

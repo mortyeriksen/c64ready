@@ -44,6 +44,7 @@ export const GAME_ICONS = new Set([
   'international-karate',
   'international-karate-ultimate',
   'io',
+  'last-light',
   'last-ninja',
   'last-ninja-3',
   'leaderboard',

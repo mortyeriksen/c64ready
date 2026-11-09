@@ -174,6 +174,7 @@ every board.
 | International Karate | 11 | yes | OneLoad64 v5: `International Karate (Side 1).crt` or `International Karate (Side 2).crt` |
 | International Karate Ultimate | 11 | yes | OneLoad64 v5 extras: `International Karate Ultimate [EasyFlash].crt`, with no trainer |
 | IO | 8 | yes | OneLoad64 v5: `IO - Into Oblivion.crt` |
+| Last Light: Stairway to Heaven | 23 | highest score, greatest height, most bells | `lastlight.d64`, built from the game's source |
 | Last Ninja 3 | 17 | yes, and the fastest game | OneLoad64 v5 extras: `Last Ninja 3, The [EasyFlash].crt`, answering N to unlimited lives |
 | Leaderboard Golf | 9 | each course, professional | OneLoad64 v5: `Leaderboard.crt` |
 | Maniac Mansion | 22 | fastest rescue | OneLoad64 v5 extras: `Maniac Mansion & Zak McKracken [EasyFlash].crt`, playing Maniac Mansion |

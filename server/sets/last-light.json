@@ -1,0 +1,212 @@
+{
+  "id": "last-light",
+  "title": "Last Light: Stairway to Heaven",
+  "hashes": [
+    {
+      "hash": "bbfdfdd6eae28702c571f01bb7a9c399",
+      "label": "Release disk (lastlight.d64)"
+    }
+  ],
+  "achievements": [
+    {
+      "id": 1,
+      "title": "Into the Cloisters",
+      "description": "Ring the first great bell and climb into the Cloisters.",
+      "points": 5,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf8d=1_d0xHcf8d=0"
+    },
+    {
+      "id": 2,
+      "title": "Clockwork Heart",
+      "description": "Climb into the Clockworks.",
+      "points": 10,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf8d=2_d0xHcf8d=1"
+    },
+    {
+      "id": 3,
+      "title": "Into the Storm",
+      "description": "Climb into the Storm Galleries.",
+      "points": 10,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf8d=3_d0xHcf8d=2"
+    },
+    {
+      "id": 4,
+      "title": "Among the Stars",
+      "description": "Climb into the Star Ruins.",
+      "points": 15,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf8d=4_d0xHcf8d=3"
+    },
+    {
+      "id": 5,
+      "title": "Full Circle",
+      "description": "Climb all five districts and come back to the Rooftops.",
+      "points": 25,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf8d=5_d0xHcf8d=4"
+    },
+    {
+      "id": 6,
+      "title": "Second Lap",
+      "description": "Climb all five districts twice in one climb.",
+      "points": 25,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf8d=10_d0xHcf8d=9"
+    },
+    {
+      "id": 7,
+      "title": "Endless Stair",
+      "description": "Reach the highest difficulty, level 15.",
+      "points": 50,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf8d=15_d0xHcf8d=14"
+    },
+    {
+      "id": 8,
+      "title": "The Dawnblade",
+      "description": "Pick up the sword.",
+      "points": 3,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHc034=1_d0xHc034=0"
+    },
+    {
+      "id": 9,
+      "title": "Blade Against Blade",
+      "description": "Strike down a Shadowblade.",
+      "points": 5,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf0b=0_0xHc3c1=2_d0xHc3c1!=2"
+    },
+    {
+      "id": 10,
+      "title": "Stop, Thief!",
+      "description": "Scare off a Lantern Thief with the sword.",
+      "points": 5,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf0b=2_0xHc3c1=2_d0xHc3c1!=2"
+    },
+    {
+      "id": 11,
+      "title": "Ring Breaker",
+      "description": "Fell a Ring Thrower.",
+      "points": 10,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf0b=1_0xHc3c1=2_d0xHc3c1!=2"
+    },
+    {
+      "id": 12,
+      "title": "Warden's Fall",
+      "description": "Fell a Bell Warden.",
+      "points": 10,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf0b=3_0xHc3c1=2_d0xHc3c1!=2"
+    },
+    {
+      "id": 13,
+      "title": "Clean Climb",
+      "description": "Take every spark of a burst without a hit and ring its bell.",
+      "points": 5,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHce95>d0xHce95"
+    },
+    {
+      "id": 14,
+      "title": "In Stride",
+      "description": "Run a stride streak.",
+      "points": 3,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf1b>=32_d0xHcf1b<32"
+    },
+    {
+      "id": 15,
+      "title": "Bell Chain",
+      "description": "Ring a bell chain up to x4.",
+      "points": 10,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf47=4_d0xHcf47=3"
+    },
+    {
+      "id": 16,
+      "title": "A Letter from Sunna",
+      "description": "Find one of Sunna's letters.",
+      "points": 5,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf4c!=0_d0xHcf4c=0"
+    },
+    {
+      "id": 17,
+      "title": "All Her Letters",
+      "description": "Find all five of Sunna's letters.",
+      "points": 25,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf4c=31_d0xHcf4c!=31"
+    },
+    {
+      "id": 18,
+      "title": "Nine Lives",
+      "description": "Hold nine lives.",
+      "points": 25,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHce96=9_d0xHce96=8"
+    },
+    {
+      "id": 19,
+      "title": "A Hundred Bells",
+      "description": "Ring 100 bells in one climb.",
+      "points": 25,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf8c=1_d0xHcf8c=0"
+    },
+    {
+      "id": 20,
+      "title": "Lamplighter",
+      "description": "Score 10,000 points.",
+      "points": 5,
+      "score": 10000,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_A:0xLcf8a*100000_A:0xLc041*10000_A:0xLc042*1000_A:0xLc043*100_A:0xLc044*10_0xLc045>=10000"
+    },
+    {
+      "id": 21,
+      "title": "Beacon",
+      "description": "Score 25,000 points.",
+      "points": 10,
+      "score": 25000,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_A:0xLcf8a*100000_A:0xLc041*10000_A:0xLc042*1000_A:0xLc043*100_A:0xLc044*10_0xLc045>=25000"
+    },
+    {
+      "id": 22,
+      "title": "Lighthouse",
+      "description": "Score 50,000 points.",
+      "points": 25,
+      "score": 50000,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_A:0xLcf8a*100000_A:0xLc041*10000_A:0xLc042*1000_A:0xLc043*100_A:0xLc044*10_0xLc045>=50000"
+    },
+    {
+      "id": 23,
+      "title": "Dawn",
+      "description": "Score 100,000 points.",
+      "points": 50,
+      "score": 100000,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_A:0xLcf8a*100000_A:0xLc041*10000_A:0xLc042*1000_A:0xLc043*100_A:0xLc044*10_0xLc045>=100000"
+    }
+  ],
+  "leaderboards": [
+    {
+      "id": 1,
+      "title": "Hiscores",
+      "description": "Your best score in one climb.",
+      "format": "SCORE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xHc000=2_d0xHc000!=2_d0xHc000!=3::CAN:0xHcf4a=1::SUB:0xHc000=4_d0xHc000=2::VAL:0xLcf8a*100000_0xLc041*10000_0xLc042*1000_0xLc043*100_0xLc044*10_0xLc045"
+    },
+    {
+      "id": 2,
+      "title": "Highest Climb",
+      "description": "The greatest height you reached in one climb.",
+      "format": "VALUE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xHc000=2_d0xHc000!=2_d0xHc000!=3::CAN:0xHcf4a=1::SUB:0xHc000=4_d0xHc000=2::VAL:0xLcf8b*1000_0xLc046*100_0xLc047*10_0xLc048"
+    },
+    {
+      "id": 3,
+      "title": "Most Bells",
+      "description": "The most bells you rang in one climb.",
+      "format": "VALUE",
+      "lowerIsBetter": false,
+      "definition": "STA:0xHc000=2_d0xHc000!=2_d0xHc000!=3::CAN:0xHcf4a=1::SUB:0xHc000=4_d0xHc000=2::VAL:0xHcf8c*100_0xHc03f*10_0xHc040"
+    }
+  ],
+  "notices": [
+    {
+      "id": 1,
+      "title": "Night mode",
+      "text": "Night mode is its own game: nothing counts while it is on. Press F3 to climb for the trophies and boards.",
+      "memaddr": "0xHc000=2_0xHcf4a=1"
+    }
+  ],
+  "gameOver": "0xHc000=4_d0xHc000=2"
+}

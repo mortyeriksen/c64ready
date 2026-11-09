@@ -128,6 +128,7 @@ const TESTS = [
   'test/achievements/pirates-set-spec-test.js',
   'test/achievements/ik-plus-set-spec-test.js',
   'test/achievements/exploding-fist-set-spec-test.js',
+  'test/achievements/last-light-set-spec-test.js',
   'test/achievements/super-mario-bros-64-set-spec-test.js',
   'test/achievements/commando-arcade-set-spec-test.js',
   'test/achievements/last-ninja-set-spec-test.js',

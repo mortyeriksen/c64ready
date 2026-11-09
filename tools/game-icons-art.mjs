@@ -862,6 +862,25 @@ export const GAME_ICON_ART = {
     '................',
     '................',
   ],
+  // A lantern's flame above the endless stair.
+  'last-light': [
+    '......dd........',
+    '.....d..d.......',
+    '....dddddd......',
+    '....d.yy.d......',
+    '....dywwyd......',
+    '....dyowyd......',
+    '....d.yy.d......',
+    '....dddddd......',
+    '............yyyy',
+    '............nnnn',
+    '........yyyynnnn',
+    '........nnnnnnnn',
+    '....yyyynnnnnnnn',
+    '....nnnnnnnnnnnn',
+    'yyyynnnnnnnnnnnn',
+    'nnnnnnnnnnnnnnnn',
+  ],
   // A ninja's masked head in a red headband.
   'last-ninja': [
     '................',
