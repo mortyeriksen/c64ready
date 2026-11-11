@@ -104,7 +104,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
   let engineReady = !engine?.load;   // rcheevos formats the scores: the first fetch waits for it
   let standingsKey = null, activityKey = null, activityAt = 0, gamesKey = null;
   const who = () => account.user?.id ?? 'out';
-  const gameKey = () => `${engine?.game?.hash ?? ''}:${who()}:${dataGen}`;
+  const gameKey = () => `${engine?.gameHash ?? ''}:${who()}:${dataGen}`;
   let opener = buttons[0];
 
   // ── CHAT ────────────────────────────────────────────────────────────────
@@ -123,7 +123,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
         // A message mentions games with achievements, and a mention opens the
         // game's page under GAMES.
         games: listGames,
-        loadedGame: () => engine?.game?.id ?? null,
+        loadedGame: () => engine?.gameId ?? null,
         onGame: async (id) => {
           const g = (await listGames()).find((x) => x.id === id);
           if (!g) return;
@@ -164,7 +164,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     pictureUrl: (u) => account.pictureUrl?.(u) ?? null,
     setPicture: (file) => account.setPicture(file),
     removePicture: () => account.removePicture(),
-    loaded: () => engine?.game?.hash ?? null,
+    loaded: () => engine?.gameHash ?? null,
     // A game's file in the LOAD library ({ hashes, names }), to load from its page.
     fromLibrary: engine?.hash && loadFromLibrary
       ? (game) => findInLibrary(game, engine.hash).then((id) => (id == null ? null : () => loadFromLibrary(id)))
@@ -213,7 +213,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
 
   // Until a tab is picked: the loaded game, else the chat room, else the
   // account to sign in to, else the activity.
-  const currentTab = () => tab ?? (engine?.game ? 'game' : chat?.inRoom() ? 'chat' : account.user ? 'activity' : 'account');
+  const currentTab = () => tab ?? (engine?.gameHash ? 'game' : chat?.inRoom() ? 'chat' : account.user ? 'activity' : 'account');
 
   function open(withTab = null) {
     if (withTab) { tab = withTab; detail = []; }
@@ -287,7 +287,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     }
     if (t === 'game') renderGame();
     else if (t === 'activity') {
-      const key = `${activityScope}:${engine?.game?.hash ?? ''}:${who()}:${dataGen}`;
+      const key = `${activityScope}:${engine?.gameHash ?? ''}:${who()}:${dataGen}`;
       renderActivityTab(engineReady && (key !== activityKey || Date.now() - activityAt > POLL_MS) ? key : null);
       startPoll();
     } else if (t === 'games') {
@@ -307,7 +307,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
   // ── ACTIVITY ────────────────────────────────────────────────────────────
   const feedEl = h('div', { class: 'achievements-feed' });
   function activityQuery() {
-    return activityScope === 'game' && engine?.game ? { hash: engine.game.hash, withGame: false } : {};
+    return activityScope === 'game' && engine?.gameHash ? { hash: engine.gameHash, withGame: false } : {};
   }
   /** ACTIVITY's scope buttons and its feed, fetched only with a `key` (what it is fetched for). */
   function renderActivityTab(key = null) {
@@ -561,7 +561,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     });
   }
   closeBtn?.addEventListener('click', () => close());
-  let shownGame = engine?.game?.hash ?? null;
+  let shownGame = engine?.gameHash ?? null;
   let shownEnabled = !!engine?.enabled;   // achievements on or off, as last drawn
   // Three flashes on whichever opening button shows (the header's, or the
   // fullscreen toolbar's), to say the loaded game has achievements.
@@ -599,7 +599,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
       }
       live.delete(leaderboard.id);
       // A score the board does not have yet (signed out, or waiting to be posted): kept to show as the reader's own.
-      const hash = engine?.game?.hash;
+      const hash = engine?.gameHash;
       if (type === 'submitted' && !softcore && result == null && hash) {
         const key = `${hash} ${leaderboard.id}`, was = held.get(key);
         if (was == null || (leaderboard.lowerIsBetter ? value < was : value > was)) held.set(key, value);
@@ -617,7 +617,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
      */
     gameChanged() {
       const on = !!engine?.enabled;
-      if ((engine?.game?.hash ?? null) !== shownGame || on !== shownEnabled) { shownEnabled = on; this.refresh(); return; }
+      if ((engine?.gameHash ?? null) !== shownGame || on !== shownEnabled) { shownEnabled = on; this.refresh(); return; }
       if (!win.hidden && !detail.length && currentTab() === 'game') renderGame();
     },
     /**
@@ -627,7 +627,7 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
      * would cover the game, so the button that opens it flashes instead.
      */
     refresh() {
-      const hash = engine?.game?.hash ?? null;
+      const hash = engine?.gameHash ?? null;
       if (hash !== shownGame) {
         shownGame = hash;
         if (hash) {

@@ -62,7 +62,7 @@ export async function openT64(bytes, archive, { signal } = {}) {
       : `"${archive}" holds no programs.`);
   }
   const picked = await chooseFile('Choose a program', files, {
-    label: f => `${f.name} · $${f.start.toString(16).toUpperCase().padStart(4, '0')} · ${(f.bytes.length - 2).toLocaleString()} B`,
+    label: f => `${f.name} · $${f.start.toString(16).toUpperCase().padStart(4, '0')} · ${(f.bytes.length - 2).toLocaleString('en-US')} B`,
     note: `${files.length} programs in this archive. The one you choose is loaded and kept in the Library.`,
     signal,
   });

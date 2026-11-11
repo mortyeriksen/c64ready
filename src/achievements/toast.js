@@ -69,6 +69,16 @@ function themeColors(el, names) {
 const reducedMotion = () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 const later = (ms, fn) => setTimeout(fn, ms);
 const replay = (el, cls) => { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
+/**
+ * A node's text changed in place, in its one text node, and only when it differs: a node put in
+ * or taken out would have the page's body:has() rules restyle the whole page.
+ */
+export function write(node, text) {
+  const t = node.firstChild;
+  // Without a text node to change (no text yet, or letters put in as elements) it is set whole.
+  if (!t || t.nodeType !== 3) node.textContent = text;
+  else if (t.data !== text) t.data = text;
+}
 
 // An icon is one element: its pixels a mask over the kind's colour (styles-achievements.css),
 // so the toast stays a dozen elements to restyle, and a change of colour needs no redraw.
@@ -153,7 +163,7 @@ export function createAchToasts({ host, ms = ACH_TOAST_MS }) {
     let el = current.el.querySelector('.ach-toast-more');
     if (!waiting.length) { el?.remove(); return; }
     if (!el) { el = document.createElement('span'); el.className = 'ach-toast-more'; current.el.append(el); }
-    el.textContent = `+${waiting.length}`;
+    write(el, `+${waiting.length}`);
   }
 
   // A toast, timed and in the queue, or pinned: a sample that stays until closed.
@@ -291,7 +301,17 @@ export function createAchToasts({ host, ms = ACH_TOAST_MS }) {
     return build(t, { place, onClose }).el;
   }
 
-  return { show, rehome, sample };
+  /**
+   * Lets go of the toasts waiting behind the one showing, as when a new game
+   * starts and they are about the game before it. The one showing keeps its time.
+   */
+  function dropWaiting() {
+    if (!waiting.length) return;
+    waiting.length = 0;
+    if (current) counter();
+  }
+
+  return { show, rehome, sample, dropWaiting };
 }
 
 /** Each letter flips down in turn. */
@@ -338,18 +358,17 @@ function completeSet(el, icon, words, chip, c, live) {
 /** Counts a number from one value to another, easing out, after the landing. */
 export function count(node, from, to, format, dur, done) {
   const start = performance.now() + 450;
-  // Room for the widest value from the start, so the toast does not grow as a digit is added.
-  const cs = getComputedStyle(node);
-  const edge = ['paddingLeft', 'paddingRight', 'borderLeftWidth', 'borderRightWidth'].reduce((n, k) => n + (parseFloat(cs[k]) || 0), 0);
-  node.style.minWidth = `calc(${Math.max(format(from).length, format(to).length)}ch + ${edge}px)`;
+  // Its widest value's characters, which the stylesheet makes room for from the start, so the
+  // toast does not grow as a digit is added. Nothing is read back.
+  node.style.setProperty('--ach-count', String(Math.max(format(from).length, format(to).length)));
   let shown = format(from);
-  node.textContent = shown;
+  write(node, shown);
   const step = (now) => {
     if (!node.isConnected && now > start) return;
     const p = Math.min(1, Math.max(0, (now - start) / dur));
     // Only a changed number is written: each write restyles and lays out the toast.
     const next = format(Math.round(from + (to - from) * (1 - (1 - p) ** 3)));
-    if (next !== shown) { shown = next; node.textContent = next; }
+    if (next !== shown) { shown = next; write(node, next); }
     if (p < 1) requestAnimationFrame(step);
     else done?.();
   };
@@ -375,7 +394,7 @@ function tickRank(node, from, to, done) {
   const gap = from - to;
   const steps = gap <= 4 ? Array.from({ length: gap }, (_, i) => from - 1 - i) : [Math.ceil((from + to) / 2), to + 2, to + 1, to];
   let at = 0;
-  steps.forEach((n, i) => { at += Math.max(90, 220 - i * 50); later(at, () => { node.textContent = String(n); replay(node, 'ach-toast-bump'); }); });
+  steps.forEach((n, i) => { at += Math.max(90, 220 - i * 50); later(at, () => { write(node, String(n)); replay(node, 'ach-toast-bump'); }); });
   later(at + 160, done);
 }
 
@@ -466,29 +485,98 @@ function layer(el) {
   return { box: rect, width: rect.width, height: rect.height, add };
 }
 
+// The sparks: 14 of them, each 700 ms on its way after a wait of up to 120 ms, fading in 32 steps.
+const SPARKS = 14, SPARK_MS = 700, SPARK_WAIT = 120, SPARK_FADES = 32;
+// Their ease, cubic-bezier(.2, .7, .4, 1), as 256ths of the way at each millisecond: made once,
+// so a frame looks a spark's place and fade up.
+const SPARK_EASE = (() => {
+  const curve = (a, b, s) => 3 * a * s * (1 - s) ** 2 + 3 * b * s * s * (1 - s) + s ** 3;
+  const out = new Uint8Array(SPARK_MS);
+  for (let ms = 0; ms < SPARK_MS; ms++) {
+    let lo = 0, hi = 1;
+    for (let k = 0; k < 24; k++) { const mid = (lo + hi) / 2; if (curve(0.2, 0.4, mid) < ms / SPARK_MS) lo = mid; else hi = mid; }
+    out[ms] = Math.min(255, Math.floor(curve(0.7, 1, lo) * 256));
+  }
+  return out;
+})();
+// A colour at each step of a spark's fading, a pixel each in a strip: drawn once per colour.
+const fadeCache = new Map();
+function fades(color) {
+  let strip = fadeCache.get(color);
+  if (strip) return strip;
+  strip = document.createElement('canvas');
+  strip.width = SPARK_FADES; strip.height = 1;
+  const g = strip.getContext('2d');
+  g.fillStyle = color;
+  for (let i = 0; i < SPARK_FADES; i++) { g.globalAlpha = 1 - i / SPARK_FADES; g.fillRect(i, 0, 1, 1); }
+  fadeCache.set(color, strip);
+  return strip;
+}
+
 /** A few pixels thrown off `from`, a part of `el`, in `el`'s colour and white, once. */
 export function sparkle(el, from) {
   const at = layer(el);
   if (!at) return;
   const r = from.getBoundingClientRect();
-  const cx = r.left - at.box.left + r.width / 2, cy = r.top - at.box.top + r.height / 2;
-  const reach = Math.max(r.width, r.height) * 1.8;
-  const ink = getComputedStyle(el).getPropertyValue('--ach-ink');
-  for (let k = 0; k < 14; k++) {
-    const s = document.createElement('i');
-    s.className = `ach-toast-spark mode-dark${k % 3 ? '' : ' white'}`;
-    const a = (k / 14) * Math.PI * 2 + Math.random() * 0.4;
-    const d = reach * (0.6 + Math.random() * 0.6);
-    s.style.left = `${cx}px`;
-    s.style.top = `${cy}px`;
-    s.style.setProperty('--x', `${Math.cos(a) * d}px`);
-    s.style.setProperty('--y', `${Math.sin(a) * d}px`);
-    s.style.setProperty('--ink', ink);
-    s.style.animationDelay = `${Math.random() * 120}ms`;
-    s.addEventListener('animationend', () => s.remove());
-    setTimeout(() => s.remove(), 1200);
-    at.add(s);
+  sparkleAt(el, r.left - at.box.left + r.width / 2, r.top - at.box.top + r.height / 2, Math.max(r.width, r.height) * 1.8, at.width);
+}
+
+/**
+ * The same from a spot measured already: `x` and `y` in `el`'s parent, which is `width` wide,
+ * thrown `reach` far. One small canvas draws them all: no element, style or timer per spark. Its
+ * pixels are spark-sized, scaled up by the page (image-rendering: pixelated), and it covers only
+ * the square the sparks can reach. It removes itself when the last has faded.
+ */
+export function sparkleAt(el, x, y, reach, width) {
+  const place = el.parentElement;
+  if (!place) return;
+  const cs = getComputedStyle(el);
+  // A spark's side in whole page pixels: the share of the parent's width the stylesheet gives, and its least.
+  const side = Math.max(parseFloat(cs.getPropertyValue('--ach-spark-min')) || 2, Math.round(width * (parseFloat(cs.getPropertyValue('--ach-spark-share')) || 0.0045)));
+  const ink = fades(cs.getPropertyValue('--ach-ink').trim()), white = fades(cs.getPropertyValue('--highlight').trim());
+  // A spark flies up to 1.2 times the reach: so many pixels each way from the middle one, where they start.
+  const mid = Math.ceil((reach * 1.2) / side), n = 2 * mid + 1;
+  const canvas = document.createElement('canvas');
+  canvas.className = place === document.body ? 'ach-toast-spark ach-toast-page' : 'ach-toast-spark';
+  canvas.width = n;
+  canvas.height = n;
+  canvas.style.cssText = `left:${Math.round(x) - mid * side}px;top:${Math.round(y) - mid * side}px;width:${n * side}px;height:${n * side}px`;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  // Each spark in whole numbers: how far it flies in 256ths of a pixel, and its wait in ms. With
+  // the time in whole ms too, a frame allocates nothing.
+  const DX = new Int32Array(SPARKS), DY = new Int32Array(SPARKS), WAIT = new Uint8Array(SPARKS);
+  for (let k = 0; k < SPARKS; k++) {
+    const a = (k / SPARKS) * Math.PI * 2 + Math.random() * 0.4;
+    const d = ((reach * (0.6 + Math.random() * 0.6)) / side) * 256;
+    DX[k] = Math.round(Math.cos(a) * d);
+    DY[k] = Math.round(Math.sin(a) * d);
+    WAIT[k] = Math.round(Math.random() * SPARK_WAIT);
   }
+  const start = performance.now() | 0;
+  const step = (now) => {
+    if (!canvas.isConnected) return;
+    const ms = ((now | 0) - start) | 0;
+    ctx.clearRect(0, 0, n, n);
+    let flying = 0;
+    for (let k = 0; k < SPARKS; k++) {
+      const t = ms - WAIT[k];
+      if (t >= SPARK_MS) continue;
+      flying++;
+      // Still at the start, whole, while it waits. Every third one is white.
+      const e = t > 0 ? SPARK_EASE[t] : 0;
+      ctx.drawImage(k % 3 ? ink : white, (e * SPARK_FADES) >> 8, 0, 1, 1, mid + ((DX[k] * e + 32768) >> 16), mid + ((DY[k] * e + 32768) >> 16), 1, 1);
+    }
+    if (flying) requestAnimationFrame(step);
+    else canvas.remove();
+  };
+  place.append(canvas);
+  requestAnimationFrame(step);
+}
+
+/** The shower's canvas in character pixels of `px` CSS pixels: the whole ones that fit in the layer. */
+export function showerGrid(width, height, px) {
+  return { cols: Math.max(1, Math.floor(width / px)), rows: Math.max(1, Math.floor(height / px)) };
 }
 
 // A PETSCII shower: characters flung up from the toast that fall with gravity,
@@ -502,14 +590,16 @@ function shower(el, at, r, x0, y0, count) {
   // No higher than the room above the toast, so a toast at the top of the screen still rains over it.
   const throwUp = Math.sqrt(2 * g * Math.max(r.height, y0 + r.height / 2));
   // One canvas over the toast's parent draws them all: no element per piece, no style work per tick.
+  // Its pixels are character pixels, scaled up by the page (image-rendering: pixelated): the
+  // pieces only ever sit on that grid, so the picture is the same and the canvas is px² times smaller.
   const canvas = at.add(document.createElement('canvas'));
   canvas.className += ' ach-toast-shower';
-  const dpr = globalThis.devicePixelRatio || 1;
-  const W = at.width, H = at.height;
-  canvas.width = Math.round(W * dpr);
-  canvas.height = Math.round(H * dpr);
+  const { cols, rows } = showerGrid(at.width, at.height, px);
+  canvas.width = cols;
+  canvas.height = rows;
+  canvas.style.width = `${cols * px}px`;
+  canvas.style.height = `${rows * px}px`;
   const ctx = canvas.getContext('2d');
-  ctx.imageSmoothingEnabled = false;
   // Each piece in whole numbers: positions in 1/256ths of a character pixel, time in 40 ms
   // ticks. The step runs too few times to be optimized, and whole numbers, unlike decimals,
   // are never boxed, so a tick allocates nothing.
@@ -527,12 +617,12 @@ function shower(el, at, r, x0, y0, count) {
     VY[k] = Math.round(-Math.min(r.height * (2.5 + Math.random() * 4), throwUp * (0.55 + Math.random() * 0.45)) * perTick);
     LIFE[k] = Math.round((1.3 + Math.random() * 0.8) / TICK);
   }
-  const cell = Math.round(px * dpr), side = Math.round(size * dpr), half = SUB >> 1;
+  const half = SUB >> 1;
   const draw = () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, cols, rows);
     for (let k = 0; k < count; k++) {
       if (AGE[k] >= LIFE[k]) continue;
-      ctx.drawImage(SET[k][CH[k]], ((X[k] + half) >> 8) * cell, ((Y[k] + half) >> 8) * cell, side, side);
+      ctx.drawImage(SET[k][CH[k]], (X[k] + half) >> 8, (Y[k] + half) >> 8);
     }
   };
   const clock = new Float64Array(2);   // [the last frame's time, time not yet stepped]

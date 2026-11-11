@@ -194,6 +194,15 @@ function waterNormalTexture() {
   _waterNorm = markShared(t); return _waterNorm;
 }
 
+// The water's mirror: how large it is drawn and how often. The mirror draws
+// the whole scene a second time, so a low-power device gets a quarter of the
+// pixels at half the rate. The sea is a wide, rippling surface seen at a low
+// angle, which hides both.
+export function waterMirror({ fine, lowPower }) {
+  if (lowPower) return { size: 256, hz: 15 };
+  return { size: fine ? 1024 : 512, hz: 30 };
+}
+
 export const scene = {
     // Recreation of the "IK+" C64 sunset scene: the C64 stands on the dark
     // fighting platform before a monumental black torii, a striped low sun over
@@ -211,7 +220,7 @@ export const scene = {
     fog: { color: 0x28172f, near: 5, far: 68 },
     shadowHz: 10,   // only the maple's slow sway moves a caster
     bg: [[0, '#12081f'], [1, '#2a0e3f']],
-    build(g, { sphere, box }) {
+    build(g, { sphere, box, lowPower }) {
       const R = sphere.radius, cx = sphere.center.x, cy = sphere.center.y, cz = sphere.center.z, gy = box.min.y;
       const S = R * 0.5;                      // world units per scene unit
       const tex = ikPlusTextures();
@@ -301,7 +310,8 @@ export const scene = {
       const SEA = 2000;                        // sea plane extent (world units)
       // Fine pointer ≈ desktop → sharper reflections + shadow map.
       const fine = typeof window !== 'undefined' && !window.matchMedia?.('(pointer: coarse)').matches;
-      const hiRT = fine ? 1024 : 512;
+      const mirror = waterMirror({ fine, lowPower });
+      const hiRT = mirror.size;
       // Dark indigo, not daylight blue — at dusk the water is the sky's mirror,
       // with a warm dusk specular.
       const water = new Water(new THREE.PlaneGeometry(SEA, SEA), {
@@ -325,7 +335,7 @@ export const scene = {
       // into a clipped white wedge in Water's mirror camera at side-on orbit
       // angles. Exclude both sky billboards from that reflection pass; the
       // water shader's own warm specular remains the sunset trail.
-      g.userData.reflection = cacheWaterReflection(water, [sunDisc, halo]);
+      g.userData.reflection = cacheWaterReflection(water, [sunDisc, halo], mirror.hz);
       // Keep the sea BEHIND the shoreline instead of sweeping forward under the
       // beach into the foreground (which read as "water under the ground"). The
       // beach's far edge sits at env-z -14 -> world (cz - 22*S); push the plane

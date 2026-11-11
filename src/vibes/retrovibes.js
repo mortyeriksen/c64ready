@@ -6,10 +6,10 @@
 // synthwave demo. Drag to rotate, scroll / two-finger pinch to zoom, Esc or the
 // ✕ (top-right) to close.
 //
-// Self-contained like pausedemo.js: main.js only calls open() / close(). The
-// WebGL context + the (18 MB) parsed model are built lazily on the first open
-// and kept resident, so re-opening is instant; the render loop only runs while
-// the overlay is visible, so it costs nothing when closed.
+// Self-contained like pausedemo.js: main.js opens and closes it, and draws it
+// from the page's tick (renderFrame). The WebGL context is built on the first
+// open and kept. The model and the scene load on each open and are freed on
+// each close, and the view draws only while open, so it costs nothing closed.
 //
 // Backdrop is the CSS synthwave gradient on the overlay (renderer clears with
 // alpha 0); a low-intensity RoomEnvironment gives the glossy/clearcoat surfaces
@@ -33,7 +33,11 @@ import { VolumePass } from './vibes-volume-pass.js';
 import { screenApproach, bezierAt } from './vibes-camera-path.js';
 import { attachKeycapPresses } from './keycap-press.js';   // [removable prototype]
 import { hostTouchControls, restoreTouchControls } from '../ui/touch-joystick.js';
-import { bgTexture, wantsLargeModels } from './vibes-scene-common.js';
+import { bgTexture, wantsLargeModels, disposeRenderTargets } from './vibes-scene-common.js';
+import { GradeShader, LeanComposer } from './vibes-grade.js';
+import { viewPixelRatio, qualitySteps, QualityGuard } from './vibes-quality.js';
+import { isSoftwareGl } from '../webgl-presenter.js';
+import { switchOn } from '../switches.js';
 import { sampleScreenLight } from './vibes-screen-light.js';
 import { ShadowCache, ShadowThrottle } from './vibes-shadow-cache.js';
 import { scene as sceneSynthwave } from './vibes-scene-synthwave.js';
@@ -43,10 +47,6 @@ import { scene as sceneBedroom } from './vibes-scene-bedroom.js';
 import { scene as sceneSpotlightReal } from './vibes-scene-spotlight-real.js';
 import { sceneIndexFromStored } from './vibes-scene-pref.js';
 
-// Cinematic grade: subtle vignette + edge chromatic aberration + film grain.
-// Runs on the final sRGB image (after OutputPass). Kept gentle so it flavours
-// rather than dominates. uTime drives the grain; uAberration/uVignette/uGrain
-// scale each effect.
 // Is this a device that should skip the expensive pass? Coarse pointer catches
 // phones and tablets; the core/memory floors catch the low-end laptops that
 // report a fine pointer and still render in software.
@@ -56,52 +56,9 @@ function _lowPowerDevice() {
   return (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
 }
 
-const GradeShader = {
-  uniforms: {
-    tDiffuse: { value: null },
-    uTime: { value: 0 },
-    uAberration: { value: 0.0008 },
-    uVignette: { value: 0.24 },
-    uGrain: { value: 0.025 },
-    // Split tone, off by default; a scene opts in through `grade`.
-    uSplit: { value: 0.0 },
-    uSplitShadow: { value: new THREE.Vector3(1, 1, 1) },
-    uSplitHigh: { value: new THREE.Vector3(1, 1, 1) },
-  },
-  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-  fragmentShader: `
-    varying vec2 vUv;
-    uniform sampler2D tDiffuse;
-    uniform float uTime, uAberration, uVignette, uGrain, uSplit;
-    uniform vec3 uSplitShadow, uSplitHigh;
-    float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-    void main(){
-      vec2 d = vUv - 0.5;
-      float r2 = dot(d, d);
-      // chromatic aberration grows toward the edges
-      vec2 off = d * uAberration * (0.4 + r2 * 3.0);
-      vec3 col;
-      col.r = texture2D(tDiffuse, vUv + off).r;
-      col.g = texture2D(tDiffuse, vUv).g;
-      col.b = texture2D(tDiffuse, vUv - off).b;
-      // vignette
-      col *= 1.0 - uVignette * smoothstep(0.25, 0.9, r2);
-      // Per-pixel, so unlike the aberration above this cannot alias anything.
-      if (uSplit > 0.0) {
-        float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
-        col = mix(col, col * mix(uSplitShadow, uSplitHigh, smoothstep(0.05, 0.7, l)), uSplit);
-      }
-      // film grain
-      float g = hash(vUv * vec2(1920.0, 1080.0) + fract(uTime) * 100.0) - 0.5;
-      col += g * uGrain;
-      gl_FragColor = vec4(col, 1.0);
-    }`,
-};
-
 // The 3D model ships in two resolutions: a heavy 4K-texture build (~100 MB) for
-// large screens and a lighter build (~19 MB) for phones. Choose once at module
-// load by device screen size — the model loads lazily and stays resident, so
-// there's no need to react to later resizes. Vite serves public/ at the site
+// large screens and a lighter build (~19 MB) for phones, chosen each time the
+// model loads. Vite serves public/ at the site
 // root, and every 3D asset lives in public/models/; BASE_URL keeps the path
 // correct under a non-root deploy base (guarded so a non-Vite context never throws).
 const MODEL_BASE = ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/') + 'models/';
@@ -152,6 +109,7 @@ export class ModelViewer {
     this.screenProvider = null;
     this._screenTex = null;
     this._screenDataRef = null;
+    this._screenSerial = -1;   // the provider's serial of the frame last uploaded
     this._screenLight = { r: 0, g: 0, b: 0, luminance: 0, active: false };
     this._screenLightSampleAt = -Infinity;
     this._keycap = null;   // [removable prototype] RETURN keycap press animation
@@ -239,6 +197,15 @@ export class ModelViewer {
 
     this._loop = this._loop.bind(this);
     this._onResize = this._onResize.bind(this);
+    this._frameDriver = null;   // { start, stop } from main.js, see setFrameDriver
+    this._lastFrameAt = 0;      // the previous frame's time, 0 before the first
+
+    // How much the view draws (vibes-quality.js): where this kind of device
+    // starts, and the steps down the guard takes when frames come too slowly.
+    // The level reached is kept while the page lives, across opens and scenes.
+    this._steps = qualitySteps(_lowPowerDevice());
+    this._guard = new QualityGuard(this._steps.length);
+    this._guardOn = false;      // set once the renderer is up, see _ensureRenderer
 
     // Exiting native fullscreen (Esc / F11 / browser UI) closes the viewer, so
     // the CSS overlay never lingers once fullscreen is gone.
@@ -250,10 +217,50 @@ export class ModelViewer {
     });
   }
 
-  // main.js calls this with a function returning { data, width, height } for the
-  // live emulator framebuffer (or null when the machine isn't up yet). Called
-  // every rendered frame while the viewer is open.
+  // main.js calls this with a function returning { data, width, height, serial }
+  // for the live emulator framebuffer (or null when the machine isn't up yet).
+  // Called every rendered frame while the viewer is open. `serial` changes when
+  // the buffer holds a new picture; without one every call counts as new.
   setScreenProvider(fn) { this.screenProvider = fn; }
+
+  // main.js draws the view from the page's own tick, after the emulator's
+  // frame: `start` makes sure that tick runs while the view is open, `stop`
+  // lets it go. Without a driver three's animation loop draws the view.
+  setFrameDriver(start, stop) { this._frameDriver = { start, stop }; }
+
+  // One frame of the view, from the page's tick. Headset frames come from the
+  // XR session instead, see _startLoop.
+  renderFrame(time) {
+    if (!this.running || this.renderer.xr.isPresenting) return;
+    this._loop(time);
+  }
+
+  // True while the overlay hides the page behind it. In VR the overlay steps
+  // aside and the page shows again.
+  coversPage() {
+    return this.isOpen() && !(this.renderer && this.renderer.xr.isPresenting);
+  }
+
+  // Start and stop drawing. With a frame driver the page's tick calls
+  // renderFrame, and three is given only the XR callback, which a headset
+  // session calls per frame. Without one three's loop does both.
+  _startLoop() {
+    if (this.running) return;
+    this.running = true;
+    this._lastFrameAt = 0;
+    if (this._frameDriver) {
+      this.renderer.xr.setAnimationLoop(this._loop);
+      this._frameDriver.start();
+    } else {
+      this.renderer.setAnimationLoop(this._loop);
+    }
+  }
+  _stopLoop() {
+    const was = this.running;
+    this.running = false;
+    if (this.renderer) this.renderer.setAnimationLoop(null);   // clears the XR callback too
+    if (was && this._frameDriver) this._frameDriver.stop();
+  }
 
   // main.js supplies the double-click action (power-on-if-off).
   setOnDoubleClick(fn) { this.onDoubleClick = fn; }
@@ -420,6 +427,12 @@ export class ModelViewer {
       this.overlay.requestFullscreen().catch(() => {});
     }
     if (this._xrFill && this.scene) this.scene.remove(this._xrFill);   // remove the VR fill light
+    // three restarts its own page loop when a session ends. With a frame driver
+    // the page's tick draws the view, so stop that loop and keep the XR callback.
+    if (this._frameDriver && this.renderer) {
+      this.renderer.setAnimationLoop(null);
+      if (this.running) this.renderer.xr.setAnimationLoop(this._loop);
+    }
     this._restorePreVrCamera();   // synchronous — 3D view is correct the instant VR ends
     if (this.controls) { this.controls.enabled = true; this.controls.update(); }
     // Defer only the framebuffer resize — setSize warns while still presenting.
@@ -469,7 +482,10 @@ export class ModelViewer {
     let renderer = null;
     try {
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setPixelRatio(this._pixelRatio());
+      // The guard judges frame times, which mean something only on a GPU: a
+      // software rasteriser is slow at every step, and steps down for nothing.
+      this._guardOn = switchOn('vibesQualityGuard') && !isSoftwareGl(renderer.getContext());
       renderer.setClearColor(0x000000, 0);            // transparent → CSS gradient shows through
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -490,8 +506,8 @@ export class ModelViewer {
       this._envMap._shared = true;
       pmrem.dispose();
 
-      // WebXR: enabling this lets renderer.setAnimationLoop drive the headset's
-      // per-eye frame loop while presenting. Session start/end toggle the desktop
+      // WebXR: enabling this lets three call the loop per headset frame while
+      // presenting (see _startLoop). Session start/end toggle the desktop
       // controls and reposition the viewer.
       renderer.xr.enabled = true;
       renderer.xr.addEventListener('sessionstart', () => this._onXrStart());
@@ -547,7 +563,7 @@ export class ModelViewer {
       // open's scene (its GPU resources died with the context).
       el.addEventListener('webglcontextlost', (e) => {
         e.preventDefault();   // signal we will restore (else no restored event)
-        if (this.running) { this.running = false; renderer.setAnimationLoop(null); }
+        this._stopLoop();
       });
       el.addEventListener('webglcontextrestored', () => {
         if (!this.isOpen()) return;   // a closed viewer rebuilds on its next open
@@ -556,7 +572,7 @@ export class ModelViewer {
           this._initGL();
           this._loadModel();
           this._onResize();
-          if (!this.running) { this.running = true; renderer.setAnimationLoop(this._loop); }
+          this._startLoop();
         } catch (err) {
           console.warn('ModelViewer: WebGL context restore failed.', err);
         }
@@ -590,10 +606,11 @@ export class ModelViewer {
 
   // Dispose one scene object's GPU resources that geometry+material disposal
   // alone misses. Render-target owners and instanced buffers must be freed
-  // explicitly while the GL context persists. (THREE.Water also owns a
-  // reflection render target but exposes no handle to it — see _teardownGL.)
+  // explicitly while the GL context persists. A render target only its owner's
+  // shader knows (THREE.Water's mirror) is reached through that shader.
   _disposeObject(o) {
     if (o.isReflector && typeof o.dispose === 'function') o.dispose();               // reflection render target
+    disposeRenderTargets(o);                                                         // Water's mirror, a baked sky
     if (o.isInstancedMesh && typeof o.dispose === 'function') o.dispose();           // instanceMatrix buffer + VAO
     if (o.isLight && o.shadow && typeof o.shadow.dispose === 'function') o.shadow.dispose();   // shadow-map render target
     if (o.geometry) o.geometry.dispose();
@@ -649,24 +666,32 @@ export class ModelViewer {
     // (canvas-level pointer/dblclick input is wired once in _ensureRenderer and
     // reads this.controls, which is rebuilt here on each open.)
 
-    // Post-processing: RenderPass → [Volume → GTAO → Bokeh] → Bloom → OutputPass
-    // (tonemap+sRGB) → SMAA → Grade (vignette/chroma/grain). The bracketed passes
-    // exist only off low-power devices and run only for a scene that asks: the
+    // Post-processing. On a computer: RenderPass → Volume → GTAO → Bokeh → Bloom
+    // → OutputPass (tonemap+sRGB) → SMAA → Grade (vignette/chroma/grain). The
     // volume marches smoke through a spotlight against the RenderPass's depth
     // (hence the depth texture on the composer's targets), GTAO and Bokeh each
-    // draw the scene again for depth. SMAA comes before the grain: grain changes
-    // every frame, and under it SMAA's edge detection would too, flickering
-    // high-contrast edges on a still camera. Wrapped so a failure degrades to
-    // plain renderer.render (see _loop). Per-scene bloom params set in _applyScene.
+    // draw the scene again for depth, and all three run only for a scene that
+    // asks. SMAA comes before the grain: grain changes every frame, and under it
+    // SMAA's edge detection would too, flickering high-contrast edges on a still
+    // camera. A low-power device gets LeanComposer instead: the scene into one
+    // multisampled buffer, then tone mapping, sRGB and the grade in one pass.
+    // Wrapped so a failure degrades to plain renderer.render (see _loop).
+    // Per-scene bloom params set in _applyScene.
     try {
       const w = window.innerWidth, h = window.innerHeight;
-      const target = new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType });
-      target.depthTexture = new THREE.DepthTexture(w, h);
-      const composer = new EffectComposer(renderer, target);
-      composer.setPixelRatio(renderer.getPixelRatio());
-      composer.setSize(w, h);
-      composer.addPass(new RenderPass(scene, camera));
-      if (!_lowPowerDevice()) {
+      if (_lowPowerDevice()) {
+        const lean = new LeanComposer(renderer, scene, camera);
+        lean.setPixelRatio(renderer.getPixelRatio());
+        lean.setSize(w, h);
+        this._composer = lean;
+        this._gradePass = lean.grade;
+      } else {
+        const target = new THREE.WebGLRenderTarget(w, h, { type: THREE.HalfFloatType });
+        target.depthTexture = new THREE.DepthTexture(w, h);
+        const composer = new EffectComposer(renderer, target);
+        composer.setPixelRatio(renderer.getPixelRatio());
+        composer.setSize(w, h);
+        composer.addPass(new RenderPass(scene, camera));
         const vol = new VolumePass();
         vol.camera = camera; vol.enabled = false;
         composer.addPass(vol);
@@ -683,21 +708,20 @@ export class ModelViewer {
         composer.addPass(dof);
         this._hideFromDepth(ao); this._hideFromDepth(dof);
         this._aoPass = ao; this._dofPass = dof;
+        const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.9, 0.6, 0.6);
+        // A blur pyramid over the whole frame, resized with the canvas: the
+        // first pass a view that cannot keep up goes without (vibes-quality.js).
+        // EffectComposer skips a pass with `enabled === false`.
+        bloom.enabled = this._plan().bloom;
+        composer.addPass(bloom);
+        composer.addPass(new OutputPass());
+        composer.addPass(new SMAAPass());
+        const grade = new ShaderPass(GradeShader);
+        composer.addPass(grade);
+        this._composer = composer;
+        this._bloomPass = bloom;
+        this._gradePass = grade;
       }
-      const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.9, 0.6, 0.6);
-      // Bloom is the only pass with a real per-frame cost — a blur pyramid over
-      // the whole frame, resized with the canvas. A phone pays for it in frame
-      // rate, so it gets everything else (grade is one fullscreen shader) and
-      // not this. EffectComposer skips a pass with `enabled === false`.
-      bloom.enabled = !_lowPowerDevice();
-      composer.addPass(bloom);
-      composer.addPass(new OutputPass());
-      composer.addPass(new SMAAPass());
-      const grade = new ShaderPass(GradeShader);
-      composer.addPass(grade);
-      this._composer = composer;
-      this._bloomPass = bloom;
-      this._gradePass = grade;
     } catch (err) {
       console.warn('ModelViewer: post-processing unavailable — plain render.', err);
       this._composer = null;
@@ -1103,11 +1127,40 @@ export class ModelViewer {
   setFog(on) {
     this._fogWanted = !!on;
     try { localStorage.setItem(FOG_KEY, on ? '1' : '0'); } catch { /* storage off */ }
-    const smoke = !!(this._volPass && SCENES[this._sceneIndex]?.volume);
+    this._syncSmoke();
+  }
+  // Whether the current scene's smoke runs: the scene has some, the device and
+  // the quality level allow it, and the fog switch is on. Otherwise the scene's
+  // stand-in shows, and the switch itself only where smoke can run.
+  _syncSmoke() {
+    const smoke = this._smokeAllowed(SCENES[this._sceneIndex]);
     this._sceneVolume = smoke && this._fogWanted;
     if (this._volPass && !this._sceneVolume) { this._volPass.enabled = false; this._volPass.light = null; }
     for (const o of this._sceneGroup?.userData.fogStandIn || []) o.visible = !this._sceneVolume;
     this._updateFogButton(smoke);
+  }
+  _smokeAllowed(def) { return !!(this._volPass && def?.volume && this._plan().extras); }
+
+  // ── Quality ───────────────────────────────────────────────────────────────
+  // The current step: a cap on the pixel ratio, and whether the bloom and the
+  // extras (smoke, contact shadows) run.
+  _plan() { return this._steps[this._guard.level]; }
+  _pixelRatio() {
+    return viewPixelRatio(window.innerWidth, window.innerHeight, window.devicePixelRatio || 1, this._plan().ratio);
+  }
+  // One drawn frame took `ms`. A view that keeps coming in too slowly takes
+  // the next step down.
+  _noteFrame(ms) {
+    if (this._guard.frame(ms)) this._applyPlan();
+  }
+  _applyPlan() {
+    const plan = this._plan();
+    if (this._bloomPass) this._bloomPass.enabled = plan.bloom;
+    if (!plan.extras) {
+      if (this._aoPass) this._aoPass.enabled = false;
+      this._syncSmoke();
+    }
+    this._onResize();   // the pixel ratio
   }
   _updateFogButton(smoke) {
     const b = this._fogBtn;
@@ -1343,7 +1396,7 @@ export class ModelViewer {
     // Contact shadows and depth of field, sized to the model. `ao.radius` and
     // `dof.aperture` are per model radius; `dof.maxblur` is a fraction of the frame.
     if (this._aoPass) {
-      this._aoPass.enabled = !!def.ao;
+      this._aoPass.enabled = !!def.ao && this._plan().extras;
       if (def.ao) {
         this._aoPass.updateGtaoMaterial({ radius: def.ao.radius * sphere.radius, distanceExponent: def.ao.distanceExponent ?? 1, thickness: (def.ao.thickness ?? 1) * sphere.radius, scale: 1, samples: def.ao.samples ?? 16 });
         this._aoPass.blendIntensity = def.ao.intensity ?? 1;
@@ -1359,9 +1412,10 @@ export class ModelViewer {
     // Smoke in the beam: the scene puts its SpotLight in g.userData.volumeLight
     // once it has one, and _loop runs the pass from then on, unless the fog
     // switch is off. The scene's stand-in (g.userData.fogStandIn) shows instead.
-    const smoke = !!(this._volPass && def.volume);
+    const smoke = this._smokeAllowed(def);
     this._sceneVolume = smoke && this._fogWanted;
     if (this._volPass) { this._volPass.enabled = false; this._volPass.light = null; }
+    this._guard.reset();   // scenes differ in cost: this one is watched afresh
     if (smoke) this._volPass.configure(def.volume, sphere.radius, box.min.y);
     this._updateFogButton(smoke);
     const g = new THREE.Group();
@@ -1529,13 +1583,15 @@ export class ModelViewer {
 
   // Push the current emulator frame into the CRT texture. The framebuffer array
   // is replaced whenever the machine is re-created (power / reset), so re-point
-  // the texture at the new buffer only when the reference actually changes;
-  // otherwise just flag it dirty so the same buffer re-uploads. When the machine
-  // is powered off the provider returns null, and we restore the original glass.
+  // the texture at the new buffer only when the reference actually changes.
+  // The same buffer re-uploads only when the provider's serial says it holds a
+  // new picture: the view draws at display rate, the machine at 50 Hz, and a
+  // paused machine not at all. When the machine is powered off the provider
+  // returns null, and we restore the original glass.
   _updateScreen(time = 0) {
     // Only touch the CRT texture while the viewer is actually on screen. The
-    // render loop already only runs while open (open()→RAF, close()→cancel), so
-    // this is belt-and-suspenders: no framebuffer upload happens when hidden.
+    // render loop already only runs while open, so this is belt-and-suspenders:
+    // no framebuffer upload happens when hidden.
     if (!this.running) return;
     const tex = this._screenTex;
     if (!tex || !this.screenProvider) return;
@@ -1546,14 +1602,18 @@ export class ModelViewer {
       return;
     }   // powered off → untouched monitor
     this._setScreenLive(true);
-    if (src.data !== this._screenDataRef) {
+    const repointed = src.data !== this._screenDataRef;
+    if (repointed) {
       this._screenDataRef = src.data;
       const data = src.data instanceof Uint8Array
         ? src.data
         : new Uint8Array(src.data.buffer, src.data.byteOffset, src.data.byteLength);
       tex.image = { data, width: src.width, height: src.height };
     }
-    tex.needsUpdate = true;
+    if (repointed || src.serial === undefined || src.serial !== this._screenSerial) {
+      this._screenSerial = src.serial;
+      tex.needsUpdate = true;
+    }
     // Lighting reacts at 10 Hz; sampling a fixed 16×12 grid in linear light is
     // enough to follow scene colour without scanning 104k pixels per RAF.
     if (time - this._screenLightSampleAt >= 100) {
@@ -1577,8 +1637,15 @@ export class ModelViewer {
     if (this._busy) this._lastResizeFrame = this._framesSinceOpen;   // keep paused until resizes settle
     const w = window.innerWidth;
     const h = window.innerHeight;
+    // The pixel ratio follows the window too: a larger one may no longer fit
+    // the pixel budget at the display's ratio (vibes-quality.js).
+    const ratio = this._pixelRatio();
+    if (ratio !== this.renderer.getPixelRatio()) {
+      this.renderer.setPixelRatio(ratio);
+      if (this._composer) this._composer.setPixelRatio(ratio);
+    }
     // updateStyle=false: the CSS keeps the canvas at 100%×100% of the overlay;
-    // the drawing buffer tracks the viewport (× capped DPR) for crispness.
+    // the drawing buffer tracks the viewport (× the pixel ratio) for crispness.
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
@@ -1587,6 +1654,13 @@ export class ModelViewer {
 
   _loop(time, frame) {
     if (!this.running) return;
+    // Time since the previous frame. The camera moves by it, so its speed is
+    // the same on a 60 Hz and a 120 Hz display. A first frame counts as a
+    // sixtieth of a second, and a long gap as a tenth at most.
+    const last = this._lastFrameAt;
+    this._lastFrameAt = time;
+    const elapsed = last > 0 ? time - last : -1;
+    const dt = elapsed < 0 ? 1 / 60 : Math.min(elapsed, 100) / 1000;
     this._updateScreen(time);        // live emulator frame → CRT texture + sampled spill colour
     const powered = !!(this.powerProvider && this.powerProvider());
     if (this._leds.length) {   // ramp each LED's emissive from its signal (power / drive-activity)
@@ -1604,7 +1678,7 @@ export class ModelViewer {
     // apply damping + autoRotate. Head tracking owns the VR view.
     if (!presenting) {
       if (this._camTween) this._updateCamTween();
-      else this.controls.update();
+      else this.controls.update(dt);
     }
     if (!presenting && !this._holdRender) this._sceneGroup?.userData.reflection?.prerender(this.renderer, this.scene, this.camera);
     if (this._holdRender && !presenting) {
@@ -1641,6 +1715,9 @@ export class ModelViewer {
       const resizeSettled = (this._framesSinceOpen - this._lastResizeFrame) >= 2;
       const ready = this._modelLoaded && this._sceneReadyFrames >= 2 && resizeSettled;
       if (ready || this._sceneReadyFrames >= 180) this._exitBusy();
+    } else if (this._guardOn && elapsed >= 0 && this._modelLoaded && !this._holdRender && !presenting) {
+      // A drawn frame of a settled scene: what the quality guard judges.
+      this._noteFrame(elapsed);
     }
   }
 
@@ -1709,10 +1786,7 @@ export class ModelViewer {
     this._loadModel();
     this._onResize();
     window.addEventListener('resize', this._onResize);
-    if (!this.running) {
-      this.running = true;
-      this.renderer.setAnimationLoop(this._loop);   // WebXR-compatible loop (drives per-eye frames while presenting)
-    }
+    this._startLoop();
   }
 
   close() {
@@ -1762,8 +1836,7 @@ export class ModelViewer {
       document.exitFullscreen().catch(() => {});
     }
     window.removeEventListener('resize', this._onResize);
-    this.running = false;
-    if (this.renderer) this.renderer.setAnimationLoop(null);
+    this._stopLoop();
     // Free everything from memory (the 4K model alone is ~95 MB / a lot of VRAM);
     // open() rebuilds from scratch. Done while paused (busy), so the disposal
     // stall can't jerk the audio.
@@ -1778,11 +1851,6 @@ export class ModelViewer {
   // materials and their textures, per-pass render targets, reflector/shadow-map
   // render targets, and instanced buffers. Shared resources (the _envMap and the
   // module-cached scene textures, tagged _shared) are left intact.
-  //
-  // Known residual: a THREE.Water reflection target (512² HalfFloat, IK+ scene
-  // only) cannot be freed — Water owns the WebGLRenderTarget in a closure and
-  // exposes no handle, and disposing its texture no-ops (render-target textures
-  // skip deallocateTexture). It is one small buffer confined to that one scene.
   _teardownGL() {
     if (!this.renderer) return;
     // The screen mesh swaps its uv attribute between the stock (_origUV) and the

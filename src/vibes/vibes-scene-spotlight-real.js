@@ -39,8 +39,10 @@ const studioFiles = () => (wantsLargeModels()
 
 // The fetch is shared per file (so a changed setting loads the other one) and
 // the parse is per build: the viewer disposes a scene's meshes when it leaves.
+// preload() only fetches: the parse holds the main thread, and build() runs
+// inside the pause the viewer puts around a swap.
 const fetched = new Map();
-function loadFloor(url) {
+function fetchFloor(url) {
   if (!fetched.has(url)) {
     const p = fetch(url).then((r) => {
       if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
@@ -49,9 +51,11 @@ function loadFloor(url) {
     p.catch(() => fetched.delete(url));
     fetched.set(url, p);
   }
-  return fetched.get(url).then((bytes) => new GLTFLoader().parseAsync(bytes, BASE));
+  return fetched.get(url);
 }
-let prepared = null;   // { floor: url, load: Promise<gltf> }
+function loadFloor(url) {
+  return fetchFloor(url).then((bytes) => new GLTFLoader().parseAsync(bytes, BASE));
+}
 
 // The probe loads once and stays, as a PMREM per renderer (tagged _shared so
 // scene disposal leaves it). Without it the studio falls back to near-black.
@@ -209,10 +213,10 @@ export const scene = {
   // tops out at 1.0, so it stays crisp.
   bloom: { strength: 0.35, radius: 0.6, threshold: 1.0 },
   grade: { aberration: 0.0003, vignette: 0.22, grain: 0.008 },
+  // Resolves once the floor's file is fetched and the light probe is in.
   preload() {
     const files = studioFiles();
-    if (prepared?.floor !== files.floor) prepared = { floor: files.floor, load: loadFloor(files.floor) };
-    return Promise.all([prepared.load, loadProbe(files.probe)]).then(() => {}, () => {});
+    return Promise.all([fetchFloor(files.floor), loadProbe(files.probe)]).then(() => {}, () => {});
   },
   build(g, { sphere, screen, volume, smoke }) {
     addCrtLight(g, screen, 2.8);
@@ -229,10 +233,7 @@ export const scene = {
     key.visible = false;
     g.add(key, key.target);
 
-    const files = studioFiles();
-    const load = prepared?.floor === files.floor ? prepared.load : loadFloor(files.floor);
-    prepared = null;
-    return load.then((gltf) => {
+    return loadFloor(studioFiles().floor).then((gltf) => {
       const room = gltf.scene;
       if (!g.parent) { disposeTree(room); return; }   // switched away while loading
       holder.add(room);

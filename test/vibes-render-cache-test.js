@@ -22,7 +22,17 @@ import { mergeStatic } from '../src/vibes/vibes-scene-common.js';
   parent.rotation.z += 0.1;
   assert.equal(cache.update(), true, 'moving a caster ancestor invalidates shadows');
   caster.geometry.attributes.position.needsUpdate = true;
-  assert.equal(cache.update(), true, 'vertex changes such as keycap presses invalidate shadows');
+  assert.equal(cache.update(), true, 'vertex changes invalidate shadows');
+  // A mesh whose vertices move too little to show in its shadow says so
+  // (the keyboard's caps sink by a few hundredths of a unit).
+  caster.userData.steadyShadow = true;
+  cache.update();
+  caster.geometry.attributes.position.needsUpdate = true;
+  assert.equal(cache.update(), false, 'vertex changes on a mesh with a steady shadow keep the cached maps');
+  caster.position.x++;
+  assert.equal(cache.update(), true, 'moving such a mesh still invalidates them');
+  caster.userData.steadyShadow = false;
+  cache.update();
   light.target.position.z++;
   assert.equal(cache.update(), true, 'moving the shadow light target invalidates shadows');
   light.position.y++;
@@ -154,6 +164,101 @@ import { mergeStatic } from '../src/vibes/vibes-scene-common.js';
   assert.equal(throttle.update(3), true, 'a clock that runs backwards (scene restart) refreshes at once');
   const ik = (await import('../src/vibes/vibes-scene-ikplus.js')).scene;
   assert.ok(ik.shadowHz > 0 && ik.shadowHz < 60 && !ik.staticShadows, 'IK+ refreshes its shadows below display rate: only the maple sways');
+}
+
+{
+  // A water mirror may refresh slower than 30 Hz, as IK+ asks on low-power devices.
+  const camera = new THREE.PerspectiveCamera(), renderer = { xr: { isPresenting: false } };
+  let renders = 0;
+  const water = { material: { uniforms: {} }, onBeforeRender() { renders++; } };
+  const state = cacheWaterReflection(water, [], 15);
+  for (let i = 0; i < 60; i++) { state.time = i / 60; water.onBeforeRender(renderer, null, camera); }
+  assert.equal(renders, 15, 'a 15 Hz mirror refreshes 15 times over 60 frames a second');
+  const ik = await import('../src/vibes/vibes-scene-ikplus.js');
+  const desk = ik.waterMirror({ fine: true, lowPower: false }), phone = ik.waterMirror({ fine: false, lowPower: true });
+  assert.deepEqual(desk, { size: 1024, hz: 30 }, 'a computer keeps the sharp 30 Hz water mirror');
+  assert.ok(phone.size < desk.size && phone.hz === 15, 'a low-power device gets a smaller mirror, refreshed at 15 Hz');
+}
+
+{
+  // Keycaps: a press re-uploads only the moved cap's vertices, and the
+  // keyboard's shadow is steady while its caps sink.
+  const { attachKeycapPresses } = await import('../src/vibes/keycap-press.js');
+  const positions = new Float32Array(300 * 3);
+  for (let i = 0; i < 300; i++) { positions[i * 3] = 50 + i; positions[i * 3 + 2] = 50; }     // off the keyboard
+  for (let i = 120; i < 126; i++) { positions[i * 3] = -0.88; positions[i * 3 + 1] = 1; positions[i * 3 + 2] = 0.83; }   // the "1" key
+  for (let i = 200; i < 204; i++) { positions[i * 3] = 2.14; positions[i * 3 + 1] = 1; positions[i * 3 + 2] = 1.22; }    // RETURN
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const keyboard = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial());
+  const down = new Set();
+  const had = globalThis.window;
+  globalThis.window = { c64: { isKeyDown: (c, r) => down.has(`${c},${r}`) } };
+  try {
+    const caps = attachKeycapPresses(keyboard);
+    assert.equal(keyboard.userData.steadyShadow, true, 'the keyboard\'s shadow is steady under its moving caps');
+    const attr = geometry.attributes.position, v0 = attr.version;
+    caps.update();
+    assert.equal(attr.version, v0, 'with no key down nothing is uploaded');
+    down.add('7,0');
+    caps.update();
+    assert.ok(attr.version > v0, 'a pressed key moves its cap');
+    assert.ok(attr.getY(122) < 1 && attr.getY(0) === 0 && attr.getY(201) === 1, 'and only its cap');
+    assert.deepEqual(attr.updateRanges, [{ start: 120 * 3, count: 6 * 3 }], 'only that cap\'s vertices are uploaded');
+    attr.clearUpdateRanges();   // as the renderer does once it has uploaded them
+    down.add('0,1');
+    caps.update();
+    assert.deepEqual(attr.updateRanges, [{ start: 120 * 3, count: 6 * 3 }, { start: 200 * 3, count: 4 * 3 }], 'two moving caps upload two ranges');
+  } finally { globalThis.window = had; }
+}
+
+{
+  // Render targets a scene's shaders hold are freed with the scene: three's
+  // Water keeps its mirror target to itself, and Starry Plain bakes its sky.
+  const { disposeRenderTargets } = await import('../src/vibes/vibes-scene-common.js');
+  const { Water } = await import('three/examples/jsm/objects/Water.js');
+  const water = new Water(new THREE.PlaneGeometry(1, 1), { textureWidth: 64, textureHeight: 64, waterNormals: new THREE.Texture() });
+  const target = water.material.uniforms.mirrorSampler.value.renderTarget;
+  assert.ok(target?.isWebGLRenderTarget, 'the water\'s mirror texture leads to its target');
+  let freed = 0;
+  target.addEventListener('dispose', () => freed++);
+  const shared = new THREE.WebGLRenderTarget(4, 4);
+  shared.texture._shared = true;
+  shared.addEventListener('dispose', () => assert.fail('a shared texture\'s target outlives the scene'));
+  water.material.uniforms.keep = { value: shared.texture };
+  disposeRenderTargets(water);
+  assert.equal(freed, 1, 'the water\'s mirror target is freed');
+  disposeRenderTargets(new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial()));   // nothing to free
+}
+
+{
+  // Starry Plain's Milky Way does not change, so it is drawn once into a
+  // texture and looked up from then on.
+  const { disposeRenderTargets } = await import('../src/vibes/vibes-scene-common.js');
+  const group = new THREE.Group();
+  starry.build(group, { sphere: new THREE.Sphere(new THREE.Vector3(), 2), box: new THREE.Box3(new THREE.Vector3(-1, -1, -1), new THREE.Vector3(1, 1, 1)) });
+  const dome = group.userData.starry.milkyWay;
+  assert.ok(dome?.isMesh, 'the scene names its Milky Way dome');
+  assert.ok(!/\bfbm\s*\(/.test(dome.material.fragmentShader), 'the dome\'s own shader computes no noise');
+  const outer = {}, draws = [];
+  const renderer = {
+    target: outer, xr: { enabled: true },
+    getRenderTarget() { return this.target; }, setRenderTarget(t) { this.target = t; },
+    render(object) { draws.push(this.target); }, clear() {},
+  };
+  const camera = new THREE.PerspectiveCamera();
+  dome.onBeforeRender(renderer, null, camera);
+  assert.equal(draws.length, 1, 'the first frame draws the sky once');
+  const sky = dome.material.uniforms.uSky.value;
+  assert.ok(draws[0]?.isWebGLRenderTarget && draws[0].texture === sky, 'into the texture the dome reads');
+  assert.equal(renderer.target, outer, 'and leaves the renderer drawing where it was');
+  assert.equal(renderer.xr.enabled, true, 'with XR as it was');
+  for (let i = 0; i < 5; i++) dome.onBeforeRender(renderer, null, camera);
+  assert.equal(draws.length, 1, 'later frames only look it up');
+  let freed = 0;
+  sky.renderTarget.addEventListener('dispose', () => freed++);
+  disposeRenderTargets(dome);
+  assert.equal(freed, 1, 'the baked sky is freed with the scene');
 }
 
 console.log('ok  - Retro Vibes render caches');

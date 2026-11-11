@@ -2,6 +2,7 @@
 // Copyright © 2026 Morten Øien Eriksen
 
 import * as THREE from 'three';
+import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 import { markShared } from './vibes-scene-common.js';
 
 // Starry-plain scene sprite textures (star / meteor-head / horizon mist),
@@ -29,7 +30,7 @@ function starryTextures() {
 export const scene = {
     name: 'Starry Plain', css: 'scene-night', envInt: 0.1, basic: true, tone: 'none',
     bg: [[0, '#010208'], [1, '#03040f']],
-    build(g, { sphere, box }) {
+    build(g, { sphere, box, lowPower }) {
       // A dark Tron-grid plain under a rich twinkling star field, a procedural
       // Milky Way shader dome, a hazy horizon and the odd shooting star — the
       // C64 sits on the grid. Adapted from the author's standalone "Starry Plain" scene; glow is
@@ -152,21 +153,26 @@ export const scene = {
         makeStars({ count: 6000, sizeMin: 1.5, sizeMax: 2.8, milkyWay: true, brightness: 1.2 }),
       ]) sky.add(s);
 
-      // ── Milky Way: procedural shader dome (coherent band + snaking dust lane) ──
+      // ── Milky Way: a procedural band with a snaking dust lane, on a dome ──
+      // The band depends only on the direction looked in, never on time or the
+      // camera, so its ten octaves of noise are computed once: the first frame
+      // draws the sky above the horizon into a texture, by direction (around
+      // the horizon across, horizon to zenith up), and the dome looks it up.
+      let milkyWay;
       {
-        const mat = new THREE.ShaderMaterial({
-          side: THREE.BackSide, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+        const size = lowPower ? [2048, 512] : [4096, 1024];
+        const baked = new THREE.WebGLRenderTarget(size[0], size[1], { type: THREE.HalfFloatType, depthBuffer: false });
+        baked.texture.wrapS = THREE.RepeatWrapping;   // the picture meets itself behind the viewer
+        const bake = new THREE.ShaderMaterial({
+          depthTest: false, depthWrite: false,
           uniforms: {
             uN: { value: new THREE.Vector3(0, 1, 0).applyEuler(MW_TILT) },
             uU: { value: new THREE.Vector3(1, 0, 0).applyEuler(MW_TILT) },
             uW: { value: new THREE.Vector3(0, 0, 1).applyEuler(MW_TILT) },
-            uCenter: { value: new THREE.Vector3(cx, gy, cz) },
           },
-          vertexShader: `
-            varying vec3 vWorld;
-            void main(){ vWorld = (modelMatrix * vec4(position, 1.0)).xyz; gl_Position = projectionMatrix * viewMatrix * vec4(vWorld, 1.0); }`,
+          vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
           fragmentShader: `
-            uniform vec3 uN; uniform vec3 uU; uniform vec3 uW; uniform vec3 uCenter; varying vec3 vWorld;
+            uniform vec3 uN; uniform vec3 uU; uniform vec3 uW; varying vec2 vUv;
             float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
             float vnoise(vec2 p){
               vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -174,7 +180,8 @@ export const scene = {
             }
             float fbm(vec2 p){ float v = 0.0, a = 0.5; for (int k = 0; k < 5; k++){ v += a * vnoise(p); p = p * 2.13 + 7.7; a *= 0.5; } return v; }
             void main(){
-              vec3 d = normalize(vWorld - uCenter);
+              float around = (vUv.x - 0.5) * 6.28318530718, up = vUv.y * 1.57079632679;
+              vec3 d = vec3(cos(up) * cos(around), sin(up), cos(up) * sin(around));
               float s = dot(d, uN);
               float az = atan(dot(d, uW), dot(d, uU));
               vec2 q = vec2(az * 2.6, s * 9.5);
@@ -200,8 +207,38 @@ export const scene = {
               gl_FragColor = vec4(col * glow * 1.28, 1.0);
             }`,
         });
+        const mat = new THREE.ShaderMaterial({
+          side: THREE.BackSide, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+          uniforms: {
+            uSky: { value: baked.texture },
+            uCenter: { value: new THREE.Vector3(cx, gy, cz) },
+          },
+          vertexShader: `
+            varying vec3 vWorld;
+            void main(){ vWorld = (modelMatrix * vec4(position, 1.0)).xyz; gl_Position = projectionMatrix * viewMatrix * vec4(vWorld, 1.0); }`,
+          fragmentShader: `
+            uniform sampler2D uSky; uniform vec3 uCenter; varying vec3 vWorld;
+            void main(){
+              vec3 d = normalize(vWorld - uCenter);
+              // Below the horizon the band has faded to nothing.
+              vec2 uv = vec2(atan(d.z, d.x) / 6.28318530718 + 0.5, asin(clamp(d.y, 0.0, 1.0)) / 1.57079632679);
+              gl_FragColor = vec4(d.y > 0.0 ? texture2D(uSky, uv).rgb : vec3(0.0), 1.0);
+            }`,
+        });
         const dome = new THREE.Mesh(new THREE.SphereGeometry(SKY * 0.95, 64, 48), mat);
         dome.renderOrder = -1; sky.add(dome);
+        let quad = new FullScreenQuad(bake);
+        dome.onBeforeRender = (renderer) => {
+          if (!quad) return;
+          const target = renderer.getRenderTarget(), xr = renderer.xr.enabled;
+          renderer.xr.enabled = false;   // one flat picture, also from inside a headset's frame
+          renderer.setRenderTarget(baked);
+          quad.render(renderer);
+          renderer.setRenderTarget(target);
+          renderer.xr.enabled = xr;
+          quad.dispose(); bake.dispose(); quad = null;
+        };
+        milkyWay = dome;
       }
 
       // ── Hazy horizon glow (fades up from the ground) ──
@@ -275,7 +312,7 @@ export const scene = {
         mat.uniforms.uFade.value = 0;
         pts.visible = true;
       };
-      g.userData.starry = { sky, starMats, gridMat, meteor, spawn: spawnMeteor, nextMeteor: 2, lastT: undefined };
+      g.userData.starry = { sky, milkyWay, starMats, gridMat, meteor, spawn: spawnMeteor, nextMeteor: 2, lastT: undefined };
     },
     animate(g, t) {
       const d = g.userData.starry; if (!d) return;

@@ -81,7 +81,7 @@ export function createCodeStory(root, { openCode, openFrame, openMemory }) {
   function renderCapture() {
     const captured=timeline.frame;
     const budget=capturedCycleBudget(captured);
-    el('budget').textContent=budget.unknown===budget.total?'Cycle budget unavailable for this capture. Resume to record detailed evidence.':`CPU available: ${budget.available.toLocaleString()} / ${budget.total.toLocaleString()} cycles · VIC-II stalls: ${budget.vic.toLocaleString()} · REU holds: ${budget.reu.toLocaleString()} · halted: ${budget.halted.toLocaleString()}${budget.unknown?` · unrecorded: ${budget.unknown.toLocaleString()}`:''}`;
+    el('budget').textContent=budget.unknown===budget.total?'Cycle budget unavailable for this capture. Resume to record detailed evidence.':`CPU available: ${budget.available.toLocaleString('en-US')} / ${budget.total.toLocaleString('en-US')} cycles · VIC-II stalls: ${budget.vic.toLocaleString('en-US')} · REU holds: ${budget.reu.toLocaleString('en-US')} · halted: ${budget.halted.toLocaleString('en-US')}${budget.unknown?` · unrecorded: ${budget.unknown.toLocaleString('en-US')}`:''}`;
     el('budget').title='CPU time available includes wait loops. This is bus availability, not useful work or processor utilisation.';
     el('warning').hidden=!captured.overflow;
     el('seek').max=Math.max(0,timeline.total-1);el('seek').disabled=!timeline.total;el('groups').replaceChildren();

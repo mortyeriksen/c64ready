@@ -72,7 +72,7 @@ export function createMemoryContext(root, shortcuts, cells, navigate, sourcesRoo
     if(capturedSprite.frame!==frame||!capturedSprite.point)capturedSprite.point=spritePreviewPixel(frame,slot,bounds);
     capturedSprite.frame=frame;
     const raster=capturedSprite.point.y+frame.rasterOffset,index=raster*8+slot;
-    fact('Visible pixels',bounds.pixels.toLocaleString());
+    fact('Visible pixels',bounds.pixels.toLocaleString('en-US'));
     fact('Recorded rasters',`${bounds.top+frame.rasterOffset}–${bounds.bottom+frame.rasterOffset}`);
     if(frame.pointers&&frame.spriteBanks){
       const pointer=frame.pointers[index],bank=frame.spriteBanks[index];

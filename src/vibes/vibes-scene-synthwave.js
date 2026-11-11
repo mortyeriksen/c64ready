@@ -168,16 +168,21 @@ const PaintedRoadShader = {
 
 // The palms and mountains, modelled in Blender: public/models/synthwave.glb.
 // The fetch is shared and the parse is per build, as the viewer disposes a
-// scene's meshes when it leaves; preload() starts it so the scene arrives whole.
+// scene's meshes when it leaves. preload() only fetches, so the scene's file is
+// in before the viewer swaps to it: the parse holds the main thread, and
+// build() runs inside the pause the viewer puts around a swap.
 const BASE = ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/') + 'models/';
 const FILE = BASE + 'synthwave.glb';
-let fetched = null, prepared = null;
-function loadScenery() {
+let fetched = null;
+function fetchScenery() {
   if (!fetched) {
     fetched = fetch(FILE).then((r) => { if (!r.ok) throw new Error(`${FILE}: HTTP ${r.status}`); return r.arrayBuffer(); });
     fetched.catch(() => { fetched = null; });
   }
-  return fetched.then((bytes) => new GLTFLoader().parseAsync(bytes, BASE));
+  return fetched;
+}
+function loadScenery() {
+  return fetchScenery().then((bytes) => new GLTFLoader().parseAsync(bytes, BASE));
 }
 function disposeTree(root) {
   root.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
@@ -305,10 +310,9 @@ export const scene = {
   bloom: { strength: 0.8, radius: 0.4, threshold: 1.0 },
   halation: [[1, 1, 1], [1, 0.9, 1], [1, 0.75, 0.95], [1, 0.6, 0.9], [1, 0.5, 0.85]],
   grade: { aberration: 0.0007, vignette: 0.28, grain: 0.014 },
-  // Resolves once the scenery is ready for build(), or failed (build() then warns).
+  // Resolves once the scenery's file is fetched, or failed (build() then warns).
   preload() {
-    if (!prepared) prepared = loadScenery();
-    return prepared.then(() => {}, () => {});
+    return fetchScenery().then(() => {}, () => {});
   },
   build(g, { sphere, box, screen, lowPower }) {
     const R = sphere.radius, cx = sphere.center.x, cy = sphere.center.y, cz = sphere.center.z;
@@ -542,9 +546,7 @@ export const scene = {
       nextStreak: 3, lastT: undefined, rnd, R, cx, cy, cz,
     };
 
-    const load = prepared || loadScenery();
-    prepared = null;
-    return load.then((gltf) => {
+    return loadScenery().then((gltf) => {
       const file = gltf.scene;
       if (!g.parent) { disposeTree(file); return; }   // switched away while loading
       // The file is in model radii around the model's centre, its floor at 0.

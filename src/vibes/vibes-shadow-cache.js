@@ -3,6 +3,9 @@
 
 // A scene builds its caster list once. Moving a caster, its ancestors, or a
 // shadow light invalidates the maps; camera motion and non-casting FX do not.
+// A caster whose vertices move too little to show in its shadow marks itself
+// userData.steadyShadow (the keyboard, as its caps sink): its vertex uploads
+// are then not a change, while moving or replacing it still is.
 export class ShadowCache {
   constructor(scene) {
     this.scene = scene;
@@ -52,7 +55,8 @@ export class ShadowCache {
       if (o.geometry) {
         const geometry = o.geometry, position = geometry.attributes.position, index = geometry.index;
         const instances = o.instanceMatrix;
-        const pv = position?.isInterleavedBufferAttribute ? position.data.version : position?.version;
+        const pv = o.userData.steadyShadow ? e.positionVersion
+          : position?.isInterleavedBufferAttribute ? position.data.version : position?.version;
         const iv = index?.version, mv = instances?.version;
         if (e.geometry !== geometry || e.position !== position || e.index !== index || e.instances !== instances ||
             e.positionVersion !== pv || e.indexVersion !== iv || e.instanceVersion !== mv || e.count !== o.count) {

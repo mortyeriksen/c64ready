@@ -98,7 +98,8 @@ assert.ok(html.indexOf('model-viewer-fog') > html.indexOf('model-viewer-fullscre
 assert.match(viewer, /const FOG_KEY = 'c64emu\.modelViewerFog'/, 'the fog switch is remembered');
 assert.match(viewer, /localStorage\.getItem\(FOG_KEY\) !== '0'/, 'the fog is on unless turned off');
 assert.match(viewer, /b\.hidden = !smoke/, 'the fog button shows only where the smoke pass can run');
-assert.match(viewer, /const smoke = !!\(this\._volPass && def\.volume\);\s*this\._sceneVolume = smoke && this\._fogWanted;/, 'the smoke runs only while the fog switch is on');
+assert.match(viewer, /const smoke = this\._smokeAllowed\(def\);\s*this\._sceneVolume = smoke && this\._fogWanted;/, 'the smoke runs only while the fog switch is on');
+assert.match(viewer, /_smokeAllowed\(def\) \{ return !!\(this\._volPass && def\?\.volume && this\._plan\(\)\.extras\); \}/, 'and only where the smoke pass exists, the scene asks for it and the quality level allows it');
 assert.match(sceneSrc, /shaft\.visible = !smoke/, 'the soft cone shows when the smoke does not');
 assert.match(sceneSrc, /fogStandIn: \[shaft\]/, 'the scene hands the viewer its cone to show while the fog is off');
 const css = fs.readFileSync(path.join(root, 'src/vibes/styles-vibes.css'), 'utf8');

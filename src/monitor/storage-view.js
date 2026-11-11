@@ -79,7 +79,7 @@ export function createStorageView(root, openMemory, openCode, navigation = {}) {
       el('status').textContent = r.attached ? `${r.model} · ${r.bytes/1024} KB` : 'No REU attached';
       el('meaning').textContent = 'The REU copies, swaps or compares blocks of memory. Current settings and recorded accesses tell different parts of the story.';
       chain(['C64 RAM','REU controller','Expansion RAM']);
-      facts([['Controller',r.active ? 'Transfer active' : 'Idle'],['Operation',r.attached ? settings.operation : 'Unavailable'],['Length register',r.attached ? `${settings.length.toLocaleString()} bytes` : 'Unavailable']]);
+      facts([['Controller',r.active ? 'Transfer active' : 'Idle'],['Operation',r.attached ? settings.operation : 'Unavailable'],['Length register',r.attached ? `${settings.length.toLocaleString('en-US')} bytes` : 'Unavailable']]);
       el('inspect').hidden = !r.attached; el('inspect').textContent = 'Inspect current C64 RAM address ↗';
       el('limit').textContent = 'Addresses and length are current register settings, not a saved transfer record.';
       el('details').textContent = r.attached ? `${settings.complete ? 'End-of-block flag set' : 'End-of-block flag clear'}\n${settings.fault ? 'Compare mismatch flag set' : 'Compare mismatch flag clear'}\nIRQ pending: ${settings.irq ? 'yes' : 'no'}\nRead-only register bytes:\n${Array.from(r.registers,(value,i)=>'$'+hex(0xDF00+i)+'  $'+hex(value,2)).join('\n')}` : 'Attach an REU to inspect its controller registers.';

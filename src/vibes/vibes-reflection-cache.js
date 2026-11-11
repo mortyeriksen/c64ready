@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
 
-// Wave shading runs at display cadence; the offscreen scene refreshes at 30 Hz.
+// Wave shading runs at display cadence; the offscreen scene refreshes at `hz`,
+// 30 times a second unless the scene asks for fewer.
 // XR and projection changes require a fresh reflection for the current camera.
 // Works for three's Water and Reflector alike (only Water has an eye uniform).
 //
@@ -9,7 +10,7 @@
 // keeps a light state per render nesting depth, so a mirror drawn inside the
 // main render makes every lit material look stale and rebuild its program
 // parameters on each switch. At depth 0 both passes share one light state.
-export function cacheWaterReflection(water, excluded) {
+export function cacheWaterReflection(water, excluded, hz = 30) {
   const render = water.onBeforeRender;
   const visibility = new Array(excluded.length);
   const state = { time: 0, lastTime: -Infinity, camera: null, projection: new Float64Array(16), prerender };
@@ -20,7 +21,7 @@ export function cacheWaterReflection(water, excluded) {
       if (state.projection[i] !== projection[i]) return true;
     }
     const elapsed = state.time - state.lastTime;
-    return !(elapsed >= 0 && elapsed < 1 / 30 - 1e-9);
+    return !(elapsed >= 0 && elapsed < 1 / hz - 1e-9);
   };
   const refresh = (renderer, scene, camera) => {
     state.camera = camera;

@@ -174,7 +174,7 @@ export function createFrameView(root, openCode = () => {}, openMemory = () => {}
     }
     const budget=story.budget,bar=document.createElement('div'),label=document.createElement('span');bar.className='monitor-story-budget-bar';bar.setAttribute('aria-hidden','true');
     for(const kind of ['available','vic','reu','halted','unknown']){const segment=document.createElement('i');segment.className=kind;segment.style.width=`${budget[kind]/budget.total*100}%`;bar.append(segment);}
-    label.textContent=budget.unknown===budget.total?'CPU budget: insufficient evidence':`CPU available ${budget.available.toLocaleString()} / ${budget.total.toLocaleString()} cycles${budget.unknown?` · ${budget.unknown} unknown`:''}`;
+    label.textContent=budget.unknown===budget.total?'CPU budget: insufficient evidence':`CPU available ${budget.available.toLocaleString('en-US')} / ${budget.total.toLocaleString('en-US')} cycles${budget.unknown?` · ${budget.unknown} unknown`:''}`;
     label.title=`VIC stalls ${budget.vic} · REU ${budget.reu} · halted ${budget.halted} · unknown ${budget.unknown}. Available time includes wait loops.`;
     el('budget').append(label,bar);controls();
   }

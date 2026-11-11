@@ -532,7 +532,7 @@ export function createMonitor({ getFacade, isPowered, isPaused, setPaused, relea
     }
     if (viewDirty || (presentationPending && now-lastPresentation>=100)) {
       if(presentationPending)presentationSampler.changed=sampler.consumeInterval(presentationPages);
-      changeCount.textContent=`${presentationSampler.changed.toLocaleString()} byte locations changed since the previous update`;
+      changeCount.textContent=`${presentationSampler.changed.toLocaleString('en-US')} byte locations changed since the previous update`;
       const storage = storageView.update(inspection, currentView === 'storage');
       if (currentView === 'atlas'&&!atlasPanel.classList.contains('is-captured-evidence')) {
         for (let page = 0; page < 256; page++) {

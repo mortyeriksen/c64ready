@@ -4,7 +4,8 @@
 // the board just played, then every other board the player has a result on,
 // the pages turn on their own even with the pointer resting on it, an unlock
 // soon after the post (the game plays on) calls it off, a set with a
-// game over opens it then and not on a posted score, and Space
+// game over opens it then and not on a posted score, its trophies page throws
+// each unlocked trophy's sparks on one canvas, and Space
 // (kept from the C64), the next game or a click beside it ends it. Esc does not.
 //
 // Needs Playwright's Chromium; without it it reports a SKIP.
@@ -313,6 +314,40 @@ try {
   expect(!errors.length, `no page errors (${errors.join('; ')})`);
   ok('achievements off, and no page errors');
   await first.context.close();
+
+  // 7b. The trophies page of a nearly finished set: each unlocked trophy throws its sparks on one
+  // small canvas over its tile, not an element a spark, and every one is gone when the sparks have faded.
+  const many = await openPage();
+  const thrown = await many.page.evaluate(async () => {
+    window.G.achievements = Array.from({ length: 30 }, (_, i) => ({ id: i + 1, title: `Goal ${i + 1}`, description: 'd', points: 5, unlocked: i < 24 }));
+    // Every spark element put into the page, as it goes in: what it is, where its middle is, and its pixel's size.
+    const seen = [];
+    new MutationObserver((list) => {
+      for (const m of list) for (const n of m.addedNodes) {
+        if (n.nodeType !== 1 || !n.classList.contains('ach-toast-spark')) continue;
+        const b = n.getBoundingClientRect();
+        seen.push({ tag: n.tagName, x: b.left + b.width / 2, y: b.top + b.height / 2, dot: n.width ? b.width / n.width : 0 });
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+    await window.attract.open(null);
+    const bars = document.querySelectorAll('.ach-attract-page');
+    bars[bars.length - 1].click();
+    await new Promise((r) => setTimeout(r, 4600));
+    const tiles = [...document.querySelectorAll('.ach-attract-tile.is-got')].map((t) => { const b = t.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
+    return { seen, tiles, title: document.querySelector('.ach-attract-title')?.getAttribute('aria-label'), left: document.querySelectorAll('.ach-toast-spark').length };
+  });
+  const tags = [...new Set(thrown.seen.map((s) => s.tag))].join();
+  expect(thrown.title === 'Trophies' && thrown.tiles.length === 24, `the trophies page shows its 24 unlocked trophies (${thrown.title}, ${thrown.tiles.length})`);
+  expect(thrown.seen.length > 0 && thrown.seen.length <= 24, `at most one spark element for each unlocked trophy (${thrown.seen.length} for 24)`);
+  expect(tags === 'CANVAS', `each a canvas (${tags})`);
+  // A canvas sits with its middle pixel on its tile's middle: within that pixel and the rounding of the layout.
+  const tileOf = (s) => thrown.tiles.findIndex((t) => Math.abs(t.x - s.x) <= s.dot + 3 && Math.abs(t.y - s.y) <= s.dot + 3);
+  const covered = new Set(thrown.seen.map(tileOf));
+  expect(!covered.has(-1) && covered.size === thrown.tiles.length, `one over each unlocked tile's middle (${covered.size} tiles covered${covered.has(-1) ? ', some off their tile' : ''})`);
+  expect(thrown.left === 0, `and all gone once the sparks have faded (${thrown.left} left)`);
+  expect(!many.errors.length, `no page errors (${many.errors.join('; ')})`);
+  ok('the trophies page throws its sparks on one canvas each');
+  await many.context.close();
 
   // 8. Reduced motion: the rows show whole at once.
   const still = await openPage({ reducedMotion: 'reduce' });

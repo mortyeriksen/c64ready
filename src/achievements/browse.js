@@ -405,7 +405,7 @@ function folderButton(ctx, status) {
     const files = input.files;
     if (!files?.length) return;
     btn.disabled = true;
-    status.textContent = `Looking through ${files.length.toLocaleString()} files…`;
+    status.textContent = `Looking through ${files.length.toLocaleString('en-US')} files…`;
     try {
       // The names each version may go by come only now: the list GAMES shows does without them.
       const { games } = await ctx.api.gamesWithLabels();

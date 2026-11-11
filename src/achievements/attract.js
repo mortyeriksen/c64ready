@@ -10,7 +10,7 @@
 // and the bars under it pick one. Space continues, as do the next game, ✕ and a
 // click beside it. Not Esc: in Retro Vibes or fullscreen that is taken already.
 
-import { KIND_ICONS, iconMask, flap, sparkle } from './toast.js';
+import { KIND_ICONS, iconMask, flap, sparkleAt } from './toast.js';
 import { ordinal } from './browse.js';
 
 /** How long each page shows. */
@@ -369,6 +369,9 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
     const grid = el('div', 'ach-attract-tiles');
     grid.style.setProperty('--ach-attract-cols', String(Math.min(list.length, list.length > 16 ? 10 : 7)));
     const next = list.findIndex((a) => !a.unlocked);
+    // Where each tile's sparks start, in the root: its middle and how far they reach.
+    const spots = new Float32Array(list.length * 3);
+    let across = 0;
     list.forEach((a, i) => {
       const t = el('span', `ach-attract-tile${a.unlocked ? ' is-got' : ''}`, a.unlocked ? null : String(i + 1));
       t.title = `${a.title}: ${a.description} (${a.points})`;
@@ -379,7 +382,7 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
         if (gen !== my) return;
         t.style.visibility = '';
         t.classList.add('is-in');
-        if (a.unlocked) later(120, () => { if (gen === my) sparkle(panel, t); });
+        if (a.unlocked) later(120, () => { if (gen === my) sparkleAt(panel, spots[i * 3], spots[i * 3 + 1], spots[i * 3 + 2], across); });
         if (i === next) later(300, () => t.classList.add('is-next'));
       });
     });
@@ -388,6 +391,19 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
     sum.append(el('span', '', `${got.length} / ${list.length} TROPHIES`), el('span', '', `${got.reduce((n, a) => n + (a.points || 0), 0)} / ${list.reduce((n, a) => n + (a.points || 0), 0)} PTS`));
     body.append(grid, sum);
     if (next >= 0) body.append(el('div', 'ach-attract-next', `NEXT: ${list[next].title.toUpperCase()} +${list[next].points}`));
+    if (still) return;
+    // The tiles are measured once, in one layout, for the whole page: by their place in the
+    // layout, as their rectangles are squeezed while the screen switches on.
+    across = root.clientWidth;
+    let x0 = 0, y0 = 0;
+    for (let n = grid.firstChild?.offsetParent; n && n !== root; n = n.offsetParent) { x0 += n.offsetLeft + n.clientLeft; y0 += n.offsetTop + n.clientTop; }
+    for (let i = 0; i < list.length; i++) {
+      if (!list[i].unlocked) continue;
+      const t = grid.children[i], w = t.offsetWidth, h = t.offsetHeight;
+      spots[i * 3] = x0 + t.offsetLeft + w / 2;
+      spots[i * 3 + 1] = y0 + t.offsetTop + h / 2;
+      spots[i * 3 + 2] = Math.max(w, h) * 1.8;
+    }
   }
 
   function close() {

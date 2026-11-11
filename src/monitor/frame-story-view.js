@@ -65,8 +65,8 @@ export function appendStoryMoment(parent,frame,moment,tick,{seek,pixel,openCode,
     for(const region of moment.regions){
       const b=button(regions,'',()=>pixel(region.point.x,region.point.y));b.disabled=!region.point;
       const slots=[];for(let s=0;s<8;s++)if(region.slots&(1<<s))slots.push(s);
-      b.append(node('strong',region.label),node('span',region.uncovered?`${region.uncovered.toLocaleString()} uncovered positions`:'Border covers this region'),node('small',region.spritePixels===null?'Visible sprite evidence unavailable':`${region.spritePixels.toLocaleString()} visible sprite pixels${slots.length?` · slots ${slots.join(', ')}`:''}`));
-      if(region.graphicsSamples!==null)b.append(node('small',`${region.graphicsSamples.toLocaleString()} graphics-source samples`));
+      b.append(node('strong',region.label),node('span',region.uncovered?`${region.uncovered.toLocaleString('en-US')} uncovered positions`:'Border covers this region'),node('small',region.spritePixels===null?'Visible sprite evidence unavailable':`${region.spritePixels.toLocaleString('en-US')} visible sprite pixels${slots.length?` · slots ${slots.join(', ')}`:''}`));
+      if(region.graphicsSamples!==null)b.append(node('small',`${region.graphicsSamples.toLocaleString('en-US')} graphics-source samples`));
     }
     parent.append(node('p','Choose an edge to explain a recorded pixel there. Sprite counts include black pixels. Corners count toward both adjacent edges. Source samples still need the per-pixel consistency check.','monitor-story-note'));
   }

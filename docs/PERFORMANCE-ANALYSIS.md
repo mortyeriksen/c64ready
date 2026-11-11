@@ -171,10 +171,49 @@ in the browser or `NAME=0` in Node harnesses.
   and boxes no numbers: about 13 bytes a frame, from about 260. The screen provider
   reuses its descriptor, and Starry pools its meteor geometry
   and material. See [Retro Vibes](RETROVIBES-ARCHITECTURE.md) §§4–5.
+- **Retro Vibes on the page's tick.** The 3D view has no loop of its own: the
+  page's tick runs the machine's frames and then draws the view, once per
+  display frame. The modelled screen's texture is uploaded, and its mipmaps
+  rebuilt, only when the machine has made a new picture, so a 120 Hz display
+  uploads 50 times a second and a paused machine not at all. The page canvas
+  under the view is not drawn while the view covers it, and its animations are
+  paused. See [Retro Vibes](RETROVIBES-ARCHITECTURE.md) §4.
+- **Retro Vibes quality.** The view draws at most a 4K picture's pixels, so a
+  5K or 6K screen costs no more than a 4K one. A low-power device runs a lean
+  pipeline: the scene into one multisampled buffer, then tone mapping, sRGB and
+  the grade in one pass, at pixel ratio 1.5 at most. A view whose frames keep
+  coming too slowly steps down by itself (`VIBES_QUALITY_GUARD`, default on,
+  `?VIBES_QUALITY_GUARD=0` to turn it off): pixel ratio first, then the bloom,
+  then smoke and contact shadows. Scene files are parsed inside the pause
+  around a scene swap, not before it. A key press re-uploads one keycap's
+  vertices and leaves the cached shadow maps alone. Starry Plain draws its
+  Milky Way once into a texture. See
+  [Retro Vibes](RETROVIBES-ARCHITECTURE.md) §2 and §5.
 - **Trophy HUD and toasts.** A running score is painted at most once per
-  display frame and writes only what changed. The engine's `game` is a fresh
+  display frame and writes only what changed. A hidden HUD formats and writes
+  nothing: only the rank is followed, for the badge on its button, and only
+  once the board's standings are known. The engine finds a running score's
+  board with a loop, not a closure, and keeps the last value it formatted, so
+  a score shown in several places is formatted once a frame. The engine's
+  `game` is a fresh
   snapshot on every read, so nothing on a per-frame path reads it: attract
-  mode looks at the game only when a board starts or a score is posted. The HUD's arrangements are
+  mode looks at the game only when a board starts or a score is posted, and the
+  Achievements window asks which game is loaded through `gameHash`, which
+  builds nothing. A notice's glow, the points chip's pop, the gold card's foil
+  and the HUD's sweep and slot flash animate only transform and opacity, which
+  the compositor runs without a repaint: a glow is a shadow painted once whose
+  opacity changes, and a moving light is an element moved inside one that
+  clips it (`test/achievements/ach-motion-spec-test.js`). A toast's confetti is
+  drawn on a canvas of character pixels
+  that the page scales up, not one the size of the view at device resolution.
+  An unlock's sparks are one small canvas of spark-sized pixels, stepped in
+  typed arrays, not an element a spark: attract mode's trophies page adds one
+  canvas for each unlocked trophy and measures its tiles once. Text that
+  changes (a counting number, a rank, the HUD's counts) is written in place in
+  its text node, since a node put in or taken out has the page's `body:has()`
+  rules restyle the whole page, and a count reserves its width in the
+  stylesheet, with no style read back. The HUD's slots start their effects
+  again on one layout, not one each. The HUD's arrangements are
   measured on an unseen copy, and again only when what it holds changes size.
   Laying it out reads nothing back: the view's size comes from its
   ResizeObserver and the HUD's own from the fit. The toast draws its close

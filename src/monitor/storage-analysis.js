@@ -56,7 +56,7 @@ export function createStorageAnalysis(root, { openCode, openMemory, openFrame, o
         const row=document.createElement('div'),button=document.createElement('button'),description=document.createElement('span');
         button.type='button';button.className='monitor-storage-link';button.textContent=`$${hex(load.address)}–$${hex((load.address+load.bytes-1)&65535)} ↗`;
         button.addEventListener('click',()=>openMemory(load.address));button.title='Inspect this address in current memory';
-        description.textContent=`Completed accelerated LOAD · ${load.bytes.toLocaleString()} bytes · ${load.ramBytes===load.bytes?'RAM destination':'CPU destination, partly I/O or special mapping'}`;
+        description.textContent=`Completed accelerated LOAD · ${load.bytes.toLocaleString('en-US')} bytes · ${load.ramBytes===load.bytes?'RAM destination':'CPU destination, partly I/O or special mapping'}`;
         row.append(description,button);el('loads').append(row);
       }
       if(loads.length){const note=document.createElement('small');note.textContent=`Latest retained loads from eight emulated seconds${current.activity?.truncated?', earlier records omitted at the buffer limit':''}. Links show current memory, which may have changed.`;el('loads').append(note);}
@@ -107,7 +107,7 @@ export function createStorageAnalysis(root, { openCode, openMemory, openFrame, o
     line(20,177,780,177);
     accessIndex=Math.min(accessIndex,Math.max(0,events.length-1));
     const e=events[accessIndex];
-    if(e){line(20+e.tick/data.cycles*760,138,20+e.tick/data.cycles*760,180,ink,2);el('reading').textContent=`${data.incomplete?'At least ':''}${events.length.toLocaleString()} ${events.length===1?'access':'accesses'} · ${e.write?'write':'read'} $${hex(e.address)} · REU $${hex(e.expansion,6)} · byte $${hex(e.value,2)}`;}
+    if(e){line(20+e.tick/data.cycles*760,138,20+e.tick/data.cycles*760,180,ink,2);el('reading').textContent=`${data.incomplete?'At least ':''}${events.length.toLocaleString('en-US')} ${events.length===1?'access':'accesses'} · ${e.write?'write':'read'} $${hex(e.address)} · REU $${hex(e.expansion,6)} · byte $${hex(e.value,2)}`;}
     else el('reading').textContent=!data.available?'Waiting for a detailed frame':data.incomplete?'Incomplete frame: no REU accesses recorded':'No REU accesses in this frame';
     el('note').textContent=e?`Selected access: raster ${Math.floor(e.tick/frame.cyclesPerLine)}, cycle ${e.tick%frame.cyclesPerLine+1}. ${data.incomplete?'Capture limit reached. ':''}Accesses do not prove a completed transfer.`:'The diagram shows current registers, not transfer progress. Pause to hold a frame for inspection.';
     el('video').hidden=!e;el('memory').hidden=!e;

@@ -10,9 +10,10 @@
 //
 // A running score can change every frame: it is painted at most once per
 // display frame, writes only what changed, and allocates nothing but the
-// texts it shows.
+// texts it shows. Hidden, it paints nothing: only the rank is followed, for
+// the badge on its button.
 
-import { KIND_ICONS, iconMask, drawGameIcon, flap, count, sparkle, tremble, burst } from './toast.js';
+import { KIND_ICONS, iconMask, drawGameIcon, flap, count, sparkle, tremble, burst, write } from './toast.js';
 import { gameIconUrl } from './game-icons.js';
 import { ordinal, ago } from './browse.js';
 
@@ -165,9 +166,6 @@ function tool(cls, label, paths) {
   return b;
 }
 const replay = (node, cls) => { node.classList.remove(cls); void node.offsetWidth; node.classList.add(cls); };
-// A text changed in place, in its own text node: inserting a node would have the
-// page's body:has() rules restyle the whole page.
-const write = (node, text) => { if (node.firstChild) node.firstChild.data = text; else node.textContent = text; };
 
 /**
  * @param {object} o
@@ -234,7 +232,9 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
   tools.append(grip, turn, fade, hide);
   const corner = el('span', 'ach-hud-resize');
   corner.title = 'Drag to reshape';
-  hud.append(inner, tools, corner);
+  // The sweep's light moves inside this, which clips it to the HUD (styles-achievements.css).
+  const shine = el('i', 'ach-hud-shine');
+  hud.append(inner, tools, corner, shine);
   // The lines a drag snaps to, made once.
   const guideV = el('i', 'ach-hud-guide v'), guideH = el('i', 'ach-hud-guide h');
   guideV.hidden = guideH.hidden = true;
@@ -286,9 +286,9 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
       s.setAttribute('aria-label', `${a.title}: ${isGot(a) ? 'unlocked' : a.challenge === 'out' ? 'out for now' : 'locked'}, ${a.points} points`);
     });
     const n = list.filter(isGot).length;
-    got.textContent = String(n);
-    of.textContent = `/${list.length}`;
-    total.textContent = ` / ${list.reduce((t, a) => t + (a.points || 0), 0)} pts`;
+    write(got, String(n));
+    write(of, `/${list.length}`);
+    write(total, ` / ${list.reduce((t, a) => t + (a.points || 0), 0)} pts`);
     const len = 2 * Math.PI * 18.5;
     ringFg?.setAttribute('stroke-dasharray', `${list.length ? (len * n) / list.length : 0} ${len}`);
   }
@@ -327,7 +327,7 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
     shownDiff = NaN;
     hud.dataset.chase = l ? 'on' : 'off';
     const name = l && game?.leaderboards.length > 1 ? boardLabel(l.title) : '';
-    boardName.textContent = name;
+    write(boardName, name);
     boardName.hidden = !name;
   }
 
@@ -387,9 +387,20 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
     shownFill = q;
     fill.style.transform = FILL[q];
   }
-  // Running scores come every frame, or faster in warp: painted once per display frame.
+  // Running scores come every frame, or faster in warp: painted once per display frame. Hidden,
+  // nothing is formatted or written: the rank alone is followed, for the badge on the button.
   let framed = false;
-  function paintFrame() { framed = false; paintChase(true); }
+  function paintFrame() {
+    framed = false;
+    if (hud.hidden) followRank(); else paintChase(true);
+  }
+  function followRank() {
+    const st = board ? standings.get(board.id) : null;
+    if (!st || live == null) return;
+    const rank = chase(st.others, live, board.lowerIsBetter, result).rank;
+    if (lastRank && rank < lastRank) climbed(rank);
+    lastRank = rank;
+  }
 
   // ── Layout: the HUD is the box drawn, its contents the arrangement that fills it best ──
   // The view's size, from its ResizeObserver: laying out reads nothing back.
@@ -477,12 +488,23 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
     freshen();
     return changed;
   }
-  // Slots clack back in one by one, the rest drawn in a few raster lines at a time.
+  // Slots clack back in one by one, the rest drawn in a few raster lines at a time. Every
+  // effect starts again on one layout: its class comes off them all, then goes back on.
   function redraw(delay = 0) {
     if (reducedMotion()) return;
-    for (const n of [id, chaseEl]) { n.style.animationDelay = `${delay}ms`; replay(n, 'ach-hud-in-raster'); }
-    // A custom property, so a slot's own effects keep their timing.
-    [...slots.children].forEach((s, i) => { s.style.setProperty('--ach-hud-in', `${delay + i * 22}ms`); replay(s, 'ach-hud-clack'); });
+    const list = slots.children;
+    id.classList.remove('ach-hud-in-raster');
+    chaseEl.classList.remove('ach-hud-in-raster');
+    for (let i = 0; i < list.length; i++) list[i].classList.remove('ach-hud-clack');
+    void hud.offsetWidth;
+    id.style.animationDelay = chaseEl.style.animationDelay = `${delay}ms`;
+    id.classList.add('ach-hud-in-raster');
+    chaseEl.classList.add('ach-hud-in-raster');
+    for (let i = 0; i < list.length; i++) {
+      // A custom property, so a slot's own effects keep their timing.
+      list[i].style.setProperty('--ach-hud-in', `${delay + i * 22}ms`);
+      list[i].classList.add('ach-hud-clack');
+    }
   }
   // A move and reshape as one: the skin glides from where it was, its contents redraw.
   function morph(change) {
@@ -507,6 +529,8 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
     const from = button.getBoundingClientRect();
     if (show) {
       hud.hidden = false;
+      // A score that ran while it was hidden was not painted.
+      paintChase(false);
       layout();
       pending = 0;
       badge('');
@@ -715,10 +739,14 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
     paintSlots();
     const i = game?.achievements.findIndex((a) => a.id === aid) ?? -1;
     const s = slots.children[i];
-    if (!onScreen() || !s || reducedMotion()) { pts.textContent = String(gotPoints()); return; }
-    replay(s, 'ach-hud-flash');
+    if (!onScreen() || !s || reducedMotion()) { write(pts, String(gotPoints())); return; }
+    // The flash and the sweep start again on the layout the sparks read their slot's place from:
+    // one read, between the writes before it and those after.
+    s.classList.remove('ach-hud-flash');
+    hud.classList.remove('ach-hud-sweep');
     sparkle(hud, s);
-    replay(hud, 'ach-hud-sweep');
+    s.classList.add('ach-hud-flash');
+    hud.classList.add('ach-hud-sweep');
     count(pts, before, gotPoints(), String, 600);
     counting = performance.now() + 1100;
     wake();
@@ -726,7 +754,7 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
   function landHidden(aid) {
     arriving.delete(aid);
     paintSlots();
-    pts.textContent = String(gotPoints());
+    write(pts, String(gotPoints()));
     pending++;
     badge(`+${pending}`);
     ping();
@@ -816,7 +844,7 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
       shownDiff = NaN;
       setBoard(game?.leaderboards[0] ?? null);
       if (game) {
-        title.textContent = game.title;
+        write(title, game.title);
         drawGameIcon(icon, gameIconUrl(game.id));
         buildSlots();
         hud.dataset.slots = game.achievements.length ? 'on' : 'off';
@@ -827,7 +855,7 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
     if (game && (changed || signedInAs)) for (const l of game.leaderboards) stale.add(l.id);
     if (game) {
       paintSlots();
-      if (performance.now() > counting) pts.textContent = String(gotPoints());
+      if (performance.now() > counting) write(pts, String(gotPoints()));
       paintChase(false);
     }
     sync(false);
@@ -859,7 +887,8 @@ export function createTrophyHud({ area, button, engine, me = () => null, storage
       if (board === null || (board.id !== id && !keep)) setBoard(l);
       if (board.id !== id) return;
       live = e.value;
-      if (!framed && !area.hidden) { framed = true; requestAnimationFrame(paintFrame); }
+      // Hidden, there is a rank to follow only once the board's standings are known.
+      if (!framed && !area.hidden && (!hud.hidden || standings.has(id))) { framed = true; requestAnimationFrame(paintFrame); }
       return;
     }
     running.delete(id);

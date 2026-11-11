@@ -76,6 +76,22 @@ export function markShared(val) {
 // round of per-object uniform uploads. `moving` lists what the scene animates;
 // those and everything under them stay as they are, as do transparent meshes,
 // instances, render-ordered meshes and meshes with their own render hook.
+// Frees the render targets an object's shader reads. three keeps a link from
+// a target's texture back to the target, which is the only way to one that its
+// owner keeps to itself: Water's mirror, a scene's baked sky. Disposing the
+// texture alone frees nothing. A texture tagged _shared outlives the scene.
+export function disposeRenderTargets(object) {
+  const materials = Array.isArray(object.material) ? object.material : object.material ? [object.material] : [];
+  for (const material of materials) {
+    const uniforms = material.uniforms;
+    if (!uniforms) continue;
+    for (const name in uniforms) {
+      const texture = uniforms[name]?.value;
+      if (texture && texture.isTexture && texture.renderTarget && !texture._shared) texture.renderTarget.dispose();
+    }
+  }
+}
+
 export function mergeStatic(root, moving = []) {
   root.updateWorldMatrix(true, true);
   const toRoot = new THREE.Matrix4().copy(root.matrixWorld).invert();

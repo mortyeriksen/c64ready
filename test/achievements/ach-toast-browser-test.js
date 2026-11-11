@@ -1,7 +1,8 @@
 // The achievement toasts (src/achievements/toast.js, styles-achievements.css)
 // in a browser: every toast shows for the same time whatever its kind or
 // length, one at a time, inside the C64's top border at every size, sparkles
-// only for a big unlock, and no motion when the system asks for none.
+// only for a big unlock and on one small canvas, a text that changes is written
+// in place, and no motion when the system asks for none.
 //
 // Needs Playwright's Chromium; without it it reports a SKIP.
 import fs from 'node:fs';
@@ -98,6 +99,26 @@ try {
   expect(await count(page) === 0, 'the queue empties');
   ok('toasts queue one at a time');
 
+  // 2b. A new game drops those still waiting: the one showing keeps its time.
+  await page.evaluate(() => ['Old one', 'Old two', 'Old three'].forEach((title) => window.toasts.show({ kind: 'unlock', title, points: 5 })));
+  await wait(page, 50);
+  await page.evaluate(() => window.toasts.dropWaiting());
+  expect(await count(page) === 1, 'the toast showing stays');
+  expect((await page.locator('.ach-toast-title').getAttribute('aria-label')) === 'Old one', 'it is the one that was showing');
+  expect(await page.locator('.ach-toast-more').count() === 0, 'its count of those waiting goes');
+  await page.evaluate(() => window.toasts.show({ kind: 'notice', title: 'New game' }));
+  await wait(page, 50);
+  expect((await page.locator('.ach-toast-more').textContent()) === '+1', 'a toast after it waits as before');
+  await close(page);
+  await wait(page, 500);
+  expect((await page.locator('.ach-toast-title').getAttribute('aria-label')) === 'New game', 'and is next, not those dropped');
+  await close(page);
+  await wait(page, 500);
+  expect(await count(page) === 0, 'nothing dropped comes back');
+  await page.evaluate(() => window.toasts.dropWaiting());
+  expect(await count(page) === 0, 'with nothing showing it does nothing');
+  ok('a new game drops the toasts still waiting');
+
   // 3. Inside the top border at every size, larger with a larger picture.
   await page.waitForFunction(() => !document.querySelector('.ach-toast'));
   const sizes = {};
@@ -134,9 +155,21 @@ try {
       pop: document.querySelector('.ach-toast-points').classList.contains('ach-toast-pop'),
       sweep: document.querySelector('.ach-toast').classList.contains('ach-toast-sweep'),
       sparks: document.querySelectorAll('.ach-toast-spark').length,
+      // What draws the sparks: its element, its pixels, and its box against the room it is thrown into.
+      spark: [...document.querySelectorAll('.ach-toast-spark')].map((s) => {
+        const box = s.getBoundingClientRect(), room = s.parentElement.getBoundingClientRect();
+        return { tag: s.tagName, w: s.width, h: s.height, cssW: box.width, cssH: box.height, roomW: room.width };
+      }),
     }));
     await wait(page, 900);
-    const big = await page.evaluate(() => ({ pieces: document.querySelectorAll('.ach-toast-shower').length, rings: document.querySelectorAll('.ach-toast-ring').length }));
+    const big = await page.evaluate(() => {
+      const c = document.querySelector('.ach-toast-shower');
+      const box = c?.getBoundingClientRect(), room = c?.parentElement.getBoundingClientRect();
+      return {
+        pieces: document.querySelectorAll('.ach-toast-shower').length, rings: document.querySelectorAll('.ach-toast-ring').length,
+        shower: c ? { w: c.width, h: c.height, cssW: box.width, cssH: box.height, roomW: room.width, roomH: room.height } : null,
+      };
+    });
     await close(page);
     await page.waitForFunction(() => !document.querySelector('.ach-toast, .ach-toast-shower, .ach-toast-ring, .ach-toast-glint, .ach-toast-spark'), null, { timeout: 5000 });
     return { early, at, big };
@@ -146,8 +179,17 @@ try {
   expect(p5.at.chip === '+5' && p5.at.pop && !p5.at.sweep && !p5.at.sparks, `5 points: the count lands and the chip pops, nothing more (${JSON.stringify(p5.at)})`);
   expect(p10.at.sweep && !p10.at.sparks, `10 points: the sweep (${JSON.stringify(p10.at)})`);
   expect(p25.at.sweep && p25.at.sparks > 0 && !p25.big.pieces, `25 points: the sweep and sparkles (${JSON.stringify(p25)})`);
+  // The sparkles are one small canvas of spark-sized pixels, not an element a spark.
+  const sp = p25.at.spark[0], dot = sp ? sp.cssW / sp.w : 0;
+  expect(p25.at.spark.length === 1 && sp.tag === 'CANVAS', `the sparkles are drawn on one canvas (${p25.at.spark.length} of ${[...new Set(p25.at.spark.map((s) => s.tag))].join()})`);
+  expect(sp && sp.w === sp.h && Number.isInteger(dot) && dot >= 2 && sp.cssH / sp.h === dot, `in spark-sized pixels, each a whole number of page pixels (${JSON.stringify(sp)})`);
+  expect(sp && sp.cssW < sp.roomW / 2, `and only as large as the sparks reach (${JSON.stringify(sp)})`);
   expect(p50.big.pieces === 1 && p50.big.rings > 0, `50 points: the PETSCII shower and a shockwave (${JSON.stringify(p50.big)})`);
   expect(true, 'and every piece is gone after');
+  // The shower's canvas holds character pixels, each a whole number of page pixels, and covers its layer.
+  const sh = p50.big.shower, cell = sh ? sh.cssW / sh.w : 0;
+  expect(sh && Number.isInteger(cell) && cell >= 2 && sh.cssH / sh.h === cell, `the shower's canvas is in character pixels (${JSON.stringify(sh)})`);
+  expect(sh && sh.cssW <= sh.roomW && sh.roomW - sh.cssW < cell && sh.cssH <= sh.roomH && sh.roomH - sh.cssH < cell, `and it covers its layer to within one of them (${JSON.stringify(sh)})`);
   ok('the payoff is scaled by points');
 
   // 4b. Scores: a plain one, a new best stamped BEST, a new first place turned to gold with #1.
@@ -207,6 +249,56 @@ try {
   await page.waitForFunction(() => !document.querySelector('.ach-toast'), null, { timeout: 4000 }).catch(() => {});
   expect(await count(page) === 0, 'and then goes');
   ok('a finished set');
+
+  // 4d. A text that changes is written in place, in its one text node: a node put in or taken out
+  // would have the page's body:has() rules restyle the whole page. The points as they count, a
+  // score as it rolls, a rank as it ticks, and the count of toasts waiting. And showing a toast
+  // that counts reads no style back.
+  // The changes under `sel` from now on: text changed in place, or nodes put in and taken out.
+  const watch = (sel) => page.evaluate((sel) => {
+    window.changes ??= {};
+    const c = window.changes[sel] = { text: 0, nodes: 0 };
+    new MutationObserver((list) => { for (const m of list) c[m.type === 'characterData' ? 'text' : 'nodes']++; })
+      .observe(document.querySelector(sel), { childList: true, characterData: true, subtree: true });
+  }, sel);
+  const changes = (sel) => page.evaluate((sel) => ({ ...window.changes[sel] }), sel);
+  const styleReads = await page.evaluate(() => {
+    const read = window.getComputedStyle;
+    let n = 0;
+    window.getComputedStyle = function (...a) { n++; return read.apply(this, a); };
+    try { window.lasting.show({ kind: 'unlock', title: 'Counted', text: 'Done.', points: 10 }); } finally { window.getComputedStyle = read; }
+    return n;
+  });
+  await watch('.ach-toast-points');
+  const chip0 = await page.evaluate(() => ({ text: document.querySelector('.ach-toast-points').textContent, width: document.querySelector('.ach-toast-points').offsetWidth }));
+  await wait(page, 1700);
+  const chip1 = await page.evaluate(() => ({ text: document.querySelector('.ach-toast-points').textContent, width: document.querySelector('.ach-toast-points').offsetWidth }));
+  const chipChanges = await changes('.ach-toast-points');
+  expect(chip0.text === '+0' && chip1.text === '+10', `the points count up (${chip0.text} to ${chip1.text})`);
+  expect(chipChanges.text > 0 && chipChanges.nodes === 0, `written in place (${chipChanges.text} text changes, ${chipChanges.nodes} node changes)`);
+  expect(styleReads === 0, `showing a toast that counts reads no computed style (${styleReads} reads)`);
+  expect(chip0.width === chip1.width, `and the chip has room for its last digit from the start (${chip0.width} px, then ${chip1.width} px)`);
+  // The count of those waiting: its element comes with the first, and its number changes in place.
+  await watch('.ach-toast');
+  await page.evaluate(() => window.lasting.show({ kind: 'unlock', title: 'Second', points: 5 }));
+  const one = { more: await page.locator('.ach-toast-more').textContent(), ...(await changes('.ach-toast')) };
+  await page.evaluate(() => window.lasting.show({ kind: 'unlock', title: 'Third', points: 5 }));
+  const two = { more: await page.locator('.ach-toast-more').textContent(), ...(await changes('.ach-toast')) };
+  expect(one.more === '+1' && two.more === '+2', `the waiting are counted (${one.more}, ${two.more})`);
+  expect(two.nodes === one.nodes && two.text === one.text + 1, `and the count changes in place (${two.text - one.text} text changes, ${two.nodes - one.nodes} node changes)`);
+  for (let i = 0; i < 3; i++) { await close(page); await wait(page, 500); }
+  await page.waitForFunction(() => !document.querySelector('.ach-toast'), null, { timeout: 5000 });
+  // A score rolling up from the old best, and its rank ticking down from fifth to second.
+  await page.evaluate(() => window.lasting.show({ kind: 'score', title: 'Your Score', text: 'New best!', score: { value: 7300, outcome: 'best', from: 4600, rankFrom: 5, rank: 2, format: (v) => v.toLocaleString('en-US') } }));
+  await watch('.ach-toast-num');
+  await watch('.ach-toast-rank');
+  await wait(page, 3000);
+  const rolled = { num: await page.locator('.ach-toast-num').textContent(), rank: await page.locator('.ach-toast-rank').textContent(), numChanges: await changes('.ach-toast-num'), rankChanges: await changes('.ach-toast-rank') };
+  expect(rolled.num === '7,300' && rolled.numChanges.text > 0 && rolled.numChanges.nodes === 0, `a score rolls up in place (${JSON.stringify(rolled.numChanges)}, to ${rolled.num})`);
+  expect(rolled.rank === '2' && rolled.rankChanges.text === 3 && rolled.rankChanges.nodes === 0, `and its rank ticks down in place (${JSON.stringify(rolled.rankChanges)}, to ${rolled.rank})`);
+  await close(page);
+  await page.waitForFunction(() => !document.querySelector('.ach-toast, .ach-toast-shower, .ach-toast-ring, .ach-toast-glint, .ach-toast-spark'), null, { timeout: 5000 });
+  ok('changing text is written in place');
 
   // 5. The action runs and closes the toast. Pointing at a toast holds its time.
   await page.evaluate(() => { window.signedIn = 0; window.toasts.show({ kind: 'score', title: 'High Score: 4,600', action: 'SIGN IN', onAction: () => window.signedIn++ }); });

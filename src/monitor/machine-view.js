@@ -110,7 +110,7 @@ export function createMachineView(root, navigate, openGuide) {
       if(pages[p]) { count++; ages[p]=now+1000; if(pages[p]>best){best=pages[p];memoryPage=p;} }
       else if(fresh&&ages[p]<=now) ages[p]=0;
     }
-    text('ram',`${count} / 256 pages changed`,`${changed.toLocaleString()} byte location${changed===1?'':'s'} observed changing`,'Explore graphics in Memory','RAM activity');
+    text('ram',`${count} / 256 pages changed`,`${changed.toLocaleString('en-US')} byte location${changed===1?'':'s'} observed changing`,'Explore graphics in Memory','RAM activity');
     const ram=contexts.ram;
     for(let p=0;p<256;p++){ram.globalAlpha=pages[p]?1:ages[p]?Math.max(.25,(ages[p]-now)/1000):1;ram.fillStyle=pages[p]||ages[p]?accent:quiet;ram.fillRect(p%16*16+1,Math.floor(p/16)*12+1,13,9);}
     ram.globalAlpha=1;

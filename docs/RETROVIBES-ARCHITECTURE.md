@@ -42,9 +42,9 @@ lazy-imports the module, builds the `ModelViewer` once, then calls `open()`:
   full-viewport overlay if the browser refuses.
 - `_loadModel()` loads the GLB (§8) while the current scene's optional
   `preload()` fetches its own files (the 80s Bedroom's room, §5), and waits for
-  both, so the C64 never appears in an empty scene. The render loop then starts via
-  `renderer.setAnimationLoop(this._loop)`, a WebXR-compatible loop that also drives
-  the per-eye frames while presenting.
+  both, so the C64 never appears in an empty scene. The render loop then starts
+  (`_startLoop()`): the page's own tick draws the view, and three is given only
+  the callback a headset session calls per frame (see "One loop" below).
 
 Closing happens three ways, all routed to the idempotent `close()`: the ✕ button
 (`#btn-model-viewer-close`), **Esc**, or **exiting native fullscreen**. Esc is
@@ -54,7 +54,7 @@ so you can type and watch the result on the modelled TV. A `fullscreenchange`
 handler closes the viewer when fullscreen is lost, unless it was left
 deliberately to enter VR. `close()` persists
 the camera, hides the overlay, exits fullscreen, stops the loop
-(`setAnimationLoop(null)`), then `_teardownGL()` disposes the per-open scene while
+(`_stopLoop()`), then `_teardownGL()` disposes the per-open scene while
 **keeping the renderer and its GL context alive**. The next `open()` rebuilds only
 the scene and reloads the model onto the same context; the module-level procedural
 texture caches and the IBL cubemap survive (tagged `_shared`), resident across opens.
@@ -67,19 +67,23 @@ open lets a few enter/exit cycles climb into the gigabytes and trip Safari's
 **What teardown frees instead**, explicitly, via `_disposeObject()`: geometry,
 materials **and their textures**, each post-processing pass's render targets
 (three's `EffectComposer.dispose()` frees only its own ping-pong targets, not
-the passes), reflector/shadow-map render targets, and instanced buffers. (One
-residual: a `THREE.Water` reflection target in the IK+ scene, which Water
-exposes no handle to free.) A lost context is recovered by a
+the passes), reflector/shadow-map render targets, and instanced buffers. A
+render target that only its owner's shader knows is reached through that shader
+(`disposeRenderTargets()` in `vibes-scene-common.js`, by the link three keeps
+from a target's texture back to the target): `THREE.Water`'s mirror in the IK+
+scene and Starry Plain's baked sky. A lost context is recovered by a
 `webglcontextrestored` handler that rebuilds the open scene.
 
 ## 2. The three.js scene
 
 `_initGL()` builds everything once:
 
-- **Renderer**: `WebGLRenderer({ antialias: true, alpha: true })`, pixel ratio
-  capped at `min(devicePixelRatio, 2)`, cleared with alpha 0 so the CSS backdrop
-  shows through, `SRGBColorSpace` output, `ACESFilmicToneMapping` at exposure 1.05,
-  soft shadow maps (`PCFShadowMap`). `renderer.xr.enabled = true` (§7).
+- **Renderer**: `WebGLRenderer({ antialias: true, alpha: true })`, cleared with
+  alpha 0 so the CSS backdrop shows through a scene without a sky texture,
+  `SRGBColorSpace` output, `ACESFilmicToneMapping` at exposure 1.05,
+  soft shadow maps (`PCFShadowMap`). `renderer.xr.enabled = true` (§7). The
+  pixel ratio is the display's, up to the current quality step's cap and no
+  more than the pixel budget allows (see "Quality" below).
 - **Environment (IBL)**: `RoomEnvironment` is baked once into a PMREM cubemap so the
   glossy / clearcoat surfaces catch real reflections; its strength is set per scene
   via `scene.environmentIntensity` (`envInt`).
@@ -90,13 +94,22 @@ exposes no handle to free.) A lost context is recovered by a
 - **OrbitControls**: left-drag rotate, wheel / pinch zoom, right-drag pan, damping
   0.08 for inertia. `zoomToCursor = false` so the dolly runs along the camera→target
   axis (§3). A slow idle auto-spin (`autoRotate`, speed 0.35) is restored from its
-  saved state and yields to the user on drag (§6).
-- **Post-processing** (`EffectComposer`, wrapped in try/catch → plain render on
-  failure): `RenderPass` → [`VolumePass` → `GTAOPass` → `BokehPass`] →
-  `UnrealBloomPass` → `OutputPass` (tone-map + sRGB) → `SMAAPass` →
-  `ShaderPass(GradeShader)`. The bracketed passes exist only off low-power devices
-  and run only for a scene that asks (`volume`, `ao`, `dof`, see Foggy Spotlight
-  below). The composer's targets carry a depth texture, which `VolumePass` reads. `GradeShader` is a gentle cinematic grade
+  saved state and yields to the user on drag (§6). `_loop` passes the time since
+  the previous frame to `controls.update()`, so the spin turns at one speed on a
+  60 Hz and a 120 Hz display.
+- **Post-processing** (wrapped in try/catch → plain render on failure). On a
+  computer, an `EffectComposer`: `RenderPass` → `VolumePass` → `GTAOPass` →
+  `BokehPass` → `UnrealBloomPass` → `OutputPass` (tone-map + sRGB) → `SMAAPass` →
+  `ShaderPass(GradeShader)`. The volume, occlusion and blur passes run only for a
+  scene that asks (`volume`, `ao`, `dof`, see Foggy Spotlight below). The
+  composer's targets carry a depth texture, which `VolumePass` reads. A low-power
+  device (a coarse pointer, or four cores or 4 GB at most) gets `LeanComposer`
+  instead (`vibes-grade.js`): the scene drawn once into one four-sample
+  half-float buffer, then `OutputGradePass`, which does the tone mapping, the
+  sRGB conversion and the grade in one fullscreen pass onto the canvas. That is
+  two full-frame draws where the full pipeline has six, with the multisampling
+  standing in for SMAA and no bloom. `GradeShader` and `OutputGradePass` share
+  one grade (`GRADE_BODY`). It is a gentle cinematic grade
   (edge chromatic aberration, vignette and film grain) running on the final sRGB
   image; its `uTime` (grain) is advanced each frame in `_loop`. It runs after
   SMAA, so the changing grain never reaches SMAA's edge detection and still
@@ -106,6 +119,19 @@ exposes no handle to free.) A lost context is recovered by a
   Foggy Spotlight has almost no chromatic aberration and minimal grain. IK+
   Sunset and Bedroom use restrained, separate settings. Bloom parameters are also overridden per
   scene. When post-processing is actually applied, see §5.
+- **Quality** (`vibes-quality.js`). The drawing buffer, and with it every
+  post-processing buffer, never holds more than a 4K picture's pixels
+  (`PIXEL_BUDGET`): laptop screens and 4K monitors keep ratio 2, and 5K and 6K
+  screens draw at less. `qualitySteps()` lists what a view gives up when it
+  cannot keep up, mildest first: pixel ratio 2, then 1.5, then 1, then the
+  bloom, then smoke and contact shadows. A low-power device starts at ratio 1.5
+  without bloom and extras. `QualityGuard` takes each drawn frame's time from
+  `_loop` and steps down when the median of a run stays above 40 ms, so a 30 Hz
+  display is not mistaken for a slow view. It stops watching once a run keeps
+  up, watches again on a scene switch, and keeps the level reached while the
+  page lives. A software rasteriser never steps, since no step makes it keep up
+  and the screenshot tools need the whole picture. `?VIBES_QUALITY_GUARD=0`
+  turns the guard off.
 
 ## 3. Framing, zoom-to-monitor & the persisted camera
 
@@ -139,8 +165,10 @@ modelled 1702's glass. It is set up by `_wireScreen()` and refreshed every frame
   the framebuffer projects onto it upright and undistorted. It creates a
   `THREE.DataTexture` of **384 × 272** (the VIC-II canvas, see
   [VIC-II](VIC2-ARCHITECTURE.md)) in `RGBAFormat` / `UnsignedByteType`,
-  `SRGBColorSpace`, `NearestFilter` for crisp chunky pixels, no mipmaps, `flipY
-  = true`.
+  `SRGBColorSpace`, `flipY = true`. Magnification is `NearestFilter`, for crisp
+  chunky pixels up close. Minification is trilinear with mipmaps and the
+  renderer's highest anisotropy, since point-sampling a shrunken picture makes
+  one-pixel font stems crawl as the camera moves.
   It is wrapped in a `MeshBasicMaterial({ map: tex, toneMapped: false })`, **unlit and
   tone-map-exempt**, so the screen reads as a self-emitting CRT at the true VIC
   palette, untouched by the scene's lighting or ACES grading. A CRT effect
@@ -154,8 +182,10 @@ modelled 1702's glass. It is set up by `_wireScreen()` and refreshed every frame
   the current frame. `null` (machine powered off) → `_setScreenLive(false)`, the
   untouched glass. Otherwise it goes live and, only when the framebuffer array
   reference changes (the machine is re-created on power / reset), re-points
-  `tex.image` at the new buffer; each display frame it flags `tex.needsUpdate = true`
-  so the bytes re-upload. At 10 Hz it also samples a fixed 16 × 12 pixel grid,
+  `tex.image` at the new buffer. It flags `tex.needsUpdate = true`, so the bytes
+  re-upload and the mipmaps rebuild, only when the provider's `serial` has moved:
+  the view draws at display rate, the machine makes 50 pictures a second, and a
+  paused machine makes none. At 10 Hz it also samples a fixed 16 × 12 pixel grid,
   converts the sRGB bytes to linear light and records average colour + luminance. Foggy Spotlight
   and Bedroom use that allocation-free result through `vibes-crt-light.js` to tint and
   brighten a smoothed, outward-facing CRT area light. Smoothing uses elapsed time;
@@ -165,8 +195,29 @@ modelled 1702's glass. It is set up by `_wireScreen()` and refreshed every frame
   existing flicker. Neither emitter adds a mesh, shadow map or post-processing pass.
 
 `main.js` supplies the provider via `setScreenProvider()`, reusing one
-`{ data: vic.frameBuffer, width: 384, height: 272 }` object while the machine runs,
-or returning `null` otherwise.
+`{ data: vic.frameBuffer, width: 384, height: 272, serial }` object while the
+machine runs, or returning `null` otherwise. `serial` is a counter `main.js`
+advances each time it has a new picture to show. A provider that leaves it out
+gets an upload on every frame.
+
+### One loop
+
+The emulator and the view share one tick, `rafLoop` in `main.js`: it runs the
+machine's frames, then calls `renderFrame(time)`. The view's screen therefore
+shows the frame just made, and the order cannot change with which of two loops
+happened to register first. `setFrameDriver(start, stop)` is how the view asks
+for that tick: `start` on open, so it also runs over a paused or powered-off
+machine, and `stop` on close, which ends the tick when the machine is off. A
+hidden tab draws no view frame. Without a frame driver the view falls back to
+three's `setAnimationLoop`.
+
+While the view covers the page, `main.js` does not draw the machine's picture
+on the page canvas underneath (`coversPage()`), and draws it once when the view
+closes. It also sets `body.vibes-open`, under which the page's own animations
+are paused (`styles-vibes.css`). Nothing over the view uses a
+`backdrop-filter`: the view changes every frame, so such a blur would be redone
+every frame. In VR the overlay steps aside, the page shows again, and the headset's
+session calls `_loop` per frame through `renderer.xr.setAnimationLoop`.
 
 ## 5. Scenes (moods)
 
@@ -193,10 +244,13 @@ as the one that replaced it (Spotlight as Foggy Spotlight).
 | 3 | **IK+ Sunset** | stone courtyard at dusk: torii and low sun over reflective water, autumn maple, layered headlands | **full composer** (bloom + warm halation + dusk split-tone grade); cool-shadow sunset IBL via `envMap`; ACES exposure 0.66, purple haze fog |
 | 4 | **80s Bedroom** | modelled teenager's bedroom at night (a GLB, below): amber desk lamp, lava lamp, live monitor spill, a flickering wood-grain TV, a half moon through the blinds, a moonbeam, a lit landing | **full composer** (bloom + amber halation + teal/amber grade) |
 
-Scenes flagged `basic` render with a plain `renderer.render` and bypass the composer;
-the **bloom + grade + SMAA** pipeline runs for the non-basic scenes
+Scenes flagged `basic` render with a plain `renderer.render` and bypass the composer.
+The post pipeline (§2) runs for the non-basic scenes
 (**Synthwave**, **Foggy Spotlight**, **IK+ Sunset**, **80s Bedroom**), while Starry Plain further uses raw tone mapping and
-bakes its glow into its own shaders. Backdrop gradients are cached equirect
+bakes its glow into its own shaders. Its Milky Way band depends only on the
+direction looked in, so the first frame draws the sky above the horizon once
+into a half-float texture (4096 × 1024, or 2048 × 512 on a low-power device)
+and the dome looks it up from then on. Backdrop gradients are cached equirect
 `CanvasTexture`s; the procedural props (star sprites, sunset sky/sun, water
 normal map, checker floor) are built once and cached at module level.
 
@@ -290,9 +344,12 @@ monitor's cables lie on the desk). `vibes-scene-bedroom.js` loads it.
   encoded as WebP at separate qualities. GPU instancing is not used: its
   shader variants cost compile time on the scene switch and save no bytes
   once repeated props join their material's mesh.
-- **Loaded with the model.** The scene's `preload()` fetches and parses the room
-  once per file and hands the result to `build()`, so opening the viewer on the
-  bedroom shows room and computer together. Switching to it with the 🎬 button
+- **Loaded with the model.** The scene's `preload()` fetches the room's files
+  once each and decodes nothing. `build()` parses them, inside the pause the
+  viewer puts around an open or a scene swap, since a parse holds the main
+  thread and would starve the sound of a running machine. The scene is drawn
+  only once its build has settled, so opening the viewer on the bedroom shows
+  room and computer together. Switching to it with the 🎬 button
   keeps the current scene on screen until the room is ready and then swaps
   whole; `LOADING SCENE…` appears only if that takes longer than 300 ms. Clicks
   while it loads step on to the next scene.
@@ -321,10 +378,12 @@ monitor's cables lie on the desk). `vibes-scene-bedroom.js` loads it.
 
 Bedroom and Foggy Spotlight set `staticShadows`. `vibes-shadow-cache.js` watches the
 casters, their ancestors, shadow lights and light targets. Transforms, visibility,
-vertex/index buffer versions (including animated keycaps), instanced matrices and
+vertex/index buffer versions, instanced matrices and
 shadow camera parameters invalidate the maps. Camera orbit, light intensity and
-non-casting dust do not. Scene switches rebuild dependencies and request fresh maps;
-reparenting tracked objects rebuilds the dependencies too. Code adding casters to
+non-casting dust do not. Nor do vertex uploads on a mesh marked
+`userData.steadyShadow`: the keyboard, whose caps sink too little to show in
+its shadow. Scene switches rebuild dependencies and request fresh maps.
+Reparenting tracked objects rebuilds the dependencies too. Code adding casters to
 an existing scene must call the cache's `rebuild()`.
 
 A scene whose casters move only slowly sets `shadowHz` instead
@@ -333,7 +392,9 @@ uses 10 Hz, since only the maple's sway moves a caster, and at that rate the
 sway shifts its shadow by a fraction of a texel per refresh.
 
 IK+ (water) and Synthwave (road mirror) refresh their offscreen reflection at
-30 Hz, reducing the extra scene render. The water's wave time still advances
+30 Hz, reducing the extra scene render. On a low-power device IK+'s mirror is
+256 px and refreshes at 15 Hz (`waterMirror()`), and Synthwave paints its road
+without one. The water's wave time still advances
 every display frame. Projection changes and XR eye renders bypass the rate
 limit. Outside XR the viewer refreshes the mirror before the main render, not
 inside it: three keeps one light state per render nesting depth, and a nested
@@ -364,8 +425,10 @@ direction vector; its maximum lifetime is shorter than the minimum spawn interva
   viewer. The preference persists (`isStudio()` / `setStudio()` /
   `_applyStudio()`), so the viewer reopens as bare or as furnished as it was
   left.
-- **Keycap press.** The RETURN keycap on the `computer_keyboard` mesh gets a small
-  press animation (`attachKeycapPresses`, advanced each frame via `this._keycap.update()`).
+- **Keycap press.** The keycaps on the `computer_keyboard` mesh sink while their
+  C64 keys are held (`attachKeycapPresses`, advanced each frame via
+  `this._keycap.update()`). A moving cap uploads only its own span of the
+  keyboard's vertex buffer.
 - **Power LEDs.** The GLB bakes each LED lens into a shared mesh. `_wireLeds` /
   `_recolorLeds` / `_wireMonitorPowerLed` isolate a lens's triangles, by
   base-texture hue within a gated region or, for the monitor lamp, by a
@@ -466,9 +529,9 @@ loop is already stopped.
   0.8 s with a cold shader cache. A switch's time is otherwise mostly the GPU
   process compiling its shader programs, so a scene's count of distinct
   material variants sets how long its first visit takes.
-- **Runs only while open.** The render loop is a `setAnimationLoop` started in `open()`
-  and cleared in `close()`, so the viewer costs nothing when closed; `_updateScreen`
-  also bails unless `running`.
+- **Runs only while open.** The view draws from the page's tick between `open()`
+  and `close()` (§4, "One loop"), so the viewer costs nothing when closed.
+  `_updateScreen` also bails unless `running`.
 - **Scene teardown on close.** `_teardownGL()` frees every per-open resource and
   reference but keeps the renderer/context and the `_shared` module-level caches
   alive for the next open; the full disposal inventory and the WebKit rationale

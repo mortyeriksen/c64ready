@@ -57,6 +57,9 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
   const KNOWN_MS = 10 * 60_000;
   let generation = 0;
   let enabled = true;       // off: nothing loaded is hashed or looked up, and no game is kept
+  // The value formatted last, its format and its text: a running score is shown in several places
+  // each frame, and rcheevos writes it once.
+  let lastValue = NaN, lastFormat = null, lastText = '';
 
   // The account's unlocks of a game, id → when (unlocked this session: now).
   const unlockMap = (data) => new Map((data.unlocks ?? data.unlocked.map((id) => ({ id, at: null }))).map((u) => [u.id, u.at]));
@@ -301,6 +304,13 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
     return false;
   }
 
+  /** The game's leaderboard `id`, or null: a loop, so a running score's frame allocates no closure. */
+  function boardOf(id) {
+    const boards = game.leaderboards;
+    for (let i = 0; i < boards.length; i++) if (boards[i].id === id) return boards[i];
+    return null;
+  }
+
   /** A challenge can be earned again, or no longer. */
   function challenge(id, state) {
     const a = game.achievements.find((x) => x.id === id);
@@ -342,6 +352,9 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
 
   return {
     get game() { return snapshot(); },
+    /** The loaded game's hash and id, or null: what a caller that only asks which game needs, with no snapshot built. */
+    get gameHash() { return game ? game.hash : null; },
+    get gameId() { return game ? game.id : null; },
     /** Whether achievements are on (Options ▸ Other). */
     get enabled() { return enabled; },
     /** Turns achievements off (the game, if any, is let go) or on (what is loaded is looked at again). */
@@ -366,7 +379,7 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
         else if (e.type === EVENT.ACHIEVEMENT_UNPRIMED && e.id < NOTICE_BASE && !triggeredIn(events, e.id)) challenge(e.id, 'out');
         else if (e.type === EVENT.LBOARD_TRIGGERED) submitted(e.id, e.value);
         else if (e.type === EVENT.LBOARD_STARTED || e.type === EVENT.LBOARD_UPDATED || e.type === EVENT.LBOARD_CANCELED) {
-          const l = game.leaderboards.find((x) => x.id === e.id);
+          const l = boardOf(e.id);
           if (l) onLeaderboard({ type: e.type === EVENT.LBOARD_STARTED ? 'started' : e.type === EVENT.LBOARD_CANCELED ? 'canceled' : 'updated', leaderboard: l, value: e.value });
         }
       }
@@ -434,19 +447,26 @@ export function createAchievementEngine({ account, base, fetchImpl = (...a) => f
     load: () => getRc().then(() => {}),
     /** A file's hash, as a loaded file is hashed to find its game, or null. */
     hash: (bytes) => getRc().then((r) => r.hash(bytes)),
-    /** A value in its leaderboard's format, as rcheevos writes it. */
     /**
-     * A value as shown. A score's leading zeros (rcheevos pads it to six digits) become no-break
-     * spaces, as wide as a digit in the fonts it is shown in, so columns of scores stay lined up.
-     * In a sentence, trim it.
+     * A value as shown, in its leaderboard's format as rcheevos writes it. A score's leading zeros
+     * (rcheevos pads it to six digits) become no-break spaces, as wide as a digit in the fonts it
+     * is shown in, so columns of scores stay lined up. In a sentence, trim it.
      */
     format(value, format) {
-      const text = rc ? rc.formatValue(value, format) : String(value);
-      if (format !== 'SCORE') return text;
-      // A running score comes every frame: the zeros are counted, the blanks made once.
-      let z = 0;
-      while (z < text.length - 1 && text.charCodeAt(z) === 48 && text.charCodeAt(z + 1) >= 48 && text.charCodeAt(z + 1) <= 57) z++;
-      return z ? BLANKS[z] + text.slice(z) : text;
+      if (value === lastValue && format === lastFormat) return lastText;
+      // Not kept until rcheevos is loaded: the plain number is not the text it then writes.
+      if (!rc) return String(value);
+      let text = rc.formatValue(value, format);
+      if (format === 'SCORE') {
+        // A running score comes every frame: the zeros are counted, the blanks made once.
+        let z = 0;
+        while (z < text.length - 1 && text.charCodeAt(z) === 48 && text.charCodeAt(z + 1) >= 48 && text.charCodeAt(z + 1) <= 57) z++;
+        if (z) text = BLANKS[z] + text.slice(z);
+      }
+      lastValue = value;
+      lastFormat = format;
+      lastText = text;
+      return text;
     },
   };
 }

@@ -3,8 +3,10 @@
 // it takes the box its corner is dragged to, its contents arranged to fit it,
 // it stays in the view and snaps to its edges, phones and tablets start
 // without it and get only the bar, the slim column and the pill, the chase
-// follows a running score at most once a frame, an unlock fills its slot, and a
-// challenge out for now powers down its slot and stamps its GAME tab card.
+// follows a running score at most once a frame and formats and writes nothing
+// while it is hidden, its slots clack in on one layout, an unlock fills its
+// slot and counts its points up in place, and a challenge out for now powers
+// down its slot and stamps its GAME tab card.
 //
 // Needs Playwright's Chromium; without it it reports a SKIP.
 import fs from 'node:fs';
@@ -170,6 +172,85 @@ try {
   expect(l.now.trim() === 'BEST' && l.value === '034600', 'when the game ends, back to the best');
   ok('the chase');
 
+  // 3b. Hidden, a running score costs nothing: no value is formatted and nothing is written.
+  // Shown again it is current. And hidden with the standings known, only the rank is followed,
+  // for the badge on the button.
+  const off = await openPage({}, JSON.stringify({ fx: 0.5, fy: 1, bw: 0.64, bh: 0.05, shown: false, fade: false }));
+  await loadGame(off.page);
+  expect(!(await shown(off.page)), 'stored hidden, it starts hidden');
+  // Scores sent `perFrame` at a time over `frames` display frames: the calls of engine.format and the changes in the HUD.
+  const running = (values, perFrame) => off.page.evaluate(async ([values, perFrame]) => {
+    const format = window.engine.format;
+    let formats = 0, writes = 0;
+    window.engine.format = (...a) => { formats++; return format(...a); };
+    const mo = new MutationObserver((m) => { writes += m.length; });
+    mo.observe(document.querySelector('.ach-hud'), { childList: true, characterData: true, attributes: true, subtree: true });
+    const frame = () => new Promise((r) => requestAnimationFrame(r));
+    for (let i = 0; i < values.length; i++) {
+      window.hud.leaderboardEvent({ type: 'updated', leaderboard: window.G.leaderboards[0], value: values[i] });
+      if ((i + 1) % perFrame === 0) await frame();
+    }
+    await frame(); await frame();
+    writes += mo.takeRecords().length;
+    mo.disconnect();
+    window.engine.format = format;
+    const b = document.querySelector('.model-viewer-hud-badge');
+    return { formats, writes, badge: b?.textContent ?? null, badgeClass: b?.className ?? '' };
+  }, [values, perFrame]);
+  const quiet = await running(Array.from({ length: 20 }, (_, i) => 30000 + i), 4);
+  expect(quiet.formats === 0, `hidden, a running score formats nothing (${quiet.formats} calls of engine.format for 20 scores over 5 frames)`);
+  expect(quiet.writes === 0, `and writes nothing into the HUD (${quiet.writes} changes)`);
+  const chaseLine = () => off.page.evaluate(() => ({ now: document.querySelector('.ach-hud-now').textContent.trim(), value: document.querySelector('.ach-hud-value').textContent, rank: document.querySelector('.ach-hud-rank').textContent }));
+  await off.page.click('#btn-model-viewer-hud');
+  await wait(off.page, 700);
+  let c = await chaseLine();
+  expect(c.now === 'NOW' && c.value === '030019', `shown, its score is the latest, formatted (${JSON.stringify(c)})`);
+  expect(c.rank === '4TH', `and ranked once its standings have come (${c.rank})`);
+  await off.page.click('#btn-model-viewer-hud');
+  await wait(off.page, 600);
+  expect(!(await shown(off.page)), 'hidden again');
+  const passing = await running([41500], 1);
+  expect(passing.badge === '3RD' && /\bis-rank\b/.test(passing.badgeClass), `hidden with the standings known, passing a player badges the button with the rank (${JSON.stringify(passing)})`);
+  expect(passing.formats === 0, `and still formats nothing (${passing.formats} calls of engine.format)`);
+  await off.page.click('#btn-model-viewer-hud');
+  await wait(off.page, 700);
+  c = await chaseLine();
+  expect(c.value === '041500' && c.rank === '3RD', `shown again, it is current (${JSON.stringify(c)})`);
+  ok('hidden, a running score formats and writes nothing');
+
+  // 3c. Its 14 slots clack back in on one layout, not one each: shown from its button, and
+  // turned while it shows, where every slot's effect starts again.
+  await off.page.evaluate(() => document.getElementById('btn-model-viewer-hud').click());
+  await wait(off.page, 600);
+  // The layout reads (offsetWidth, rectangles) while `click` is clicked and for a moment after.
+  const layoutReads = (click, ms) => off.page.evaluate(async ([click, ms]) => {
+    const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth');
+    const rect = Element.prototype.getBoundingClientRect;
+    let widths = 0, rects = 0, clacks = 0;
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', { ...width, get() { widths++; return width.get.call(this); } });
+    Element.prototype.getBoundingClientRect = function () { rects++; return rect.call(this); };
+    try {
+      document.querySelector(click).click();
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      clacks = document.getAnimations().filter((a) => a.animationName === 'ach-hud-clack' && a.playState === 'running').length;
+      await new Promise((r) => setTimeout(r, ms));
+    } finally {
+      Object.defineProperty(HTMLElement.prototype, 'offsetWidth', width);
+      Element.prototype.getBoundingClientRect = rect;
+    }
+    return { widths, rects, clacks, slots: document.querySelectorAll('.ach-hud-slot').length, shown: !document.querySelector('.ach-hud').hidden };
+  }, [click, ms]);
+  const showing = await layoutReads('#btn-model-viewer-hud', 700);
+  expect(showing.shown && showing.slots === 14 && showing.clacks === 14, `shown, its 14 slots clack in (${JSON.stringify(showing)})`);
+  expect(showing.widths <= 3, `on one layout, not one per slot (${showing.widths} offsetWidth reads for ${showing.slots} slots)`);
+  expect(showing.rects <= 4, `and a few rectangles (${showing.rects})`);
+  const turning = await layoutReads('.ach-hud-turn', 700);
+  expect(turning.clacks === 14, `turned, every slot's clack starts again (${turning.clacks} of 14 running)`);
+  expect(turning.widths <= 3, `on one layout too (${turning.widths} offsetWidth reads for ${turning.slots} slots)`);
+  expect(!off.errors.length, `no page errors (${off.errors.join('; ')})`);
+  ok('the slots clack in on one layout');
+  await off.context.close();
+
   // 4. The HUD is the box stored, its contents fitting inside it: a bar when wide, a column when tall.
   const fits = [];
   for (const [bw, bh, want] of [[0.64, 0.05, 'row'], [0.3, 0.09, 'row'], [0.2, 0.15, 'box'], [0.11, 0.26, 'col'], [0.035, 0.5, 'col'], [0.1, 0.02, 'pill']]) {
@@ -248,6 +329,10 @@ try {
 
   // 7. An unlock: its toast shows, then the trophy lands in its slot.
   await d.page.evaluate(() => {
+    // Its points as they count up: text changed in place, or nodes put in and taken out.
+    window.ptsChanges = { text: 0, nodes: 0 };
+    new MutationObserver((list) => { for (const m of list) window.ptsChanges[m.type === 'characterData' ? 'text' : 'nodes']++; })
+      .observe(document.querySelector('.ach-hud-words small i'), { childList: true, characterData: true, subtree: true });
     window.G.achievements[4].unlocked = true;
     window.toasts.show({ kind: 'unlock', title: 'Area 5', text: 'Clear area 5.', points: 5 });
     window.hud.unlocked(window.G.achievements[4]);
@@ -260,6 +345,10 @@ try {
   const late = await d.page.evaluate(() => ({ got: document.querySelectorAll('.ach-hud-slot')[4].classList.contains('is-got'), next: document.querySelectorAll('.ach-hud-slot')[5].classList.contains('is-next'), count: document.querySelector('.ach-hud-count').textContent }));
   expect(!early, 'the slot waits for its trophy');
   expect(late.got && late.next && late.count === '5/14', `then it is filled, the next is marked, the count is 5/14 (${JSON.stringify(late)})`);
+  await wait(d.page, 1200);
+  const pts = await d.page.evaluate(() => ({ ...window.ptsChanges, shown: document.querySelector('.ach-hud-words small i').textContent }));
+  expect(pts.shown === '25', `its points count up to the five more (${pts.shown})`);
+  expect(pts.text > 0 && pts.nodes === 0, `written in place, in the one text node (${pts.text} text changes, ${pts.nodes} node changes)`);
   ok('an unlock flies into its slot');
 
   // 7b. A challenge out for now: its slot powers down at once, a refresh leaves the effect running,

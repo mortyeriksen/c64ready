@@ -96,7 +96,7 @@ export function buildFrameStory(frame) {
   const bus = frame.analysis?.bus;
   if (bus) for (let t=0; t<bus.length; t++) if ((bus[t]&5)===5 && !(bus[t]&24)) { waits++; if(wait<0||(wait<frame.rasterOffset*cpl&&t>=frame.rasterOffset*cpl))wait=t; }
   if (wait >= 0) add({ id:'dma', title:'Video work leaves less time for code', tick:wait, precision:'cycle', rule:'2.2 / 2.3 / 3.8',
-    summary:`${waits.toLocaleString()} CPU cycles were blocked by the VIC in this recording.`,
+    summary:`${waits.toLocaleString('en-US')} CPU cycles were blocked by the VIC in this recording.`,
     mechanism:'Screen and sprite data share memory with the CPU. BA warns the CPU before AEC takes the bus. Reads can stop during the warning, while writes may still proceed. The exact cost depends on the recorded bus sequence.',
     evidence:'These are observed CPU stalls, not useful-work percentages. Sprite-enable bits alone cannot establish the cost or prove that a program deliberately stabilises timing.' });
   const q=frame.analysis?.sequencer;
@@ -188,7 +188,7 @@ export function buildFrameStory(frame) {
       const tick = (region.point.y + frame.rasterOffset) * cpl + Math.floor((region.point.x + 80) / 8);
       stops.push({ ...moment, id: `border:${region.label.toLowerCase()}`, kind: 'border', tick, line: Math.floor(tick / cpl), point: region.point,
         title: `${region.label} border: picture beyond the normal screen`,
-        summary: `${region.uncovered.toLocaleString()} uncovered positions in this edge region. ${region.spritePixels === null ? 'Visible sprite evidence is unavailable.' : `${region.spritePixels.toLocaleString()} recorded visible sprite pixels.`}` });
+        summary: `${region.uncovered.toLocaleString('en-US')} uncovered positions in this edge region. ${region.spritePixels === null ? 'Visible sprite evidence is unavailable.' : `${region.spritePixels.toLocaleString('en-US')} recorded visible sprite pixels.`}` });
     }
   }
   stops.sort((a,b)=>a.tick-b.tick);

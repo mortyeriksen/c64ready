@@ -115,7 +115,7 @@ export function attachKeycapPresses(keyboardMesh) {
     col: k.c, row: k.r,
     x0: k.cx - (k.hx ?? HX), x1: k.cx + (k.hx ?? HX),
     z0: k.cz - (k.hz ?? HZ), z1: k.cz + (k.hz ?? HZ),
-    verts: [], restY: [], cur: 0,
+    verts: [], restY: [], cur: 0, first: Infinity, last: -1,
   }));
 
   // One pass over the mesh: assign each vertex to the first key whose footprint
@@ -126,11 +126,20 @@ export function attachKeycapPresses(keyboardMesh) {
       const key = keys[k];
       if (x >= key.x0 && x <= key.x1 && z >= key.z0 && z <= key.z1) {
         key.verts.push(i); key.restY.push(posAttr.getY(i));
+        if (i < key.first) key.first = i;
+        if (i > key.last) key.last = i;
         break;
       }
     }
   }
+  // What is uploaded when a cap moves: the span of the buffer holding that
+  // cap's vertices, not the whole keyboard. `per` is the buffer's elements per
+  // vertex (the stride when positions are interleaved with other attributes).
   const dirty = posAttr.isInterleavedBufferAttribute ? posAttr.data : posAttr;
+  const per = posAttr.isInterleavedBufferAttribute ? posAttr.data.stride : posAttr.itemSize;
+  // A cap sinks by a few hundredths of a unit, which no shadow shows: the
+  // cached shadow maps stay as they are through a press (vibes-shadow-cache.js).
+  keyboardMesh.userData.steadyShadow = true;
 
   return {
     update() {
@@ -145,6 +154,7 @@ export function attachKeycapPresses(keyboardMesh) {
         key.cur += (target - key.cur) * LERP;
         if (Math.abs(target - key.cur) < 1e-4) key.cur = target;
         for (let j = 0; j < key.verts.length; j++) posAttr.setY(key.verts[j], key.restY[j] - key.cur);
+        dirty.addUpdateRange(key.first * per, (key.last - key.first + 1) * per);
         changed = true;
       }
       if (changed) dirty.needsUpdate = true;

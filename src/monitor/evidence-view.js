@@ -63,7 +63,7 @@ export function createEvidenceView(root,kind,openFrame,openMemory,{inline=false,
     if(usesRam)showBytes(base);
     if(kind==='learn'){
       const pixel=explainPixel(frame,px,py);text(pixel.title,pixel.text);showGraphics(pixel);if(pixel.address!==undefined){address.value=hex(pixel.address);showBytes(pixel.address);const section=text('Recorded source',`$${hex(pixel.address)}${pixel.value!==undefined?` supplied byte $${hex(pixel.value,2)}`:''}. This is source evidence, not proof of the programmer’s intent.`);if(pixel.tick!==undefined)jump(section,pixel.tick);if(openMemory){const button=document.createElement('button');button.className='btn';button.textContent='Inspect captured source in Memory';button.addEventListener('click',()=>openMemory(frame,pixel.tick??tick,pixel.address));section.append(button);}}
-      text('Independent border check',border.supported?`${border.checked.toLocaleString()} pixel positions checked against the six Bauer comparator rules: ${border.mismatches} mismatches. Stable border controls only.`:border.reason);
+      text('Independent border check',border.supported?`${border.checked.toLocaleString('en-US')} pixel positions checked against the six Bauer comparator rules: ${border.mismatches} mismatches. Stable border controls only.`:border.reason);
       for(const finding of findings){const section=text(`${finding.status}: ${finding.title}`,finding.text);jump(section,finding.tick);}
     }else if(kind==='atlas'){
       text('The memory used at this moment','This view reconstructs underlying RAM from the frame-boundary snapshot and actual recorded RAM changes through the selected cycle. It does not substitute current memory or pretend RAM beneath ROM is ROM.');

@@ -82,13 +82,13 @@ export function createVideoInspector(root, { seek, selectSprite, openMemory, ope
     } else if (topic === 'sprite') {
       coverage ??= spriteCoverage(frame);
       section(slot<0?'Which shapes are sprites?':`Sprite slot ${slot}`,slot<0?'Select one of the eight slots below. Highlighted coverage belongs to that slot in this recording.':'The video chip draws this independent image over graphics. A slot can be reused, so line-end settings do not describe every pixel.');
-      if(slot>=0) { const source=spriteSourceAtLine(frame,slot,Math.floor(tick/63)); section('Source at this line’s end',`Pointer $${hex(source.pointer,2)} · bank $${hex(source.bank)} → $${hex(source.address)}. ${coverage[slot].toLocaleString()} pixels of recorded coverage, including possible foreground-hidden pixels.`); button(body,'Inspect captured source in Memory →',()=>openMemory(frame,(Math.floor(tick/63)+1)*63-1,source.address)); appendSpriteIntervals(body,frame,slot,position=>jump(position,'sprite'),openMemory); writes(relatedWrites(frame,'sprites',slot)); }
+      if(slot>=0) { const source=spriteSourceAtLine(frame,slot,Math.floor(tick/63)); section('Source at this line’s end',`Pointer $${hex(source.pointer,2)} · bank $${hex(source.bank)} → $${hex(source.address)}. ${coverage[slot].toLocaleString('en-US')} pixels of recorded coverage, including possible foreground-hidden pixels.`); button(body,'Inspect captured source in Memory →',()=>openMemory(frame,(Math.floor(tick/63)+1)*63-1,source.address)); appendSpriteIntervals(body,frame,slot,position=>jump(position,'sprite'),openMemory); writes(relatedWrites(frame,'sprites',slot)); }
     } else if (topic === 'border') {
       border ??= staticBorderCheck(frame);
       const e=borderEvidence(frame,tick);
       section('Where the border lets pixels through',`${e?.uncovered??0} positions outside the normal screen are uncovered on this line. Related register writes are evidence, not proof of what caused the opening.`);
       if(frameStory(frame).moments.some(m=>m.id==='border'))button(body,'Explore all four border regions →',()=>chooseStory('border'));
-      section('Independent stable-border check',border.supported?`${border.checked.toLocaleString()} positions checked · ${border.mismatches} mismatches.`:border.reason);
+      section('Independent stable-border check',border.supported?`${border.checked.toLocaleString('en-US')} positions checked · ${border.mismatches} mismatches.`:border.reason);
       evidence(body,`Recorded gates at this cycle: horizontal ${frame.flags[tick]&1?'closed':'open'}, vertical ${frame.flags[tick]&2?'closed':'open'}. Timing includes the six comparator rules and cycle-17/56 border cancellation checks.`);
       writes(relatedWrites(frame,'border'));
     } else if(topic === 'timing') {

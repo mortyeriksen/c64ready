@@ -49,6 +49,7 @@ import { initializeAssembly64 } from './assembly64/start.js';
 import { initOnline } from './online/window.js';
 import { createAchievementEngine } from './achievements/engine.js';
 import { createAchToasts } from './achievements/toast.js';
+import { createNewGameWatch } from './achievements/new-game.js';
 import { createTrophyHud, TIME_FORMATS } from './achievements/hud.js';
 import { createAttract } from './achievements/attract.js';
 import { gameIconUrl } from './achievements/game-icons.js';
@@ -62,6 +63,8 @@ let achievements = null;
 // The engine while achievements are on, null while off: the frame loop and a
 // reset reach it only through this, so off takes it out of the machine's path.
 let achievementsLive = null;
+// When a new game starts, the toasts still waiting about the one before are let go.
+let _newGame = null;
 import { initInput, updateJoyPorts, _releaseAllLatched, softKeyboardInput } from './input.js';
 import { pushEscapeLayer, popEscapeLayer } from './ui/escape-stack.js';
 import { createAvMarker, avMarkerEnabled } from './av-marker.js';
@@ -473,6 +476,12 @@ if (_logoText) {
 }
 let rafId     = null;
 let lastTime  = 0;
+// The Retro Vibes view (retrovibes.js), once it has first been opened. The
+// loop draws it after the machine's frame, see rafLoop.
+let modelViewer = null;
+// Moves each time the machine's frame buffer holds a new picture, so a reader
+// of that buffer can tell a new frame from the one it already has.
+let pictureSerial = 0;
 // SID variant preference. Persisted in localStorage. Default = 8580
 // (the HMOS SID in the later C64C). Internally we still keep an is8580 boolean
 // because the audio worklet protocol uses it. A persisted choice still wins.
@@ -1482,8 +1491,23 @@ function _redriveTick() {
 function rafLoop(timestamp) {
   _scheduleTick();
   if (collisionIndicator) collisionIndicator.update(timestamp, c64?.collisionOverlay());
-  if (!running || paused) return;
+  if (running && !paused) _machineTick(timestamp);
+  // The 3D view draws from this same tick, after the machine: its screen then
+  // shows the frame just made, and the two never race for the display frame.
+  // It also draws while the machine is paused or off, and not in a hidden tab.
+  if (modelViewer !== null && !document.hidden) modelViewer.renderFrame(timestamp);
+}
 
+// The machine's picture on the page. Not drawn while the Retro Vibes view
+// covers the page, where nobody can see it.
+function _showFrame() {
+  pictureSerial++;
+  if (modelViewer !== null && modelViewer.coversPage()) return;
+  if (presenter) presenter.present(c64.presentationBuffer());
+  else c64.blit(ctx);
+}
+
+function _machineTick(timestamp) {
   if (lastTime === 0) lastTime = timestamp;
   let delta = timestamp - lastTime;
   lastTime = timestamp;
@@ -1574,8 +1598,7 @@ function rafLoop(timestamp) {
     if (userportCard) userportCard.frame();
     if (iecCard) iecCard.frame();
     if (collisionIndicator) collisionIndicator.update(timestamp, c64.collisionOverlay());
-    if (presenter) presenter.present(c64.presentationBuffer());
-    else c64.blit(ctx);
+    _showFrame();
 
     // A/V clapper: off by default. avMarkerEnabled() is a session boolean only
     // (no per-frame storage/URL). Instance exists only while on.
@@ -1831,6 +1854,7 @@ function _createAndWireMachine({ keepKey = true, reuRam = null } = {}) {
   setHasBeenReady(false);
   // A new machine: every achievement waits for its conditions to be false again.
   achievementsLive?.reset();
+  if (achievementsLive) _newGame?.reset();
 }
 
 // Peripheral state cached so a power-off → power-on cycle can re-apply
@@ -1903,7 +1927,7 @@ powerBtn.addEventListener('click', async () => {
     if (frametimeDisplay) frametimeDisplay.textContent = '–';
     if (heapDisplay) heapDisplay.textContent = '–';
     _releaseAllLatched();
-    _cancelTick();
+    if (!modelViewer?.isOpen()) _cancelTick();   // an open Retro Vibes view still draws from the tick
     // Stop any drive audio that was active when the user pressed POWER
     // OFF (TDE motor, fake-load click train). Without this, the audio
     // graph kept playing through the entire off-period until the next
@@ -2105,8 +2129,7 @@ createMonitor({
   isPaused: () => paused,
   setPaused: _setPaused,
   presentFrame: () => {
-    if (presenter) presenter.present(c64.presentationBuffer());
-    else c64.blit(ctx);
+    _showFrame();
     updateMediaIndicators(false);
   },
   releaseInput: () => {
@@ -2461,6 +2484,7 @@ const _achToasts = createAchToasts({
     return vibes && !vibes.hidden ? vibes : document.querySelector('.crt-bezel');
   },
 });
+_newGame = createNewGameWatch(() => _achToasts.dropWaiting());
 const _signIn = () => achievementsPanel?.open('account');
 // A score's title: "Your Score" (or "Your Time" on a board of times, "Your Moves" where fewer is better), and only at first
 // place the board's: "Hiscore" for a Hiscores board, with its mode ("Hiscore (Game A)"), else its
@@ -2541,7 +2565,7 @@ const _outNow = [];   // challenge titles gone out this frame, for one toast
 achievements = createAchievementEngine({
   account: achievementAccount,
   base: apiBase(),
-  onChange: () => { achievementsPanel?.gameChanged(); _trophyHud?.refresh(); },
+  onChange: () => { _newGame?.gameChanged(achievements.gameId); achievementsPanel?.gameChanged(); _trophyHud?.refresh(); },
   onUnlock: ({ achievement, saved, signedIn, complete, softcore, checking }) => {
     const text = signedIn && !saved ? 'Saved when the server is back.' : softcore ? `${achievement.description} (softcore)` : checking ? `${achievement.description} Being checked.` : achievement.description;
     _achToasts.show({
@@ -2562,7 +2586,7 @@ achievements = createAchievementEngine({
   // A set's notice, such as a trainer that keeps the game from counting.
   onNotice: ({ title, text }) => _achToasts.show({ kind: 'notice', title: title || text, text: title ? text : '' }),
   // The set's game over: attract mode shows the boards and trophies.
-  onGameOver: () => { _attract?.gameOver(); },
+  onGameOver: () => { _newGame?.gameOver(); _attract?.gameOver(); },
   // A challenge spoiled: its trophy is out until it can be tried again. Those out in one frame, as a
   // crash or a game over can put out several, share one toast.
   onChallenge: ({ achievement, state }) => {
@@ -2583,6 +2607,8 @@ achievements = createAchievementEngine({
     achievementsPanel?.leaderboardEvent(e);
     _trophyHud?.leaderboardEvent(e);
     _attract?.leaderboardEvent(e);
+    // A start or a post may mark a new game (achievements/new-game.js).
+    if (e.type === 'started' || e.type === 'submitted') _newGame?.leaderboard(e.type, !!achievements.game?.gameOver);
     const { type, leaderboard, value, result, signedIn, softcore } = e;
     if (type !== 'submitted') return;
     // Softcore: the score goes on no board.
@@ -2763,9 +2789,8 @@ document.addEventListener('keydown', e => {
 // three.js + its addons are ~700 kB and this scene only opens on that button, so
 // defer importing retrovibes.js (and thus three) until the first open — it then
 // splits into its own chunk instead of bloating the main bundle. On first open
-// the module also builds its WebGL context and loads the GLB, then keeps them
-// resident.
-let modelViewer = null;
+// the module also builds its WebGL context, which stays for the page's life.
+// The model and the scene load on each open and are freed on each close.
 let _modelViewerPromise = null;
 async function _ensureModelViewer() {
   if (modelViewer) return modelViewer;
@@ -2776,13 +2801,24 @@ async function _ensureModelViewer() {
     // Feed the live emulator framebuffer to the model's CRT. `machine` is
     // re-created on power/reset, so read it fresh each call (the viewer re-points
     // its texture when the buffer reference changes). 384×272 = vic2 canvas.
-    const screenFrame = { data: null, width: 384, height: 272 };
+    // The serial tells the viewer whether the buffer holds a frame it has not
+    // uploaded yet: a display faster than 50 Hz, or a paused machine, asks more
+    // often than the picture changes.
+    const screenFrame = { data: null, width: 384, height: 272, serial: 0 };
     mv.setScreenProvider(() => {
       const frame = running && c64 ? c64.frameBuffer() : null;
       if (!frame) return null;
       screenFrame.data = frame;
+      screenFrame.serial = pictureSerial;
       return screenFrame;
     });
+    // The page's tick draws the view (rafLoop), so it must run while the view
+    // is open, also with the machine off. An open view keeps it going; closing
+    // one over a powered-off machine lets it stop again.
+    mv.setFrameDriver(
+      () => startLoop(),
+      () => { if (!running) _cancelTick(); },
+    );
     // Double-click in the 3D scene powers on (the power button's full boot path).
     // No-op when running, and when the ROMs aren't in: POWER opens Setup then, and
     // this overlay covers the page opaquely, so the dialog would open unseen.
@@ -2804,8 +2840,13 @@ async function _ensureModelViewer() {
     // this: it returns early when the machine isn't running, which is exactly
     // when the attract demo IS running.
     mv.setVisibilityHooks(
-      () => { pauseDemo?.stop(); _stopBootHint(); },
-      () => { if (!running) _showPoweredOffScreen(); },   // re-decides banner vs demo
+      // body.vibes-open holds the covered page's animations still (styles-vibes.css).
+      () => { document.body.classList.add('vibes-open'); pauseDemo?.stop(); _stopBootHint(); },
+      // The page was not drawn while covered: put the current picture back.
+      () => {
+        document.body.classList.remove('vibes-open');
+        if (!running) _showPoweredOffScreen(); else _showFrame();   // re-decides banner vs demo
+      },
     );
     modelViewer = mv;
     return mv;

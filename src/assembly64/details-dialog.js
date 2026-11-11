@@ -62,7 +62,7 @@ export async function openDetailsDialog(controller, reference, perform, details 
     for (const file of item.files) {
       const row = el('div', null, { class: 'mb-file' });
       const info = el('div', null, { class: 'mb-file-info' });
-      info.append(el('strong', file.name), el('span', `${file.mediaType.toUpperCase()} · ${file.size == null ? 'Size unknown' : `${file.size.toLocaleString()} B`}`, { class: 'mb-meta' }));
+      info.append(el('strong', file.name), el('span', `${file.mediaType.toUpperCase()} · ${file.size == null ? 'Size unknown' : `${file.size.toLocaleString('en-US')} B`}`, { class: 'mb-meta' }));
       const buttons = el('div', null, { class: 'mb-file-actions' });
       row.append(info, buttons);
       const actions = allowedActions(file.mediaType);

@@ -53,7 +53,7 @@ export function buildFrameSummary(frame) {
     summary.title = 'The picture spills into all four borders';
     summary.paragraphs.push('The normal screen is only part of this picture. Recorded sprite pixels appear above, below and on both sides of it. The border cover is open at those positions, letting the picture extend beyond its usual window.');
     summary.cards.push({title:'Above and below the usual window',text:'Both strips come from outside the normal 320 × 200 screen. These are pixels in the recorded output.',crops:[area(0,0,frame.width,36),area(0,236,frame.width,36)],stacked:true,storyId:'border',
-      evidence:regions.map(r=>`${r.label}: ${r.spritePixels.toLocaleString()} visible sprite pixels at uncovered positions.`).join(' ')});
+      evidence:regions.map(r=>`${r.label}: ${r.spritePixels.toLocaleString('en-US')} visible sprite pixels at uncovered positions.`).join(' ')});
     if(blackLeft && blackRight)summary.cards.push({title:'Black pixels can hide the border trick',text:'Black is a sprite colour too. The source masks distinguish these side areas from the hardware border.',crops:[area(0,regions[2].point.y-12,64,32),area(320,regions[3].point.y-12,64,32)],storyId:'border:left',
       evidence:`The output and border masks identify ${regions[2].spritePixels} visible sprite pixels on the left and ${regions[3].spritePixels} on the right, including ${blackLeft} and ${blackRight} black pixels respectively. Corners belong to both adjacent edge regions.`});
   } else if (visibleCount) {
@@ -85,7 +85,7 @@ export function buildFrameSummary(frame) {
     const open=regions.filter(r=>r.uncovered),region=open[0];
     summary.cards.push({title:'The border cover leaves extra space',text:'Uncovered positions extend beyond the usual window. Removing the border cover does not itself create extra graphics.',
       crops:[patch(region.point)],point:region.point,storyId:`border:${region.label.toLowerCase()}`,
-      evidence:open.map(r=>`${r.label}: ${r.uncovered.toLocaleString()} uncovered positions.`).join(' ')+' These are border-mask observations. Inspect a pixel to distinguish graphics, sprites and background.'});
+      evidence:open.map(r=>`${r.label}: ${r.uncovered.toLocaleString('en-US')} uncovered positions.`).join(' ')+' These are border-mask observations. Inspect a pixel to distinguish graphics, sprites and background.'});
   }
   const priorities={border:96,'border:top':96,'border:left':72,sprites:38,fetch:35,ghost:93,'extended-sprites':87,sources:83,colour:58};
   for(const card of summary.cards){

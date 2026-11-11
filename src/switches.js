@@ -75,6 +75,17 @@ const SWITCHES = {
     env: ['CRT_SHADER_SOFTWARE'],
   },
 
+  // Let the Retro Vibes view step its quality down when its frames keep coming
+  // too slowly: pixel ratio first, then the bloom, then smoke and contact
+  // shadows (src/vibes/vibes-quality.js). A software WebGL rasteriser never
+  // steps, whatever this says: no step would make it keep up, and the tools
+  // that drive the view in a headless browser need the whole picture.
+  // Browser A/B: ?VIBES_QUALITY_GUARD=0.
+  vibesQualityGuard: {
+    default: true,
+    env: ['VIBES_QUALITY_GUARD'],
+  },
+
   // Start with the user port empty and load no device code at all, for when an
   // installed device breaks the app on load: ?USERPORT_SAFE=1.
   userportSafeMode: {

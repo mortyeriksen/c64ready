@@ -101,7 +101,7 @@ export function summaryFindings(frame, story, strip, patch) {
   if(dma)cards.push({id:'bus-sharing',category:'timing',score:62,title:'Drawing borrows time from the CPU',
     headline:'Video and code share the same memory bus',intro:'The video chip takes memory time to fetch picture data. The recording shows when that makes the CPU wait, which is part of the cost of drawing this frame.',
     text:'The CPU sometimes waits while the video chip uses memory. This is a hardware cost, not a measure of how useful the program’s work is.',
-    crops:[strip(dma.line)],storyId:'dma',evidence:`${story.budget.vic.toLocaleString()} of ${story.budget.total.toLocaleString()} cycles are recorded as VIC stalls. ${story.budget.unknown?`${story.budget.unknown.toLocaleString()} cycles have unknown bus ownership. `:''}${dma.mechanism}`});
+    crops:[strip(dma.line)],storyId:'dma',evidence:`${story.budget.vic.toLocaleString('en-US')} of ${story.budget.total.toLocaleString('en-US')} cycles are recorded as VIC stalls. ${story.budget.unknown?`${story.budget.unknown.toLocaleString('en-US')} cycles have unknown bus ownership. `:''}${dma.mechanism}`});
   let invalidSeen=false;
   return cards.filter(card=>{
     if(!/^graphics-[567]$/.test(card.id))return true;

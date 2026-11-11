@@ -170,9 +170,12 @@ function loadRoom(files) {
     fetchLightmap(files.lightmap).catch((err) => { console.warn('80s Bedroom: no lightmap.', err); return null; }),
   ]);
 }
-// preload() starts the next build's room ahead of it, so the viewer can show
-// the scene whole: the room arrives with the computer, not after it.
-let prepared = null;   // { room: url, load: Promise<[gltf, lightmap]> }
+// preload() fetches the next build's files ahead of it and decodes nothing:
+// the decode holds the main thread, and build() runs inside the pause the
+// viewer puts around a swap.
+function fetchRoom(files) {
+  return Promise.all([fetchOnce(files.room, 'buffer'), fetchOnce(files.lightmap, 'blob').catch(() => null)]);
+}
 
 function disposeTree(root) {
   root.traverse((o) => {
@@ -224,9 +227,9 @@ export const scene = {
   // TV, a red clock and the lava lamp. The warm landing light through the door
   // is in the baked lightmap.
   // Shadows are static and cached. The viewer awaits preload() before build(),
-  // so the room is parsed by then; it still attaches a microtask after build()
-  // returns (before the next frame), inside a shadow-casting holder, so
-  // revealing it marks the cached maps dirty once.
+  // so the room's files are fetched by then; the room attaches once it is
+  // parsed, after build() returns and before the scene is drawn, inside a
+  // shadow-casting holder, so revealing it marks the cached maps dirty once.
   name: '80s Bedroom', css: 'scene-bedroom', envInt: 0.07, exposure: 1.2,
   staticShadows: true,
   // The live CRT picture tops out at 1.0, so a threshold of 1.0 keeps it crisp
@@ -236,11 +239,9 @@ export const scene = {
   screenOff: true,
   halation: [[1, 1, 1], [1, 0.95, 0.90], [1, 0.86, 0.75], [1, 0.77, 0.60], [1, 0.70, 0.50]],
   bg: [[0, '#08060d'], [1, '#08060d']],
-  // Resolves once the room is ready for build(), or failed (build() then warns).
+  // Resolves once the room's files are fetched, or failed (build() then warns).
   preload() {
-    const files = roomFiles();
-    if (prepared?.room !== files.room) prepared = { room: files.room, load: loadRoom(files) };
-    return prepared.load.then(() => {}, () => {});
+    return fetchRoom(roomFiles()).then(() => {}, () => {});
   },
   build(g, { sphere, box, screen }) {
     addCrtLight(g, screen, 2.2);
@@ -292,11 +293,8 @@ export const scene = {
       realCrtScan: makeTvScanner(document, 24, 11), realCrtTex: crtTex, realTvNext: 0,
     });
 
-    const files = roomFiles();
-    const load = prepared?.room === files.room ? prepared.load : loadRoom(files);
-    prepared = null;
     // Returned, so the viewer compiles the scene once the room is in.
-    return load.then(([gltf, lightmap]) => {
+    return loadRoom(roomFiles()).then(([gltf, lightmap]) => {
       const room = gltf.scene;
       if (!g.parent) { disposeTree(room); if (lightmap) lightmap.dispose(); tvMat.dispose(); crtTex.dispose(); return; }   // switched away while loading
       const k = S / FILE_UNITS_PER_M;

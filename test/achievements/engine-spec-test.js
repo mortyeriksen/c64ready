@@ -105,6 +105,7 @@ const settle = () => new Promise((r) => setTimeout(r, 50));
   const g = engine.game;
   expect(g?.title === 'Demo Game' && g.hash === hash, `the cartridge's hash finds its game (got ${g?.title})`);
   expect(g?.achievements.length === 3 && g.achievements.every((a) => !a.unlocked), 'its achievements, none unlocked');
+  expect(engine.gameHash === hash && engine.gameId === g?.id, 'the game\'s hash and id are read without its snapshot');
   expect(!asked.some((u) => u.includes(unknownHash)), 'a file without a set is never sent to the server, not even its hash');
   expect(asked.filter((u) => u.endsWith('/games')).length === 1, 'the list of games is fetched once');
   ok('a loaded file with a set becomes the game');
@@ -225,6 +226,7 @@ const settle = () => new Promise((r) => setTimeout(r, 50));
   setLoaded('drive8', { ref: 'another', kind: 'd64', bytes: crypto.randomBytes(200) });
   await engine.mediaChanged();
   expect(engine.game === null, 'a different file without a set ends it');
+  expect(engine.gameHash === null && engine.gameId === null, 'and no game has no hash and no id');
   ok('a game survives its own media changes, and ends with another game');
 }
 
@@ -522,6 +524,52 @@ const settle = () => new Promise((r) => setTimeout(r, 50));
   expect(engine.format(123456, 'SCORE') === '123456', 'a full-width score is as it was');
   expect(engine.format(4512, 'MILLISECS') === '0:45.12' && engine.format(42, 'VALUE') === '42', `a time and a plain value are as rcheevos writes them (${engine.format(4512, 'MILLISECS')})`);
   ok('a score shows its padding as blanks');
+}
+
+// A running score comes every emulated frame: its frame makes no closure to find its board (no
+// find, filter or map), and a value shown several times in a frame is formatted by rcheevos once.
+{
+  const { loadRcheevos } = await import('../../src/achievements/rcheevos.js');
+  let formats = 0;
+  const loadRc = async () => {
+    const rc = await loadRcheevos();
+    return { ...rc, formatValue: (v, f) => { formats++; return rc.formatValue(v, f); } };
+  };
+  const news = [];
+  const e9 = createAchievementEngine({ account: { token: null, user: null }, base, loadRc, log: () => {}, onLeaderboard: (e) => news.push(e.type) });
+  _resetLoaded();
+  setLoaded('cart', { ref: file, kind: 'crt', bytes: file });
+  await e9.mediaChanged();
+  const r9 = new Uint8Array(0x10000);
+  e9.frame(r9);
+  r9[0x12] = 1; r9[0x11] = 10; e9.frame(r9);
+  const names = ['find', 'filter', 'map'], real = names.map((n) => Array.prototype[n]);
+  const called = [];
+  news.length = 0;
+  try {
+    names.forEach((n, i) => { Array.prototype[n] = function (...a) { called.push(n); return real[i].apply(this, a); }; });
+    for (let i = 0; i < 20; i++) { r9[0x11]++; e9.frame(r9); }
+  } finally {
+    names.forEach((n, i) => { Array.prototype[n] = real[i]; });
+  }
+  expect(news.length === 20 && news.every((t) => t === 'updated'), `the score ran: an update each frame (${news.length} of 20)`);
+  expect(called.length === 0, `a frame with a running score calls no find, filter or map (${called.length} calls: ${[...new Set(called)].join(', ')})`);
+
+  const B = ' ';
+  formats = 0;
+  const a = e9.format(34600, 'SCORE'), b = e9.format(34600, 'SCORE');
+  expect(a === `${B}34600` && b === a, `the same value in the same format reads the same (${JSON.stringify([a, b])})`);
+  expect(formats === 1, `and reaches rcheevos once (${formats} calls)`);
+  expect(e9.format(34601, 'SCORE') === `${B}34601` && formats === 2, `another value is formatted (${formats} calls)`);
+  const plain = (await loadRcheevos()).formatValue(34601, 'VALUE');
+  expect(e9.format(34601, 'VALUE') === plain && formats === 3, `and so is the same value in another format, as rcheevos writes it (${JSON.stringify(e9.format(34601, 'VALUE'))} for ${JSON.stringify(plain)}, ${formats} calls)`);
+  expect(e9.format(34600, 'SCORE') === `${B}34600` && formats === 4, `only the last one is kept (${formats} calls)`);
+  // Before rcheevos is loaded a value shows plain, and that is not kept for when it is.
+  const cold = createAchievementEngine({ account: { token: null, user: null }, base, loadRc, log: () => {} });
+  expect(cold.format(7, 'SCORE') === '7', 'before rcheevos is loaded a value shows plain');
+  await cold.load();
+  expect(cold.format(7, 'SCORE') === `${B.repeat(5)}7`, `and in its format once it is (${JSON.stringify(cold.format(7, 'SCORE'))})`);
+  ok('a running score: no closure per frame, and one format per value');
 }
 
 accounts.close();

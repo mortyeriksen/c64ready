@@ -53,6 +53,13 @@
   background: #05060a;
 }
 .model-viewer-overlay[hidden] { display: none; }
+/* The page under the view is not seen while it is open (main.js sets
+   body.vibes-open): its animations hold still, the view's own run on. */
+body.vibes-open :not(.model-viewer-overlay, .model-viewer-overlay *),
+body.vibes-open :not(.model-viewer-overlay, .model-viewer-overlay *)::before,
+body.vibes-open :not(.model-viewer-overlay, .model-viewer-overlay *)::after {
+  animation-play-state: paused !important;
+}
 
 /* ── Scene backdrops (JS toggles one .scene-* class at a time) ─────────── */
 /* 1 · Synthwave — magenta horizon glow rising into deep indigo. */
@@ -109,7 +116,6 @@
   border: 1px solid rgba(5, 217, 232, 0.5);
   background: rgba(10, 6, 24, 0.55);
   color: #7df9ff;
-  backdrop-filter: blur(4px);
   transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 .model-viewer-close.dialog-close:hover:not(:disabled) {
@@ -140,7 +146,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(4px);
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 .model-viewer-scene:hover {
@@ -167,7 +172,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(4px);
   transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 .model-viewer-fullscreen svg { display: block; }
@@ -199,7 +203,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(4px);
   transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 .model-viewer-hud { top: 186px; }
@@ -279,7 +282,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(4px);
   transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.15s, opacity 0.15s;
 }
 .model-viewer-fog[hidden] { display: none; }
@@ -315,7 +317,6 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  backdrop-filter: blur(4px);
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.15s;
 }
 .model-viewer-vr[hidden] { display: none; }
@@ -395,7 +396,6 @@
   border: 1px solid rgba(5, 217, 232, 0.35);
   border-radius: 8px;
   background: rgba(10, 6, 24, 0.82);
-  backdrop-filter: blur(6px);
   box-shadow: 0 6px 22px rgba(0, 0, 0, 0.5);
   font-size: 0.62rem;
   line-height: 1.55;

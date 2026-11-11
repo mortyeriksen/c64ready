@@ -10,7 +10,7 @@ import { libraryEntryFor } from './library.js';
 function chooseArchive(entries, signal) {
   if (!entries.length) throw new Error('The ZIP contains no supported PRG, D64, CRT, TAP, T64, SID or REU files.');
   return chooseFile('Choose a file from ZIP', entries, {
-    label: entry => `${entry.path} · ${entry.size.toLocaleString()} B`,
+    label: entry => `${entry.path} · ${entry.size.toLocaleString('en-US')} B`,
     note: 'Only the selected media file will be opened and saved. Nested archives are not expanded.',
     signal,
   });
