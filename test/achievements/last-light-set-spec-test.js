@@ -1,12 +1,12 @@
 // Spec tests for the Last Light set (server/sets/last-light.json) under rcheevos, on
 // synthesized RAM laid out as the game's src/vars.asm defines it: the state $C000
 // (0 title, 1 a run being set up, 2 play, 3 pause, 4 game over), the level $CF8D
-// (one up at each great bell, so 1-4 are the districts after the Rooftops and 5 a
-// whole lap), the sword $C034, the Order's type $CF0B (0 Shadowblade, 1 Ring
+// (one up at each great bell, so 1-6 are the seven districts after the Rooftops,
+// 7 a whole lap, 14 two, and 15 the top), the sword $C034, the Order's type $CF0B (0 Shadowblade, 1 Ring
 // Thrower, 2 Lantern Thief, 3 Bell Warden) and state $C3C1 (2 struck), the six
 // ASCII score digits $CF8A and $C041-$C045, the four ASCII height digits $CF8B and
 // $C046-$C048, the bells $CF8C, $C03F and $C040 (0-9 each), the letters $CF4C (a
-// bit per district), lives $CE96 and night mode $CF4A.
+// bit per district, 127 with all seven), lives $CE96 and night mode $CF4A.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -84,8 +84,8 @@ function newRun() {
   ok('the set parses');
 }
 
-// 2. The listed hash is the release disk's.
-for (const [key, label] of [['last-light-d64', 'the release disk']]) {
+// 2. The listed hash is the 1.1 release disk's.
+for (const [key, label] of [['last-light-d64', 'the 1.1 release disk']]) {
   const file = assetPath(key);
   if (!file) { console.log(`ok  - test ${++testNo}: ${key} hashes to a listed hash # SKIP ${missingNote(key)}`); continue; }
   const h = rc.hash(fs.readFileSync(file));
@@ -96,8 +96,8 @@ for (const [key, label] of [['last-light-d64', 'the release disk']]) {
 // 3. Each district, the laps and the top level unlock as the level climbs, one each.
 {
   start();
-  const steps = [[1, 'Into the Cloisters'], [2, 'Clockwork Heart'], [3, 'Into the Storm'], [4, 'Among the Stars'],
-    [5, 'Full Circle'], [10, 'Second Lap'], [15, 'Endless Stair']];
+  const steps = [[1, 'Into the Cloisters'], [2, 'Clockwork Heart'], [3, 'Into the Storm'], [4, 'Above the Clouds'],
+    [5, 'Among the Stars'], [6, 'Snowline'], [7, 'Full Circle'], [14, 'Second Lap'], [15, 'Endless Stair']];
   for (let level = 1; level <= 15; level++) {
     ram[LEVEL] = level; frames(2);
     for (const [at, title] of steps) {
@@ -112,10 +112,10 @@ for (const [key, label] of [['last-light-d64', 'the release disk']]) {
 //    nor from the game-over screen to the next run's first frame.
 {
   start();
-  ram[LEVEL] = 4; frames(2); events.length = 0;
+  ram[LEVEL] = 6; frames(2); events.length = 0;
   ram[STATE] = 4; frames(3);
   ram[LEVEL] = 0; ram[STATE] = 2; frames(2);  // the game over to play in one frame, the level reset
-  ram[LEVEL] = 5; ram[STATE] = 1; frames(1); ram[STATE] = 2; frames(2);
+  ram[LEVEL] = 7; ram[STATE] = 1; frames(1); ram[STATE] = 2; frames(2);
   expect(!has('Full Circle'), 'a level change across a state change unlocks nothing');
   ok('a run being set up unlocks nothing');
 }
@@ -167,8 +167,10 @@ for (const [key, label] of [['last-light-d64', 'the release disk']]) {
   start();
   ram[LETTERS] = 0x04; frames(2);
   expect(unlocked().length === 0, 'one letter unlocks nothing');
-  ram[LETTERS] = 0x1f; ram[LIVES] = 8; frames(2);
-  expect(has('All Her Letters'), 'all five bits unlock All Her Letters');
+  ram[LETTERS] = 0x1f; frames(2);
+  expect(!has('All Her Letters'), 'five of the seven letters are not all of them');
+  ram[LETTERS] = 0x7f; ram[LIVES] = 8; frames(2);
+  expect(has('All Her Letters'), 'all seven bits unlock All Her Letters');
   expect(!has('Nine Lives'), 'eight lives is not nine');
   ram[LIVES] = 9; frames(2);
   expect(has('Nine Lives'), 'the ninth life unlocks Nine Lives');

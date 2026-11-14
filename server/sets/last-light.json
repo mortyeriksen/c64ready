@@ -3,8 +3,8 @@
   "title": "Last Light: Stairway to Heaven",
   "hashes": [
     {
-      "hash": "bbfdfdd6eae28702c571f01bb7a9c399",
-      "label": "Release disk (lastlight.d64)"
+      "hash": "6d43dd029ed8342023661c2df8491c46",
+      "label": "Release 1.1 disk (lastlight-1.1.d64)"
     }
   ],
   "achievements": [
@@ -31,97 +31,111 @@
     },
     {
       "id": 4,
-      "title": "Among the Stars",
-      "description": "Climb into the Star Ruins.",
-      "points": 15,
+      "title": "Above the Clouds",
+      "description": "Climb into the Cloudtops.",
+      "points": 10,
       "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf8d=4_d0xHcf8d=3"
     },
     {
       "id": 5,
-      "title": "Full Circle",
-      "description": "Climb all five districts and come back to the Rooftops.",
-      "points": 25,
+      "title": "Among the Stars",
+      "description": "Climb into the Star Ruins.",
+      "points": 15,
       "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf8d=5_d0xHcf8d=4"
     },
     {
       "id": 6,
-      "title": "Second Lap",
-      "description": "Climb all five districts twice in one climb.",
-      "points": 25,
-      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf8d=10_d0xHcf8d=9"
+      "title": "Snowline",
+      "description": "Climb into the Snowy Mountains.",
+      "points": 15,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf8d=6_d0xHcf8d=5"
     },
     {
       "id": 7,
+      "title": "Full Circle",
+      "description": "Climb all seven districts and come back to the Rooftops.",
+      "points": 25,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf8d=7_d0xHcf8d=6"
+    },
+    {
+      "id": 8,
+      "title": "Second Lap",
+      "description": "Climb all seven districts twice in one climb.",
+      "points": 25,
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf8d=14_d0xHcf8d=13"
+    },
+    {
+      "id": 9,
       "title": "Endless Stair",
       "description": "Reach the highest difficulty, level 15.",
       "points": 50,
       "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf8d=15_d0xHcf8d=14"
     },
     {
-      "id": 8,
+      "id": 10,
       "title": "Blade Against Blade",
       "description": "Strike down a Shadowblade.",
       "points": 5,
       "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf0b=0_0xHc3c1=2_d0xHc3c1!=2"
     },
     {
-      "id": 9,
+      "id": 11,
       "title": "Stop, Thief!",
       "description": "Scare off a Lantern Thief with the sword.",
       "points": 5,
       "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf0b=2_0xHc3c1=2_d0xHc3c1!=2"
     },
     {
-      "id": 10,
+      "id": 12,
       "title": "Ring Breaker",
       "description": "Fell a Ring Thrower.",
       "points": 10,
       "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf0b=1_0xHc3c1=2_d0xHc3c1!=2"
     },
     {
-      "id": 11,
+      "id": 13,
       "title": "Warden's Fall",
       "description": "Fell a Bell Warden.",
       "points": 10,
       "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf0b=3_0xHc3c1=2_d0xHc3c1!=2"
     },
     {
-      "id": 12,
+      "id": 14,
       "title": "Clean Climber",
       "description": "Take every spark of a burst without a hit and ring its bell, five times in one climb.",
       "points": 5,
       "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHce95>=5_d0xHce95<5"
     },
     {
-      "id": 13,
+      "id": 15,
       "title": "Bell Chain",
       "description": "Ring a bell chain up to x4.",
       "points": 10,
       "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf47=4_d0xHcf47=3"
     },
     {
-      "id": 14,
+      "id": 16,
       "title": "All Her Letters",
-      "description": "Find all five of Sunna's letters.",
+      "description": "Find all seven of Sunna's letters.",
       "points": 25,
-      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf4c=31_d0xHcf4c!=31"
+      "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf4c=127_d0xHcf4c!=127"
     },
     {
-      "id": 15,
+      "id": 17,
       "title": "Nine Lives",
       "description": "Hold nine lives.",
       "points": 25,
       "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHce96=9_d0xHce96=8"
     },
     {
-      "id": 16,
+      "id": 18,
       "title": "A Hundred Bells",
       "description": "Ring 100 bells in one climb.",
       "points": 25,
       "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_0xHcf8c=1_d0xHcf8c=0"
     },
     {
-      "id": 17,
+      "id": 19,
       "title": "Lamplighter",
       "description": "Score 10,000 points.",
       "points": 5,
@@ -129,7 +143,7 @@
       "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_A:0xLcf8a*100000_A:0xLc041*10000_A:0xLc042*1000_A:0xLc043*100_A:0xLc044*10_0xLc045>=10000"
     },
     {
-      "id": 18,
+      "id": 20,
       "title": "Beacon",
       "description": "Score 25,000 points.",
       "points": 10,
@@ -137,7 +151,7 @@
       "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_A:0xLcf8a*100000_A:0xLc041*10000_A:0xLc042*1000_A:0xLc043*100_A:0xLc044*10_0xLc045>=25000"
     },
     {
-      "id": 19,
+      "id": 21,
       "title": "Lighthouse",
       "description": "Score 50,000 points.",
       "points": 25,
@@ -145,7 +159,7 @@
       "memaddr": "0xHc000=2_d0xHc000=2_0xHcf4a=0_A:0xLcf8a*100000_A:0xLc041*10000_A:0xLc042*1000_A:0xLc043*100_A:0xLc044*10_0xLc045>=50000"
     },
     {
-      "id": 20,
+      "id": 22,
       "title": "Dawn",
       "description": "Score 100,000 points.",
       "points": 50,
