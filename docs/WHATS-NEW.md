@@ -9,58 +9,67 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
-## Next release
+## 2026.11.3 — November 14, 2026
 
-- **Trophies in Retro Vibes.** A HUD with the game's trophies and the next
-  player to pass, to keep up while you play. Drag it anywhere and shape it into
-  a bar, a column or a pill.
-- **A new GAME tab.** The Achievements window opens with the same HUD and the
-  next trophy to get. While you play, only the boards in play show, a speedrun
-  on top.
+Achievements grows to 75 games and follows you into play: your trophies on
+screen in Retro Vibes, a GAME tab with the next one to get, and high scores
+cycling like an arcade cabinet when a game ends. Trophies you earn before
+signing in now count too.
+
+- **Trophies in Retro Vibes.** A HUD shows the game's trophies and the next
+  player to pass while you play. Drag it anywhere and shape it into a bar, a
+  column or a pill.
+- **A new GAME tab.** The Achievements window opens on the same HUD and the
+  next trophy to get. While you play, it shows only the boards in play, with a
+  speedrun on top.
 - **Attract mode.** When a game ends, its high scores, Trophy Hunters and
   trophies cycle across the screen, as on an arcade cabinet.
 - **Challenges.** A challenge trophy you can no longer earn this time powers
   down and is stamped OUT until you can try again. Fifteen games have them.
 - **Play first, sign in later.** Trophies and scores earned before you sign in
-  count once you do.
-- **Your games from a folder.** The 💾 button in GAMES looks through a folder
-  of your own files and adds every game with achievements to the library.
-- **Load a game from its page.** A game in your library has a play button on
-  its page under GAMES.
-- **Game icons in colour.** Every game has a new, more detailed pixel icon in
-  colour.
-- **New sets.** Arkanoid, Arkanoid: Revenge of Doh, Green Beret, the Spy vs. Spy
-  trilogy, Turrican, Turrican II, Pirates!, Maniac Mansion, Eye of the Beholder,
-  Elite, Prince of Persia, International Karate, International Karate Ultimate,
-  Leaderboard Golf, H.E.R.O., Airborne Ranger, IO, Last Ninja 3, Bruce Lee II,
-  Ghostbusters, Pitstop II, Armalyte, Fist II: The Legend Continues,
-  Neuromancer, Space Rogue, Ultima IV Remastered and Last Light: Stairway to
-  Heaven, many with speedruns and high-score boards of their own.
+  count once you do, and a score shows on the GAME tab and in attract mode
+  right away.
+- **Toasts for the game you play.** When a new game starts (another go, another
+  game loaded, or a reset), trophy toasts still waiting from the last one are
+  dropped. The one showing finishes.
+- **29 new sets.** Airborne Ranger, Arkanoid, Arkanoid: Revenge of Doh,
+  Armalyte, Bruce Lee II, Elite, Eye of the Beholder, Fist II: The Legend
+  Continues, Ghostbusters, Green Beret, H.E.R.O., International Karate,
+  International Karate Ultimate, IO, Last Light: Stairway to Heaven, Last
+  Ninja 3, Leaderboard Golf, Maniac Mansion, Neuromancer, Pirates!, Pitstop II,
+  Prince of Persia, Space Rogue, the Spy vs. Spy trilogy, Turrican, Turrican
+  II and Ultima IV Remastered. Many have speedruns and high-score boards of
+  their own.
 - **More in the sets you know.** The Last Ninja has new trophies and a speedrun
   for every level, Out Run eight more trophies, The Way of the Exploding Fist a
   trophy for every dan, Space Rogue a trophy for taking the Manchi egg home, and
   Commando a speedrun for the first area. The disk versions of Commando Arcade,
   Ghosts 'n Goblins Arcade and IK+ share their cartridges' trophies and high
   scores.
-- **Fixes.** The Last Ninja's Stepping Stones and Dragon's Breath unlock,
-  Neuromancer's last trophy comes when Neuromancer is defeated, and an Exploding
-  Fist score counts when you lose. The app installed from Safari on a Mac now
-  finds a new version when you open it or switch back to it. After a click on a
-  Retro Vibes button, the keyboard goes straight back to the C64. A score you
-  play before signing in shows on the GAME tab and in attract mode right away.
-  The slow spin in Retro Vibes turns at the same speed on a 120 Hz screen as on
-  a 60 Hz one. Numbers read the same whatever language your computer is set
-  to, such as 19,656 in the monitor.
+- **Your games from a folder.** The 💾 button in GAMES looks through a folder
+  of your own files and adds every game with achievements to the library. A
+  game in your library has a play button on its page.
+- **Game icons in colour.** Every game has a new, more detailed pixel icon.
 - **Smoother Retro Vibes.** On a phone or tablet the 3D view draws a little
   less sharply and much more cheaply, so the C64 keeps running at full speed
   under it. On any device that cannot keep up, it gives up sharpness first,
-  then the glow, then the smoke, until it does. Very large screens draw no
-  more than a 4K picture. Switching scenes no longer stutters the sound.
-- **Lighter trophy effects.** Sparkles, glows and the gold shimmer cost far
-  less while you play.
-- **Toasts for the game you play.** When a new game starts (another go after a
-  game over or a posted score, another game loaded, or a reset), the trophy
-  toasts still waiting from the last one are dropped. The one showing finishes.
+  then the glow, then the smoke. Very large screens draw no more than a 4K
+  picture. Switching scenes no longer stutters the sound, and trophy sparkles,
+  glows and the gold shimmer cost far less.
+- **Fixes.**
+  - The Last Ninja's Stepping Stones and Dragon's Breath unlock, Neuromancer's
+    last trophy comes when Neuromancer is defeated, and an Exploding Fist score
+    counts when you lose.
+  - The app installed from Safari on a Mac finds a new version when you open
+    it or switch back to it.
+  - In Retro Vibes, the slow spin turns at the same speed on a 120 Hz screen as
+    on a 60 Hz one, and after a click on a button the keyboard goes straight
+    back to the C64.
+  - Numbers read the same whatever language your computer is set to, such as
+    19,656 in the monitor.
+  - The monitor's disk drive rate shows the data the drive reads or writes,
+    about 0.5 kB/s for a normal LOAD, rather than every byte passing under the
+    head.
 
 ## 2026.11.2 — November 3, 2026
 
