@@ -421,7 +421,7 @@ when traffic stops, including while paused.
 
 | Rate label | Bytes counted |
 | --- | --- |
-| GCR media bytes | Framed disk read-channel bytes and bytes written to the surface, including repeated reads. |
+| Disk data bytes | Disk bytes the drive reads for its program or writes to the surface, as decoded data. Bytes that pass under the head unread are not counted. |
 | File/channel bytes | Accelerated LOAD payload and virtual drive data channels. |
 | TAP stream bytes | Encoded pulse bytes consumed during playback or produced while recording. |
 | CPU ROM reads | CPU accesses to mapped cartridge ROM, excluding inspection. |

@@ -42,6 +42,10 @@ const DRIVE_HEAD_SETTLE_CYCLES  = 10000;
 // deterministic resting state is the practical choice for demo compatibility.
 const DIRECTORY_TRACK_HALFTRACK = 36;   // track 18.0
 
+// Five GCR bytes encode four data bytes, so the rate observer reports each
+// consumed or written GCR byte as 0.8 data bytes.
+const GCR_DATA_RATIO = 0.8;
+
 // A VIA port pin's level: driven to its latch bit when configured as output
 // (DDR bit set), else floats high. Module-scope so writePortB (bit-banged on
 // every drive-side $1800 write during a load) allocates no per-call closure.
@@ -70,6 +74,7 @@ function speedZoneBitsForTrack(track) {
 export class Drive1541 {
   constructor(romBuffer, d64) {
     this._storageCounter = null;
+    this._storageByteFresh = false;
     // 1541.bin often has a 2-byte PRG header (load address) that shifts everything.
     // Standard 1541-II 16KB ROM starts with copyright header at offset 2 in many dumps.
     // ROM map: 16KB bank $C000-$FFFF
@@ -643,7 +648,7 @@ export class Drive1541 {
     this._shiftReg = ((this._shiftReg << 1) | bit) & 0xFF;
     this._shiftBits++;
     if (this._shiftBits === 8) {
-      if (this._storageCounter) this._storageCounter[0]++;
+      if (this._storageCounter) this._storageByteFresh = true;
       this.lastGCRByte = this._shiftReg;
       this._shiftBits = 0;
       // BYTE-READY feeds VIA2 CA1 → latches IFR bit 1, INDEPENDENT of SOE
@@ -777,7 +782,7 @@ export class Drive1541 {
           this._writeShiftReg = (this._writeShiftReg << 1) & 0xFF;
           this.trackBitPos = (bitPos + 1) % totalBits;
           if (++this._writeBits >= 8) {
-            if (this._storageCounter) this._storageCounter[1]++;
+            if (this._storageCounter) this._storageCounter[1] += GCR_DATA_RATIO;
             this._writeBits = 0;
             // Byte boundary: the surface changed; load the next byte the DOS
             // parked in Port A (it had a full byte-time to set it) and pulse
@@ -872,9 +877,20 @@ export class Drive1541 {
   read(addr) {
     if (addr < 0x1800)       return this.ram[addr & 0x07FF];  // 2KB RAM + mirrors
     if (addr < 0x1C00)       return this.via1.read(addr & 0x0F); // VIA1 mirrors
-    if (addr < 0x2000)       return this.via2.read(addr & 0x0F); // VIA2 mirrors
+    if (addr < 0x2000) {                                         // VIA2 mirrors
+      const reg = addr & 0x0F;
+      if (this._storageByteFresh && (reg === 0x01 || reg === 0x0F)) this._countConsumedByte();
+      return this.via2.read(reg);
+    }
     if (addr >= 0xC000)      return this.rom[addr - 0xC000];
     return 0xFF;
+  }
+
+  // The rate observer counts a framed byte once, when the drive CPU first reads
+  // it from Port A. Bytes that pass under the head unread are not counted.
+  _countConsumedByte() {
+    this._storageByteFresh = false;
+    if (this._storageCounter) this._storageCounter[0] += GCR_DATA_RATIO;
   }
 
   peekForCpu(addr) {

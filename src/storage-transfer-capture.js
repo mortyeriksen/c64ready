@@ -29,7 +29,7 @@ export class StorageTransferCapture {
       const accelerated = i ? m.drive9Enabled && !drive : !m.truedriveEnabled;
       const owner = accelerated ? (i ? m.vdrive9 : m.vdrive8) : drive;
       this.bind(i, owner, '_storageCounter', i ? m.currentD64Drive9 : m.currentD64,
-        accelerated ? 'File/channel bytes' : 'GCR media bytes');
+        accelerated ? 'File/channel bytes' : 'Disk data bytes');
     }
     this.bind(2, m.datasette, '_storageCounter', m.datasette.tapData, 'TAP stream bytes');
     this.bind(3, m.mem, '_storageRomCounter', m.mem.cartridge, 'CPU ROM reads');
