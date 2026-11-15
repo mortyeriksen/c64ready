@@ -623,10 +623,10 @@
    "note": "Commercial game \u2014 bring your own; not distributed with this repo"
   },
   "last-light-d64": {
-   "description": "Last Light: Stairway to Heaven (RetroMorty), the 1.1 release disk, MD5 6d43dd029ed8342023661c2df8491c46",
+   "description": "Last Light: Stairway to Heaven (RetroMorty), the 1.2 release disk, MD5 e9d6f47b1c503d978e9316ad5fe4b9b3",
    "env": "C64_LAST_LIGHT_D64",
    "paths": [
-    "~/projects/stairway/build/lastlight-1.1.d64"
+    "~/projects/stairway/build/lastlight-1.2.d64"
    ],
    "note": "Built from the Last Light repository with make"
   },

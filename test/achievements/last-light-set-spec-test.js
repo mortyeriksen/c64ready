@@ -84,8 +84,8 @@ function newRun() {
   ok('the set parses');
 }
 
-// 2. The listed hash is the 1.1 release disk's.
-for (const [key, label] of [['last-light-d64', 'the 1.1 release disk']]) {
+// 2. The listed hash is the 1.2 release disk's.
+for (const [key, label] of [['last-light-d64', 'the 1.2 release disk']]) {
   const file = assetPath(key);
   if (!file) { console.log(`ok  - test ${++testNo}: ${key} hashes to a listed hash # SKIP ${missingNote(key)}`); continue; }
   const h = rc.hash(fs.readFileSync(file));

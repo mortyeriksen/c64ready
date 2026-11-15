@@ -9,6 +9,13 @@ The version you are running is shown at the bottom of the About dialog.
 
 ---
 
+## Next release
+
+- **Last Light 1.2.** Achievements for Last Light: Stairway to Heaven now
+  follow the game's 1.2 disk. The trophies and boards are the same.
+
+---
+
 ## 2026.11.3 — November 14, 2026
 
 Achievements grows to 75 games and follows you into play: your trophies on
