@@ -38,7 +38,7 @@ async function context() {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   await ctx.addInitScript(() => {
     localStorage.setItem('c64emu.splashSeen', '1');
-    localStorage.setItem('c64emu.themePickerShown', '1');
+    localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
     localStorage.setItem('c64emu.pauseDemo', 'off');
   });
   return ctx;

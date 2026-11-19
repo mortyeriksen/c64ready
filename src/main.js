@@ -82,6 +82,7 @@ import { createPasteQueue } from './paste-queue.js';
 import { initAppearance } from './ui/appearance.js';
 import { initThemes } from './ui/themes.js';
 import { createThemePicker } from './ui/theme-picker.js';
+import { createAchievementsPromo, PROMO_BOARD, PROMO_BOARD_ROWS } from './ui/achievements-promo.js';
 import { confirmDialog } from './ui/dialogs.js';
 import { createMonitor } from './monitor/monitor.js';
 // ── Elements (see dom.js for the full inventory) ─────────────────────────────
@@ -911,6 +912,24 @@ const themes = initThemes({
 });
 const themePicker = createThemePicker(themes);
 let themePreviewPending = switchOn('themePicker');
+// After the theme picker, once: the Achievements splash. TRY IT NOW opens the window on its games.
+const achievementsPromo = createAchievementsPromo({
+  openAchievements: () => achievementsPanel?.open('games'),
+  // Its board's top times as the window shows them, and the account's own place below them.
+  loadBoard: async () => {
+    if (!achievements) return null;
+    await achievements.load();
+    const r = await achievements.api.leaderboard(PROMO_BOARD.hash, PROMO_BOARD.id, PROMO_BOARD_ROWS);
+    const show = (v) => achievements.format(v, r.leaderboard.format).trim();
+    const me = achievementAccount.user;
+    return {
+      title: r.leaderboard.title,
+      entries: r.entries.map((e) => ({ rank: e.rank, name: e.name, value: show(e.value), you: !!me && e.user?.id === me.id })),
+      me: me && r.me?.rank > PROMO_BOARD_ROWS ? { rank: r.me.rank, name: me.name, value: show(r.me.value) } : null,
+    };
+  },
+});
+let promoPreviewPending = switchOn('achievementsPromo');
 
 // Attract-mode toggle (Settings ▸ Display). Persisted; applies live — when
 // toggled while powered off it swaps between the animated demo and the static
@@ -1136,11 +1155,17 @@ for (const btn of document.querySelectorAll('.expand-btn')) {
 const panelOrder = initPanelOrder({ forceEquipmentHint: switchOn('equipmentHint') });
 function maybeEquipmentHint() {
   if (!loader.allLoaded || splashIsOpen() || !(setupModal?.hidden ?? true) || !(settingsModal?.hidden ?? true)) return;
-  if (themePicker.isOpen) return;
+  if (themePicker.isOpen || achievementsPromo.isOpen) return;
   if (themePreviewPending || !themePicker.hasBeenShown()) {
     const preview = themePreviewPending;
     themePreviewPending = false;
     themePicker.open({ onClose: maybeEquipmentHint, remember: !preview });
+    return;
+  }
+  if (achievementsPanel && (promoPreviewPending || !achievementsPromo.hasBeenShown())) {
+    const preview = promoPreviewPending;
+    promoPreviewPending = false;
+    achievementsPromo.open({ onClose: maybeEquipmentHint, remember: !preview });
     return;
   }
   panelOrder?.showEquipmentHint();

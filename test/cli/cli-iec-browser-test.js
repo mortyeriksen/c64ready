@@ -26,7 +26,7 @@ try {
   const ctx = await browser.newContext();
   await ctx.addInitScript(cache => {
     for (const [key, value] of Object.entries(cache)) localStorage.setItem(key, JSON.stringify({ data: value, name: key.split('.').at(-1) + '.bin' }));
-    for (const key of ['splashSeen', 'themePickerShown', 'installDismissed', 'equipmentHintShown']) localStorage.setItem(`c64emu.${key}`, '1');
+    for (const key of ['splashSeen', 'themePickerShown', 'achievementsPromoShown', 'installDismissed', 'equipmentHintShown']) localStorage.setItem(`c64emu.${key}`, '1');
   }, roms);
   const page = await ctx.newPage();
   const errors = []; page.on('pageerror', error => errors.push(error.message));

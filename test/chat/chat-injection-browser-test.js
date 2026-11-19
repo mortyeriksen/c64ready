@@ -151,7 +151,7 @@ try {
   const app = await ctx.newPage();
   await watch(app);
   await app.addInitScript(([port, token]) => {
-    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
     localStorage.setItem('c64emu.chat.server', `ws://127.0.0.1:${port}/chat`);
     localStorage.setItem('c64emu.account.token', token);
   }, [CHAT_PORT, account(VICTIM)]);

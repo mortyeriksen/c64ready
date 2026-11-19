@@ -130,6 +130,15 @@ setup shows the picker before the equipment hint.
 `?THEME_PICKER=1` previews the picker after ROM setup without changing its
 one-time setting.
 
+`test/achievements-promo-browser-test.js` checks the Achievements splash that
+follows the picker: it opens once, shows the Last Ninja board from the server
+(or says it is offline) with an open place for you, fetches nothing from
+YouTube until its video is played, plays it in a credentialless frame that
+the page's cross-origin isolation allows (or on YouTube in a new tab where a
+browser has no such frames), fits phones, and **TRY IT NOW** opens the
+Achievements window. `?ACHIEVEMENTS_PROMO=1` previews it after ROM setup
+without changing its one-time setting.
+
 `test/close-button-spec-test.js` checks accessible names, non-submit activation,
 repeat initialization and title-bar drag isolation. `test/close-button-browser-test.js`
 checks consistent icon and target sizes in scaled and unscaled dialogs on desktop

@@ -21,7 +21,7 @@ try {
   await context.addInitScript(cache => {
     for (const [key, value] of Object.entries(cache)) localStorage.setItem(key, value);
     localStorage.setItem('c64emu.panelHidden', '[]');
-    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
     localStorage.setItem('c64emu.installDismissed', '1');
     localStorage.setItem('c64emu.equipmentHintShown', '1');
   }, roms);

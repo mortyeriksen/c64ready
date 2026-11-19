@@ -14,7 +14,7 @@ export async function createGuideContext(browser, options, { roms = true } = {})
   await context.addInitScript(roms => {
     for (const [key, value] of Object.entries(roms)) localStorage.setItem(key, value);
     localStorage.setItem('c64emu.equipmentHintShown', '1');
-    localStorage.setItem('c64emu.themePickerShown', '1');
+    localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
     localStorage.setItem('c64emu.theme', 'phosphor');
     localStorage.setItem('c64emu.appearance', 'dark');
     localStorage.setItem('c64emu.hideDevServer', '1');   // the shots are taken against a dev server

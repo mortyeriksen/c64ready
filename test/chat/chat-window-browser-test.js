@@ -59,7 +59,7 @@ async function newPage(opts = {}) {
   // Past the splash, and on the dev server's own chat, never the production one.
   await page.addInitScript((port) => {
     try {
-      localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+      localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
       localStorage.setItem('c64emu.chat.server', `ws://localhost:${port}/chat`);
       // This test drags and resizes the window: floating, not the desktop's docked default.
       if (!localStorage.getItem('c64emu.online.dock')) localStorage.setItem('c64emu.online.dock', JSON.stringify({ on: false, w: 400 }));

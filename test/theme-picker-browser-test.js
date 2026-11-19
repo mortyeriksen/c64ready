@@ -28,6 +28,7 @@ try {
       sessionStorage.setItem('theme-test-seeded', '1');
       for (const [key, value] of Object.entries(cache)) localStorage.setItem(key, value);
       localStorage.setItem('c64emu.splashSeen', '1');
+      localStorage.setItem('c64emu.achievementsPromoShown', '1');
       localStorage.setItem('c64emu.installDismissed', '1');
       localStorage.setItem('c64emu.theme', 'phosphor');
       localStorage.setItem('c64emu.appearance', 'dark');

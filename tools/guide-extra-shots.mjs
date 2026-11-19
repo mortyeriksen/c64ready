@@ -151,7 +151,7 @@ if (want('update-toast') || want('drive8-loaded') || want('directory-zoom') || w
   const ctx = await createGuideContext(browser, { colorScheme: 'dark',
     viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 2, reducedMotion: 'reduce',
   });
-  await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); } catch {} });
+  await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1'); } catch {} });
   const page = await bootPage(ctx);
 
   if (want('update-toast')) {
@@ -277,7 +277,7 @@ if (want('cartridge-freezer')) {
   const ctx = await createGuideContext(browser, { colorScheme: 'dark',
     viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 2, reducedMotion: 'reduce',
   });
-  await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); } catch {} });
+  await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1'); } catch {} });
   const page = await bootPage(ctx);
   try {
     const tmp = path.join(os.tmpdir(), 'guide-freezer.crt');
@@ -308,7 +308,7 @@ if (want('panel-hide') || want('panel-restore')) {
     // as a band of empty page between the two things the shot is about.
     viewport: { width: 1460, height: 780 }, deviceScaleFactor: 2, reducedMotion: 'reduce',
   });
-  await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); } catch {} });
+  await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1'); } catch {} });
 
   if (want('panel-hide')) {
     const page = await bootPage(ctx);
@@ -369,7 +369,7 @@ if (want('touch-joystick')) {
     await mctx.addInitScript(() => {
       try {
         localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1');
-        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
         // Port 2 = Touch Joystick so the overlay shows once the machine is running.
         localStorage.setItem('c64emu.controlPorts', JSON.stringify({ 1: 'none', 2: 'touchJoystick' }));
       } catch {}
@@ -435,7 +435,7 @@ if (want('user-port-modem')) {
       await ctx.addInitScript(cache => {
         for (const [key, value] of Object.entries(cache)) localStorage.setItem(key, value);
         localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1');
-        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
         localStorage.setItem('c64emu.userport', 'on');
         localStorage.setItem('c64emu.userport.device', 'builtin.wifi-modem');
         localStorage.setItem('c64emu.userport.dev.builtin.wifi-modem.speaker', 'true');
@@ -469,7 +469,7 @@ if (want('iec-printer')) {
       await ctx.addInitScript(cache => {
         for (const [key, value] of Object.entries(cache)) localStorage.setItem(key, value);
         localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1');
-        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
       }, roms);
       const page = await bootPage(ctx);
       await page.locator('#iec-card .panel-card-header h2').click();
@@ -526,7 +526,7 @@ if (want('user-port-bbs')) {
       try {
         for (const [key, value] of Object.entries(cache)) localStorage.setItem(key, value);
         localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1');
-        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
         localStorage.setItem('c64emu.userport', 'on');
         localStorage.setItem('c64emu.userport.device', 'builtin.wifi-modem');
       } catch {}
@@ -641,7 +641,7 @@ if (want('achievements-chat')) {
     await ctx.addInitScript((url) => {
       try {
         localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1');
-        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
         localStorage.setItem('c64emu.chat.server', url);
         localStorage.removeItem('c64emu.online.rect');
       } catch {}
@@ -730,7 +730,7 @@ if (want('achievements')) {
     await ctx.addInitScript(() => {
       try {
         localStorage.setItem('c64emu.equipmentHintShown', '1'); localStorage.setItem('c64emu.panelHidden', '[]'); localStorage.setItem('c64emu.installDismissed', '1');
-        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
         localStorage.removeItem('c64emu.online.rect'); localStorage.removeItem('c64emu.online.dock'); localStorage.removeItem('c64emu.achievements');
       } catch {}
     });

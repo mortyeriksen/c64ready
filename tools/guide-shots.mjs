@@ -106,7 +106,7 @@ await ctx.addInitScript(() => {
   try {
     localStorage.setItem('c64emu.equipmentHintShown', '1');
     localStorage.setItem('c64emu.installDismissed', '1');
-    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
     localStorage.setItem('c64emu.vibesModel', 'small');
     localStorage.setItem('c64emu.modelViewerScene', '80s Bedroom');
   } catch {}
@@ -141,7 +141,7 @@ if (want('sid-player') && TUNE && fs.existsSync(TUNE)) {
   try {
     await sidCtx.addInitScript(() => {
       try { localStorage.setItem('c64emu.equipmentHintShown', '1');
-    localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); } catch {}
+    localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1'); } catch {}
     });
     await sidCtx.addInitScript(cache => {
       for (const [key, value] of Object.entries(cache)) localStorage.setItem(key, value);

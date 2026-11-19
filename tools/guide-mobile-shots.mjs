@@ -52,7 +52,7 @@ try {
     viewport: { width: 430, height: 874 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
   await context.addInitScript(() => {
     localStorage.setItem('c64emu.installDismissed', '1');
-    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
   });
   const page = await context.newPage();
   await page.goto(`${base}/?CRT_SHADER_SOFTWARE=1`, { waitUntil: 'networkidle' });

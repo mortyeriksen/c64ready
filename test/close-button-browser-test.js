@@ -17,7 +17,7 @@ await vite.listen();
 const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' });
 await context.addInitScript(port => {
   localStorage.setItem('c64emu.splashSeen', '1');
-  localStorage.setItem('c64emu.themePickerShown', '1');
+  localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
   localStorage.setItem('c64emu.pauseDemo', 'off');
   localStorage.setItem('c64emu.chat.server', `ws://127.0.0.1:${port}/chat`);
 }, port);

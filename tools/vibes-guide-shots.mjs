@@ -30,7 +30,7 @@ const ctx = await createGuideContext(browser, { colorScheme: 'dark', serviceWork
 await ctx.addInitScript(() => {
   try {
     localStorage.setItem('c64emu.equipmentHintShown', '1');
-    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
     localStorage.setItem('c64emu.installDismissed', '1');
   } catch {}
 });

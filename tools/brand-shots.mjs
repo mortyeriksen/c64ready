@@ -107,7 +107,7 @@ for (const [name, s] of Object.entries(SHOTS)) {
   await ctx.addInitScript(({ scene, fog, vibes }) => {
     try {
       localStorage.setItem('c64emu.installDismissed', '1');
-      localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+      localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
       localStorage.setItem('c64emu.vibesModel', 'small');
       if (vibes) localStorage.setItem('c64emu.sizeMode', '15x');
       localStorage.setItem('c64emu.modelViewerScene', scene);

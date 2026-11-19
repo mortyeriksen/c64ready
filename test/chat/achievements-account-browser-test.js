@@ -44,7 +44,7 @@ const BASE = `http://localhost:${freePort}`;
 const context = await browser.newContext();
 await context.addInitScript((port) => {
   try {
-    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
     localStorage.setItem('c64emu.chat.server', `ws://localhost:${port}/chat`);
   } catch { /* storage blocked */ }
 }, freePort);
@@ -159,7 +159,7 @@ try {
   // new passkey there and sign in; the code is then replaced.
   {
     const device = await browser.newContext();
-    await device.addInitScript((port) => { try { localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.chat.server', `ws://localhost:${port}/chat`); } catch { /* storage blocked */ } }, freePort);
+    await device.addInitScript((port) => { try { localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1'); localStorage.setItem('c64emu.chat.server', `ws://localhost:${port}/chat`); } catch { /* storage blocked */ } }, freePort);
     const p2 = await device.newPage();
     const cdp2 = await device.newCDPSession(p2);
     await cdp2.send('WebAuthn.enable');

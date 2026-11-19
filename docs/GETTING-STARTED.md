@@ -67,6 +67,13 @@ press **APPLY THEME**, or **KEEP CURRENT**. You can reopen it from
 
 ![The theme picker with eight illustrated cards, from Phosphor and Classic to Art Deco and Lookout Point.](/guide/theme-picker.webp)
 
+Next, **Your name on the board** introduces
+[Achievements](GUIDE-ACHIEVEMENTS.md), once. It shows the top times of The
+Last Ninja's Wastelands speedrun with a place for you, and a speedrun video
+that plays from YouTube when you press play (in Safari and Firefox it opens on
+YouTube in a new tab). **TRY IT NOW** opens the Achievements window on its
+games, and **MAYBE LATER** closes it.
+
 ---
 
 ## 2. Power on

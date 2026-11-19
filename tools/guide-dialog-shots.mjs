@@ -53,7 +53,7 @@ const ctx = await createGuideContext(browser, { colorScheme: 'dark',
   deviceScaleFactor: 2,
   reducedMotion: 'reduce',
 });
-await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); } catch {} });
+await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1'); } catch {} });
 const page = await ctx.newPage();
 page.on('pageerror', (e) => console.error('  page error:', e.message));
 

@@ -182,6 +182,7 @@ const TESTS = [
   'test/appearance-spec-test.js',
   'test/themes-spec-test.js',
   'test/theme-picker-browser-test.js',
+  'test/achievements-promo-browser-test.js',
   'test/switches-spec-test.js',
   'test/crt-params-test.js',
   'test/crt-panel-spec-test.js',

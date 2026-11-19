@@ -26,7 +26,7 @@ await ctx.addInitScript(roms => {
   if (sessionStorage.getItem('panels-seeded')) return;
   sessionStorage.setItem('panels-seeded', '1');
   for (const [key, value] of Object.entries(roms)) localStorage.setItem(key, value);
-  localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.installDismissed', '1');
+  localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1'); localStorage.setItem('c64emu.installDismissed', '1');
 }, roms);
 const page = await ctx.newPage();
 const errors = []; page.on('pageerror', error => errors.push(error.message));
@@ -75,7 +75,7 @@ try {
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   await phone.addInitScript(cache => {
     for (const [key, value] of Object.entries(cache)) localStorage.setItem(key, value);
-    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
   }, roms);
   const phonePage = await phone.newPage();
   await phonePage.goto(`http://127.0.0.1:${port}`, { waitUntil: 'networkidle' });
@@ -152,6 +152,9 @@ try {
       await setup.locator('.theme-picker').waitFor();
       assert.equal(await hint.isVisible(), false, 'theme selection precedes the equipment hint');
       await setup.locator('.theme-picker').getByRole('button', { name: 'KEEP CURRENT', exact: true }).click();
+      await setup.locator('.achievements-promo').waitFor();
+      assert.equal(await hint.isVisible(), false, 'the Achievements splash precedes the equipment hint');
+      await setup.locator('.achievements-promo').getByRole('button', { name: 'MAYBE LATER', exact: true }).click();
       await hint.waitFor({ state: 'visible' });
       assert.equal(await hint.evaluate(element => getComputedStyle(element).animationName), 'equipment-arrow-point', 'text and arrow animate together');
       assert.equal(await hint.locator('svg').evaluate(element => getComputedStyle(element).animationName), 'none', 'the arrow has no independent movement');

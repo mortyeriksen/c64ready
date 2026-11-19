@@ -51,7 +51,7 @@ const ctx = await createGuideContext(b, { colorScheme: 'dark', viewport: { width
 await ctx.addInitScript(() => {
   try {
     localStorage.setItem('c64emu.installDismissed', '1');
-    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
   } catch {}
 });
 const p = await ctx.newPage();

@@ -53,7 +53,7 @@ const romCache = Object.fromEntries(Object.entries(roms).map(([slot, f]) => [`c6
 const context = await browser.newContext();
 await context.addInitScript(([port, cache]) => {
   try {
-    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
     localStorage.setItem('c64emu.chat.server', `ws://localhost:${port}/chat`);
     for (const [k, v] of Object.entries(cache)) localStorage.setItem(k, v);
   } catch { /* storage blocked */ }
@@ -355,7 +355,7 @@ try {
     const phoneCtx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     await phoneCtx.addInitScript(([port, cache]) => {
       try {
-        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
         localStorage.setItem('c64emu.chat.server', `ws://localhost:${port}/chat`);
         for (const [k, v] of Object.entries(cache)) localStorage.setItem(k, v);
       } catch { /* storage blocked */ }

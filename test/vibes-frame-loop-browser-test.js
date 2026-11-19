@@ -55,7 +55,7 @@ try {
   await context.addInitScript((roms) => {
     for (const [key, value] of Object.entries(roms)) localStorage.setItem(key, value);
     localStorage.setItem('c64emu.splashSeen', '1');
-    localStorage.setItem('c64emu.themePickerShown', '1');
+    localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
     localStorage.setItem('c64emu.pauseDemo', 'off');
     // Every draw of the machine's picture onto the page's own canvas.
     window.pageDraws = 0;
@@ -217,7 +217,7 @@ try {
     const openView = async (options) => {
       const context = await browser.newContext({ reducedMotion: 'reduce', ...options });
       await context.addInitScript(() => {
-        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.pauseDemo', 'off');
+        localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1'); localStorage.setItem('c64emu.pauseDemo', 'off');
       });
       const p = await context.newPage();
       p.on('pageerror', (e) => errors.push(e.message));

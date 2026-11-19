@@ -64,7 +64,7 @@ async function newPage(prefs = {}, url = BASE) {
     sessionStorage.setItem('seeded', '1');
     localStorage.setItem('c64emu.panelHidden', '[]');
     for (const [k, v] of Object.entries({ ...roms, ...prefs })) localStorage.setItem(k, v);
-    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
     localStorage.setItem('c64emu.installDismissed', '1');
   }, { roms, prefs });
   const page = await ctx.newPage();

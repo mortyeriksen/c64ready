@@ -37,7 +37,7 @@ const ctx = await createGuideContext(browser, { colorScheme: 'dark',
   reducedMotion: 'reduce',
 }, { roms: false });
 // Hide the PWA install card so it can't intrude; storage is otherwise empty.
-await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); } catch {} });
+await ctx.addInitScript(() => { try { localStorage.setItem('c64emu.installDismissed', '1'); localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1'); } catch {} });
 const page = await ctx.newPage();
 page.on('pageerror', (e) => console.error('  page error:', e.message));
 // Defensive: even if /roms/ still holds files, block them so autoLoad finds none.

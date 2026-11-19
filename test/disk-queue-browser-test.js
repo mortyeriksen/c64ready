@@ -29,7 +29,7 @@ await context.addInitScript(roms => {
   if (sessionStorage.getItem('diskQueueSeeded')) return;
   sessionStorage.setItem('diskQueueSeeded', '1');
   for (const [key, value] of Object.entries(roms)) localStorage.setItem(key, value);
-  localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+  localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
   localStorage.setItem('c64emu.pauseDemo', 'off');
   localStorage.setItem('c64emu.tde', 'off');
 }, roms);

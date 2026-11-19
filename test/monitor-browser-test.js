@@ -1039,7 +1039,7 @@ try {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.addInitScript(roms => {
       for (const [key, value] of Object.entries(roms)) localStorage.setItem(key, value);
-      for (const key of ['splashSeen', 'themePickerShown', 'installDismissed']) localStorage.setItem('c64emu.' + key, '1');
+      for (const key of ['splashSeen', 'themePickerShown', 'achievementsPromoShown', 'installDismissed']) localStorage.setItem('c64emu.' + key, '1');
       localStorage.setItem('c64emu.attract', '0');
     }, roms);
     await page.goto(base);
@@ -1500,7 +1500,7 @@ try {
     phone.on('pageerror', error => errors.push(error.message));
     await phone.addInitScript(roms => {
       for (const [key, value] of Object.entries(roms)) localStorage.setItem(key, value);
-      for (const key of ['splashSeen', 'themePickerShown', 'installDismissed']) localStorage.setItem('c64emu.' + key, '1');
+      for (const key of ['splashSeen', 'themePickerShown', 'achievementsPromoShown', 'installDismissed']) localStorage.setItem('c64emu.' + key, '1');
       localStorage.setItem('c64emu.controlPorts', JSON.stringify({ 1: 'none', 2: 'touchJoystick' }));
     }, roms);
     await phone.goto(base);

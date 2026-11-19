@@ -17,6 +17,12 @@ const SWITCHES = {
     default: false,
     env: ['THEME_PICKER'],
   },
+  // Open the Achievements splash after ROM setup without marking it seen.
+  // Reload with ?ACHIEVEMENTS_PROMO=1.
+  achievementsPromo: {
+    default: false,
+    env: ['ACHIEVEMENTS_PROMO'],
+  },
   equipmentHint: {
     default: false,
     env: ['EQUIPMENT_HINT'],

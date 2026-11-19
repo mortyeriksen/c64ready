@@ -15,7 +15,7 @@ try {
     viewport: { width: 1460, height: 1180 }, deviceScaleFactor: 2, reducedMotion: 'reduce' });
   await context.addInitScript(() => {
     localStorage.setItem('c64emu.installDismissed', '1');
-    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1');
+    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
   });
   const page = await context.newPage();
   await page.goto(process.argv[2] || 'http://localhost:5173', { waitUntil: 'networkidle' });

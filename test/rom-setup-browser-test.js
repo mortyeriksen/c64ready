@@ -72,7 +72,7 @@ try {
     const context = await browser.newContext({ viewport: { width: mobile ? 390 : 1440, height: mobile ? 844 : 1000 }, hasTouch: mobile, isMobile: mobile });
     await context.addInitScript(() => {
       localStorage.setItem('c64emu.splashSeen', '1');
-      localStorage.setItem('c64emu.themePickerShown', '1');
+      localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1');
     });
     await context.route('**/roms/**', route => route.fulfill({ status: 404, body: '' }));
     await context.route('**/rom-sources.json', route => route.fulfill({ json: urls }));

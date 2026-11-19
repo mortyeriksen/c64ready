@@ -16,6 +16,8 @@ The version you are running is shown at the bottom of the About dialog.
 - **Bomb Jack's game over.** Losing the second-to-last Jack no longer ends
   the game for Achievements. Your score is posted, and the high scores come
   up, only when the last Jack is lost.
+- **Meet Achievements.** A new screen after you choose your look shows the
+  high-score boards you can join, with a Last Ninja speedrun to watch.
 
 ---
 

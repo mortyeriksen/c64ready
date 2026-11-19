@@ -95,7 +95,7 @@ try {
     sessionStorage.setItem('seeded', '1');
     localStorage.setItem('c64emu.panelHidden', '[]');
     for (const [key, value] of Object.entries(roms)) localStorage.setItem(key, value);
-    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.installDismissed', '1');
+    localStorage.setItem('c64emu.splashSeen', '1'); localStorage.setItem('c64emu.themePickerShown', '1'); localStorage.setItem('c64emu.achievementsPromoShown', '1'); localStorage.setItem('c64emu.installDismissed', '1');
     localStorage.setItem('c64emu.userport', 'on');
   }, roms);
   const page = await ctx.newPage(); const errors = []; page.on('pageerror', e => errors.push(e.message));
