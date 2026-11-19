@@ -13,6 +13,9 @@ The version you are running is shown at the bottom of the About dialog.
 
 - **Last Light 1.2.** Achievements for Last Light: Stairway to Heaven now
   follow the game's 1.2 disk. The trophies and boards are the same.
+- **Bomb Jack's game over.** Losing the second-to-last Jack no longer ends
+  the game for Achievements. Your score is posted, and the high scores come
+  up, only when the last Jack is lost.
 
 ---
 

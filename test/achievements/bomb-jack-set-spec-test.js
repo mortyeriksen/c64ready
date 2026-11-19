@@ -3,7 +3,9 @@
 // keeps it:
 //   $122F-$1231 score, six BCD digits, high byte first.
 //   $14F7 lives: 1 for a new game (two Jacks in the panel), 0, then $FF on the last life.
-//         A death on $FF ends the game. An E coin adds one, up to 5.
+//         A death takes one on the frame $1BE6 drops, so the death that leaves the last life
+//         shows $FF there too. A death on $FF ends the game and leaves it $FF. An E coin adds
+//         one, up to 5.
 //   $150E round, BCD. $1E94 rises when a round is cleared, before the firebomb bonus.
 //   $3C5F lit bombs taken this round: 20 or more pays the firebomb bonus, 23 pays 50,000.
 //   $536B the bonus multiplier digit in the panel, 1 at each round start, +1 per B coin.
@@ -98,8 +100,8 @@ function clearRound(lit = 0, bonus = 0) {
   ram[IRQ] = PLAY; frames(5);
 }
 function scoreNow() { return Number([0, 1, 2].map((i) => ram[SCORE + i].toString(16).padStart(2, '0')).join('')); }
-/** A death: the animation, then the main loop takes a life (0 wraps to $FF). The round goes on. */
-function die() { ram[DYING] = 1; frames(140); ram[DYING] = 0; frames(1); ram[LIVES] = (ram[LIVES] - 1) & 0xff; frames(5); }
+/** A death: the animation, then a life taken on the frame it ends (0 wraps to $FF). The round goes on. */
+function die() { ram[DYING] = 1; frames(140); ram[DYING] = 0; ram[LIVES] = (ram[LIVES] - 1) & 0xff; frames(5); }
 /** The death on the last life: the animation ends with lives still $FF, then game over. */
 function gameOver() { ram[LIVES] = 0xff; ram[DYING] = 1; frames(140); ram[DYING] = 0; frames(1); ram[IRQ] = BETWEEN; frames(30); }
 
