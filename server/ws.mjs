@@ -28,9 +28,18 @@ function frame(payload, opcode) {
   return Buffer.concat([head, payload]);
 }
 
-/** Refuse an upgrade request with a plain HTTP status. */
+// A socket the server is done with is closed once its last bytes are out, and in any case after
+// this long: the peer need not close its side for it to go.
+const LINGER_MS = 2000;
+function endAndDestroy(sock, data) {
+  const t = setTimeout(() => sock.destroy(), LINGER_MS);
+  t.unref?.();
+  sock.end(data, () => { clearTimeout(t); sock.destroy(); });
+}
+
+/** Refuse an upgrade request with a plain HTTP status, and close the socket. */
 export function refuseUpgrade(sock, status, text) {
-  sock.end(`HTTP/1.1 ${status} ${text}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
+  endAndDestroy(sock, `HTTP/1.1 ${status} ${text}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
 }
 
 /**
@@ -84,7 +93,7 @@ class WsConn {
     const r = Buffer.from(String(reason).slice(0, 100), 'utf8');
     const p = Buffer.alloc(2 + r.length);
     p.writeUInt16BE(code, 0); r.copy(p, 2);
-    this.sock.end(frame(p, 8));
+    endAndDestroy(this.sock, frame(p, 8));
     this._gone();
   }
 

@@ -98,12 +98,27 @@ const chat = createChatServer({
 });
 
 
+// A request a handler fails on is answered and logged: it never ends the process.
 const server = http.createServer((req, res) => {
-  if (accounts?.handleRequest(req, res)) return;
-  if (!chat.handleRequest(req, res)) res.writeHead(404, { 'Content-Type': 'text/plain' }).end('not found');
+  try {
+    if (accounts?.handleRequest(req, res)) return;
+    if (!chat.handleRequest(req, res)) res.writeHead(404, { 'Content-Type': 'text/plain' }).end('not found');
+  } catch (e) {
+    console.warn(`request ${req.method} failed: ${e.stack || e.message}`);
+    if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'text/plain' });
+    res.end();
+  }
 });
+// Node takes its own listeners off a socket before it hands it over: a peer that resets it would
+// otherwise be an unhandled 'error' event.
 server.on('upgrade', (req, sock, head) => {
-  if (!chat.handleUpgrade(req, sock, head)) sock.destroy();
+  sock.on('error', () => sock.destroy());
+  try {
+    if (!chat.handleUpgrade(req, sock, head)) sock.destroy();
+  } catch (e) {
+    console.warn(`upgrade failed: ${e.stack || e.message}`);
+    sock.destroy();
+  }
 });
 
 const port = Number(env.PORT) || 6465;

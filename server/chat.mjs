@@ -682,7 +682,9 @@ export function createChatServer({
 
   function serveAdmin(req, res, path) {
     if (!gate) return false;
-    const url = new URL(String(req.url || ''), 'http://x');
+    // A target such as `//` reads as a URL with no host and does not parse: it is no page here.
+    const url = URL.parse(String(req.url || ''), 'http://x');
+    if (!url) { res.writeHead(400, { 'Content-Type': 'text/plain' }).end('bad request'); return true; }
     const secure = !!req.socket.encrypted || (trustProxy > 0 && req.headers['x-forwarded-proto'] === 'https');
     const ownOrigin = `${secure ? 'https' : 'http'}://${String(req.headers.host || '')}`;
     // A passkey and a console request belong to this server's own page.

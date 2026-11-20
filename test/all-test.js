@@ -77,6 +77,7 @@ const TESTS = [
   // Quick unit tests (deterministic, fast)
   'test/cli/cli-sid-spec-test.js',
   'test/chat/chat-server-spec-test.js',
+  'test/chat/server-survives-spec-test.js',
   'test/chat/accounts-spec-test.js',
   'test/chat/admin-console-spec-test.js',
   'test/chat/demo-players-spec-test.js',
