@@ -165,6 +165,8 @@ const TESTS = [
   'test/achievements/ach-hud-browser-test.js',
   'test/achievements/ach-attract-browser-test.js',
   'test/achievements/game-tab-spec-test.js',
+  'test/achievements/game-tab-browser-test.js',
+  'test/css-has-spec-test.js',
   'test/chat/now-loaded-spec-test.js',
   'test/assembly64-test.js',
   'test/media-browser-test.js',

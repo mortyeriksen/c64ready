@@ -297,7 +297,7 @@ export function createAttract({ host, watch = null, engine, me = () => null, pag
   // appends characters (cached one-letter strings) to a text node: nothing is
   // allocated per character, only a row's elements as it starts.
   // The cursor is the typed cell's ::after: moving it inserts no node, which
-  // would have the page's body:has() rules restyle the whole page.
+  // would have the page's body:has() rules looked through again.
   let typing = null, typingCell = null;
   function typeIn(cell) {
     if (cell === typingCell) return;

@@ -9,7 +9,7 @@
 import { KIND_ICONS, iconMask, drawGameIcon } from './toast.js';
 import { gameIconUrl } from './game-icons.js';
 import { challengeFx, challengeSince, FX_CLASS, FX_GOING_OUT, FX_BACK } from './hud.js';
-import { h, ago } from './browse.js';
+import { h, ago, patchChildren } from './browse.js';
 
 // A slot or card built again mid-effect carries on where it was.
 const fxDelay = (a, fx, now) => (fx === FX_GOING_OUT || fx === FX_BACK ? `--ach-fx-delay: -${challengeSince(a, now)}ms` : null);
@@ -19,6 +19,12 @@ export function boardsShown(leaderboards, runningIds = [], playingId = null) {
   const on = leaderboards.filter((l) => runningIds.includes(l.id));
   if (!on.length) return leaderboards;
   return [...on.filter((l) => l.id === playingId), ...on.filter((l) => l.id !== playingId)];
+}
+/** What the HUD card shows of `game`, as a string: the card is the same while this is. */
+export function hudCardKey(game, now = Date.now()) {
+  let key = `${game.hash}:`;
+  for (const a of game.achievements) key += a.unlocked ? 'u' : challengeFx(a, now);
+  return key;
 }
 /**
  * The HUD card for `game`: its icon, title and points, a slot per achievement, and the next one to get.
@@ -63,24 +69,29 @@ export function hudCard({ game, buttons = [] }) {
 /**
  * Every trophy of a game as a toast in miniature: a trophy when unlocked, its
  * number while locked, the next one marked. When it was unlocked, and whether
- * it is being checked.
+ * it is being checked. Given `list`, one it made before for the same game, it
+ * builds only the cards that changed and leaves the others as they are.
  */
-export function trophyCards(achievements, unlockedAt = () => null, checking = () => false) {
+export function trophyCards(achievements, unlockedAt = () => null, checking = () => false, list = null) {
   const next = achievements.findIndex((a) => !a.unlocked);
   const now = Date.now();
-  const list = h('ul', { class: 'ach-trophies' }, achievements.map((a, i) => {
+  if (!list) {
+    list = h('ul', { class: 'ach-trophies' });
+    list.style.setProperty('--ach-hud-trophy', iconMask(KIND_ICONS.unlock));
+  }
+  patchChildren(list, achievements.map((a, i) => {
     const got = a.unlocked, at = got ? unlockedAt(a) : null, fx = challengeFx(a, now);
-    return h('li', { class: `ach-trophy ${got ? 'is-got' : 'is-locked'}${i === next ? ' is-next' : ''}${FX_CLASS[fx]}`, style: fxDelay(a, fx, now) },
+    const when = at ? `Unlocked ${ago(at)}` : '', check = got && checking(a);
+    return [`${a.id}:${got ? 1 : 0}:${when}:${check ? 1 : 0}:${i === next ? 1 : 0}:${fx}:${a.challenge ?? ''}`, () => h('li', { class: `ach-trophy ${got ? 'is-got' : 'is-locked'}${i === next ? ' is-next' : ''}${FX_CLASS[fx]}`, style: fxDelay(a, fx, now) },
       h('span', { class: 'ach-trophy-icon', 'aria-hidden': 'true' }, got ? null : String(i + 1)),
       h('span', { class: 'ach-trophy-words' },
         h('b', {}, a.title),
         h('span', {}, a.description),
-        at ? h('em', {}, `Unlocked ${ago(at)}`) : null,
-        got && checking(a) ? h('span', { class: 'ach-checking' }, 'Being checked') : null,
+        when ? h('em', {}, when) : null,
+        check ? h('span', { class: 'ach-checking' }, 'Being checked') : null,
         h('span', { class: 'sr-only' }, got ? ' Unlocked.' : a.challenge === 'out' ? ' Out for now.' : ' Locked.')),
       h('span', { class: 'ach-trophy-pts' }, got ? `+${a.points}` : String(a.points)),
-      i === next ? h('span', { class: 'ach-trophy-tag' }, 'NEXT UP') : null);
+      i === next ? h('span', { class: 'ach-trophy-tag' }, 'NEXT UP') : null)];
   }));
-  list.style.setProperty('--ach-hud-trophy', iconMask(KIND_ICONS.unlock));
   return list;
 }

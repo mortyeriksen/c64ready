@@ -20,6 +20,8 @@ The version you are running is shown at the bottom of the About dialog.
   high-score boards you can join, with a Last Ninja speedrun to watch.
 - **Play from GAMES.** Each game in your library has a ▷ on its row in the
   Achievements window's GAMES list.
+- **Lighter Achievements.** Trophies, toasts and the high-score screen ask
+  less of a slow device while a game runs.
 
 ---
 

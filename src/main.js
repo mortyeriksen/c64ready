@@ -2601,8 +2601,8 @@ achievements = createAchievementEngine({
     });
     // Its trophy flies from the toast into the HUD.
     _trophyHud?.unlocked(achievement);
-    // The window's views fetch again, now that the server has it.
-    achievementsPanel?.unlocked();
+    // The window's views fetch again when the server has it.
+    achievementsPanel?.unlocked({ saved });
   },
   // Play stopped counting in public, as when a save state is loaded: said once, for a game with a set.
   onSoftcore: ({ reason, quiet }) => {

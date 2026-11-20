@@ -17,8 +17,8 @@ import { confirmDialog } from '../ui/dialogs.js';
 import { floatingWindow, resizeHandles, fillsScreen } from '../ui/floating-window.js';
 import { LIMITS } from '../../server/protocol.mjs';
 import { findInLibrary, importFolder, libraryIndex } from '../achievements/library-match.js';
-import { h, renderActivity, renderGames, renderGamePage, renderProfile, highScoreScreen, playerChip, hallOfFame, attractButton, refreshButton } from '../achievements/browse.js';
-import { hudCard, trophyCards, boardsShown } from '../achievements/hud-card.js';
+import { h, patchChildren, renderActivity, renderGames, renderGamePage, renderProfile, highScoreScreen, playerChip, hallOfFame, attractButton, refreshButton } from '../achievements/browse.js';
+import { hudCard, hudCardKey, trophyCards, boardsShown } from '../achievements/hud-card.js';
 import { boardInPlay } from '../achievements/hud.js';
 
 const TABS = ['game', 'activity', 'chat', 'games', 'account'];
@@ -105,6 +105,16 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
   let standingsKey = null, activityKey = null, activityAt = 0, gamesKey = null;
   const who = () => account.user?.id ?? 'out';
   const gameKey = () => `${engine?.gameHash ?? ''}:${who()}:${dataGen}`;
+  // GAME's standings are fetched whole for a game and an account, and from then on in parts: a saved
+  // unlock moves only Trophy Hunters, a posted score only its own board.
+  const standingsBase = () => `${engine?.gameHash ?? ''}:${who()}`;
+  let staleTop = false;
+  const staleBoards = new Set();
+  // Each answer from the server gets a number: a screen is built again only for a new one.
+  const answers = new WeakMap();
+  let answered = 0;
+  const answerOf = (o) => (o ? answers.get(o) ?? (answers.set(o, ++answered), answered) : 0);
+  let trophiesEl = null, trophiesOf = null;   // GAME's trophy cards, kept between draws of one game
   let opener = buttons[0];
 
   // ── CHAT ────────────────────────────────────────────────────────────────
@@ -337,23 +347,39 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
   function stopPoll() { clearInterval(poll); poll = null; }
 
   // ── GAME ────────────────────────────────────────────────────────────────
-  async function loadStandings() {
+  // `all`: every board and Trophy Hunters, as for another game or account, or REFRESH. Else only what
+  // an unlock or a posted score made stale, and what was shown stays if that fetch fails.
+  async function loadStandings(all = false) {
     const game = engine?.game;
     if (!game) return;
+    const key = standingsBase();
+    const whole = all || standingsKey !== key;
+    const boards = whole ? game.leaderboards : game.leaderboards.filter((l) => staleBoards.has(l.id));
+    const fame = (whole || staleTop) && game.achievements.length > 0;
+    standingsKey = key;
+    staleTop = false;
+    staleBoards.clear();
+    if (!whole && !boards.length && !fame) return;
     standingsFor = game.hash;
-    standingsKey = gameKey();
     loadingStandings = true;
     const next = new Map();
     let nextTop = null;
     await Promise.all([
-      ...game.leaderboards.map(async (l) => {
+      ...boards.map(async (l) => {
         // All of a board, for the chase to find the next player up; its screen shows the top five.
-        try { next.set(l.id, await engine.leaderboard(l.id, 100)); } catch { next.set(l.id, { entries: [], players: 0 }); }
+        try { next.set(l.id, await engine.leaderboard(l.id, 100)); } catch { if (whole) next.set(l.id, { entries: [], players: 0 }); }
       }),
-      game.achievements.length ? engine.api.top(game.hash, 10).then((t) => { nextTop = t; }, () => { nextTop = { total: game.achievements.length, players: 0, complete: 0, entries: [] }; }) : null,
+      fame ? engine.api.top(game.hash, 10).then((t) => { nextTop = t; }, () => { if (whole) nextTop = { total: game.achievements.length, players: 0, complete: 0, entries: [] }; }) : null,
     ]);
     loadingStandings = false;
-    if (standingsFor === game.hash) { standings = next; standingsOf = game.hash; top = nextTop; renderGame(); }
+    if (standingsFor !== game.hash) return;
+    if (whole) { standings = next; top = nextTop; }
+    else {
+      for (const [id, st] of next) standings.set(id, st);
+      if (nextTop) top = nextTop;
+    }
+    standingsOf = game.hash;
+    renderGame();
   }
 
   function renderGame() {
@@ -370,32 +396,49 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
         h('div', { class: 'confirm-actions achievements-scopes' }, h('button', { type: 'button', class: 'btn', on: { click: () => selectTab('games') } }, 'SEE THE GAMES')));
       return;
     }
-    // Standings are fetched while GAME shows, once per game, account and generation (an unlock or a posted score).
-    if (engineReady && !win.hidden && currentTab() === 'game' && !detail.length && !loadingStandings && standingsKey !== gameKey()) loadStandings();
+    // Standings are fetched while GAME shows: whole once per game and account, then the part an unlock or a posted score moved.
+    if (engineReady && !win.hidden && currentTab() === 'game' && !detail.length && !loadingStandings && (standingsKey !== standingsBase() || staleTop || staleBoards.size)) loadStandings();
     // While boards are played those running show, the one in play on top (the latest started, a time
     // first); else all of them.
     playingId = boardInPlay(game.leaderboards, live.keys());
     const shown = boardsShown(game.leaderboards, [...live.keys()], playingId);
     const st = (id) => (standingsOf === game.hash ? standings.get(id) ?? null : null);
     const topFive = (s) => (s ? { ...s, entries: s.entries.slice(0, 5) } : null);
-    // The HUD on top: the game and its trophies. Its boards follow it.
-    const card = hudCard({
-      game,
-      buttons: [attract ? attractButton(attract) : null, refreshButton(() => { dataGen++; return Promise.all([loadStandings(), engine.refreshChecks().catch(() => {})]); })].filter(Boolean),
-    });
-    gameEl.replaceChildren(...[
-      card.el,
-      game.notice ? h('p', { class: 'ach-notice', role: 'status' }, game.notice)
-        // Softcore play: what it unlocks stays the player's own, until a reset.
-        : game.softcore ? h('p', { class: 'ach-notice', role: 'status' }, `Softcore: ${game.softcore}. Nothing counts in public until a reset.`) : null,
-      account.user ? null : h('p', { class: 'achievements-note ach-signin-note' }, 'Signed out: sign in to keep what you unlock. ',
-        h('button', { type: 'button', class: 'achievements-link', on: { click: () => selectTab('account') } }, 'Sign in')),
-      ...shown.map((l) => highScoreScreen(ctx, game.title, l, topFive(st(l.id)), live.get(l.id) ?? null, held.get(`${game.hash} ${l.id}`) ?? null)),
-      game.achievements.length ? hallOfFame(ctx, game.title, standingsOf === game.hash ? top : null) : null,
-      ...(game.achievements.length ? [h('h4', { class: 'ach-h' }, 'Trophies'), trophyCards(game.achievements, (a) => a.unlockedAt, (a) => a.checking)] : []),
+    // Each part under what it shows, as a key: a part whose key is unchanged stays as it is, so an
+    // unlock draws the card and the trophies it moved, and the boards are left alone.
+    const reader = `${who()}:${account.user?.name ?? ''}:${engineReady ? 1 : 0}`;
+    const fame = standingsOf === game.hash ? top : null;
+    const notice = game.notice
+      // Softcore play: what it unlocks stays the player's own, until a reset.
+      || (game.softcore ? `Softcore: ${game.softcore}. Nothing counts in public until a reset.` : '');
+    if (trophiesOf !== game.hash) { trophiesEl = null; trophiesOf = game.hash; }
+    if (game.achievements.length) trophiesEl = trophyCards(game.achievements, (a) => a.unlockedAt, (a) => a.checking, trophiesEl);
+    patchChildren(gameEl, [
+      // The HUD on top: the game and its trophies. Its boards follow it.
+      [`card:${attract ? 1 : 0}:${hudCardKey(game)}`, () => hudCard({
+        game,
+        buttons: [attract ? attractButton(attract) : null, refreshButton(() => { dataGen++; return Promise.all([loadStandings(true), engine.refreshChecks().catch(() => {})]); })].filter(Boolean),
+      }).el],
+      notice ? [`notice:${notice}`, () => h('p', { class: 'ach-notice', role: 'status' }, notice)] : null,
+      account.user ? null : ['signin', () => h('p', { class: 'achievements-note ach-signin-note' }, 'Signed out: sign in to keep what you unlock. ',
+        h('button', { type: 'button', class: 'achievements-link', on: { click: () => selectTab('account') } }, 'Sign in'))],
+      ...shown.map((l) => {
+        const s = st(l.id), mine = held.get(`${game.hash} ${l.id}`) ?? null;
+        // A running score is written into its cell in place: the screen is built for whether one runs.
+        return [`board:${game.hash}:${l.id}:${answerOf(s)}:${live.has(l.id) ? 1 : 0}:${mine ?? ''}:${reader}`,
+          () => highScoreScreen(ctx, game.title, l, topFive(s), live.get(l.id) ?? null, mine)];
+      }),
+      game.achievements.length ? [`fame:${game.hash}:${answerOf(fame)}:${reader}`, () => hallOfFame(ctx, game.title, fame)] : null,
+      ...(game.achievements.length ? [['trophies-head', () => h('h4', { class: 'ach-h' }, 'Trophies')], [`trophies:${game.hash}`, () => trophiesEl]] : []),
     ].filter(Boolean));
     liveCells.clear();
-    for (const p of gameEl.querySelectorAll('.ach-screen-live[data-board]')) liveCells.set(Number(p.dataset.board), p.querySelector('.ach-screen-live-value'));
+    for (const p of gameEl.querySelectorAll('.ach-screen-live[data-board]')) {
+      const id = Number(p.dataset.board), cell = p.querySelector('.ach-screen-live-value');
+      liveCells.set(id, cell);
+      // A screen kept from the last draw may hold an older score, as after the tab was away.
+      const text = ctx.format(live.get(id), shown.find((l) => l.id === id)?.format);
+      if (cell.firstChild.data !== text) cell.firstChild.data = text;
+    }
   }
 
   // ── ACCOUNT ─────────────────────────────────────────────────────────────
@@ -585,8 +628,8 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     accountChanged() { chat?.accountChanged(); },
     /**
      * A leaderboard attempt from the engine: started and updated carry the
-     * running score, shown live; canceled clears it; submitted clears it and
-     * fetches the standings (and the activity) again.
+     * running score, shown live; canceled clears it; submitted clears it and,
+     * when the server took the score, fetches its board (and the activity) again.
      */
     leaderboardEvent({ type, leaderboard, value, result, softcore }) {
       if (type === 'started' || type === 'updated') {
@@ -608,13 +651,21 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
         const key = `${hash} ${leaderboard.id}`, was = held.get(key);
         if (was == null || (leaderboard.lowerIsBetter ? value < was : value > was)) held.set(key, value);
       }
-      if (type === 'submitted') dataGen++;
+      // A score the server took changes what it holds: its board is fetched again, and the other views.
+      if (type === 'submitted' && result != null) { dataGen++; staleBoards.add(leaderboard.id); }
       if (win.hidden || detail.length) return;
       if (type === 'submitted') showView();
       else if (currentTab() === 'game') renderGame();
     },
-    /** An unlock the server has (engine onUnlock, after it is saved): the views fetch again as they show. */
-    unlocked() { dataGen++; },
+    /**
+     * An unlock (engine onUnlock). One the server has (`saved`) has the views fetch again as they show,
+     * and GAME its Trophy Hunters. One it does not have changes nothing there.
+     */
+    unlocked({ saved = true } = {}) {
+      if (!saved) return;
+      dataGen++;
+      staleTop = true;
+    },
     /**
      * The engine's game changed. Another game, or achievements turned on or off, is a full
      * refresh. The same game (an unlock, a challenge) draws only the GAME tab, once.

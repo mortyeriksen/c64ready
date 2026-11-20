@@ -22,6 +22,23 @@ export function h(tag, attrs = {}, ...children) {
   for (const c of children.flat()) if (c != null && c !== false) el.append(c);
   return el;
 }
+/**
+ * Puts `parts` into `parent` in their order, each a [key, build] pair: a child made for the same key
+ * stays as it is, and only the others are built. A draw then touches what changed and no more.
+ */
+export function patchChildren(parent, parts) {
+  const made = new Map();
+  for (const c of parent.children) if (c._key != null && !made.has(c._key)) made.set(c._key, c);
+  let at = parent.firstChild;
+  for (const [key, build] of parts) {
+    let node = made.get(key);
+    if (node) made.delete(key);
+    else { node = build(); node._key = key; }
+    if (node === at) at = at.nextSibling;
+    else parent.insertBefore(node, at);
+  }
+  while (at) { const next = at.nextSibling; at.remove(); at = next; }
+}
 const SVG = 'http://www.w3.org/2000/svg';
 function icon(paths, size = 15) {
   const s = document.createElementNS(SVG, 'svg');

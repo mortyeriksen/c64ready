@@ -211,8 +211,19 @@ in the browser or `NAME=0` in Node harnesses.
   canvas for each unlocked trophy and measures its tiles once. Text that
   changes (a counting number, a rank, the HUD's counts) is written in place in
   its text node, since a node put in or taken out has the page's `body:has()`
-  rules restyle the whole page, and a count reserves its width in the
-  stylesheet, with no style read back. The HUD's slots start their effects
+  rules looked through again (about 35 µs in Chromium, against 1 µs for a
+  class or a text written in place), and a count reserves its width in the
+  stylesheet, with no style read back. No stylesheet rule goes on past a
+  `:has()` to a subject without a class, id, attribute or tag, such as
+  `.card:has(.shot) > :not(.shot)`: with `body:has()` in the page, one such
+  rule had every node put in or taken out restyle the whole page, about
+  0.45 ms each, whether or not it matched an element
+  (`test/css-has-spec-test.js`). The Achievements window's GAME tab keeps
+  each part whose content is unchanged when it draws again, so an unlock
+  builds the card and the trophies it moved and leaves the boards alone, and
+  it fetches only what moved on the server: Trophy Hunters for a saved
+  unlock, the board for a posted score, nothing for an unlock made signed out
+  (`test/achievements/game-tab-browser-test.js`). The HUD's slots start their effects
   again on one layout, not one each. The HUD's arrangements are
   measured on an unseen copy, and again only when what it holds changes size.
   Laying it out reads nothing back: the view's size comes from its

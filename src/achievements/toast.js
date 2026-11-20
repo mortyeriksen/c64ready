@@ -71,7 +71,7 @@ const later = (ms, fn) => setTimeout(fn, ms);
 const replay = (el, cls) => { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
 /**
  * A node's text changed in place, in its one text node, and only when it differs: a node put in
- * or taken out would have the page's body:has() rules restyle the whole page.
+ * or taken out would have the page's body:has() rules looked through again.
  */
 export function write(node, text) {
   const t = node.firstChild;
