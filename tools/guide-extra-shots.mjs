@@ -38,7 +38,8 @@
 //                        its cartridge in the library and so its ▷ button. Then the
 //                        Achievements window docked beside the game running: its
 //                        GAME tab (progress, the high scores, Trophy Hunters, the
-//                        achievements), then GAMES, then ACTIVITY. Five players
+//                        achievements), then GAMES (1943, Airborne Ranger and Arkanoid
+//                        in the library, so their rows have a ▷), then ACTIVITY. Five players
 //                        sign up on the dev server, post unlocks and scores
 //                        through the games API, and are deleted afterwards.
 //                        Run it against a dev server with accounts in memory
@@ -800,9 +801,20 @@ if (want('achievements')) {
     info = saveGuideShot(await page.screenshot(), OUT, 'achievements-game');
     done.push('achievements-game'); console.log('  ✓', shotLabel('achievements-game', info));
 
+    // A few games near the top of the list wait in the library too, so their rows have a ▷ to play them
+    // and the rest the dashed one.
+    for (const asset of ['1943-crt', 'airborne-ranger-crt', 'arkanoid-crt']) {
+      const file = assetPath(asset);
+      if (!file || !fs.existsSync(file)) continue;
+      await page.evaluate(async ([name, b64]) => {
+        const { libSave } = await import('/src/media/library.js');
+        await libSave('crt', name, Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)));
+      }, [path.basename(file), fs.readFileSync(file).toString('base64')]);
+    }
     await page.locator('#online-tab-games').click();
     if (!(await page.evaluate(() => document.body.classList.contains('has-docked-window')))) await page.locator('#btn-online-dock').click();
     await page.locator('.ach-card').first().waitFor({ timeout: 10000 });
+    await page.locator('#achievements-games .ach-play-none').first().waitFor({ timeout: 20000 });
     await page.mouse.move(10, 890);
     await sleep(600);
     await clearToasts(page);

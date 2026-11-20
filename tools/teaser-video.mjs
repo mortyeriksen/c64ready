@@ -39,8 +39,8 @@
 // Overrides, all env: TEASER_WIDTH (default 1280), TEASER_FPS (30), TEASER_CRF
 // (17), POSTER_AT (seconds into the clip, default 3), POSTER_WIDTH (0 = the
 // source's own width, which is the default).
-// Needs `ffmpeg` and `ffprobe` on PATH (brew install ffmpeg), and `cwebp` for the
-// poster (brew install webp), as the guide shots do.
+// Needs `ffmpeg` and `ffprobe` on PATH (brew install ffmpeg). The poster is
+// encoded by tools/guide-image.mjs, as the guide shots are.
 import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';

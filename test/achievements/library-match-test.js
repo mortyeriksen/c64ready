@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { words, namesOf, nameMatches, findInLibrary, importFolder, hashedType } from '../../src/achievements/library-match.js';
+import { words, namesOf, nameMatches, findInLibrary, importFolder, hashedType, libraryIndex } from '../../src/achievements/library-match.js';
 import { MAX_ENTRIES } from '../../src/media/library.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -73,6 +73,35 @@ expect(await findInLibrary({ hashes: ['x'], names: ['Uridium'] }, async () => { 
   const full = library(Array.from({ length: MAX_ENTRIES }, (_, i) => ({ id: `e${i}`, type: 'sid', name: `tune${i}.sid`, size: 1, savedAt: 1 })));
   const r2 = await importFolder([file('Uridium.prg', 'uri-2')], games, hashOf, () => {}, full);
   expect(full.saved.length === 0 && r2.full === 1, 'a full library takes nothing more, so nothing kept there is pushed out, and says how many were left out');
+}
+
+// GAMES: every listed game with a version in the library, found in one pass, hashing only files named like a game.
+{
+  const read = [];
+  const hashOf = async (bytes) => { const h = new TextDecoder().decode(bytes); read.push(h); return h; };
+  const entries = [
+    { id: 'new', type: 'crt', name: 'Bomb Jack.crt', size: 1, savedAt: 3, hash: 'bj-1' },
+    { id: 'old', type: 'crt', name: 'Bomb Jack (old).crt', size: 1, savedAt: 2, hash: 'bj-1' },
+    { id: 'hack', type: 'prg', name: 'Uridium hack.prg', size: 1, savedAt: 2, hash: 'uri-hacked' },
+    { id: 'ln', type: 'd64', name: 'LNINJA1.D64', size: 1, savedAt: 1, hash: 'ln-side1' },
+    { id: 'para', type: 'd64', name: 'Paradroid.d64', size: 1, savedAt: 1, hash: 'paradroid' },
+    { id: 'tune', type: 'sid', name: 'Bomb Jack.sid', size: 1, savedAt: 1, hash: 'bj-1' },
+  ];
+  const lib = { list: async () => entries, load: async (id) => ({ data: new TextEncoder().encode(entries.find((e) => e.id === id).hash) }) };
+  const games = [
+    { hash: 'bj-1', title: 'Bomb Jack' },
+    { hash: 'uri-1', hashes: ['uri-1', 'uri-2'], title: 'Uridium' },
+    { hash: 'ln-side1', hashes: ['ln-side1', 'ln-side2'], title: 'The Last Ninja', labels: ['LNINJA1.D64'] },
+    { hash: 'gng', title: 'Ghosts \u2019n Goblins' },
+  ];
+  const found = await libraryIndex(games, hashOf, lib);
+  expect(found.get('bj-1') === 'new', `a game in the library is found, its newest entry when there are several (${JSON.stringify([...found])})`);
+  expect(found.get('ln-side1') === 'ln', 'a file named by a version label is found too');
+  expect(!found.has('uri-1'), 'a file named like a game but with none of its hashes is not it');
+  expect(!found.has('gng'), 'a game with no file in the library is not found');
+  expect(!read.includes('paradroid') && !read.includes('old') && read.filter((h) => h === 'bj-1').length === 1, `only files named like a game still unfound are read, and no type the engine does not hash (${JSON.stringify(read)})`);
+  hashed = 0;
+  expect((await libraryIndex(games, async () => { hashed++; return 'x'; })).size === 0 && hashed === 0, 'no library, no games found');
 }
 
 if (fails) { console.log(`\n${fails} of ${checks} library match checks failed`); process.exit(1); }

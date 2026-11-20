@@ -10,7 +10,7 @@
 // readings must agree byte for byte (src/media/wav-tape.js, mendTurbo).
 //
 //   node tools/tape-guide-art.mjs            writes public/guide/tape-*.svg,
-//                                            and tape-pipeline.webp (needs cwebp)
+//                                            and tape-pipeline.webp
 //   GUIDE_OUT=dir node tools/tape-guide-art.mjs   writes them elsewhere
 import fs from 'fs';
 import path from 'path';

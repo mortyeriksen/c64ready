@@ -240,6 +240,40 @@ try {
   await page.waitForFunction(() => /^(Added|The library|No game)/.test(document.querySelector('#achievements-games .ach-games-count')?.textContent ?? ''), null, { timeout: 15000 }).catch(() => {});
   expect(/^The library has every game found there already \(1\)\.$/.test(await countText()), `a second look adds nothing (${await countText()})`);
   fs.rmSync(dir, { recursive: true, force: true });
+  // ▷ on each row plays a game from the LOAD library: none on the loaded game's row (it says LOADED), a
+  // dashed one for a game not in the library, and a filled one that loads it for a game that is.
+  const row = (title) => gamesTab.locator('li.ach-games-row', { has: page.locator('.ach-games-title', { hasText: title }) }).first();
+  await gamesTab.locator('.ach-play-none').first().waitFor({ timeout: 10_000 }).catch(() => {});
+  expect(await row('Uridium').locator('.ach-play-btn, .ach-play-none').count() === 0, 'the loaded game\'s row has no ▷');
+  expect(await row('Commando').locator('.ach-play-none').count() === 1 && await row('Commando').locator('button.ach-play-btn').count() === 0, 'a game not in the library has a dashed ▷, not a button');
+  const bombJackCrt = assetPath('bomb-jack-crt');
+  if (!bombJackCrt) console.log('ok  - a game in the library has a ▷ that loads it # SKIP asset bomb-jack-crt not found');
+  else {
+    const bjDir = fs.mkdtempSync(path.join(os.tmpdir(), 'c64-games-'));
+    fs.copyFileSync(bombJackCrt, path.join(bjDir, path.basename(bombJackCrt)));
+    await page.evaluate(() => { document.querySelector('#achievements-games .ach-games-count').textContent = ''; });
+    await gamesTab.locator('.ach-games-folder-wrap input[type=file]').setInputFiles(bjDir);
+    await page.waitForFunction(() => /^(Added|The library|No game)/.test(document.querySelector('#achievements-games .ach-games-count')?.textContent ?? ''), null, { timeout: 15000 }).catch(() => {});
+    fs.rmSync(bjDir, { recursive: true, force: true });
+    const play = row('Bomb Jack').locator('button.ach-play-btn');
+    await play.waitFor({ timeout: 15_000 }).catch(() => {});
+    expect(await play.getAttribute('aria-label', { timeout: 1000 }).catch(() => null) === 'Play Bomb Jack', 'a game added to the library gets a ▷ named for it');
+    await page.evaluate(() => { window.__mediaChanges = 0; addEventListener('c64-media', () => { window.__mediaChanges++; }); });
+    await play.click();
+    await page.waitForFunction(() => window.__mediaChanges > 0, null, { timeout: 10_000 }).catch(() => {});
+    expect(/bomb jack/i.test(await page.locator('#crt-label').textContent().catch(() => '')), 'and the ▷ loads it');
+    // Uridium again, for the checks that follow.
+    await page.locator('#online-tab-games').click();
+    await gamesTab.locator('.ach-play-slot').first().waitFor({ timeout: 10_000 }).catch(() => {});
+    const uri = row('Uridium').locator('button.ach-play-btn');
+    await uri.waitFor({ timeout: 15_000 }).catch(() => {});
+    expect(await uri.count() === 1, 'once another game is loaded, the one before gets its ▷');
+    await page.evaluate(() => { window.__mediaChanges = 0; });
+    await uri.click();
+    await page.waitForFunction(() => window.__mediaChanges > 0, null, { timeout: 10_000 }).catch(() => {});
+    await page.locator('#online-tab-games').click();
+    await page.waitForFunction(() => /Uridium/.test(document.querySelector('#achievements-games .ach-card.is-loaded')?.textContent ?? ''), null, { timeout: 15_000 }).catch(() => {});
+  }
   const order = await gamesTab.locator('.ach-card .ach-games-title').allTextContents();
   const rest = order.slice(1);
   expect(/Uridium/.test(order[0] ?? ''), `the loaded game comes first (got ${order[0]})`);

@@ -10,36 +10,26 @@
 // photographic and want lossy.
 //
 // Playwright only ever hands back PNG or JPEG, so a PNG capture is unavoidable —
-// but it stays in memory: cwebp reads it on stdin and returns the WebP on stdout,
-// so the only file written is the shot itself.
-//
-// Needs the `cwebp` binary on PATH (brew install webp).
+// but it stays in memory: tools/webp-encode.mjs (sharp, a dev dependency) reads
+// it on stdin and returns the WebP on stdout, so the only file written is the
+// shot itself. It runs as a child process so this writer stays synchronous.
 import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 export const MAX_WIDTH = 1920;
 const QUALITY = 90;
 
 
-let checked = false;
-function requireCwebp() {
-  if (checked) return;
-  try {
-    execFileSync('cwebp', ['-version'], { stdio: 'ignore' });
-  } catch {
-    throw new Error('cwebp not found on PATH — install it with `brew install webp`');
-  }
-  checked = true;
-}
+const ENCODER = fileURLToPath(new URL('./webp-encode.mjs', import.meta.url));
 
 const pngWidth = (buf) => buf.readUInt32BE(16);
 
-// '--' then '-' is cwebp's read-stdin form; '-o -' writes the result to stdout.
 // The lossless pass of a full-page 3D shot is ~1 MB, over execFileSync's default
 // stdout cap.
 const encode = (pngBuffer, resize, extra) =>
-  execFileSync('cwebp', ['-quiet', ...extra, ...resize, '-o', '-', '--', '-'], {
+  execFileSync(process.execPath, [ENCODER, ...extra, ...resize], {
     input: pngBuffer,
     maxBuffer: 64 * 1024 * 1024,
   });
@@ -49,11 +39,10 @@ const encode = (pngBuffer, resize, extra) =>
 // guide's own 1920 by default, lower for an asset with a fixed display size.
 // Returns what was written, for logging.
 export function saveShot(pngBuffer, outBase, maxWidth = MAX_WIDTH) {
-  requireCwebp();
   const width = pngWidth(pngBuffer);
-  const resize = width > maxWidth ? ['-resize', String(maxWidth), '0'] : [];
-  const lossless = encode(pngBuffer, resize, ['-lossless', '-z', '9']);
-  const lossy = encode(pngBuffer, resize, ['-q', String(QUALITY), '-m', '6']);
+  const resize = width > maxWidth ? ['--width', String(maxWidth)] : [];
+  const lossless = encode(pngBuffer, resize, ['--lossless']);
+  const lossy = encode(pngBuffer, resize, ['--quality', String(QUALITY)]);
   const best = lossless.length <= lossy.length ? lossless : lossy;
   const out = `${outBase}.webp`;
   fs.writeFileSync(out, best);

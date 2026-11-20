@@ -16,7 +16,7 @@ import { pushEscapeLayer, popEscapeLayer } from '../ui/escape-stack.js';
 import { confirmDialog } from '../ui/dialogs.js';
 import { floatingWindow, resizeHandles, fillsScreen } from '../ui/floating-window.js';
 import { LIMITS } from '../../server/protocol.mjs';
-import { findInLibrary, importFolder } from '../achievements/library-match.js';
+import { findInLibrary, importFolder, libraryIndex } from '../achievements/library-match.js';
 import { h, renderActivity, renderGames, renderGamePage, renderProfile, highScoreScreen, playerChip, hallOfFame, attractButton, refreshButton } from '../achievements/browse.js';
 import { hudCard, trophyCards, boardsShown } from '../achievements/hud-card.js';
 import { boardInPlay } from '../achievements/hud.js';
@@ -168,6 +168,10 @@ export function initOnline({ buttons, win, closeBtn, account = createAccount(), 
     // A game's file in the LOAD library ({ hashes, names }), to load from its page.
     fromLibrary: engine?.hash && loadFromLibrary
       ? (game) => findInLibrary(game, engine.hash).then((id) => (id == null ? null : () => loadFromLibrary(id)))
+      : null,
+    // Every listed game with a file in the LOAD library, to play from its row in GAMES: a game's hash → its load.
+    playable: engine?.hash && loadFromLibrary
+      ? (games) => libraryIndex(games, engine.hash).then((ids) => new Map([...ids].map(([hash, id]) => [hash, () => loadFromLibrary(id)])))
       : null,
     // A folder of the player's own files: each version of a game with a set goes into the library.
     importFolder: engine?.hash ? (files, games, progress) => importFolder(files, games, engine.hash, progress) : null,

@@ -3,7 +3,7 @@
 // Capture every Monitor section and Video TL;DR using the external Nine demo.
 // Usage: node tools/guide-monitor-shots.mjs [baseURL]
 // Requires a running dev server (default http://localhost:5173), external ROMs,
-// monitor-nine in test/external-assets.json and cwebp. Missing assets are SKIPs.
+// and monitor-nine in test/external-assets.json. Missing assets are SKIPs.
 // GUIDE_OUT overrides public/guide. GUIDE_ONLY selects comma-separated shot names.
 // Runs as part of npm run guide:shots.
 import fs from 'node:fs';

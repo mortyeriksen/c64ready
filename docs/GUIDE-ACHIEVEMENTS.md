@@ -230,7 +230,9 @@ page, pages the same way. A player keeps the same colour here and in the chat.
 
 **GAMES** lists every game with your progress: the loaded game first, then the
 games you have played, most complete first, with when you last played them
-where the window has room. **Filter
+where the window has room. A game whose file is in your **LOAD LIB** library
+has a **▷** at the end of its row that loads it straight away. A dashed **▷**
+means the game is not in the library yet. **Filter
 games** narrows the list by title. A game's page shows its high-score screen,
 its Trophy Hunters, your achievements, its activity and the versions it accepts.
 Its **i** button shows the versions, and **About the game** under them opens the
@@ -246,7 +248,7 @@ is full, the rest are left out, so nothing you keep there is pushed out.
 
 ![Commando Arcade's page under GAMES, before the game is loaded: its icon and title with the ▷ button that loads it from the library beside the i button, then its progress and high scores.](/guide/achievements-game-page.webp)
 
-![The GAMES tab docked on the right of the app: a row for each game, with its pixel icon, its title, your count and a meter of your progress.](/guide/achievements-games.webp)
+![The GAMES tab docked on the right of the app: a row for each game, with its pixel icon, its title, your count and a meter of your progress, and at its end a ▷ that plays a game in the library, or a dashed ▷ for one that is not.](/guide/achievements-games.webp)
 
 A player's profile shows their points, and their progress and best scores in
 each game they have played.

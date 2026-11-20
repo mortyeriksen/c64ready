@@ -365,7 +365,10 @@ export async function renderGames(el, ctx) {
       const words = fold(field.value).split(' ').filter(Boolean);
       const shown = games.filter((g) => { const t = fold(g.title); return words.every((w) => t.includes(w)); });
       const loaded = ctx.loaded?.() ?? null;
-      list.replaceChildren(...shown.map((g) => h('li', {}, gameCard(ctx, g, (g.hashes ?? [g.hash]).includes(loaded)))));
+      list.replaceChildren(...shown.map((g) => {
+        const isLoaded = (g.hashes ?? [g.hash]).includes(loaded);
+        return h('li', { class: `ach-games-row ${playerHue(g.id)}`, 'data-hash': g.hash }, gameCard(ctx, g, isLoaded), playSlot(g, isLoaded, plays));
+      }));
       revealOnScroll(list, reveal);
       count.textContent = words.length ? (shown.length ? `${shown.length} of ${games.length} games.` : 'No games match.') : `${games.length} games. Load one and play: what you unlock is saved to your account.`;
     };
@@ -378,10 +381,25 @@ export async function renderGames(el, ctx) {
       show();
       if (field.value && !layered) { pushEscapeLayer(layer); layered = true; }
     });
+    // Each game in the LOAD library gets a ▷ on its row, once the library has been looked through.
+    let plays = null;
+    const findPlays = () => {
+      if (!ctx.playable) return;
+      ctx.api.gamesWithLabels().then((r) => ctx.playable(r.games), () => ctx.playable(games)).then((found) => {
+        if (gen !== el._gen) return;
+        plays = found;
+        const loaded = ctx.loaded?.() ?? null;
+        for (const li of list.children) {
+          const g = games.find((x) => x.hash === li.dataset.hash);
+          if (g) li.lastElementChild.replaceWith(playSlot(g, (g.hashes ?? [g.hash]).includes(loaded), plays));
+        }
+      }, () => {});
+    };
     show(true);
+    findPlays();
     // The guide says how to ask for a game, or add one. A new tab keeps the game running here.
     const missing = h('a', { class: 'achievements-link ach-games-missing', href: '/docs/guide-achievements.html#missing-a-game', target: '_blank', rel: 'noopener' }, 'Missing a game?');
-    el.replaceChildren(h('div', { class: 'ach-games-bar' }, field, folderButton(ctx, count), missing), count, list);
+    el.replaceChildren(h('div', { class: 'ach-games-bar' }, field, folderButton(ctx, count, findPlays), missing), count, list);
     if (field.value) { pushEscapeLayer(layer); layered = true; }
     // Shown again as it was (the window keeps the list): text in the filter claims Esc again.
     el._shown = () => { if (field.value) { pushEscapeLayer(layer); layered = true; } };
@@ -394,7 +412,7 @@ export async function renderGames(el, ctx) {
  * The 💾 button: a folder of the player's own files, looked through for every game here, and each
  * version found put into the LOAD library. `status` says how it goes and what it added.
  */
-function folderButton(ctx, status) {
+function folderButton(ctx, status, added = () => {}) {
   if (!ctx.importFolder) return null;
   const input = h('input', { type: 'file', webkitdirectory: true, multiple: true, hidden: true });
   const btn = h('button', {
@@ -414,6 +432,7 @@ function folderButton(ctx, status) {
       });
       const titles = [...new Set(r.added.map((a) => a.title))];
       const full = r.full ? ` ${r.full} more left out: the library is full.` : '';
+      if (r.added.length) added();
       status.textContent = r.added.length
         ? `Added ${r.added.length} ${r.added.length === 1 ? 'file' : 'files'} to the library, for ${titles.join(', ')}.${full}`
         : r.games.length ? `The library has every game found there already (${r.games.length}).${full}` : 'No game here was found in that folder.';
@@ -469,6 +488,20 @@ function gameCard(ctx, g, isLoaded) {
       ? h('span', { class: `ach-card-count${played ? ' is-started' : ''}`, 'aria-label': `${got} of ${g.achievements} unlocked` }, `${got}/${g.achievements}`)
       : h('span', { class: `ach-card-count${played ? ' is-started' : ''}` }, 'scores'),
     g.achievements ? h('span', { class: 'ach-card-bar', 'aria-hidden': 'true' }, h('span', { style: `width: ${Math.round((100 * got) / g.achievements)}%` })) : null);
+}
+
+/**
+ * A row's ▷: plays the game from the LOAD library. A game not in the library shows a dashed one, the
+ * loaded game none (it says LOADED), and while the library is still being looked through the slot
+ * keeps its place empty.
+ * @param {Map<string, () => void>|null} plays  a game's hash → its load, or null until known
+ */
+function playSlot(g, isLoaded, plays) {
+  const load = plays?.get(g.hash);
+  if (!plays || isLoaded) return h('span', { class: 'ach-play-slot', 'aria-hidden': 'true' });
+  if (!load) return h('span', { class: 'ach-play-slot ach-play-none', title: `${g.title} is not in your LOAD LIB library`, 'aria-hidden': 'true' }, icon(['M7 4.5v15L19.5 12z'], 14));
+  const label = `Play ${g.title}`;
+  return h('button', { type: 'button', class: 'ach-play-slot ach-play-btn', 'aria-label': label, title: label, on: { click: () => load() } }, icon(['M7 4.5v15L19.5 12z'], 16));
 }
 
 /**

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright © 2026 Morten Øien Eriksen
-// src/achievements/library-match.js — a game's file in the LOAD library, found when its page opens:
-// the entries whose file name has the game's words are hashed, as the achievements engine hashes a
-// loaded file, and one with a hash of the game's is it. A hash is worked out once a session. And a
-// folder of the player's own files: every version of a game with a set in it goes into the library.
+// src/achievements/library-match.js — a game's file in the LOAD library, found when its page opens,
+// and every listed game's at once for GAMES: the entries whose file name has the game's words are
+// hashed, as the achievements engine hashes a loaded file, and one with a hash of the game's is it. A
+// hash is worked out once a session. And a folder of the player's own files: every version of a game
+// with a set in it goes into the library.
 
 import { libList, libLoad, libSave, MAX_ENTRIES, MAX_TOTAL_BYTES } from '../media/library.js';
 
@@ -65,6 +66,29 @@ export async function findInLibrary({ hashes, names }, hashOf) {
     }
   } catch { /* no library: nothing to load */ }
   return null;
+}
+
+/**
+ * Each of `games` that has a version in the library, by its hash, with that entry's id: the newest
+ * entry when there are several. One pass over the library, hashing only the entries named like a game.
+ * @param {{ hash: string, hashes?: string[], title: string, labels?: string[] }[]} games
+ * @param {(bytes: Uint8Array) => Promise<string|null>} hashOf  the engine's hash
+ * @returns {Promise<Map<string, string>>}  a game's hash → the library entry's id
+ */
+export async function libraryIndex(games, hashOf, lib = { list: libList, load: libLoad }) {
+  const sets = games.map((g) => ({ hash: g.hash, hashes: new Set(g.hashes ?? [g.hash]), keys: nameKeys(namesOf(g.title, (g.labels ?? []).filter(Boolean))) }));
+  const found = new Map();
+  try {
+    for (const e of await lib.list()) {
+      if (!HASHED.has(e.type)) continue;
+      const file = fileKeys(e.name);
+      const of = sets.filter((s) => !found.has(s.hash) && keysMatch(file, s.keys));
+      if (!of.length) continue;
+      const h = await entryHash(e, hashOf, lib.load);
+      for (const s of of) if (s.hashes.has(h)) found.set(s.hash, e.id);
+    }
+  } catch { /* no library: nothing to play */ }
+  return found;
 }
 
 /** A library entry's hash, worked out once a session. */

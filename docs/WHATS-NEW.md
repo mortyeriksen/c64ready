@@ -18,6 +18,8 @@ The version you are running is shown at the bottom of the About dialog.
   up, only when the last Jack is lost.
 - **Meet Achievements.** A new screen after you choose your look shows the
   high-score boards you can join, with a Last Ninja speedrun to watch.
+- **Play from GAMES.** Each game in your library has a ▷ on its row in the
+  Achievements window's GAMES list.
 
 ---
 
