@@ -282,6 +282,37 @@ function rawSocket(ip = freshIp()) {
   expect(again.welcome.room?.code === 'CHAT', 'a new session takes over from one that dropped, without waiting out its grace period');
   for (const c of [twin, again]) c.ws.close();
   ok('hello puts every account in the one channel, named by the account, on its newest device');
+
+  // An account has one session in all, in the channel or out of it: leaving and connecting again
+  // cannot keep a second socket open.
+  await settle();
+  const out = await guest({ as: 'Ola' });
+  await out.req('leave');
+  const anew = await guest({ as: 'Ola' });
+  expect(anew.welcome.room?.code === 'CHAT', 'a new session of an account that left is in the channel');
+  expect(await Promise.race([out.closed, sleep(1000).then(() => 'still open')]) === 4001, 'and the one that left is told it moved, and closed');
+  out.ws.close();
+  anew.ws.close();
+  ok('an account has one session, in the channel or out of it');
+
+  // One address holds a bounded number of sockets: past it, a new one is refused until one closes.
+  await settle();
+  const home = freshIp();
+  const many = [];
+  for (let i = 0; i < DEFAULTS.maxPerAddress; i++) {
+    // Admission lets ten in at once and two a second after: the clock moves on between.
+    if (i % 10 === 9) advance(5000);
+    many.push(await guest({ ip: home }));
+  }
+  advance(5000);
+  expect(await upgradeStatus('/chat', { 'x-forwarded-for': home }) === 429, `past ${DEFAULTS.maxPerAddress} sockets, an address is refused`);
+  expect(await upgradeStatus('/chat', { 'x-forwarded-for': freshIp() }) === 101, 'while another address is not');
+  many[0].ws.close();
+  await many[0].closed;
+  await sleep(40);
+  expect(await upgradeStatus('/chat', { 'x-forwarded-for': home }) === 101, 'once one of its sockets closes, the address may open another');
+  for (const c of many.slice(1)) c.ws.close();
+  ok('one address holds a bounded number of sockets');
 }
 {
   const { first, all } = await channelWith(2);

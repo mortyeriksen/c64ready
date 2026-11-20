@@ -38,9 +38,10 @@ write('demo.json', {
     { id: 1, title: 'First', description: 'Do the first thing.', points: 5, memaddr: '0xH0010=1' },
     { id: 2, title: 'Second', description: 'Do the second thing.', points: 10, memaddr: '0xH0010=2' },
   ],
+  // Values read as 32 bits, which can wrap round: no range from them, so the posts here are free.
   leaderboards: [
-    { id: 1, title: 'High Score', description: 'Most points.', format: 'SCORE', lowerIsBetter: false, definition: 'STA:0=1::CAN:0=1::SUB:0=1::VAL:0xH0020' },
-    { id: 2, title: 'Fastest', description: 'Least time.', format: 'FRAMES', lowerIsBetter: true, definition: 'STA:0=1::CAN:0=1::SUB:0=1::VAL:0xH0021' },
+    { id: 1, title: 'High Score', description: 'Most points.', format: 'SCORE', lowerIsBetter: false, definition: 'STA:0=1::CAN:0=1::SUB:0=1::VAL:0xX0020' },
+    { id: 2, title: 'Fastest', description: 'Least time.', format: 'FRAMES', lowerIsBetter: true, definition: 'STA:0=1::CAN:0=1::SUB:0=1::VAL:0xX0021' },
   ],
   gameOver: '0xH0022=0',
 });
@@ -375,6 +376,29 @@ const open = (who, hash = HASH) => api('GET', `/api/games/${hash}`, { token: who
   expect(heldHuge.body.flagged === true && flagOf('lb_entries', jo) === "over the board's limit", "while the board's limit applies to it");
   db.prepare("UPDATE leaderboards SET max_value = NULL WHERE game_id = 'demo'").run();
   db.prepare("DELETE FROM achievements WHERE game_id = 'demo' AND id > 10").run();
+  // A board without its own limits is held to what its value can be: six BCD digits are at most
+  // 16665 (every digit 15), and a time counted in frames is never below 0.
+  const demo = fs.readFileSync(path.join(sets, 'demo.json'), 'utf8');
+  const bounded = JSON.parse(demo);
+  bounded.leaderboards[0].definition = 'STA:0=1::CAN:0=1::SUB:0=1::VAL:b0xH0020*100_b0xH0021';
+  bounded.leaderboards[1].definition = 'STA:0=1::CAN:0=1::SUB:0=1::VAL:C:1=1_M:1=1';
+  write('demo.json', bounded);
+  loadSets(db, sets);
+  const limits = db.prepare("SELECT id, max_value, min_value FROM leaderboards WHERE game_id = 'demo' ORDER BY id").all();
+  expect(limits[0].max_value === 16665 && limits[0].min_value === 0 && limits[1].max_value === null && limits[1].min_value === 0, `the limits come from the values (got ${JSON.stringify(limits)})`);
+  const lia = account('Lia');
+  await open(lia); clock += 60_000;
+  const top = await raw(lia, 'leaderboards/1/entries', { value: 2 ** 31 - 1, hardcore: true });
+  expect(top.body.flagged === true && flagOf('lb_entries', lia) === "over the board's limit" && !(await boardNames()).includes('Lia'), 'a score the value cannot reach is flagged and kept off the board');
+  clock += 60_000;
+  const fast = await raw(lia, 'leaderboards/2/entries', { value: -(2 ** 31), hardcore: true });
+  expect(fast.body.flagged === true && flagOf('lb_entries', lia) === "under the board's limit", 'a time below zero is flagged');
+  const max = account('Max');
+  await open(max); clock += 60_000;
+  const fair = await raw(max, 'leaderboards/1/entries', { value: 9990, hardcore: true });
+  expect(!fair.body.flagged && (await boardNames()).includes('Max'), 'a score within the range goes on the board');
+  fs.writeFileSync(path.join(sets, 'demo.json'), demo);
+  loadSets(db, sets);
   ok('fair play: softcore results stay private, odd results are flagged');
 }
 

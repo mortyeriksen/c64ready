@@ -25,6 +25,8 @@
 import { Bucket } from './address.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
+import { valueBounds } from './value-bounds.mjs';
+
 
 /** Leaderboard formats, as rcheevos's rc_parse_format names them (format.c). */
 export const LB_FORMATS = Object.freeze(['SCORE', 'POINTS', 'TIME', 'FRAMES', 'TIMESECS', 'MILLISECS', 'SECS', 'MINUTES', 'SECS_AS_MINS', 'VALUE', 'UNSIGNED', 'OTHER',
@@ -131,7 +133,11 @@ export function loadSets(db, dir, log = () => {}) {
       const addAch = db.prepare('INSERT INTO achievements (game_id, id, title, description, points, memaddr, sort, score_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
       (set.achievements ?? []).forEach((a, i) => addAch.run(set.id, a.id, a.title, a.description, a.points ?? 0, a.memaddr, i, a.score ?? null));
       const addLb = db.prepare('INSERT INTO leaderboards (game_id, id, title, description, format, lower_is_better, definition, sort, max_value, min_value) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-      (set.leaderboards ?? []).forEach((l, i) => addLb.run(set.id, l.id, l.title, l.description, l.format, l.lowerIsBetter ? 1 : 0, l.definition, i, l.max ?? null, l.min ?? null));
+      // A board without its own limits is held to the range its value expression can take.
+      (set.leaderboards ?? []).forEach((l, i) => {
+        const b = valueBounds(l.definition);
+        addLb.run(set.id, l.id, l.title, l.description, l.format, l.lowerIsBetter ? 1 : 0, l.definition, i, l.max ?? b.max, l.min ?? b.min);
+      });
       db.exec('COMMIT');
     } catch (e) { db.exec('ROLLBACK'); throw e; }
     loaded.push(set.id);

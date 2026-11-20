@@ -82,6 +82,7 @@ const TESTS = [
   'test/chat/admin-console-spec-test.js',
   'test/chat/demo-players-spec-test.js',
   'test/chat/games-api-spec-test.js',
+  'test/chat/value-bounds-spec-test.js',
   'test/achievements/rcheevos-spec-test.js',
   'test/achievements/game-icons-test.js',
   'test/achievements/library-match-test.js',

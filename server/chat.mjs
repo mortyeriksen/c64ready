@@ -34,6 +34,8 @@ export const DEFAULTS = Object.freeze({
   pingMs: 25_000,
   maxSessions: 5000,
   maxConnections: 2000,
+  // Sockets open at once from one address (an IPv6 /64): a household or an office shares one.
+  maxPerAddress: 20,
   maxReports: 200,
 });
 
@@ -76,6 +78,7 @@ export function createChatServer({
   const byId = new Map();       // public id → session
   const rooms = new Map();      // code → room
   const conns = new Set();      // every open socket, users and admins
+  const perAddress = new Map(); // address key → its users' open sockets
   const pending = new Set();    // user sockets that have not said hello
   const adminConns = new Set();
   // Address codes seen lately → { key, ip, at }: a ban from a report still finds
@@ -345,6 +348,15 @@ export function createChatServer({
       send(old, { t: 'replaced' });
       old.close(4001, 'replaced');
     }
+    // An account has one session: the newest takes over from any other, in the channel or not,
+    // so one account cannot keep sockets open by leaving and connecting again.
+    for (const other of [...sessions.values()]) {
+      if (other === s || other.user?.id !== user.id) continue;
+      if (other.room) record({ ev: 'replaced', room: other.room.code, ...who(other) });
+      send(other.conn, { t: 'replaced' });
+      other.conn?.close(4001, 'replaced');
+      deleteSession(other);
+    }
     if (!s) {
       if (sessions.size >= L.maxSessions) { conn.close(1013, 'full'); return; }
       s = newSession(conn);
@@ -425,6 +437,7 @@ export function createChatServer({
     const addrId = hashAddr(key);
     if (bans.get(key)) { refuseUpgrade(sock, 403, 'Forbidden'); return; }
     if (conns.size >= L.maxConnections) { refuseUpgrade(sock, 503, 'Service Unavailable'); return; }
+    if ((perAddress.get(key) ?? 0) >= L.maxPerAddress) { refuseUpgrade(sock, 429, 'Too Many Requests'); return; }
     if (!admission.take(key)) { refuseUpgrade(sock, 429, 'Too Many Requests'); return; }
     const conn = acceptWebSocket(req, sock, head, { maxPayload: 4096 });
     if (!conn) return;
@@ -435,10 +448,13 @@ export function createChatServer({
     conn.events = new Bucket(5, 10, now);
     conn.deadline = now() + L.helloTimeoutMs;
     conns.add(conn);
+    perAddress.set(key, (perAddress.get(key) ?? 0) + 1);
     pending.add(conn);
     conn.onmessage = (text) => onUserMessage(conn, text);
     conn.onclose = () => {
       conns.delete(conn);
+      const n = perAddress.get(key) - 1;
+      if (n > 0) perAddress.set(key, n); else perAddress.delete(key);
       pending.delete(conn);
       const s = conn.session;
       if (s && s.conn === conn) disconnected(s);

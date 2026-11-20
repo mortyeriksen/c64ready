@@ -53,7 +53,8 @@ device is lost, set a new hash.
   games and the latest sign-ups.
   - **To review:** results the fair-play checks keep out of public view (posted
     without the game open, many unlocks at once, a score seconds after the game
-    opened, past a board's `max` or `min`, past `score` milestones not unlocked,
+    opened, past a board's `max` or `min` (without them in its set, what its
+    value expression can reach), past `score` milestones not unlocked,
     which clears when they arrive). Results earned signed out skip the
     many-at-once and seconds-after checks. **Approve** or **Clear**. The dev
     server skips the checks.
